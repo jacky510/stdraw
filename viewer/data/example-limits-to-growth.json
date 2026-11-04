@@ -1,0 +1,93 @@
+{
+  "name": "limits-to-growth",
+  "desc": "经典《系统之美》增长极限原型：采纳扩散的增强环 + 两个调节环（市场饱和、拥挤）",
+  "nodes": [
+    {
+      "id": "potential",
+      "l": "潜在采纳者"
+    },
+    {
+      "id": "adopters",
+      "l": "采纳者"
+    },
+    {
+      "id": "rate",
+      "l": "采纳率"
+    },
+    {
+      "id": "word",
+      "l": "口碑效应"
+    },
+    {
+      "id": "crowding",
+      "l": "拥挤效应"
+    }
+  ],
+  "edges": [
+    {
+      "a": "adopters",
+      "b": "word",
+      "p": "+"
+    },
+    {
+      "a": "word",
+      "b": "rate",
+      "p": "+"
+    },
+    {
+      "a": "rate",
+      "b": "adopters",
+      "p": "+"
+    },
+    {
+      "a": "potential",
+      "b": "rate",
+      "p": "+"
+    },
+    {
+      "a": "adopters",
+      "b": "potential",
+      "p": "−"
+    },
+    {
+      "a": "adopters",
+      "b": "crowding",
+      "p": "+"
+    },
+    {
+      "a": "crowding",
+      "b": "rate",
+      "p": "−"
+    }
+  ],
+  "ref": {
+    "H": 26,
+    "nodes": {
+      "rate": {
+        "x": 400,
+        "y": 400
+      },
+      "adopters": {
+        "x": 1000,
+        "y": 400
+      },
+      "word": {
+        "x": 700,
+        "y": 130
+      },
+      "potential": {
+        "x": 700,
+        "y": 660
+      },
+      "crowding": {
+        "x": 700,
+        "y": 880
+      }
+    }
+  },
+  "loops_expect": [
+    "R1 增强：采纳率→采纳者→口碑→采纳率",
+    "B1 平衡：采纳率→采纳者→潜在采纳者→采纳率",
+    "B2 平衡：采纳率→采纳者→拥挤→采纳率"
+  ]
+}
