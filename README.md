@@ -160,12 +160,14 @@ Every deliverable directory contains `certificate.json`:
   "metrics": { "crossings": 0, "box_press_1px": 0, "edge_box_min_clear": 18.0,
                "min_card_gap": 40.0, "row_align_rate": null,
                "spacing_cv": 0.405, "ring_spacing_cv": 0.0,
-               "ring_template_deviation": 0.0, "mutual_pair_min_sep": 15.8 },
+               "ring_template_deviation": 0.0, "mutual_pair_min_sep": 15.8,
+               "line_line_coincident_pairs": 0 },
   "gates":   { "crossings_zero": true, "box_press_zero": true,
                "edge_box_clear_ge_16": true, "anchors_smooth": true,
                "min_gap_ge_16": true, "ring_spacing_cv_le_005": true,
                "ring_template_fit_le_005": true,
-               "mutual_pairs_separated": true, "routing_consistent": true },
+               "mutual_pairs_separated": true, "routing_consistent": true,
+               "lines_no_coincidence": true },
   "placement": "ring-cycle",
   "grade": "最优"
 }

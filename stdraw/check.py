@@ -5,8 +5,123 @@
 输出 report JSON（可当 CI 门禁），fail>0 时 exit 1。
 """
 import json
+import math
 import sys
 from typing import List
+
+
+# ── ref-scrubbed #13 检查辅助：SVG path d（M/L/A）解析与几何核对 ──
+def _arc_points(x0, y0, rx, sweep, x1, y1, n=48):
+    """SVG 圆弧（rot=0、正圆、rx=ry；本引擎 laf 恒 0=短弧）→ 采样点列。"""
+    rx = abs(rx)
+    if rx < 1e-9 or (abs(x1 - x0) < 1e-12 and abs(y1 - y0) < 1e-12):
+        return [(x0, y0), (x1, y1)]
+    mx, my = (x0 + x1) / 2.0, (y0 + y1) / 2.0
+    dx, dy = x1 - x0, y1 - y0
+    chord = math.hypot(dx, dy)
+    if chord < 1e-12:
+        return [(x0, y0), (x1, y1)]
+    if chord / 2.0 > rx:
+        rx = chord / 2.0        # 退化保护：半径不足时取半圆
+    h = math.sqrt(max(0.0, rx * rx - (chord / 2.0) ** 2))
+    # 弦两侧两个候选圆心；短弧下扫过角 ∈(-π,π)，取扫向与 sweep 一致者
+    for sgn in (1.0, -1.0):
+        cx = mx - dy / chord * h * sgn
+        cy = my + dx / chord * h * sgn
+        a0 = math.atan2(y0 - cy, x0 - cx)
+        a1 = math.atan2(y1 - cy, x1 - cx)
+        da = a1 - a0
+        while da > math.pi:
+            da -= 2 * math.pi
+        while da < -math.pi:
+            da += 2 * math.pi
+        if abs(da) > 1e-9 and (da > 0) == (sweep == 1):
+            return [(cx + rx * math.cos(a0 + da * k / n),
+                     cy + rx * math.sin(a0 + da * k / n)) for k in range(n + 1)]
+    return [(x0, y0), (x1, y1)]
+
+
+def _parse_path_d(d):
+    """path d（仅 M/L/A，本引擎输出形态）→ 元素列表。
+
+    ('L', (x0,y0), (x1,y1)) 或 ('A', [(采样点)...])。不识别的命令返回 None。
+    """
+    toks = d.replace(",", " ").split()
+    elems, cur, i = [], None, 0
+    try:
+        while i < len(toks):
+            t = toks[i]
+            if t == "M":
+                cur = (float(toks[i + 1]), float(toks[i + 2]))
+                i += 3
+            elif t == "L":
+                p = (float(toks[i + 1]), float(toks[i + 2]))
+                elems.append(("L", cur, p))
+                cur = p
+                i += 3
+            elif t == "A":
+                rx = float(toks[i + 1])
+                sweep = int(float(toks[i + 5]))
+                p = (float(toks[i + 6]), float(toks[i + 7]))
+                elems.append(("A", _arc_points(cur[0], cur[1], rx, sweep,
+                                               p[0], p[1])))
+                cur = p
+                i += 8
+            else:
+                return None
+    except (ValueError, IndexError, TypeError):
+        return None
+    return elems
+
+
+def _path_d_all_points(elems):
+    out = []
+    for el in elems:
+        if el[0] == "L":
+            out.append(el[1])
+            out.append(el[2])
+        else:
+            out.extend(el[1])
+    return out
+
+
+def _max_poly_dev(pa, pb):
+    """两折线（采样点列）的双向最大最小距（Hausdorff 采样口径）。"""
+    from .metrics import _pt_seg_dist
+    def one_way(src, other):
+        worst = 0.0
+        for p in src:
+            dmin = min(_pt_seg_dist(p, other[k], other[k + 1])
+                       for k in range(len(other) - 1))
+            worst = max(worst, dmin)
+        return worst
+    return max(one_way(pa, pb), one_way(pb, pa))
+
+
+def _path_d_g1_max_deg(elems):
+    """path_d 元素序列的最大切向不连续角（度）。L↔A 连接处解析切向。"""
+    def line_dir(a, b):
+        n = math.hypot(b[0] - a[0], b[1] - a[1])
+        return ((b[0] - a[0]) / n, (b[1] - a[1]) / n) if n > 1e-12 else None
+
+    def elem_dirs(el):
+        if el[0] == "L":
+            d = line_dir(el[1], el[2])
+            return (d, d)
+        pts = el[1]
+        # 弧端切向 = 端点弦向（n=48 采样，弦向与真切向差 <0.1°）
+        return (line_dir(pts[0], pts[1]), line_dir(pts[-2], pts[-1]))
+
+    worst = 0.0
+    for k in range(len(elems) - 1):
+        d_out = elem_dirs(elems[k])[1]
+        d_in = elem_dirs(elems[k + 1])[0]
+        if d_out is None or d_in is None:
+            continue
+        ang = math.degrees(math.acos(max(-1.0, min(1.0,
+                       d_out[0] * d_in[0] + d_out[1] * d_in[1]))))
+        worst = max(worst, ang)
+    return worst
 
 
 def geometry_report(layout: dict) -> dict:
@@ -355,6 +470,37 @@ def auto_geometry_report(layout: dict) -> dict:
                                  md if md is None else round(md, 1)))
     chk("12. 互环对两线最小间距 ≥ 4px（透镜双弧，禁止重合）",
         not pair_bad, (str(pair_bad[:5]) if pair_bad else "; ".join(pair_note[:6])))
+
+    # 13. ref-scrubbed #15：path_d 渲染几何 = 核验几何（dense points）+ 弧线 G1 切线连续。
+    # 历史 bug：route_svg_d 曾在 fillet 弧后无条件补画角点本体，渲染层出现
+    # tb→q→ta_next 折返毛刺，而证书只核对 dense 采样点（平滑）——交付与
+    # 核验脱节。本检查直接解析渲染用的 path_d（M/L/A），双向核对两套几何
+    # 偏差 ≤1.5px，且每个 A 段与相邻 L 段切向夹角 ≤4°（取整容差）。
+    pathd_bad = []
+    pathd_n = 0
+    for pts, e in P:
+        d = e.get("route", {}).get("path_d")
+        if not d:
+            continue
+        pathd_n += 1
+        elems = _parse_path_d(d)
+        if elems is None:
+            pathd_bad.append((f"{e['a']}->{e['b']}", "path_d 解析失败"))
+            continue
+        dp = _path_d_all_points(elems)
+        dense = [tuple(p) for p in pts]
+        dev = _max_poly_dev(dp, dense)
+        if dev > 1.5:
+            pathd_bad.append((f"{e['a']}->{e['b']}", f"渲染/核验几何偏差 {dev:.1f}px"))
+            continue
+        g1 = _path_d_g1_max_deg(elems)
+        if g1 > 4.0:
+            pathd_bad.append((f"{e['a']}->{e['b']}", f"弧线切线不连续 {g1:.1f}°"))
+    chk("13. path_d 渲染几何与核验几何一致 + 弧线 G1 切线连续",
+        not pathd_bad,
+        (str(pathd_bad[:5]) if pathd_bad
+         else f"{pathd_n} 条 vg 路径渲染/核验一致（G1 ≤4°，几何偏差 ≤1.5px）"
+         if pathd_n else "本图无 vg path_d 路径（平凡通过）"))
 
     report["summary"] = {
         "viewBox": [W, H], "aspect": round(W / H, 3) if H else 0,

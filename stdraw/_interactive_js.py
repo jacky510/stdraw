@@ -187,6 +187,7 @@ function ptPolyDist(px, py, pts) {
 }
 function refreshMarkers() {
   var ids = Object.keys(nodes);
+  var placedPts = [];   // ref-scrubbed #10②：徽标互撞避让（与 render._polarity_marker 同口径 ≥17px）
   edges.forEach(function (e, i) {
     var rec = polGroups[i];
     if (!rec) return;
@@ -197,11 +198,15 @@ function refreshMarkers() {
     for (var ti = 0; ti < ts.length && !placed; ti++) {
       var r = polyPointAt(e.pts, ts[ti]);
       var nx = -r.tan[1], ny = r.tan[0];
-      var offs = [10, -10, 14, -14, 18, -18];
+      var offs = [10, -10, 14, -14, 18, -18, 22, -22];
       for (var oi = 0; oi < offs.length && !placed; oi++) {
         var cx = r.p[0] + nx * offs[oi], cy = r.p[1] + ny * offs[oi];
         if (cx < 8 || cx > VB[2] - 8 || cy < 8 || cy > VB[3] - 8) continue;
         var bad = false;
+        for (var pi = 0; pi < placedPts.length; pi++) {
+          if (Math.hypot(cx - placedPts[pi][0], cy - placedPts[pi][1]) < 17) { bad = true; break; }
+        }
+        if (bad) continue;
         for (var bi = 0; bi < ids.length && !bad; bi++) {
           var n = nodes[ids[bi]];
           var ddx = Math.max(Math.abs(cx - n.x) - n.w / 2, 0);
@@ -214,7 +219,10 @@ function refreshMarkers() {
         placed = [cx, cy];
       }
     }
-    if (placed) rec.g.setAttribute('transform', 'translate(' + placed[0].toFixed(1) + ' ' + placed[1].toFixed(1) + ')');
+    if (placed) {
+      rec.g.setAttribute('transform', 'translate(' + placed[0].toFixed(1) + ' ' + placed[1].toFixed(1) + ')');
+      placedPts.push(placed);
+    }
   });
 }
 var drag = null, rafPending = false;

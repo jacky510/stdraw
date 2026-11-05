@@ -327,10 +327,13 @@ def route_svg_d(corner_pts, fillets, nd=1):
         q = corner_pts[i]
         f = fmap.get(i)
         if f:
+            # ref-scrubbed #15：带 fillet 的角点由 ta→弧→tb 替代，不得再画回
+            # 角点本体（曾因 L q 无条件追加，出现 tb→q→ta_next 折返毛刺）。
             parts.append(f"L {r6(f['ta'][0])} {r6(f['ta'][1])}")
             parts.append(f"A {r6(f['r'])} {r6(f['r'])} 0 0 {f['sweep']} "
                          f"{r6(f['tb'][0])} {r6(f['tb'][1])}")
-        parts.append(f"L {r6(q[0])} {r6(q[1])}")
+        else:
+            parts.append(f"L {r6(q[0])} {r6(q[1])}")
     return " ".join(parts)
 
 
