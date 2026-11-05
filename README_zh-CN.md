@@ -46,7 +46,7 @@ pip install stdraw
 | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a> | <a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a> |
 | **2D · auto-v2 硬门布局**（增长极限×转嫁负担，8n/13e，直线/弧线、框不压线） | **3D · 球面排布**（任意角度旋转，投影交叉由相机解决） |
 | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a> | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/before-after.png" alt="before/after comparison" width="420"/></a> |
-| **质量证书面板**（硬门 + 门禁 + 诚实分级，随 demo 交付） | **前后对比**（同一输入、当前引擎双配方渲染：ortho-v1 冻结配方线从卡下穿过 → auto-v2 硬门布局、门禁 8/9、R/B 极性徽标） |
+| **质量证书面板**（硬门 + 门禁 + 诚实分级，随 demo 交付） | **前后对比**（同一输入、当前引擎双配方渲染：ortho-v1 冻结配方线从卡下穿过 → auto-v2 硬门布局、门禁 9/10、R/B 极性徽标） |
 
 ## 对 agent 说人话
 
@@ -133,12 +133,14 @@ loop R1 "采纳扩散" "R" [rate, adopters, word]
 ```json
 {
   "metrics": { "crossings": 1, "box_press_1px": 0, "edge_box_min_clear": 18.0,
-               "min_card_gap": 18.0, "row_align_rate": 0.625,
-               "spacing_cv": 0.110, "column_snap24_rate": 1.0 },
+               "min_card_gap": 22.0, "row_align_rate": 0.625,
+               "spacing_cv": 0.162, "column_snap24_rate": 1.0,
+               "mutual_pair_min_sep": 12.0 },
   "gates":   { "crossings_zero": false, "box_press_zero": true,
                "edge_box_clear_ge_16": true, "anchors_smooth": true,
                "min_gap_ge_16": true, "row_align_ge_060": true,
-               "cv_le_035": true, "regularity_simple": true },
+               "cv_le_035": true, "regularity_simple": true,
+               "mutual_pairs_separated": true, "routing_consistent": true },
   "grade": "其次"
 }
 ```
