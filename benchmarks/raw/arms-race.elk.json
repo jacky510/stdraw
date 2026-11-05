@@ -1,0 +1,1 @@
+{"tool": "elk-layered", "graph": "arms-race", "n": 4, "m": 4, "crossings": 0, "box_press": 0, "clear_violations": 2, "min_edge_box_clear_px": 10.0, "spacing_cv": 0.001, "row_align_rate": 1.0, "runtime_s": 0.057, "bbox": [552, 51], "bbox_area": 28336, "status": "ok"}

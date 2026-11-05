@@ -1,0 +1,18 @@
+# 经典系统动力学原型：种群逻辑斯蒂增长（Logistic Growth，教科书公有领域模型）
+graph "种群逻辑斯蒂"
+
+var population "种群规模"
+var births "出生数"
+var deaths "死亡数"
+var rpc "人均资源"
+
+population -> + births @loops R1
+births -> + population @loops R1,R2
+population -> + deaths @loops B1
+deaths -> - population @loops B1
+population -> - rpc @loops R2
+rpc -> - births @loops R2
+
+loop R1 "出生增长回路" "R" [population, births]
+loop B1 "死亡平衡回路" "B" [population, deaths]
+loop R2 "资源约束回路" "R" [population, rpc, births]

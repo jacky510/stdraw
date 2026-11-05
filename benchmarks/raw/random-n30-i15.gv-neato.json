@@ -1,0 +1,1 @@
+{"tool": "graphviz-neato", "graph": "random-n30-i15", "n": 30, "m": 48, "crossings": 0, "box_press": 33, "clear_violations": 68, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.375, "row_align_rate": 0.4, "runtime_s": 0.13, "bbox": [553, 377], "bbox_area": 208464, "status": "ok"}

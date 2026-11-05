@@ -1,0 +1,18 @@
+# 经典系统动力学原型：债务螺旋（Debt Spiral，宏观财务教科书公有领域模型）
+graph "债务螺旋"
+
+var debt "债务总额"
+var interest "利息支出"
+var deficit "收支缺口"
+var credit "信用评级"
+var rate "融资成本"
+
+debt -> + interest @loops R1
+interest -> + deficit @loops R1,R2
+deficit -> + debt @loops R1,R2
+debt -> - credit @loops R2
+credit -> - rate @loops R2
+rate -> + interest @loops R2
+
+loop R1 "利息滚雪球回路" "R" [debt, interest, deficit]
+loop R2 "信用恶化回路" "R" [debt, credit, rate, interest, deficit]

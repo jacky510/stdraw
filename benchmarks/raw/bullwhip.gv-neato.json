@@ -1,0 +1,1 @@
+{"tool": "graphviz-neato", "graph": "bullwhip", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 3, "min_edge_box_clear_px": 4.7, "spacing_cv": 0.028, "row_align_rate": 0.0, "runtime_s": 0.021, "bbox": [279, 154], "bbox_area": 42997, "status": "ok"}

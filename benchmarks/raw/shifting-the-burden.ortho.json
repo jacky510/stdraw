@@ -1,0 +1,1 @@
+{"tool": "stdraw-ortho", "graph": "shifting-the-burden", "n": 5, "m": 8, "crossings": 0, "box_press": 2, "clear_violations": 3, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.024, "row_align_rate": 0.8, "runtime_s": 0.008, "bbox": [280, 154], "bbox_area": 43120, "status": "ok"}

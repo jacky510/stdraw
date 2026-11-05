@@ -1,0 +1,1 @@
+{"tool": "elk-layered", "graph": "brand-flywheel", "n": 6, "m": 8, "crossings": 0, "box_press": 0, "clear_violations": 3, "min_edge_box_clear_px": 10.0, "spacing_cv": 0.236, "row_align_rate": 0.667, "runtime_s": 0.086, "bbox": [654, 131], "bbox_area": 85630, "status": "ok"}

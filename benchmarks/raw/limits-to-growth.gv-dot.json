@@ -1,0 +1,1 @@
+{"tool": "graphviz-dot", "graph": "limits-to-growth", "n": 5, "m": 7, "crossings": 1, "box_press": 0, "clear_violations": 3, "min_edge_box_clear_px": 6.6, "spacing_cv": 0.234, "row_align_rate": 0.6, "runtime_s": 0.061, "bbox": [372, 204], "bbox_area": 75885, "status": "ok"}

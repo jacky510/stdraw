@@ -1,0 +1,1 @@
+{"tool": "stdraw-ortho", "graph": "random-n20-i19", "n": 20, "m": 32, "status": "not_planar_skip", "why": "core 子图非平面（19 节点 / 32 边）——2D 平面层不适用，请降级 3D 层或走均匀排布形态"}

@@ -1,0 +1,1 @@
+{"tool": "graphviz-dot", "graph": "burnout-attrition", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 2, "min_edge_box_clear_px": 8.4, "spacing_cv": 0.129, "row_align_rate": 0.4, "runtime_s": 0.023, "bbox": [231, 284], "bbox_area": 65604, "status": "ok"}

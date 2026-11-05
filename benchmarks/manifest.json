@@ -1,0 +1,707 @@
+{
+ "random_family": {
+  "generator": "networkx.gnm_random_graph",
+  "seeds": "4200 + n*100 + i, n in {10,20,30,50}, i in 0..19",
+  "density": "m = round(1.6*n)",
+  "count": 80,
+  "planar": 17,
+  "nonplanar": 63,
+  "entries": [
+   {
+    "file": "random-n10-i00.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5200,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i01.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5201,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i02.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5202,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i03.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5203,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i04.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5204,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i05.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5205,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i06.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5206,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i07.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5207,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i08.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5208,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i09.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5209,
+    "planar": false
+   },
+   {
+    "file": "random-n10-i10.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5210,
+    "planar": false
+   },
+   {
+    "file": "random-n10-i11.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5211,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i12.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5212,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i13.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5213,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i14.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5214,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i15.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5215,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i16.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5216,
+    "planar": false
+   },
+   {
+    "file": "random-n10-i17.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5217,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i18.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5218,
+    "planar": true
+   },
+   {
+    "file": "random-n10-i19.cld",
+    "n": 10,
+    "m": 16,
+    "seed": 5219,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i00.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6200,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i01.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6201,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i02.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6202,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i03.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6203,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i04.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6204,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i05.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6205,
+    "planar": true
+   },
+   {
+    "file": "random-n20-i06.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6206,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i07.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6207,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i08.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6208,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i09.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6209,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i10.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6210,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i11.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6211,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i12.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6212,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i13.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6213,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i14.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6214,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i15.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6215,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i16.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6216,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i17.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6217,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i18.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6218,
+    "planar": false
+   },
+   {
+    "file": "random-n20-i19.cld",
+    "n": 20,
+    "m": 32,
+    "seed": 6219,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i00.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7200,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i01.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7201,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i02.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7202,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i03.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7203,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i04.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7204,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i05.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7205,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i06.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7206,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i07.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7207,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i08.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7208,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i09.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7209,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i10.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7210,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i11.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7211,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i12.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7212,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i13.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7213,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i14.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7214,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i15.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7215,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i16.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7216,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i17.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7217,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i18.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7218,
+    "planar": false
+   },
+   {
+    "file": "random-n30-i19.cld",
+    "n": 30,
+    "m": 48,
+    "seed": 7219,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i00.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9200,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i01.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9201,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i02.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9202,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i03.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9203,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i04.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9204,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i05.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9205,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i06.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9206,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i07.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9207,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i08.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9208,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i09.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9209,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i10.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9210,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i11.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9211,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i12.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9212,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i13.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9213,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i14.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9214,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i15.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9215,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i16.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9216,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i17.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9217,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i18.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9218,
+    "planar": false
+   },
+   {
+    "file": "random-n50-i19.cld",
+    "n": 50,
+    "m": 80,
+    "seed": 9219,
+    "planar": false
+   }
+  ]
+ },
+ "classic_corpus": [
+  {
+   "file": "arms-race.cld",
+   "n": 4,
+   "m": 4,
+   "loops": 1,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "brand-flywheel.cld",
+   "n": 6,
+   "m": 8,
+   "loops": 3,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "bullwhip.cld",
+   "n": 5,
+   "m": 6,
+   "loops": 2,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "burnout-attrition.cld",
+   "n": 5,
+   "m": 6,
+   "loops": 2,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "classic-cld-growth-and-burden.cld",
+   "n": 8,
+   "m": 13,
+   "loops": 6,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "debt-spiral.cld",
+   "n": 5,
+   "m": 6,
+   "loops": 2,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "eroding-goals.cld",
+   "n": 5,
+   "m": 6,
+   "loops": 2,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "fishing-collapse.cld",
+   "n": 6,
+   "m": 9,
+   "loops": 5,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "fixes-that-fail.cld",
+   "n": 4,
+   "m": 5,
+   "loops": 2,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "induced-demand.cld",
+   "n": 5,
+   "m": 7,
+   "loops": 4,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "learning-flywheel.cld",
+   "n": 4,
+   "m": 5,
+   "loops": 2,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "limits-to-growth.cld",
+   "n": 5,
+   "m": 7,
+   "loops": 3,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "population-logistic.cld",
+   "n": 4,
+   "m": 6,
+   "loops": 3,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "renewable-resource.cld",
+   "n": 5,
+   "m": 7,
+   "loops": 3,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "shifting-the-burden.cld",
+   "n": 5,
+   "m": 8,
+   "loops": 4,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "soil-erosion.cld",
+   "n": 6,
+   "m": 8,
+   "loops": 3,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "tragedy-of-the-commons.cld",
+   "n": 5,
+   "m": 6,
+   "loops": 2,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "urban-migration.cld",
+   "n": 6,
+   "m": 8,
+   "loops": 3,
+   "lint": "0 problems (validate_corpus.py)"
+  },
+  {
+   "file": "wage-price-spiral.cld",
+   "n": 5,
+   "m": 6,
+   "loops": 2,
+   "lint": "0 problems (validate_corpus.py)"
+  }
+ ]
+}

@@ -1,0 +1,1 @@
+{"tool": "graphviz-dot", "graph": "arms-race", "n": 4, "m": 4, "crossings": 0, "box_press": 0, "clear_violations": 2, "min_edge_box_clear_px": 9.0, "spacing_cv": 0.067, "row_align_rate": 0.0, "runtime_s": 0.027, "bbox": [189, 284], "bbox_area": 53676, "status": "ok"}

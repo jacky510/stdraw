@@ -1,0 +1,1 @@
+{"tool": "stdraw-ortho", "graph": "soil-erosion", "n": 6, "m": 8, "crossings": 0, "box_press": 1, "clear_violations": 2, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.397, "row_align_rate": 0.667, "runtime_s": 0.008, "bbox": [452, 210], "bbox_area": 94920, "status": "ok"}

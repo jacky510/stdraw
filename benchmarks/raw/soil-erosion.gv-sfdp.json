@@ -1,0 +1,1 @@
+{"tool": "graphviz-sfdp", "graph": "soil-erosion", "n": 6, "m": 8, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 96.8, "spacing_cv": 0.179, "row_align_rate": 0.333, "runtime_s": 0.018, "bbox": [740, 520], "bbox_area": 384995, "status": "ok"}

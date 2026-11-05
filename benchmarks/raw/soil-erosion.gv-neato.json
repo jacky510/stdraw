@@ -1,0 +1,1 @@
+{"tool": "graphviz-neato", "graph": "soil-erosion", "n": 6, "m": 8, "crossings": 0, "box_press": 2, "clear_violations": 2, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.186, "row_align_rate": 0.667, "runtime_s": 0.023, "bbox": [244, 148], "bbox_area": 36116, "status": "ok"}

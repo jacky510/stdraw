@@ -1,0 +1,1 @@
+{"tool": "graphviz-dot", "graph": "classic-cld-growth-and-burden", "n": 8, "m": 13, "crossings": 1, "box_press": 0, "clear_violations": 5, "min_edge_box_clear_px": 6.6, "spacing_cv": 0.342, "row_align_rate": 0.625, "runtime_s": 0.023, "bbox": [589, 364], "bbox_area": 214396, "status": "ok"}

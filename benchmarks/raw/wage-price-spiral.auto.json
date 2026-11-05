@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "wage-price-spiral", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 17.6, "spacing_cv": 0.0, "row_align_rate": 0.0, "runtime_s": 16.326, "bbox": [174, 364], "bbox_area": 63336, "status": "ok", "exactness": null}

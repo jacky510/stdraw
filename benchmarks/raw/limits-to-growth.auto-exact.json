@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto-exact", "graph": "limits-to-growth", "n": 5, "m": 7, "crossings": 1, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 21.3, "spacing_cv": 0.197, "row_align_rate": 0.6, "runtime_s": 25.276, "bbox": [342, 204], "bbox_area": 69768, "status": "ok", "exactness": {"cr": 0, "proven_optimal": true, "coverage": "full", "exact_time_s": 0.001}}

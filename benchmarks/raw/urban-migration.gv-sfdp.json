@@ -1,0 +1,1 @@
+{"tool": "graphviz-sfdp", "graph": "urban-migration", "n": 6, "m": 8, "crossings": 2, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 43.0, "spacing_cv": 0.24, "row_align_rate": 0.667, "runtime_s": 0.019, "bbox": [603, 448], "bbox_area": 270250, "status": "ok"}

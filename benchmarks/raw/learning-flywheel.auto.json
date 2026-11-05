@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "learning-flywheel", "n": 4, "m": 5, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 17.6, "spacing_cv": 0.265, "row_align_rate": 0.5, "runtime_s": 4.025, "bbox": [254, 204], "bbox_area": 51816, "status": "ok", "exactness": null}

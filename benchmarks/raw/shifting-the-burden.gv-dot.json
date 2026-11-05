@@ -1,0 +1,1 @@
+{"tool": "graphviz-dot", "graph": "shifting-the-burden", "n": 5, "m": 8, "crossings": 0, "box_press": 0, "clear_violations": 2, "min_edge_box_clear_px": 7.9, "spacing_cv": 0.036, "row_align_rate": 0.8, "runtime_s": 0.021, "bbox": [282, 204], "bbox_area": 57525, "status": "ok"}

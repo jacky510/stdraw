@@ -1,0 +1,1 @@
+{"tool": "graphviz-neato", "graph": "arms-race", "n": 4, "m": 4, "crossings": 1, "box_press": 2, "clear_violations": 3, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.007, "row_align_rate": 0.0, "runtime_s": 0.136, "bbox": [185, 136], "bbox_area": 25179, "status": "ok"}

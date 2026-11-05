@@ -1,0 +1,1 @@
+{"tool": "graphviz-neato", "graph": "learning-flywheel", "n": 4, "m": 5, "crossings": 0, "box_press": 2, "clear_violations": 2, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.122, "row_align_rate": 0.0, "runtime_s": 0.022, "bbox": [173, 151], "bbox_area": 26073, "status": "ok"}

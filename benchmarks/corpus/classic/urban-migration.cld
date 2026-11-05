@@ -1,0 +1,22 @@
+# 经典系统动力学原型：城市化与拥挤（Urban Migration，城市经济教科书公有领域模型）
+graph "城市化与拥挤"
+
+var jobs "就业机会"
+var amenity "城市吸引力"
+var in_migration "人口流入"
+var population "城市人口"
+var congestion "交通拥堵"
+var housing_cost "住房成本"
+
+jobs -> + amenity @loops R1
+amenity -> + in_migration @loops R1,B1,B2
+in_migration -> + population @loops R1,B1,B2
+population -> + jobs @loops R1
+population -> + congestion @loops B1
+congestion -> - amenity @loops B1
+population -> + housing_cost @loops B2
+housing_cost -> - amenity @loops B2
+
+loop R1 "集聚增长回路" "R" [jobs, amenity, in_migration, population]
+loop B1 "拥堵抑制回路" "B" [population, congestion, amenity, in_migration]
+loop B2 "房价抑制回路" "B" [population, housing_cost, amenity, in_migration]

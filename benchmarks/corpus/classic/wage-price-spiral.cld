@@ -1,0 +1,18 @@
+# 经典系统动力学原型：通胀-工资螺旋（Wage-Price Spiral，教科书公有领域模型）
+graph "通胀工资螺旋"
+
+var wages "工资水平"
+var cost "企业成本"
+var prices "物价水平"
+var real_income "实际购买力"
+var demand "名义需求"
+
+wages -> + cost @loops R1
+cost -> + prices @loops R1
+prices -> + wages @loops R1
+prices -> - real_income @loops B1
+real_income -> + demand @loops B1
+demand -> + prices @loops B1
+
+loop R1 "工资-物价螺旋" "R" [wages, cost, prices]
+loop B1 "购买力约束" "B" [prices, real_income, demand]

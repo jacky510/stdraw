@@ -1,0 +1,18 @@
+# 经典系统动力学原型：公共地悲剧（Tragedy of the Commons，教科书公有领域模型）
+graph "公共地悲剧"
+
+var usage "单个使用者取用"
+var total_usage "总使用量"
+var resource "公共资源存量"
+var individual_gain "个体收益"
+var population "使用者数量"
+
+usage -> + total_usage @loops R1,B1
+total_usage -> - resource @loops R1
+resource -> - individual_gain @loops R1
+total_usage -> - individual_gain @loops B1
+individual_gain -> + usage @loops R1,B1
+population -> + usage
+
+loop R1 "资源耗竭螺旋" "R" [usage, total_usage, resource, individual_gain]
+loop B1 "拥挤收益递减" "B" [usage, total_usage, individual_gain]

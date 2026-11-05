@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "population-logistic", "n": 4, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 20.5, "spacing_cv": 0.124, "row_align_rate": 0.5, "runtime_s": 5.211, "bbox": [264, 204], "bbox_area": 53856, "status": "ok", "exactness": null}

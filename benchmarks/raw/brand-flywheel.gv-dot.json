@@ -1,0 +1,1 @@
+{"tool": "graphviz-dot", "graph": "brand-flywheel", "n": 6, "m": 8, "crossings": 0, "box_press": 0, "clear_violations": 2, "min_edge_box_clear_px": 8.8, "spacing_cv": 0.113, "row_align_rate": 0.333, "runtime_s": 0.022, "bbox": [237, 364], "bbox_area": 86266, "status": "ok"}

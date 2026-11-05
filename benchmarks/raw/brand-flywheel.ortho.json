@@ -1,0 +1,1 @@
+{"tool": "stdraw-ortho", "graph": "brand-flywheel", "n": 6, "m": 8, "crossings": 0, "box_press": 2, "clear_violations": 2, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.345, "row_align_rate": 0.667, "runtime_s": 0.008, "bbox": [466, 210], "bbox_area": 97860, "status": "ok"}

@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "debt-spiral", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 17.8, "spacing_cv": 0.192, "row_align_rate": 0.0, "runtime_s": 14.792, "bbox": [216, 364], "bbox_area": 78624, "status": "ok", "exactness": null}

@@ -1,0 +1,1 @@
+{"tool": "elk-layered", "graph": "bullwhip", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 3, "min_edge_box_clear_px": 10.0, "spacing_cv": 0.171, "row_align_rate": 0.0, "runtime_s": 0.075, "bbox": [474, 128], "bbox_area": 60672, "status": "ok"}

@@ -1,0 +1,1 @@
+{"tool": "stdraw-ortho", "graph": "random-n10-i07", "n": 10, "m": 16, "crossings": 0, "box_press": 0, "clear_violations": 1, "min_edge_box_clear_px": 6.0, "spacing_cv": 0.376, "row_align_rate": 0.5, "runtime_s": 0.024, "bbox": [572, 372], "bbox_area": 212784, "status": "ok"}

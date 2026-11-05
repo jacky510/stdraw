@@ -1,0 +1,1 @@
+{"tool": "elk-layered", "graph": "classic-cld-growth-and-burden", "n": 8, "m": 13, "crossings": 0, "box_press": 0, "clear_violations": 5, "min_edge_box_clear_px": 10.0, "spacing_cv": 0.33, "row_align_rate": 0.5, "runtime_s": 0.077, "bbox": [736, 225], "bbox_area": 165747, "status": "ok"}

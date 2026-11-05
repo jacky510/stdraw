@@ -1,0 +1,1 @@
+{"tool": "graphviz-dot", "graph": "fishing-collapse", "n": 6, "m": 9, "crossings": 0, "box_press": 0, "clear_violations": 3, "min_edge_box_clear_px": 7.6, "spacing_cv": 0.089, "row_align_rate": 0.333, "runtime_s": 0.043, "bbox": [230, 364], "bbox_area": 83718, "status": "ok"}
