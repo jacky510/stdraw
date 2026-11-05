@@ -20,6 +20,7 @@ from . import __version__
 from .model import Graph
 from .dsl import parse, dumps
 from .planar import PlanarLayout, NotPlanarError, LayoutConfig
+from .recipes import run as recipes_run
 from .check import geometry_report_to_file
 from .metrics import certificate, scene_from_planar
 from .loops import loops_audit
@@ -54,6 +55,11 @@ def main(argv=None):
     ap.add_argument("command", choices=["layout"], help="子命令")
     ap.add_argument("input", help="输入 .cld（DSL）或 .json（图模型）")
     ap.add_argument("--outdir", default="stdraw-out")
+    ap.add_argument("--recipe", default="auto", choices=["auto", "ortho"],
+                    help="布局配方：auto=auto-v2（默认，直线/弧线+新硬门）；"
+                         "ortho=ortho-v1（正交竖线构造法，行为冻结，pin-safe）")
+    ap.add_argument("--linestyle", default="straight", choices=["straight", "arc"],
+                    help="auto 配方线型（默认 straight；arc 全弧线偏好）")
     ap.add_argument("--skip-3d", action="store_true", help="只跑 2D 层")
     ap.add_argument("--solids", default="sphere,cube,tetra,cone",
                     help="3D 形体列表（逗号分隔）")
@@ -93,35 +99,64 @@ def main(argv=None):
         print("   lint:", pr)
 
     # 2D 平面布局
-    cfg = LayoutConfig()
-    if a.pitch:
-        cfg.pitch = a.pitch
-    eng = PlanarLayout(g, cfg)
-    try:
-        v4 = eng.run()
-    except NotPlanarError as e:
-        print(f"[3/6] 2D 平面层不适用：{e}")
-        print("      诚实降级：跳过 2D 证书（布局层的可替换实现属 M1+）")
-        v4 = None
+    if a.recipe == "ortho":
+        cfg = LayoutConfig()
+        if a.pitch:
+            cfg.pitch = a.pitch
+        eng = PlanarLayout(g, cfg)
+        try:
+            v4 = eng.run()
+        except NotPlanarError as e:
+            print(f"[3/6] 2D 平面层不适用：{e}")
+            print("      诚实降级：跳过 2D 证书（布局层的可替换实现属 M1+）")
+            v4 = None
+        else:
+            labels = {n.id: n.label for n in g.nodes}
+            values = {n.id: n.value for n in g.nodes if n.value}
+            p = w("layout.json", v4)
+            print(f"[3/6] 2D 布局（ortho-v1 冻结配方）：{v4['viewBox'][2]}×"
+                  f"{v4['viewBox'][3]}，{v4['meta']['rows']} 行 -> {p}")
+            # 11 项几何自检（跑在交付坐标上）
+            rc = geometry_report_to_file(
+                v4, os.path.join(a.outdir, "geometry_report.json"))
+            # 五指标证书（legacy 口径，逐字节兼容）
+            cert = certificate(scene_from_planar(v4), graph_name=name,
+                               layer="2D",
+                               notes=["无关线遮挡式穿卡为设计允许（卡片不透明）"])
+            p = w("certificate.json", cert)
+            m = cert["metrics"]
+            print(f"[4/6] 证书：交叉 {m['crossings']} / 真穿卡 {m['occlusions_true_0px']} / "
+                  f"净距 {m['min_card_gap']} / 对齐 {m['row_align_rate']} / CV "
+                  f"{m['spacing_cv']} → 分级【{cert['grade']}】-> {p}")
+            hp = os.path.join(a.outdir, "demo-2d.html")
+            with open(hp, "w", encoding="utf-8") as f:
+                f.write(render_html(v4, name, cert, lr, labels, values))
+            print(f"      demo -> {hp}")
+            if rc:
+                sys.exit(1)
     else:
+        from .layout_auto import AutoConfig
+        from .metrics import certificate_auto, scene_from_auto
+        cfg = AutoConfig()
+        if a.pitch:
+            cfg.pitch = a.pitch
+        v4 = recipes_run("auto-v2", g, cfg, a.linestyle)
         labels = {n.id: n.label for n in g.nodes}
         values = {n.id: n.value for n in g.nodes if n.value}
         p = w("layout.json", v4)
-        print(f"[3/6] 2D 布局：{v4['viewBox'][2]}×{v4['viewBox'][3]}，"
-              f"{v4['meta']['rows']} 行 -> {p}")
-        # 11 项几何自检（跑在交付坐标上）
+        meta = v4["meta"]
+        print(f"[3/6] 2D 布局（auto-v2，engine={meta['position_engine']}，"
+              f"线型={meta['line_style']}）：{v4['viewBox'][2]}×{v4['viewBox'][3]}，"
+              f"{meta['rows']} 行 -> {p}")
         rc = geometry_report_to_file(
             v4, os.path.join(a.outdir, "geometry_report.json"))
-        # 五指标证书
-        cert = certificate(scene_from_planar(v4), graph_name=name,
-                           layer="2D",
-                           notes=["无关线遮挡式穿卡为设计允许（卡片不透明）"])
+        cert = certificate_auto(scene_from_auto(v4), graph_name=name, layer="2D")
         p = w("certificate.json", cert)
         m = cert["metrics"]
-        print(f"[4/6] 证书：交叉 {m['crossings']} / 真穿卡 {m['occlusions_true_0px']} / "
-              f"净距 {m['min_card_gap']} / 对齐 {m['row_align_rate']} / CV "
-              f"{m['spacing_cv']} → 分级【{cert['grade']}】-> {p}")
-        # 2D demo html
+        print(f"[4/6] 证书：交叉 {m['crossings']} / 框压线 {m['box_press_1px']} / "
+              f"边-框净距 {m['edge_box_min_clear']} / 锚点违例 {m['anchor_violations']} / "
+              f"净距 {m['min_card_gap']} / CV {m['spacing_cv']} → "
+              f"分级【{cert['grade']}】-> {p}")
         hp = os.path.join(a.outdir, "demo-2d.html")
         with open(hp, "w", encoding="utf-8") as f:
             f.write(render_html(v4, name, cert, lr, labels, values))

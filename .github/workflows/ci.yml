@@ -16,13 +16,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install
+      - name: "Install (optional layers: solver + measure + render-check)"
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
+          pip install -e ".[solver,measure]"
+          pip install playwright
+          playwright install chromium
       - name: CLI help smoke
         run: |
           stdraw --help
           python -m stdraw layout --help
-      - name: Full checks (11-item geometry + certificates + loops + determinism)
+      - name: "Full checks: ortho byte-regression + auto hard gates + DOM bounds + determinism"
         run: python tests/ci_checks.py

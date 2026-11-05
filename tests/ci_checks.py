@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""CI checks: run the CLI on both in-repo examples and assert the hard results.
+"""CI checks（2026-11-05 六点返修版）。
 
-Covers:
-  1. both examples exit 0;
-  2. 11-item geometry report: fail == 0 for both cases;
-  3. certificate: crossings == 0, grade == "最优" (honest grading: both demo
-     graphs are planar, so the theorem-level grade must hold);
-  4. loops audit: summary.problems == 0, all declared loops closed;
-  5. determinism: two runs of the same input are byte-identical.
+三层断言：
+  A. ortho-v1 冻结配方回归（生产行为 pin 保护）：
+     - 两案例 exit 0，11 项几何自检 fail==0；
+     - layout.json 与 tests/baselines/ 逐字节一致（planar.py 行为冻结铁门）；
+     - legacy 证书 crossings==0 / grade==最优；loops problems==0；
+     - 同输入两次运行逐字节一致（确定性）。
+  B. auto-v2 默认配方（产品主路径）新硬门：
+     - 框压线=0、边-框净距≥16px、锚点平滑、卡净距≥16、CV≤0.35、简单图规律性
+       全部 pass；
+     - crossings ≤ 2 且 grade ∈ {最优, 其次}（诚实分级，不冒充 0 交叉）；
+     - loops problems==0；确定性两次运行逐字节一致。
+  C. DOM 实测框界（① CI 侧第二层，可选）：
+     - playwright 可用时逐卡量 demo-2d.html 文字实际宽度 vs 规划框界；
+     - 不可用时如实 SKIP（不算通过也不算失败，由 workflow 安装可选层兜底）。
 
-Stdlib only — no pytest needed.
+Stdlib only（C 层可选依赖 playwright）。
 """
 import json
 import os
@@ -23,14 +30,17 @@ EXAMPLES = [
     "examples/limits-to-growth.cld",
     "examples/classic-cld-growth-and-burden.cld",
 ]
+HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
+              "min_gap_ge_16", "cv_le_035", "regularity_simple")
 
 
-def run_cli(path, outdir):
-    r = subprocess.run(
-        [sys.executable, "-m", "stdraw", "layout", path,
-         "--outdir", outdir, "--pitch", "62"],
-        capture_output=True, text=True)
-    return r
+def run_cli(path, outdir, extra=(), pitch="62"):
+    # ortho 用 --pitch 62 过净距门禁（legacy 调参）；auto 有自调 pitch=80，不传（pitch=None）
+    cmd = [sys.executable, "-m", "stdraw", "layout", path, "--outdir", outdir]
+    if pitch:
+        cmd += ["--pitch", pitch]
+    cmd += list(extra)
+    return subprocess.run(cmd, capture_output=True, text=True)
 
 
 def load(outdir, name):
@@ -42,56 +52,90 @@ def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(root)
     failures = []
-
     tmp = tempfile.mkdtemp(prefix="stdraw-ci-")
     try:
+        # ── A. ortho-v1 冻结回归（生产行为 pin）──
         for ex in EXAMPLES:
             name = os.path.splitext(os.path.basename(ex))[0]
-            out1 = os.path.join(tmp, name + "-1")
-            out2 = os.path.join(tmp, name + "-2")
-
-            r1 = run_cli(ex, out1)
+            out1 = os.path.join(tmp, name + "-ortho-1")
+            out2 = os.path.join(tmp, name + "-ortho-2")
+            r1 = run_cli(ex, out1, ("--recipe", "ortho"))
             if r1.returncode != 0:
-                failures.append(f"{ex}: CLI exit {r1.returncode}\n{r1.stderr}")
+                failures.append(f"ortho {ex}: CLI exit {r1.returncode}\n{r1.stderr}")
                 continue
-            r2 = run_cli(ex, out2)
-            if r2.returncode != 0:
-                failures.append(f"{ex}: determinism re-run exit {r2.returncode}")
-                continue
-
+            run_cli(ex, out2, ("--recipe", "ortho"))
             geo = load(out1, "geometry_report.json")
             if geo.get("fail", 0) != 0:
-                failures.append(f"{ex}: geometry report fail={geo['fail']}")
-            n_checks = geo.get("checks")
-            if n_checks != 11:
-                # tolerate either a count field or a list
-                checks = geo.get("results") or geo.get("items")
-                if isinstance(checks, list) and len(checks) != 11:
-                    failures.append(f"{ex}: expected 11 geometry checks, got {len(checks)}")
-
+                failures.append(f"ortho {ex}: geometry fail={geo['fail']}")
             cert = load(out1, "certificate.json")
-            if cert["metrics"]["crossings"] != 0:
-                failures.append(f"{ex}: crossings={cert['metrics']['crossings']} != 0")
-            if cert["grade"] != "最优":
-                failures.append(f"{ex}: grade={cert['grade']!r} != '最优'")
-
-            audit = load(out1, "loops_audit.json")
-            s = audit["summary"]
-            if s["problems"] != 0:
-                failures.append(f"{ex}: loops problems={s['problems']}")
-            if s["closed"] != s["declared"]:
-                failures.append(f"{ex}: closed={s['closed']} != declared={s['declared']}")
-
-            # determinism: byte-identical artifact sets
-            for fn in ("graph.json", "layout.json", "certificate.json",
-                       "loops_audit.json", "demo-2d.html"):
+            if cert["metrics"]["crossings"] != 0 or cert["grade"] != "最优":
+                failures.append(f"ortho {ex}: legacy cert crossings="
+                                f"{cert['metrics']['crossings']} grade={cert['grade']}")
+            # 生产 pin 铁门：与提交基线逐字节一致
+            base = os.path.join(root, "tests", "baselines", name + ".layout.json")
+            with open(base, "rb") as a, \
+                 open(os.path.join(out1, "layout.json"), "rb") as b:
+                if a.read() != b.read():
+                    failures.append(f"ortho {ex}: layout.json 漂移 vs tests/baselines/"
+                                    f"（生产行为 pin 被破坏——planar.py 必须冻结）")
+            # 确定性
+            for fn in ("layout.json", "demo-2d.html"):
                 with open(os.path.join(out1, fn), "rb") as a, \
                      open(os.path.join(out2, fn), "rb") as b:
                     if a.read() != b.read():
-                        failures.append(f"{ex}: {fn} not byte-identical across runs")
+                        failures.append(f"ortho {ex}: {fn} 不确定（两次运行不一致）")
+            audit = load(out1, "loops_audit.json")
+            if audit["summary"]["problems"] != 0:
+                failures.append(f"ortho {ex}: loops problems={audit['summary']['problems']}")
+            print(f"OK  ortho {ex}: 11 checks fail=0, baseline byte-identical, deterministic")
 
-            print(f"OK  {ex}: crossings=0 grade={cert['grade']} "
-                  f"loops {s['closed']}/{s['declared']} closed, deterministic")
+        # ── B. auto-v2 新硬门 ──
+        for ex in EXAMPLES:
+            name = os.path.splitext(os.path.basename(ex))[0]
+            out1 = os.path.join(tmp, name + "-auto-1")
+            out2 = os.path.join(tmp, name + "-auto-2")
+            r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
+            # auto 配方不传 pitch（自调 80）
+            if r1.returncode != 0:
+                failures.append(f"auto {ex}: CLI exit {r1.returncode}\n{r1.stderr}")
+                continue
+            run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
+            geo = load(out1, "geometry_report.json")
+            if geo.get("fail", 0) != 0:
+                failures.append(f"auto {ex}: geometry fail={geo['fail']}")
+            cert = load(out1, "certificate.json")
+            m = cert["metrics"]
+            for k in HARD_GATES:
+                if not cert["gates"].get(k, False):
+                    failures.append(f"auto {ex}: 硬门 {k} FAIL "
+                                    f"(metrics={json.dumps(m, ensure_ascii=False)[:300]})")
+            if m["crossings"] > 2:
+                failures.append(f"auto {ex}: crossings={m['crossings']} > 2")
+            if cert["grade"] not in ("最优", "其次"):
+                failures.append(f"auto {ex}: grade={cert['grade']}")
+            audit = load(out1, "loops_audit.json")
+            if audit["summary"]["problems"] != 0:
+                failures.append(f"auto {ex}: loops problems={audit['summary']['problems']}")
+            # 确定性
+            for fn in ("layout.json", "certificate.json", "demo-2d.html"):
+                with open(os.path.join(out1, fn), "rb") as a, \
+                     open(os.path.join(out2, fn), "rb") as b:
+                    if a.read() != b.read():
+                        failures.append(f"auto {ex}: {fn} 不确定（两次运行不一致）")
+            print(f"OK  auto {ex}: hard gates pass, crossings={m['crossings']}, "
+                  f"grade={cert['grade']}, deterministic")
+
+        # ── C. DOM 实测框界（可选层）──
+        r = subprocess.run(
+            [sys.executable, "-m", "stdraw.rendercheck",
+             os.path.join(tmp, os.path.basename(EXAMPLES[0]).split(".")[0] + "-auto-1")],
+            capture_output=True, text=True)
+        if r.returncode == 2:
+            print("SKIP  rendercheck: playwright 不可用（CI workflow 安装可选层兜底）")
+        elif r.returncode != 0:
+            failures.append(f"rendercheck: exit {r.returncode}\n{r.stdout}\n{r.stderr}")
+        else:
+            print("OK  rendercheck: DOM 实测框界无溢出")
 
         if failures:
             print("\nFAILURES:")

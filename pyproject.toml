@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stdraw"
-version = "0.1.0"
+version = "0.2.0"
 description = "Planarity-aware system-thinking (CLD) diagram engine with honest, metric-backed quality certificates"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -30,6 +30,11 @@ classifiers = [
   "Topic :: Multimedia :: Graphics",
 ]
 dependencies = ["networkx>=3.0"]
+
+[project.optional-dependencies]
+solver = ["ortools>=9.10"]          # auto-v2 定位精化（可选；未装优雅降级为构造法）
+measure = ["pillow>=10.0"]          # 框界真值度量（可选；未装退保守解析式）
+render-check = ["playwright>=1.40"] # CI 侧 DOM 实测框界（可选层）
 
 [project.scripts]
 stdraw = "stdraw.__main__:main"

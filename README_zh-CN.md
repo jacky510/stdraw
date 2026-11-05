@@ -1,0 +1,178 @@
+<div align="center">
+
+# stdraw
+
+**Planarity-aware 系统思维图引擎。诚实分级、硬质量门、带量化证书的交付。**
+
+*Text DSL 进 → 带质量证书的图出。诚实分级，绝不冒充「零交叉」。*
+
+[English](README.md) | 简体中文
+
+</div>
+
+[![CI](https://github.com/jacky510/stdraw/actions/workflows/ci.yml/badge.svg)](https://github.com/jacky510/stdraw/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](pyproject.toml)
+[![Stars](https://img.shields.io/github/stars/jacky510/stdraw.svg?style=flat)](https://github.com/jacky510/stdraw/stargazers)
+
+[安装](#安装) · [Gallery](#gallery) · [Quickstart](#get-started--quickstart) · [DSL](#dsl-一分钟) · [证书与硬门](#certificates--质量证书) · [Agent 集成](#agent-integration)
+
+```bash
+pip install stdraw
+```
+
+> 面向 agent host 的机器消费文档（[AGENTS.md](AGENTS.md)、[skills/stdraw/SKILL.md](skills/stdraw/SKILL.md)）以英文为准；DSL 规范（[docs/dsl-spec-v0.1.md](docs/dsl-spec-v0.1.md)）暂为英文，中文版在规划中（不做日期承诺）。
+
+---
+
+## What & Why
+
+主流图工具全停在「交叉最小化」启发式，并且**没有一个敢对自己的输出做承诺**。stdraw 反过来：
+
+- **auto-v2（默认配方）**：分层 + 交叉数进目标函数（CP-SAT 精化可选）+ 直线/弧线一等布线，带**硬质量门**：框压线=0（任何角度）、边-框净距≥16px、锚点平滑、简单图（≤10 节点）对称/规律排布；
+- **ortho-v1（经典配方，可选）**：平面嵌入 + st 编号 + 可见性表示，可平面图的线全竖直、**0 交叉有定理保证**（行为冻结，逐字节回归保护，供生产调用方 pin 用）；
+- **诚实分级**：拿不到证书就如实说拿不到——**绝不宣称任意图 0 交叉**（auto-v2 的交叉数是目标函数最小化项，不是定理保证）；
+- **框界真值两层验证**：布局侧按真实字体最坏度量规划框界；验证侧在真实渲染后量 DOM 实际框界——证书量的是渲染真值，不是估算值；
+- **质量证书**：每一次交付都带量化证书（交叉 / 框压线 / 净距 / 对齐 / CV / 锚点），验证跑在交付坐标上；
+- **确定性**：同输入同输出，逐字节一致（CP-SAT 固定单 worker + 种子），图进版本库 diff 干净。
+
+## Gallery
+
+全部为仓内 demos 的真实渲染截图（点击跳转对应 demo）。
+
+| | |
+|---|---|
+| <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a> | <a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a> |
+| **2D · auto-v2 硬门布局**（增长极限×转嫁负担，8n/13e，直线/弧线、框不压线） | **3D · 球面排布**（任意角度旋转，投影交叉由相机解决） |
+| <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a> | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/before-after.png" alt="before/after comparison" width="420"/></a> |
+| **质量证书面板**（页面内实时复算，硬门 + 门禁 + 分级） | **v0.2 返修前后对比**（v0.1 正交遮挡式 → v0.2 auto 硬门） |
+
+## 对 agent 说人话
+
+stdraw 是 agent 原生工具：一份 `.cld` 文本进，带证书的图出。你可以直接对 agent 说：
+
+| 你说 | agent 跑 |
+|---|---|
+| 「帮我把这张因果回路图画出来，要带质量证书」 | `stdraw layout model.cld --outdir out` |
+| 「审计这个文件里声明的反馈环：有没有不闭合的、极性标错的？」 | 看 `out/loops_audit.json` 的 `problems`（独立枚举全图回路对照） |
+| 「这张图能零交叉吗？拿不到就直说，别吹」 | 看 `out/certificate.json` 的 `grade`（诚实分级，见下） |
+| 「给一张能打印的版本」 | 打开 `out/demo-2d.html`（内联 SVG，零联网） |
+
+## Project Structure
+
+```text
+stdraw/
+├── stdraw/              # Python 包
+│   ├── recipes.py       #   配方注册表：auto-v2（默认）/ ortho-v1（冻结，pin-safe）
+│   ├── layout_auto.py   #   auto-v2 布局（分层 + 交叉进目标 + CP-SAT 可选精化 + 局部精化）
+│   ├── routing.py       #   直线/弧线/绕行布线（框不压线、净距≥16px 硬门）
+│   ├── textmetrics.py   #   框界真值（布局侧：真实字体最坏度量）
+│   ├── rendercheck.py   #   框界真值（CI 侧：无头浏览器 DOM 实测，可选层）
+│   ├── planar.py        #   ortho-v1：2D 平面布局（0 交叉定理保证，行为冻结）
+│   ├── layout3d.py      #   3D 五形体排布（球面/立方体/四面体/圆锥）
+│   ├── metrics.py       #   质量证书 v1/v2 + 诚实分级
+│   ├── check.py         #   几何自检（CI 门禁形态：v1 11 项 / v2 硬门 11 项）
+│   ├── loops.py         #   环路语义审计（lint）
+│   ├── dsl.py           #   .cld DSL 解析器
+│   ├── model.py         #   图数据模型
+│   ├── render.py        #   2D HTML 渲染（内联 SVG，v1/v2 双形态）
+│   ├── render3d.py      #   3D HTML 渲染（three.js）
+│   └── __main__.py      #   CLI：stdraw layout ... [--recipe auto|ortho] [--linestyle straight|arc]
+├── examples/            # .cld 案例（增长极限 / 增长极限×转嫁负担）
+├── demos/               # 交付形态：2D/3D demo + 证书 JSON
+├── viewer/              # 零依赖交互查看器（四形态 + 页面内实时证书）
+├── skills/stdraw/       # Agent Skill（skills add 即装）
+├── tests/baselines/     # ortho-v1 逐字节回归基线（生产行为冻结铁门）
+├── docs/                # DSL 规范 + gallery + OR-Tools 对比报告
+└── .github/workflows/   # CI：配方回归 + 新硬门 + DOM 实测 + 确定性
+```
+
+## Get Started / Quickstart
+
+```bash
+# 1. 安装（纯 pip，唯一硬依赖 networkx）
+pip install stdraw
+
+# 2. 跑一个案例：文本 DSL 进
+stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62
+
+# 3. 看交付形态
+#    out/demo-2d.html     — 2D 布局 + 内嵌质量证书
+#    out/demo-3d.html     — 3D 球面/立方体/四面体/圆锥排布（需同仓 assets/）
+#    out/certificate.json — 指标 + 诚实分级
+#    out/loops_audit.json — 环路语义审计
+```
+
+仓库内已有跑好的交付形态：直接打开 [`demos/classic-cld-2d.html`](demos/classic-cld-2d.html) / [`demos/classic-cld-3d.html`](demos/classic-cld-3d.html)。
+交互查看器（四形态 + 节点拖拽 + 环路面板）：浏览器打开 `viewer/index.html`，无需安装任何东西。
+
+## DSL 一分钟
+
+行导向文本，`#` 起注释：
+
+```ld
+graph "增长极限×转嫁负担"
+var rate "采纳率"
+rate -> + adopters @loops R1,B1,B2      # 极性边 + 回路标签
+loop R1 "采纳扩散" "R" [rate, adopters, word]
+```
+
+最小闭环 = 变量 / 极性边 / 回路标签 / 分组（可选，布局层不消费分组——布局由关系唯一决定）。
+回路标签不是注释——lint 层验证闭合性与 R/B 极性奇偶，独立枚举全图回路对照（抓过「声明环不闭合」「极性标错」）。
+规范全文：[docs/dsl-spec-v0.1.md](docs/dsl-spec-v0.1.md)（暂英文，中文版规划中，不做日期承诺）。
+
+## Certificates · 质量证书
+
+每个交付目录里的 `certificate.json`：
+
+```json
+{
+  "metrics": { "crossings": 1, "box_press_1px": 0, "edge_box_min_clear": 18.0,
+               "min_card_gap": 18.0, "row_align_rate": 0.625,
+               "spacing_cv": 0.110, "column_snap24_rate": 1.0 },
+  "gates":   { "crossings_zero": false, "box_press_zero": true,
+               "edge_box_clear_ge_16": true, "anchors_smooth": true,
+               "min_gap_ge_16": true, "row_align_ge_060": true,
+               "cv_le_035": true, "regularity_simple": true },
+  "grade": "其次"
+}
+```
+
+诚实分级语义（分级铁律：**绝不冒充成品**）：
+
+| 级别 | 定义（auto-v2） |
+|---|---|
+| **最优** | 硬门全过（框压线 0 / 边-框净距≥16 / 锚点平滑 / 规律排布）+ 线 0 交叉 |
+| **其次** | 硬门全过 + 交叉 ≤2 处（坐标入证书供人复核；互斥时保硬门、放交叉） |
+| **最次** | 升维 3D：任意角度旋转，空间无交叉，投影交叉由相机解决 |
+| **未获证书** | 其余情况——如实不评级 |
+
+另有 `geometry_report.json`（几何自检，CI 门禁形态，fail>0 时 CLI exit 1）可直接当回归门禁用。
+
+### Recipes · 配方
+
+| 配方 | 线型 | 保证 | 适用 |
+|---|---|---|---|
+| `auto-v2`（默认） | 直线/弧线一等（`--linestyle straight\|arc`） | 硬质量门 + 交叉最小化（CP-SAT 可选 `pip install "stdraw[solver]"`） | 一般 CLD / 教学 / 报告 |
+| `ortho-v1`（`--recipe ortho`） | 全竖直正交 | 可平面图 0 交叉定理保证（**行为冻结**，CI 逐字节回归） | 生产调用方 pin / 正交风格偏好 |
+
+## Agent Integration
+
+| Agent host | 接入方式 |
+|---|---|
+| 任意能读文件的 agent | 读 [AGENTS.md](AGENTS.md)（仓根，agent 使用说明书，英文） |
+| Agent Skills 生态 | `npx skills add jacky510/stdraw` → 安装 [skills/stdraw/SKILL.md](skills/stdraw/SKILL.md)（英文） |
+| 脚本 / CI 门禁 | `pip install stdraw` → `stdraw layout ...` → 断言 `certificate.json` / `geometry_report.json` |
+| MCP server | 规划中（见 AGENTS.md 预留位） |
+
+## Limitations（诚实边界）
+
+- **绝不宣称任意图 0 交叉**：auto-v2 的交叉数是目标函数最小化项而非定理保证；ortho-v1 在不可平面输入抛 `NotPlanarError` 诚实降级，不硬画。
+- ortho-v1（冻结配方）的「无关线遮挡式穿卡」为 legacy 设计允许（卡片不透明），证书如实计数——这是 v0.1 已知边界，**v0.2 默认配方 auto-v2 已把框压线定为硬门（=0）**。
+- 3D 层不做 2D 交叉承诺——空间弦线不相交由维度冗余保证，投影交叉由相机解决。
+- 布局层是可替换实现（当前：分层 + 交叉最小化 + 直线/弧线布线；CP-SAT 为可选精化层，未装时构造法降级，质量回退但功能齐全）。
+- 局部搜索邻域为行内横移与相邻交换，不含跨行搬移——个别图的最后一处交叉可能需要更大邻域（路线图 M3）。
+
+## License
+
+[MIT](LICENSE) © stdraw contributors

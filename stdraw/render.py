@@ -7,6 +7,8 @@ import json
 def render_html(v4: dict, graph_name: str = "", cert: dict = None,
                 loops_report: dict = None, labels: dict = None,
                 values: dict = None) -> str:
+    if v4.get("edges") and "route" in v4["edges"][0]:
+        return render_auto_html(v4, graph_name, cert, loops_report, labels, values)
     W, H = v4["viewBox"][2], v4["viewBox"][3]
     nodes, edges, bars = v4["nodes"], v4["edges"], v4.get("bars", {})
     meta = v4["meta"]
@@ -101,4 +103,121 @@ h1{{font-size:18px}} svg{{background:#fff;border:1px solid #e2e8f0;border-radius
 {cert_html}
 {loops_html}
 <p class="note">stdraw M0 · 诚实分级：本证书只对本图本布局成立，绝不宣称任意图 0 交叉。</p>
+'''
+
+
+# ═══ auto-v2 渲染（2026-11-05 六点返修）：直线/弧线一等 + 锚点方向箭头 ═══
+def _edge_svg(e, labels, values):
+    """单条边 → SVG（line/poly 折线，arc 真贝塞尔），箭头按末段方向。"""
+    r = e["route"]
+    pts = r["points"]
+    color = "#64748b"
+    if r["kind"] == "arc" and "ctrl" in r:
+        c = r["ctrl"]
+        d = (f'M {pts[0][0]} {pts[0][1]} Q {c[0]} {c[1]} '
+             f'{pts[-1][0]} {pts[-1][1]}')
+    else:
+        d = 'M ' + ' L '.join(f'{p[0]} {p[1]}' for p in pts)
+    out = [f'<path d="{d}" fill="none" stroke="{color}" stroke-width="1.3"/>']
+    # 箭头：末段方向
+    import math as _m
+    (x1, y1), (x2, y2) = pts[-2], pts[-1]
+    ang = _m.degrees(_m.atan2(y2 - y1, x2 - x1))
+    ax, ay = e["arrow"]
+    out.append(f'<path d="M 0 0 L -7 -3 L -7 3 Z" fill="{color}" '
+               f'transform="translate({ax} {ay}) rotate({ang:.1f})"/>')
+    return ''.join(out)
+
+
+def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
+                     loops_report: dict = None, labels: dict = None,
+                     values: dict = None) -> str:
+    W, H = v4["viewBox"][2], v4["viewBox"][3]
+    nodes, edges = v4["nodes"], v4["edges"]
+    meta = v4["meta"]
+    card_h = meta.get("cardH", 44)
+    labels = labels or {}
+    values = values or {}
+
+    parts = []
+    parts.append(f'<svg viewBox="0 0 {W} {H}" font-family="Microsoft YaHei,sans-serif">')
+    for e in edges:
+        parts.append(_edge_svg(e, labels, values))
+    for v, p in nodes.items():
+        x, y, w = p["x"], p["y"], p["w"]
+        label = html.escape(labels.get(v, v))
+        value = html.escape(values.get(v, ""))
+        parts.append(f'<g><rect x="{x - w / 2:.0f}" y="{y - card_h / 2:.0f}" width="{w}" '
+                     f'height="{card_h}" rx="7" fill="#fffbeb" stroke="#f59e0b" '
+                     f'stroke-width="1.5"/>'
+                     f'<text x="{x:.0f}" y="{y + 4:.0f}" text-anchor="middle" '
+                     f'dominant-baseline="middle" '
+                     f'font-size="{meta.get("fs", [12.5, 14])[0]}" fill="#78350f">{label}</text>')
+        if value:
+            parts.append(f'<text x="{x:.0f}" y="{y + card_h / 2 - 7:.0f}" text-anchor="middle" '
+                         f'font-size="{meta.get("fs", [12.5, 14])[1]}" font-weight="bold" '
+                         f'fill="#1f2937">{value}</text>')
+        parts.append('</g>')
+    parts.append('</svg>')
+
+    cert_html = ""
+    if cert:
+        m = cert["metrics"]
+        def _cls(v):
+            return "ok" if v else "bad"
+        def _mark(v):
+            return "✓" if v else "✗"
+        rows = "".join(
+            f'<tr><td>{k}</td><td class="{_cls(v)}">{_mark(v)}</td></tr>'
+            for k, v in cert["gates"].items())
+        cert_html = f'''<div class="cert"><h3>质量证书（交付坐标复检 · auto-v2 硬门）</h3>
+<table>
+<tr><td>交叉</td><td>{m["crossings"]}</td></tr>
+<tr><td>框压线(1px余量)</td><td>{m["box_press_1px"]}</td></tr>
+<tr><td>边-框最小净距</td><td>{m["edge_box_min_clear"]}</td></tr>
+<tr><td>锚点违例</td><td>{m["anchor_violations"]}</td></tr>
+<tr><td>平均边长</td><td>{m["avg_edge_length"]}</td></tr>
+<tr><td>行对齐率</td><td>{m["row_align_rate"]}</td></tr>
+<tr><td>卡间最小净距</td><td>{m["min_card_gap"]}</td></tr>
+<tr><td>间距变异系数 CV</td><td>{m["spacing_cv"]}</td></tr>
+<tr><td>24px 列吸附率</td><td>{m["column_snap24_rate"]}</td></tr>
+</table>
+<h4>门禁 {cert["gates_passed"]}</h4><table>{rows}</table>
+<p class="grade">分级：<b>{cert["grade"]}</b> — {html.escape(cert["grade_note"])}</p>
+<p class="note">{html.escape(" / ".join(cert.get("honest_notes", [])))}</p>
+</div>'''
+    loops_html = ""
+    if loops_report:
+        def _status(it):
+            st = "闭合✓" if it["closed"] else "不闭合✗"
+            par = "平衡B" if it["neg_edges"] % 2 else "增强R"
+            bad = "" if it["kind_consistent"] else "（与声明不一致！）"
+            return f'{st}，负边 {it["neg_edges"]} 条 → {par}{bad}'
+        items = "".join(
+            '<li>[{} {}] {} — {}</li>'.format(
+                it["declared_kind"] or "?", it["id"], html.escape(it["label"]),
+                _status(it))
+            for it in loops_report["loops"])
+        probs = loops_report["problems"]
+        prob_text = html.escape("; ".join(probs)) if probs else "无问题"
+        loops_html = ('<div class="cert"><h3>环路语义审计</h3><ul>' + items +
+                      '</ul><p>' + prob_text + '</p></div>')
+
+    engine = meta.get("position_engine", "construct")
+    ls = meta.get("line_style", "straight")
+    return f'''<!doctype html><html lang="zh"><meta charset="utf-8">
+<title>stdraw 2D · {html.escape(graph_name)}</title>
+<style>
+body{{margin:16px;background:#f8fafc;font-family:Microsoft YaHei,sans-serif}}
+h1{{font-size:18px}} svg{{background:#fff;border:1px solid #e2e8f0;border-radius:8px;max-width:1280px}}
+.cert{{margin-top:12px;padding:10px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;max-width:1280px}}
+.cert table{{border-collapse:collapse}} .cert td{{border:1px solid #e2e8f0;padding:2px 10px}}
+.ok{{color:#16a34a}} .bad{{color:#dc2626}} .note{{color:#64748b;font-size:12px}}
+.grade{{color:#1d4ed8}}
+</style>
+<h1>stdraw 2D 布局 · {html.escape(graph_name)}（auto-v2：直线/弧线一等、框不压线硬门、边-框净距≥16px；定位引擎 {engine}，线型 {ls}）</h1>
+{''.join(parts)}
+{cert_html}
+{loops_html}
+<p class="note">stdraw auto-v2 · 诚实分级：交叉数是目标函数最小化项而非定理保证，本证书只对本图本布局成立。</p>
 '''

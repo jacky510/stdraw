@@ -9,17 +9,19 @@
 诚实分级承诺：拿不到证书就说拿不到；绝不宣称任意图 0 交叉。
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from .model import Graph, Node, Edge, Loop, Group
 from .dsl import parse, dumps
 from .planar import PlanarLayout
-from .metrics import certificate
+from . import recipes
+from .metrics import certificate, certificate_auto
 from .check import geometry_report
 from .loops import loops_audit
 
 __all__ = [
     "Graph", "Node", "Edge", "Loop", "Group",
     "parse", "dumps",
-    "PlanarLayout", "certificate", "geometry_report", "loops_audit",
+    "PlanarLayout", "certificate", "certificate_auto", "geometry_report",
+    "loops_audit", "recipes",
 ]
