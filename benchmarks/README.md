@@ -16,5 +16,5 @@
 | Graphviz sfdp | — | — | — | — | — | — |
 | ELK layered | — | — | — | — | — | — |
 
-诚实边界：随机族 n≥20 上 stdraw auto-v2 当前 DNF（见 REPORT §5 瓶颈定位）；OGDF 未同题运行（§6）。「最好」主张措辞以 REPORT §8 为准，经 default 复核后才写入仓库 README。
+诚实边界：随机族 n≥20 的全 DNF 已由 WS5 修复（CP-SAT 确定性时间预算 + 布线精确等价提速，根因与修复记录见 `REPORT.md §5`），但运行时间仍慢基线 2~3 个数量级、随机族框压线/净距非 0；OGDF 未同题运行（§6）。「最好」主张措辞以 REPORT §8 为准，经 default 复核后才写入仓库 README。
 

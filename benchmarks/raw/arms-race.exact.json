@@ -1,0 +1,1 @@
+{"tool": "stdraw-exact", "graph": "arms-race", "n": 4, "m": 4, "cr": 0, "proven_optimal": true, "lb": 0, "gap": 0, "coverage": "full", "status": "ok", "runtime_s": 0.39}

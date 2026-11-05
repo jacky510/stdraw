@@ -1,0 +1,1 @@
+{"tool": "stdraw-exact", "graph": "random-n30-i03", "n": 30, "m": 48, "cr": 2, "proven_optimal": false, "lb": 1, "gap": 1, "coverage": "partial", "status": "ok", "runtime_s": 37.697}

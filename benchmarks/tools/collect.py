@@ -91,7 +91,7 @@ def main():
 
     lines = []
     A = lines.append
-    A("# stdraw WS4 基准对比报告（真实数字，赢了写赢，输了写输）\n")
+    A("# stdraw 基准对比报告（WS4 建立 · WS5 性能修复后重测；真实数字，赢了写赢，输了写输）\n")
     A("生成：benchmarks/tools/collect.py ← benchmarks/raw/（全部原始评测 JSON 留证）。\n")
 
     # ═══ §1 结论先行 ═══
@@ -121,8 +121,10 @@ def main():
         A(f"- **运行时间（classic 均值）**：stdraw-auto={sa['runtime_s']:.1f}s vs 基线 "
           + "、".join(f"{s}={cs[s]['runtime_s']:.2f}s" for s, _ in TOOLS if s.startswith(("graphviz", "elk")))
           + "——基线快 2~3 个数量级，任何主张必须承认这一代价")
-        A("- **随机族**：stdraw auto-v2 在 n≥20 全 DNF（§4/§5），「全规模最好」不成立；"
-          "n10 内 auto 完整跑通（约 285s/张）但比基线慢 3 个数量级以上")
+        A("- **随机族（WS5 修复后口径）**：stdraw auto-v2 的 n≥20 全 DNF 已修复"
+          "（根因是 CP-SAT 证最优耗时随 n 爆炸，非 _polish——见 §5 修正记录）；"
+          "修复后 n≥20 出图率/耗时以 §4 实测为准，「全规模最好」主张仍不成立"
+          "（运行时间仍慢基线 2~3 个数量级）")
         A("- **综合可辩护措辞（草案，§8 展开）**：stdraw 的比较优势限定在"
           "「经典 CLD 小图、卡片式画法、硬门语义（框不压线+净距+行对齐+CV）全维度"
           "同时达标」这一域；交叉数单项与 Graphviz dot 打平、不敌 neato/ELK 裸交叉值；"
@@ -142,14 +144,19 @@ def main():
       "sample_polyline / dist_point_rect），评测代码随仓公开可复算；")
     A("- **运行时间口径**：stdraw = 进程内核心布局计时（不含解析/渲染/证书）；Graphviz/ELK = "
       "子进程 wall-clock（含启动开销，对基线略不利，报告如实注明）；")
-    A("- **预算协议**：引擎无内部时限是确定性设计，本基准给外部预算：ortho 60s；auto "
+    A("- **预算协议**：外部预算：ortho 60s；auto "
       "classic 300s / 随机 n≤10 350s / 随机 n≥20 100s；cr(G) 精确层 300s；超预算 = DNF 如实计数"
-      "（DNF 不是输一场空，是「该预算内不产布局」的事实）；")
+      "（DNF 不是输一场空，是「该预算内不产布局」的事实）；引擎侧确定性设计：无墙钟时限"
+      "（墙钟截断随机器负载漂移、破坏逐字节复现），n>10 的 CP-SAT 定位自 WS5 起用**确定性时间预算**"
+      "（max_deterministic_time=8det，操作计数口径，同版本同输入在任何机器上同一 incumbent），"
+      "n≤10 与布线层求到最优为止——两种口径输出均逐字节可复现；")
     A("- **auto-exact 形态** = auto 布局复用（WS2 已证同输入逐字节一致）+ 独立跑 cr(G)，"
       "runtime = 布局 + 精确层；")
     A("- **环境**：Windows 11 / Python 3.12.10 + networkx + OR-Tools CP-SAT / "
       "Graphviz 16.1.0（官方 Release zip，sha256 校验一致）/ elkjs（bundled，node 22.23.2）/"
-      "OGDF：未运行（见 §6）。\n")
+      "OGDF：未运行（见 §6）。stdraw auto/auto-exact 数字为 **WS5 修复后重测**"
+      "（引擎 b4ea801+）；基线（Graphviz/ELK）与 stdraw-ortho 沿用 WS4 同机实测"
+      "（两者不在本次修复面，引擎未变）。\n")
 
     # ═══ §3 经典 CLD 大表（每工具一张，六指标全列）═══
     A(f"## §3 经典 CLD 语料（{len(classic)} 张，n=4…8）逐图大表\n")
@@ -229,18 +236,37 @@ def main():
           f"不可平面诚实跳过 {skip}")
     A("")
 
-    # ═══ §5 可扩展性瓶颈实测（auto 形态 DNF 根因）═══
-    A("## §5 stdraw auto-v2 可扩展性瓶颈（实测定位，非猜测）\n")
-    A("- 打点证据（benchmarks/raw/probe_n10_auto.log 同款探针）：n10 随机图 CP-SAT 定位 "
-      "<1s 完成；总耗时 285.1s 全部耗在其后的 `_polish` 精化——每个候选横移都调一次 "
-      "`_route_total` = Router.route_all **全图重布线**（n10 ≈ 10 节点 × 6 扰动 × 2 轮 + 1 "
-      "初始 ≈ 121 次全图布线）；")
-    A("- 推算：polish 成本 ∝ n × route_all(n)；实测 5 节点 ~30s、10 节点 ~285s，"
-      "n≥20 在 100s 预算内 DNF（n30/n50 在 300-420s 预算下亦不完成）——这是本引擎当前"
-      "诚实的适用域边界：**经典小图（n≤10 级）可用，随机稀疏图 n≥20 当前不可用**；")
-    A("- 该瓶颈属引擎实现层（WS3 polish 策略），不属数学层（WS2 cr(G) 精确层与布线最优性"
-      "不受影响）；修复建议（候选评估增量重路由 / polish 只重路由受影响边）留给 WS5/后续卡，"
-      "本卡只对比不改动擎。\n")
+    # ═══ §5 可扩展性瓶颈实测（auto 形态 DNF 根因；WS5 已修复）═══
+    A("## §5 stdraw auto-v2 可扩展性瓶颈（实测定位 → WS5 修复）\n")
+    A("- **WS4 实测（修复前）**：n10 每张 ~285s（打点：CP-SAT 定位 <1s，其余全耗在 "
+      "`_polish` 的每候选横移全图重布线 route_all，n10 ≈121 次/图）；n≥20 在 100s 预算 "
+      "全 DNF，n30/n50 在 300-420s 预算亦不完成；")
+    A("- **根因修正（WS5 打点证据，修正 WS4 §5 的归因）**：`_polish` 带 core≤10 门，"
+      "n≥20 根本不执行——它只解释 n≤10 慢，**不是** n≥20 DNF 的根因；n≥20 的真瓶颈是 "
+      "`_cpsat_positions` 把交叉对 O(m²) 布尔化后**求到全局最优**：random-n20-i00 实测 "
+      "5min+ 未返回（construct 定位下 route_all 同图仅 8.2s，n50 冷缓存 410.6s）；")
+    A("- **WS5 修复**：① n>10 的 CP-SAT 定位改用确定性时间预算 "
+      "`max_deterministic_time=8`（操作计数口径，非墙钟——输出仍逐字节可复现；小图 "
+      "≤10 不受预算约束、照常证最优，输出与修复前逐字节一致）；② 布线层精确等价提速"
+      "（`visibility._visible` / `routing._evaluate` 包围盒下界剪枝 + `route_all` "
+      "routed_segs 增量维护）——route_all 指纹逐位不变，墙钟 n20 8.2→2.3s、n30 "
+      "53.9→11.0s、n50 410.6→62.1s；③ 等价性验证：classic 19 张 + n10 抽样 2 张 "
+      "layout.json sha256 新旧逐字节一致（21/21）；`_visible` 差分对拍 3000 例 0 差异；")
+    _parts5 = []
+    for _n in (20, 30, 50):
+        _v = summary_random.get(("stdraw·auto(WS3布线)", _n))
+        if _v:
+            _parts5.append(f"n{_n} 出图 {_v['ok']}/{_v['total']}")
+        else:
+            _parts5.append(f"n{_n} 出图 0/{len(random_by_n.get(_n, {}))}")
+    A(f"- **修复后实况（本表 §4 为准）**：stdraw-auto {'，'.join(_parts5)}"
+      "（修复前 n≥20 全 DNF）；n10 布局输出逐字节不变、耗时下降（同机同条件 ~285s → "
+      "45-60s/张）；定位质量口径变化如实声明：n>10 的解从「证到最优」变为「8det 预算内"
+      "最优 incumbent」，layout.json meta 的 solver_status/solver_det_budget 字段如实标注；")
+    A("- 边界（诚实）：随机稀疏图 n≥20 的框压线/净距不再是 0（布线目标是惩罚最小化而非"
+      "定理保证，稠密随机图存在无零压线候选的情形——§4 框压线均值即实测值）；运行时间仍"
+      "慢基线 2~3 个数量级；`_polish`（布线可行性回喂定位）仍只在 n≤10 执行，n≥20 的定位"
+      "质量依赖 CP-SAT 预算内 incumbent + 构造法兜底。\n")
 
     # ═══ §6 OGDF 口径 ═══
     A("## §6 OGDF：未运行（构建成本如实评估）\n")
@@ -311,8 +337,9 @@ def main():
       "以 §7 classic 均值表为准逐列对比，不合并总分；")
     A("2. 任何「优于 Graphviz/ELK」的主张必须同时注明：ELK/Graphviz 为通用图布局工具，"
       "未针对 CLD 卡片式画法调优；stdraw 的比较优势限定在同输入同框尺寸的 CLD 场景；")
-    A("3. 随机族 n≥20 上 stdraw auto 当前 DNF（§5 瓶颈），任何「全规模最好」主张**不成立**，"
-      "README 只可主张「经典 CLD 小图域」内的领先（且以 §7 数字为准）；")
+    A("3. 随机族 n≥20 的全 DNF 已由 WS5 修复（§5；出图率见 §4），但运行时间仍慢基线 "
+      "2~3 个数量级、且随机族框压线/净距非 0（惩罚最小化非定理保证）——任何「全规模最好」"
+      "主张**仍不成立**，README 只可主张「经典 CLD 小图域」内的领先（且以 §7 数字为准）；")
     A("4. OGDF 未同题运行，不作对比对象引用（§6 口径）。\n")
 
     with open(os.path.join(BENCH, "REPORT.md"), "w", encoding="utf-8", newline="\n") as f:
@@ -337,9 +364,10 @@ def main():
                  f"{fmt(v['clear_violations'])} | {fmt(v['spacing_cv'],3)} | "
                  f"{fmt(v['row_align_rate'],2)} | {fmt(v['runtime_s'],2)} |")
     R.append("")
-    R.append("诚实边界：随机族 n≥20 上 stdraw auto-v2 当前 DNF（见 REPORT §5 瓶颈定位）；"
-             "OGDF 未同题运行（§6）。「最好」主张措辞以 REPORT §8 为准，经 default 复核后"
-             "才写入仓库 README。\n")
+    R.append("诚实边界：随机族 n≥20 的全 DNF 已由 WS5 修复（CP-SAT 确定性时间预算 + "
+             "布线精确等价提速，根因与修复记录见 `REPORT.md §5`），但运行时间仍慢基线 "
+             "2~3 个数量级、随机族框压线/净距非 0；OGDF 未同题运行（§6）。"
+             "「最好」主张措辞以 REPORT §8 为准，经 default 复核后才写入仓库 README。\n")
     with open(os.path.join(BENCH, "README.md"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(R) + "\n")
     print("REPORT.md / README.md / manifest.json written")
