@@ -137,6 +137,15 @@ def main():
         else:
             print("OK  rendercheck: DOM 实测框界无溢出")
 
+        # ── D. WS3 布线数学层单元（可见性图最短路/净距/双口径）──
+        r = subprocess.run([sys.executable, os.path.join(root, "tests",
+                                                          "test_visibility.py")],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            failures.append(f"test_visibility: exit {r.returncode}\n{r.stdout}\n{r.stderr}")
+        else:
+            print("OK  test_visibility: 可见性图最短路/弧平滑/双口径 单元全过")
+
         if failures:
             print("\nFAILURES:")
             for f in failures:

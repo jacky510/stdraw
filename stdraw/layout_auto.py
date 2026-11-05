@@ -329,22 +329,29 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
         pos, _sc, _rt = _polish(core, EDGES_REF[0], rows, pos, y,
                                 widths, card_h, cfg)
 
-    # ④ 布线（直线/弧线一等，框不压线）
+    # ④ 布线（直线/弧线一等，框不压线）+ WS3 理论口径（最终路线交叉对数）
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
     router = Router(nodes_px, EDGES_REF[0], cfg.clearance, cfg.pitch)
     routes = router.route_all()
+    router_pairs = router.final_crossing_pairs(routes)
 
     edges_out = []
     for i, (a, b) in enumerate(EDGES_REF[0]):
         info = routes[i]
-        e = {"a": a, "b": b, "route": {"kind": info["kind"],
-                                       "points": [[round(px, 1), round(py, 1)]
-                                                  for px, py in info["points"]]},
+        e = {"a": a, "b": b, "polarity": getattr(graph.edges[i], "polarity", "+"),
+             "route": {"kind": info["kind"],
+                       "points": [[round(px, 1), round(py, 1)]
+                                  for px, py in info["points"]]},
              "anchors": {"a": list(info["points"][0]), "b": list(info["points"][-1])},
-             "arrow": [round(info["points"][-1][0], 1), round(info["points"][-1][1], 1)]}
+             "arrow": [round(info["points"][-1][0], 1), round(info["points"][-1][1], 1)],
+             "route_cross_edges": int(info.get("cross_edges", 0))}  # 评估期诊断值
         if info["kind"] == "arc":
             e["route"]["arc"] = True
             e["route"]["ctrl"] = [round(c, 1) for c in info.get("ctrl", info["points"][len(info["points"]) // 2])]
+        if info["kind"] == "vg":
+            # 暂存原始角点/弧参数，dx 平移后生成 SVG path（见下方 finalize）
+            e["_vg"] = ([list(p) for p in info["vg_corners"]],
+                        [dict(f) for f in info["vg_fillets"]])
         edges_out.append(e)
 
     xs_all = [pos[v] - widths[v] / 2 for v in nodes] + [pos[v] + widths[v] / 2 for v in nodes]
@@ -362,8 +369,24 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
             e["anchors"] = {"a": [e["anchors"]["a"][0] + dx, e["anchors"]["a"][1]],
                             "b": [e["anchors"]["b"][0] + dx, e["anchors"]["b"][1]]}
             e["arrow"][0] += dx
+            if "ctrl" in e["route"]:      # bugfix：弧线控制点必须随 dx 平移
+                e["route"]["ctrl"][0] += dx
         for v in nodes:
             pos[v] += dx
+
+    # WS3 finalize：vg 路线在平移后的交付坐标上生成精确 SVG path（L+A 命令）
+    from .visibility import route_svg_d as _route_svg_d
+    for e in edges_out:
+        vg = e.pop("_vg", None)
+        if vg:
+            corners, fillets = vg
+            corners = [[p[0] + dx, p[1]] for p in corners]
+            fillets = [dict(f, ta=[f["ta"][0] + dx, f["ta"][1]],
+                            tb=[f["tb"][0] + dx, f["tb"][1]],
+                            center=[f["center"][0] + dx, f["center"][1]])
+                       for f in fillets]
+            e["route"]["path_d"] = _route_svg_d(corners, fillets)
+            e["route"]["via"] = [[round(px, 1), round(py, 1)] for px, py in corners]
 
     v4 = {
         "viewBox": [0, 0, W, H],
@@ -381,10 +404,15 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
             "line_style": linestyle,
             "position_engine": engine,
             "clearance": CLEARANCE,
+            "router_cross_pairs": router_pairs,
             "solver_available": _has_solver(),
+            "routing_math": ("visibility-graph Dijkstra shortest path (clearance-"
+                             "inflated obstacles) + tangent-arc fillet smoothing "
+                             "(G1, clearance-verified); crossing dual-caliber: "
+                             "router theory vs Liang-Barsky delivered geometry"),
             "method": ("layered + crossing-minimization (CP-SAT if available) "
-                       "with straight/arc first-class routing; "
-                       "hard gates: box-over-line=0, edge-box clearance>=16px"),
+                       "with straight/arc first-class routing and visibility-graph "
+                       "detour; hard gates: box-over-line=0, edge-box clearance>=16px"),
         },
     }
     return v4

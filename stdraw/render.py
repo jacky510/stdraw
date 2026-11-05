@@ -108,11 +108,13 @@ h1{{font-size:18px}} svg{{background:#fff;border:1px solid #e2e8f0;border-radius
 
 # ═══ auto-v2 渲染（2026-11-05 六点返修）：直线/弧线一等 + 锚点方向箭头 ═══
 def _edge_svg(e, labels, values):
-    """单条边 → SVG（line/poly 折线，arc 真贝塞尔），箭头按末段方向。"""
+    """单条边 → SVG（line/poly 折线，arc 真贝塞尔，vg 精确 L+A 路径），箭头按末段方向。"""
     r = e["route"]
     pts = r["points"]
     color = "#64748b"
-    if r["kind"] == "arc" and "ctrl" in r:
+    if r.get("path_d"):
+        d = r["path_d"]
+    elif r["kind"] == "arc" and "ctrl" in r:
         c = r["ctrl"]
         d = (f'M {pts[0][0]} {pts[0][1]} Q {c[0]} {c[1]} '
              f'{pts[-1][0]} {pts[-1][1]}')
@@ -129,6 +131,78 @@ def _edge_svg(e, labels, values):
     return ''.join(out)
 
 
+# ═══ WS3：R/B 极性标记（随切线方向确定性放置，不遮字不压线）═══
+def _poly_point_at(pts, t):
+    """折线按弧长比例取点与局部切向。"""
+    import math as _m
+    segs = [(_m.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]))
+            for i in range(len(pts) - 1)]
+    total = sum(segs)
+    target = total * max(0.0, min(1.0, t))
+    acc = 0.0
+    for i, L in enumerate(segs):
+        if acc + L >= target and L > 0:
+            f = (target - acc) / L
+            p = (pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f,
+                 pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f)
+            d = (pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
+            n = _m.hypot(*d) or 1.0
+            return p, (d[0] / n, d[1] / n)
+        acc += L
+    return pts[-1], (0.0, 1.0)
+
+
+def _pt_poly_dist(px, py, pts):
+    """点到折线的最小距离。"""
+    best = float("inf")
+    for i in range(len(pts) - 1):
+        ax, ay = pts[i]
+        bx, by = pts[i + 1]
+        vx, vy = bx - ax, by - ay
+        L2 = vx * vx + vy * vy
+        t = 0.0 if L2 < 1e-12 else max(0.0, min(1.0, ((px - ax) * vx + (py - ay) * vy) / L2))
+        d = ((px - ax - t * vx) ** 2 + (py - ay - t * vy) ** 2) ** 0.5
+        best = min(best, d)
+    return best
+
+
+def _polarity_marker(e, polys, boxes, W, H):
+    """R/B 标记位置：确定性候选序（t × 法向偏移），首个不遮字不压线的位置。
+
+    boxes: [(cx, cy, hw, hh)] 全部框；不遮字 = 与框外缘保持 ≥8px；
+    不压线 = 与其他边折线保持 ≥11px。
+    """
+    pol = e.get("polarity", "+")
+    if pol not in ("+", "-"):
+        return None
+    letter = "R" if pol == "+" else "B"
+    color = "#dc2626" if pol == "+" else "#2563eb"
+    own = e["route"]["points"]
+    other_polys = [p for j, p in polys.items() if j != e.get("_idx")]
+    for t in (0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74):
+        p, tan = _poly_point_at(own, t)
+        nx, ny = -tan[1], tan[0]
+        for off in (10, -10, 14, -14, 18, -18):
+            cand = (p[0] + nx * off, p[1] + ny * off)
+            if not (8 <= cand[0] <= W - 8 and 8 <= cand[1] <= H - 8):
+                continue
+            # 不遮字：与任何框（含端点框）外缘保持 ≥8px
+            near_box = False
+            for (cx, cy, hw, hh) in boxes:
+                dx = max(abs(cand[0] - cx) - hw, 0.0)
+                dy = max(abs(cand[1] - cy) - hh, 0.0)
+                if (dx * dx + dy * dy) ** 0.5 < 8:
+                    near_box = True
+                    break
+            if near_box:
+                continue
+            # 不压线：与其他边折线保持 ≥11px
+            if any(_pt_poly_dist(cand[0], cand[1], p2) < 11 for p2 in other_polys):
+                continue
+            return cand, letter, color
+    return None
+
+
 def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                      loops_report: dict = None, labels: dict = None,
                      values: dict = None) -> str:
@@ -141,8 +215,21 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
 
     parts = []
     parts.append(f'<svg viewBox="0 0 {W} {H}" font-family="Microsoft YaHei,sans-serif">')
-    for e in edges:
+    polys = {i: e["route"]["points"] for i, e in enumerate(edges)}
+    boxes = [(p["x"], p["y"], p.get("w", 140) / 2, card_h / 2) for p in nodes.values()]
+    for i, e in enumerate(edges):
+        e["_idx"] = i
         parts.append(_edge_svg(e, labels, values))
+    # WS3：R/B 极性标记（确定性放置，白底盘 + 字母）
+    for i, e in enumerate(edges):
+        mk = _polarity_marker(e, polys, boxes, W, H)
+        if mk:
+            (mx, my), letter, mcolor = mk
+            parts.append(f'<g transform="translate({mx:.1f} {my:.1f})">'
+                         f'<circle r="7.5" fill="#ffffff" stroke="{mcolor}" '
+                         f'stroke-width="1.2"/>'
+                         f'<text y="3.2" text-anchor="middle" font-size="9.5" '
+                         f'font-weight="bold" fill="{mcolor}">{letter}</text></g>')
     for v, p in nodes.items():
         x, y, w = p["x"], p["y"], p["w"]
         label = html.escape(labels.get(v, v))
