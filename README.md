@@ -37,14 +37,14 @@ Mainstream diagram tools stop at "crossing minimization" heuristics, and **none 
 
 ## Gallery
 
-All images are real renderings of the in-repo demos (click through to each demo).
+All images are real renderings produced by the current engine (v0.3.0) from the in-repo corpus — no mock-ups, no stale artifacts (click through to each demo).
 
 | | |
 |---|---|
 | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a> | <a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a> |
 | **2D · auto-v2 hard-gate layout** (limits-to-growth × shifting-the-burden, 8n/13e, straight/arc lines, no box over a line) | **3D · sphere arrangement** (rotate freely; projection crossings solved by the camera) |
 | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a> | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/before-after.png" alt="before/after comparison" width="420"/></a> |
-| **Quality certificate panel** (recomputed live on the page: hard gates + gates + grade) | **Before/after the v0.2 rework** (v0.1 orthogonal-with-occlusion → v0.2 auto hard gates) |
+| **Quality certificate panel** (hard gates + gate tally + honest grade, exactly as shipped in the demo) | **Before/after** (same input, both rendered by the current engine: frozen ortho-v1 recipe with wires occluded under cards → auto-v2 hard-gate layout, gates 8/9, R/B polarity markers) |
 
 ## Ask your agent in plain words
 

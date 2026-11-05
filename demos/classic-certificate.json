@@ -48,6 +48,25 @@
  "gates_passed": "8/9",
  "grade": "其次",
  "grade_note": "硬门全过 + 交叉 ≤2 处（明细已入证书供复核）；互斥时保硬门、放交叉",
+ "proven_optimal": null,
+ "gap": null,
+ "exactness": {
+  "computed": false,
+  "proven_optimal": null,
+  "gap": null,
+  "crossing_number": null,
+  "lb": null,
+  "coverage": null,
+  "method": "crossing-number exactness not computed (pass --exact to compute)",
+  "scope": "proven_optimal 只相对 docs/crossing-exact.md §1-5 定义的模型类成立：good-drawing 交叉数口径（相邻边不交叉、每对至多一次、无三边共点）、安全缩减后的 2-边-连通核族、B&B 覆盖的可平面子图 × 全嵌入族。不虚称全体指标集或任意画法空间的最优性。"
+ },
+ "regularity": {
+  "structure": "general",
+  "cycle_polygon_deviation": null,
+  "chain_straightness": null,
+  "symmetry_axis_alignment": 0.5,
+  "dominant": "symmetry_axis_alignment"
+ },
  "honest_notes": [
   "硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性",
   "交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，不一致拒发证书",
