@@ -1,0 +1,18 @@
+# 经典系统动力学原型：倦怠与离职（Burnout，组织管理教科书公有领域模型）
+graph "倦怠与离职"
+
+var workload "工作负荷"
+var overtime "加班时长"
+var burnout "倦怠水平"
+var productivity "人均产出"
+var attrition "离职率"
+
+workload -> + overtime @loops R1,B1
+overtime -> + burnout @loops R1,B1
+burnout -> - productivity @loops R1
+productivity -> - workload @loops R1
+burnout -> + attrition @loops B1
+attrition -> - workload @loops B1
+
+loop R1 "倦怠恶性循环" "R" [workload, overtime, burnout, productivity]
+loop B1 "离职减负回路" "B" [workload, overtime, burnout, attrition]

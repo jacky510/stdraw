@@ -1,0 +1,1 @@
+{"tool": "graphviz-neato", "graph": "renewable-resource", "n": 5, "m": 7, "crossings": 0, "box_press": 0, "clear_violations": 1, "min_edge_box_clear_px": 7.9, "spacing_cv": 0.007, "row_align_rate": 0.0, "runtime_s": 0.019, "bbox": [284, 222], "bbox_area": 62867, "status": "ok"}

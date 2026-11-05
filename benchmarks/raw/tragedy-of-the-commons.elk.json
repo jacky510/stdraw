@@ -1,0 +1,1 @@
+{"tool": "elk-layered", "graph": "tragedy-of-the-commons", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 2, "min_edge_box_clear_px": 10.0, "spacing_cv": 0.279, "row_align_rate": 0.4, "runtime_s": 0.068, "bbox": [598, 156], "bbox_area": 93487, "status": "ok"}

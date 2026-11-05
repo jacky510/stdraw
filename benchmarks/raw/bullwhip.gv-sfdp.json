@@ -1,0 +1,1 @@
+{"tool": "graphviz-sfdp", "graph": "bullwhip", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 151.5, "spacing_cv": 0.173, "row_align_rate": 0.6, "runtime_s": 0.02, "bbox": [956, 255], "bbox_area": 243218, "status": "ok"}

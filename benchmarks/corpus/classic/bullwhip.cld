@@ -1,0 +1,18 @@
+# 经典系统动力学原型：牛鞭效应（Bullwhip Effect，供应链教科书公有领域模型）
+graph "牛鞭效应"
+
+var retail "终端销量"
+var forecast "需求预测"
+var orders "订单量"
+var factory "工厂产量"
+var inventory "渠道库存"
+
+retail -> + forecast
+forecast -> + orders @loops B2
+orders -> + factory @loops B1,B2
+factory -> + inventory @loops B1,B2
+inventory -> - orders @loops B1
+inventory -> - forecast @loops B2
+
+loop B1 "库存订单纠偏回路" "B" [orders, factory, inventory]
+loop B2 "库存预测纠偏回路" "B" [forecast, orders, factory, inventory]

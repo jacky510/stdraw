@@ -1,0 +1,21 @@
+# 经典系统动力学原型：交通诱导需求（Induced Demand，城市研究教科书公有领域模型）
+graph "交通诱导需求"
+
+var congestion "拥堵程度"
+var driving_cost "驾车成本感知"
+var car_trips "汽车出行量"
+var expansion "扩建压力"
+var road_capacity "道路容量"
+
+congestion -> + driving_cost @loops B1,R3
+driving_cost -> - car_trips @loops B1,R3
+car_trips -> + congestion @loops B1,B2
+congestion -> - car_trips @loops R1,B2
+car_trips -> + expansion @loops R1,R3
+expansion -> + road_capacity @loops R1,R3
+road_capacity -> - congestion @loops R1,R3
+
+loop B1 "拥堵回避回路" "B" [congestion, driving_cost, car_trips]
+loop R1 "扩建诱导回路" "R" [congestion, car_trips, expansion, road_capacity]
+loop B2 "拥堵出行互制回路" "B" [car_trips, congestion]
+loop R3 "扩建诱导综合回路" "R" [congestion, driving_cost, car_trips, expansion, road_capacity]

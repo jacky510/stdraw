@@ -1,0 +1,1 @@
+{"tool": "stdraw-ortho", "graph": "fishing-collapse", "n": 6, "m": 9, "crossings": 0, "box_press": 0, "clear_violations": 1, "min_edge_box_clear_px": 3.0, "spacing_cv": 0.601, "row_align_rate": 0.667, "runtime_s": 0.011, "bbox": [501, 210], "bbox_area": 105210, "status": "ok"}

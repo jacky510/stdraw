@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "random-n30-i15", "status": "dnf", "why": "timeout at budget 100s (engine has no internal limit; bottleneck = _polish full-route re-runs, see REPORT §5)", "budget_s": 100}

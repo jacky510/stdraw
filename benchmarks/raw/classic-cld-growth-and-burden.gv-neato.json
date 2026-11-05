@@ -1,0 +1,1 @@
+{"tool": "graphviz-neato", "graph": "classic-cld-growth-and-burden", "n": 8, "m": 13, "crossings": 0, "box_press": 3, "clear_violations": 10, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.181, "row_align_rate": 0.25, "runtime_s": 0.02, "bbox": [314, 250], "bbox_area": 78478, "status": "ok"}

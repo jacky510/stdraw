@@ -1,0 +1,1 @@
+{"tool": "elk-layered", "graph": "wage-price-spiral", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 2, "min_edge_box_clear_px": 10.0, "spacing_cv": 0.199, "row_align_rate": 0.0, "runtime_s": 0.07, "bbox": [386, 160], "bbox_area": 61760, "status": "ok"}

@@ -1,0 +1,1 @@
+{"tool": "graphviz-neato", "graph": "urban-migration", "n": 6, "m": 8, "crossings": 0, "box_press": 4, "clear_violations": 5, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.313, "row_align_rate": 0.0, "runtime_s": 0.019, "bbox": [243, 172], "bbox_area": 41673, "status": "ok"}

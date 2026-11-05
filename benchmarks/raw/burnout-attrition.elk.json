@@ -1,0 +1,1 @@
+{"tool": "elk-layered", "graph": "burnout-attrition", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 4, "min_edge_box_clear_px": 10.0, "spacing_cv": 0.203, "row_align_rate": 0.6, "runtime_s": 0.075, "bbox": [494, 128], "bbox_area": 63232, "status": "ok"}

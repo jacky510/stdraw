@@ -1,0 +1,25 @@
+# 经典系统动力学原型：渔业崩溃（Fishing Collapse，资源经济教科书公有领域模型）
+graph "渔业崩溃"
+
+var fleet "捕捞船队规模"
+var catch_amount "捕捞量"
+var profit "捕捞利润"
+var fish_stock "鱼类种群"
+var price "鱼价"
+var quota "配额管制"
+
+profit -> + fleet @loops R1,R2,R3
+fleet -> + catch_amount @loops R1,R2,R3
+catch_amount -> + profit @loops R1,R2,R3
+catch_amount -> - fish_stock @loops R2,R3,R4
+fish_stock -> - catch_amount @loops R2,R4
+fish_stock -> - price @loops R3
+price -> + profit @loops R3
+catch_amount -> + quota @loops B1
+quota -> - catch_amount @loops B1
+
+loop R1 "船队扩张回路" "R" [profit, fleet, catch_amount]
+loop R2 "种群耗竭回路" "R" [fleet, catch_amount, fish_stock]
+loop R3 "稀缺涨价回路" "R" [fish_stock, price, profit, fleet, catch_amount]
+loop R4 "捕捞种群互制回路" "R" [catch_amount, fish_stock]
+loop B1 "配额平衡回路" "B" [catch_amount, quota]

@@ -1,0 +1,1 @@
+{"tool": "graphviz-neato", "graph": "burnout-attrition", "n": 5, "m": 6, "crossings": 0, "box_press": 2, "clear_violations": 4, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.122, "row_align_rate": 0.0, "runtime_s": 0.02, "bbox": [223, 167], "bbox_area": 37326, "status": "ok"}

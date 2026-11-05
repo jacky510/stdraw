@@ -1,0 +1,21 @@
+# 经典 CLD 原型：增长极限（《系统之美》公开原型）
+# 5 节点 / 7 边 / 3 条反馈环（1 增强 + 2 平衡）——最小可读案例。
+graph "增长极限"
+
+var rate "采纳率"
+var adopters "采纳者"
+var word "口碑效应"
+var potential "潜在采纳者"
+var crowding "拥挤效应"
+
+adopters -> + word @loops R1
+word -> + rate @loops R1
+rate -> + adopters @loops R1,B1,B2
+potential -> + rate @loops B1
+adopters -> - potential @loops B1
+adopters -> + crowding @loops B2
+crowding -> - rate @loops B2
+
+loop R1 "采纳扩散" "R" [rate, adopters, word]
+loop B1 "市场饱和" "B" [rate, adopters, potential]
+loop B2 "拥挤制约" "B" [rate, adopters, crowding]

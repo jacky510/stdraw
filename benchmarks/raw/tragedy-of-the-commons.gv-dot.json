@@ -1,0 +1,1 @@
+{"tool": "graphviz-dot", "graph": "tragedy-of-the-commons", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 2, "min_edge_box_clear_px": 8.8, "spacing_cv": 0.182, "row_align_rate": 0.0, "runtime_s": 0.021, "bbox": [244, 364], "bbox_area": 88814, "status": "ok"}

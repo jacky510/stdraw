@@ -1,0 +1,1 @@
+{"tool": "graphviz-dot", "graph": "random-n50-i02", "n": 50, "m": 80, "crossings": 53, "box_press": 4, "clear_violations": 68, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.331, "row_align_rate": 0.96, "runtime_s": 0.03, "bbox": [1825, 844], "bbox_area": 1540369, "status": "ok"}

@@ -1,0 +1,1 @@
+{"tool": "graphviz-sfdp", "graph": "brand-flywheel", "n": 6, "m": 8, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 189.1, "spacing_cv": 0.047, "row_align_rate": 0.333, "runtime_s": 0.018, "bbox": [864, 490], "bbox_area": 423214, "status": "ok"}

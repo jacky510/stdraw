@@ -1,0 +1,1 @@
+{"tool": "elk-layered", "graph": "urban-migration", "n": 6, "m": 8, "crossings": 0, "box_press": 0, "clear_violations": 5, "min_edge_box_clear_px": 10.0, "spacing_cv": 0.249, "row_align_rate": 0.333, "runtime_s": 0.06, "bbox": [522, 212], "bbox_area": 110664, "status": "ok"}

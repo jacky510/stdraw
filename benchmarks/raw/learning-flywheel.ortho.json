@@ -1,0 +1,1 @@
+{"tool": "stdraw-ortho", "graph": "learning-flywheel", "n": 4, "m": 5, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 41.3, "spacing_cv": 0.312, "row_align_rate": 0.0, "runtime_s": 0.004, "bbox": [307, 210], "bbox_area": 64470, "status": "ok"}

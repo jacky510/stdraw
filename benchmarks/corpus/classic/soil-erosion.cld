@@ -1,0 +1,22 @@
+# 经典系统动力学原型：耕地-水土流失（Soil Erosion，农业生态教科书公有领域模型）
+graph "耕地水土流失"
+
+var farming "耕作强度"
+var vegetation "植被覆盖"
+var erosion "水土流失"
+var soil_quality "土壤质量"
+var crop_yield "亩产"
+var abandonment "弃耕"
+
+farming -> + crop_yield @loops R1
+crop_yield -> + farming @loops R1,B2
+farming -> - vegetation @loops B2,B3
+vegetation -> - erosion @loops B2,B3
+erosion -> - soil_quality @loops B2
+soil_quality -> + crop_yield @loops B2
+erosion -> + abandonment @loops B3
+abandonment -> - farming @loops B3
+
+loop R1 "短期增产回路" "R" [farming, crop_yield]
+loop B2 "地力衰减回路" "B" [farming, vegetation, erosion, soil_quality, crop_yield]
+loop B3 "弃耕退出回路" "B" [farming, vegetation, erosion, abandonment]

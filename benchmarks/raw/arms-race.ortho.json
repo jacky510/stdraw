@@ -1,0 +1,1 @@
+{"tool": "stdraw-ortho", "graph": "arms-race", "n": 4, "m": 4, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 67.7, "spacing_cv": 0.218, "row_align_rate": 0.0, "runtime_s": 0.003, "bbox": [416, 210], "bbox_area": 87360, "status": "ok"}

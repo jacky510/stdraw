@@ -1,0 +1,14 @@
+# 经典系统动力学原型：军备竞赛（Arms Race，教科书公有领域模型）
+graph "军备竞赛"
+
+var our_arms "我方军备"
+var their_arms "对方军备"
+var our_fear "我方受威胁感"
+var their_fear "对方受威胁感"
+
+their_arms -> + our_fear @loops R1
+our_fear -> + our_arms @loops R1
+our_arms -> + their_fear @loops R1
+their_fear -> + their_arms @loops R1
+
+loop R1 "军备竞赛螺旋" "R" [their_arms, our_fear, our_arms, their_fear]

@@ -1,0 +1,1 @@
+{"tool": "stdraw-exact", "graph": "classic-cld-growth-and-burden", "n": 8, "m": 13, "cr": 0, "proven_optimal": true, "lb": 0, "gap": 0, "coverage": "full", "status": "ok", "runtime_s": 0.518}

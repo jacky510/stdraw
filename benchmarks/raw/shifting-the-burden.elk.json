@@ -1,0 +1,1 @@
+{"tool": "elk-layered", "graph": "shifting-the-burden", "n": 5, "m": 8, "crossings": 0, "box_press": 0, "clear_violations": 2, "min_edge_box_clear_px": 10.0, "spacing_cv": 0.272, "row_align_rate": 0.0, "runtime_s": 0.081, "bbox": [378, 139], "bbox_area": 52542, "status": "ok"}

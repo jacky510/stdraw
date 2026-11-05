@@ -1,0 +1,16 @@
+# 经典系统动力学原型：学习飞轮（Learning Flywheel，增长回路教科书公有领域模型）
+graph "学习飞轮"
+
+var practice "刻意练习"
+var skill "技能水平"
+var confidence "信心"
+var challenge "挑战任务难度"
+
+practice -> + skill @loops R1,R2
+skill -> + confidence @loops R1
+confidence -> + practice @loops R1
+skill -> + challenge @loops R2
+challenge -> + practice @loops R2
+
+loop R1 "信心增强回路" "R" [practice, skill, confidence]
+loop R2 "能力进阶回路" "R" [practice, skill, challenge]

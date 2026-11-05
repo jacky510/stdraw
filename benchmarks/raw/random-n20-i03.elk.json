@@ -1,0 +1,1 @@
+{"tool": "elk-layered", "graph": "random-n20-i03", "n": 20, "m": 32, "crossings": 14, "box_press": 0, "clear_violations": 16, "min_edge_box_clear_px": 10.0, "spacing_cv": 0.368, "row_align_rate": 0.4, "runtime_s": 0.119, "bbox": [912, 504], "bbox_area": 459891, "status": "ok"}

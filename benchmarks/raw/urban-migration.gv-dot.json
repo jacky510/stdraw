@@ -1,0 +1,1 @@
+{"tool": "graphviz-dot", "graph": "urban-migration", "n": 6, "m": 8, "crossings": 1, "box_press": 0, "clear_violations": 4, "min_edge_box_clear_px": 7.6, "spacing_cv": 0.123, "row_align_rate": 0.333, "runtime_s": 0.023, "bbox": [251, 364], "bbox_area": 91364, "status": "ok"}

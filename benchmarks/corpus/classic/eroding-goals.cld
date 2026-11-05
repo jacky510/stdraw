@@ -1,0 +1,18 @@
+# 经典系统动力学原型：目标侵蚀（Eroding Goals，教科书公有领域模型）
+graph "目标侵蚀"
+
+var gap "绩效差距"
+var action "改进行动"
+var performance "实际绩效"
+var standard "绩效标准"
+var lower_pressure "放低标准压力"
+
+gap -> + action @loops B1
+action -> + performance @loops B1
+performance -> - gap @loops B1
+gap -> + lower_pressure @loops B2
+lower_pressure -> - standard @loops B2
+standard -> + gap @loops B2
+
+loop B1 "改进闭环" "B" [gap, action, performance]
+loop B2 "标准侵蚀" "B" [gap, lower_pressure, standard]

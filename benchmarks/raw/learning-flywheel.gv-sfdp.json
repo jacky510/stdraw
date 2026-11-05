@@ -1,0 +1,1 @@
+{"tool": "graphviz-sfdp", "graph": "learning-flywheel", "n": 4, "m": 5, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 227.3, "spacing_cv": 0.085, "row_align_rate": 0.5, "runtime_s": 0.018, "bbox": [758, 342], "bbox_area": 259211, "status": "ok"}

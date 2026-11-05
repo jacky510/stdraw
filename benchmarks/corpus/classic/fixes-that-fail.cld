@@ -1,0 +1,16 @@
+# 经典系统动力学原型：饮鸩止渴（Fixes that Fail，教科书公有领域模型）
+graph "饮鸩止渴"
+
+var problem "问题压力"
+var fix "应急对策"
+var relief "压力缓解"
+var consequence "长期恶果"
+
+problem -> + fix @loops B1,R2
+fix -> + relief @loops B1
+relief -> - problem @loops B1
+fix -> + consequence @loops R2
+consequence -> + problem @loops R2
+
+loop B1 "应急缓解" "B" [problem, fix, relief]
+loop R2 "恶果回流" "R" [fix, consequence, problem]

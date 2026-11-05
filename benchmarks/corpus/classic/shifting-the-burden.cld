@@ -1,0 +1,22 @@
+# 经典系统动力学原型：转嫁负担（Shifting the Burden，教科书公有领域模型）
+graph "转嫁负担"
+
+var problem "问题症状"
+var symptom_fix "症状解"
+var side_effect "副作用"
+var fundamental "根本解"
+var capability "根本能力"
+
+problem -> + symptom_fix @loops B1,R2
+symptom_fix -> - problem @loops B1
+symptom_fix -> + side_effect @loops R2
+side_effect -> + problem @loops R2
+problem -> + fundamental @loops B3,B4
+fundamental -> - problem @loops B3
+fundamental -> + capability @loops B4
+capability -> - problem @loops B4
+
+loop B1 "症状缓解" "B" [problem, symptom_fix]
+loop R2 "副作用依赖" "R" [symptom_fix, side_effect, problem]
+loop B3 "根本治理" "B" [problem, fundamental]
+loop B4 "能力建设" "B" [problem, fundamental, capability]

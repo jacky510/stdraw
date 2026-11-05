@@ -1,0 +1,1 @@
+{"tool": "graphviz-sfdp", "graph": "burnout-attrition", "n": 5, "m": 6, "crossings": 1, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 75.3, "spacing_cv": 0.143, "row_align_rate": 0.0, "runtime_s": 0.02, "bbox": [630, 426], "bbox_area": 268087, "status": "ok"}

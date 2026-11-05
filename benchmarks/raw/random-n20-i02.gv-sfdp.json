@@ -1,0 +1,1 @@
+{"tool": "graphviz-sfdp", "graph": "random-n20-i02", "n": 20, "m": 32, "crossings": 9, "box_press": 6, "clear_violations": 8, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.334, "row_align_rate": 0.2, "runtime_s": 0.027, "bbox": [1520, 846], "bbox_area": 1285490, "status": "ok"}

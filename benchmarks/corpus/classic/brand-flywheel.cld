@@ -1,0 +1,22 @@
+# 经典系统动力学原型：品牌资产飞轮（Brand Equity，营销教科书公有领域模型）
+graph "品牌资产飞轮"
+
+var ad_spend "广告投放"
+var ad_effect "广告边际效果"
+var awareness "品牌认知"
+var sales "销售额"
+var budget "营销预算"
+var wom "口碑推荐"
+
+ad_spend -> + ad_effect @loops R1
+ad_effect -> + awareness @loops R1,B1
+awareness -> + sales @loops R1,R2
+sales -> + budget @loops R1
+budget -> + ad_spend @loops R1
+sales -> + wom @loops R2
+wom -> + awareness @loops R2
+awareness -> - ad_effect @loops B1
+
+loop R1 "广告增长回路" "R" [ad_spend, ad_effect, awareness, sales, budget]
+loop R2 "口碑增强回路" "R" [awareness, sales, wom]
+loop B1 "认知饱和回路" "B" [ad_effect, awareness]

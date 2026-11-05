@@ -1,0 +1,1 @@
+{"tool": "graphviz-sfdp", "graph": "classic-cld-growth-and-burden", "n": 8, "m": 13, "crossings": 1, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 51.4, "spacing_cv": 0.309, "row_align_rate": 0.0, "runtime_s": 0.025, "bbox": [1057, 575], "bbox_area": 608075, "status": "ok"}

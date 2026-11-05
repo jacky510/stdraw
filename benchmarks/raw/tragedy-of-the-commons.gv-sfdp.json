@@ -1,0 +1,1 @@
+{"tool": "graphviz-sfdp", "graph": "tragedy-of-the-commons", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 175.5, "spacing_cv": 0.179, "row_align_rate": 0.6, "runtime_s": 0.029, "bbox": [1100, 280], "bbox_area": 307677, "status": "ok"}

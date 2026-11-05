@@ -1,0 +1,20 @@
+# 经典系统动力学原型：可再生资源开发（Renewable Resource，教科书公有领域模型）
+graph "可再生资源"
+
+var economy "经济产出"
+var harvest "资源开采量"
+var profit "行业利润"
+var stock "资源存量"
+var regeneration "资源再生量"
+
+economy -> + harvest @loops R1
+harvest -> + profit @loops R1
+profit -> + economy @loops R1
+harvest -> - stock @loops B1
+stock -> + harvest @loops B1
+stock -> + regeneration @loops R2
+regeneration -> + stock @loops R2
+
+loop R1 "增长开采回路" "R" [economy, harvest, profit]
+loop R2 "资源再生回路" "R" [stock, regeneration]
+loop B1 "稀缺约束回路" "B" [harvest, stock]

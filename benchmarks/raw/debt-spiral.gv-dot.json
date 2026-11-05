@@ -1,0 +1,1 @@
+{"tool": "graphviz-dot", "graph": "debt-spiral", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 4, "min_edge_box_clear_px": 8.4, "spacing_cv": 0.046, "row_align_rate": 0.0, "runtime_s": 0.14, "bbox": [146, 364], "bbox_area": 53142, "status": "ok"}
