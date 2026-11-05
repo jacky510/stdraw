@@ -44,7 +44,7 @@ All images are real renderings produced by the current engine (v0.4.0) from the 
 | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a> | <a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a> |
 | **2D · auto-v2 hard-gate layout** (limits-to-growth × shifting-the-burden, 8n/13e, straight/arc lines, no box over a line) | **3D · sphere arrangement** (rotate freely; projection crossings solved by the camera) |
 | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a> | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/before-after.png" alt="before/after comparison" width="420"/></a> |
-| **Quality certificate panel** (hard gates + gate tally + honest grade, exactly as shipped in the demo) | **Before/after** (same input, both rendered by the current engine: frozen ortho-v1 recipe with wires occluded under cards → auto-v2 hard-gate layout, gates 8/9, R/B polarity markers) |
+| **Quality certificate panel** (hard gates + gate tally + honest grade, exactly as shipped in the demo) | **Before/after** (same input, both rendered by the current engine: frozen ortho-v1 recipe with wires occluded under cards → auto-v2 hard-gate layout, gates 9/10, R/B polarity markers) |
 
 ## Ask your agent in plain words
 
@@ -133,12 +133,14 @@ Every deliverable directory contains `certificate.json`:
 ```json
 {
   "metrics": { "crossings": 1, "box_press_1px": 0, "edge_box_min_clear": 18.0,
-               "min_card_gap": 18.0, "row_align_rate": 0.625,
-               "spacing_cv": 0.110, "column_snap24_rate": 1.0 },
+               "min_card_gap": 22.0, "row_align_rate": 0.625,
+               "spacing_cv": 0.162, "column_snap24_rate": 1.0,
+               "mutual_pair_min_sep": 12.0 },
   "gates":   { "crossings_zero": false, "box_press_zero": true,
                "edge_box_clear_ge_16": true, "anchors_smooth": true,
                "min_gap_ge_16": true, "row_align_ge_060": true,
-               "cv_le_035": true, "regularity_simple": true },
+               "cv_le_035": true, "regularity_simple": true,
+               "mutual_pairs_separated": true, "routing_consistent": true },
   "grade": "其次"
 }
 ```
