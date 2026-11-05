@@ -67,6 +67,10 @@ stdraw/
 │   ├── routing.py       #   straight/arc/detour routing (box-over-line=0, clearance>=16px hard gates)
 │   ├── textmetrics.py   #   ground-truth box bounds (layout side: worst-case real-font metrics)
 │   ├── rendercheck.py   #   ground-truth box bounds (CI side: headless-browser DOM measurement, optional layer)
+│   ├── visibility.py    # WS3: 布线数学（膨胀障碍可见性图最短路 + 弧平滑）
+│   ├── crossing_exact.py  # WS2: 精确交叉数层（OIL 插入 ILP + 平面化 oracle + B&B 夹逼，可选 ortools）
+│   ├── regularity.py    # WS2: 结构检测 + 规律性可计算定义（正多边形偏差/直线度/对称轴）
+│   ├── placement.py     # WS2: 槽位离散化放置（结构驱动槽型；general 分支 CP-SAT）
 │   ├── planar.py        #   ortho-v1: 2D planar layout (theorem-level 0 crossings, frozen behavior)
 │   ├── layout3d.py      #   3D five-solid arrangements (sphere/cube/tetrahedron/cone)
 │   ├── metrics.py       #   quality certificates v1/v2 + honest grading
@@ -82,7 +86,7 @@ stdraw/
 ├── viewer/              # zero-dependency interactive viewer (four forms + live certificate)
 ├── skills/stdraw/       # Agent Skill (installable via skills add)
 ├── tests/baselines/     # ortho-v1 byte-regression baselines (frozen-behavior iron gate)
-├── docs/                # DSL spec + gallery + OR-Tools comparison report
+├── docs/                # DSL spec + gallery + OR-Tools comparison + crossing-exact math (WS2)
 └── .github/workflows/   # CI: recipe regression + hard gates + DOM measurement + determinism
 ```
 
@@ -149,6 +153,18 @@ Honest grading semantics (iron rule: **never pass off a non-certificate as one**
 | **未获证书** (uncertified) | everything else — honestly ungraded |
 
 `geometry_report.json` (geometry self-checks in CI-gate form; the CLI exits 1 on fail) can be used directly as a regression gate.
+
+**Exactness layer (WS2, `--exact`)**: the CLI can compute the provable crossing
+number cr(G) (ordering-style insertion ILP + planarization oracle + exhaustive
+B&B over planar subgraphs × embeddings). The certificate then carries
+`proven_optimal` / `gap` / `lb` / `crossing_number` in an `exactness` block —
+with a rigorous scope note: optimality is claimed only relative to the model
+class defined in [docs/crossing-exact.md](docs/crossing-exact.md) §0–5, never
+over all conceivable metric sets. Requires the optional solver extra
+(`pip install "stdraw[solver]"`); without it the fields honestly stay
+`computed: false`. Layouts also carry a computable **regularity** block
+(structure-driven: cycle → regular-polygon deviation, chain → straightness,
+symmetry-axis alignment; definitions in docs/crossing-exact.md §7).
 
 ### Recipes
 

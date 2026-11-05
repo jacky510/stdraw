@@ -157,6 +157,25 @@ def main():
         else:
             print("OK  test_visibility: 可见性图最短路/弧平滑/双口径 单元全过")
 
+        # ── E. WS2 精确交叉数层（可选层：需 ortools；不可用如实 SKIP）──
+        try:
+            import ortools  # noqa: F401
+            has_ortools = True
+        except Exception:
+            has_ortools = False
+        if has_ortools:
+            for t in ("test_crossing_exact.py", "test_placement.py"):
+                r = subprocess.run([sys.executable, os.path.join(root, "tests", t)],
+                                   capture_output=True, text=True)
+                if r.returncode != 0:
+                    failures.append(f"{t}: exit {r.returncode}\n"
+                                    f"{r.stdout}\n{r.stderr}")
+                else:
+                    print(f"OK  {t}: 全过")
+        else:
+            print("SKIP  test_crossing_exact/test_placement: "
+                  "ortools 不可用（CI workflow 安装 [solver] 可选层兜底）")
+
         if failures:
             print("\nFAILURES:")
             for f in failures:

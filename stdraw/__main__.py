@@ -66,6 +66,10 @@ def main(argv=None):
     ap.add_argument("--pitch", type=int, default=None,
                     help="行距 px（缺省 56；小图可调大过净距门禁，参数透明）")
     ap.add_argument("--name", default="", help="图名（缺省取 DSL graph 名）")
+    ap.add_argument("--exact", action="store_true",
+                    help="WS2 精确交叉数层：B&B 夹逼计算 cr(G) 并写入证书 "
+                         "exactness 块（proven_optimal/gap；需可选依赖 ortools，"
+                         "未装时如实降级标注）")
     a = ap.parse_args(argv)
 
     g = load_graph(a.input)
@@ -150,7 +154,16 @@ def main(argv=None):
               f"{meta['rows']} 行 -> {p}")
         rc = geometry_report_to_file(
             v4, os.path.join(a.outdir, "geometry_report.json"))
-        cert = certificate_auto(scene_from_auto(v4), graph_name=name, layer="2D")
+        exactness = None
+        if a.exact:
+            from .crossing_exact import crossing_exact
+            exactness = crossing_exact(g)
+            print(f"      [exact] cr={exactness['crossing_number']} "
+                  f"proven_optimal={exactness['proven_optimal']} "
+                  f"lb={exactness['lb']} gap={exactness['gap']} "
+                  f"coverage={exactness['coverage']}")
+        cert = certificate_auto(scene_from_auto(v4), graph_name=name, layer="2D",
+                                graph=g, exactness=exactness)
         p = w("certificate.json", cert)
         m = cert["metrics"]
         print(f"[4/6] 证书：交叉 {m['crossings']} / 框压线 {m['box_press_1px']} / "

@@ -11,6 +11,7 @@
   未获证书 = 其余情况（如实写明，不降格冒充）
 3D 层不在本模块范围（3D 指标属 M2，M0 的 3D demo 只报告排布与边长）。
 """
+import json
 import math
 from typing import Dict, List, Optional
 
@@ -273,7 +274,8 @@ def _anchor_tangent_angle(node, anchor, direction):
 
 def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                      gates: Optional[dict] = None,
-                     notes: Optional[List[str]] = None) -> dict:
+                     notes: Optional[List[str]] = None,
+                     graph=None, exactness: Optional[dict] = None) -> dict:
     """v2 质量证书：五指标 + 新硬门 + 诚实分级。一切验证跑在交付坐标上。
 
     新硬门（v0.2 质量返修）：
@@ -476,6 +478,10 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "gates_passed": f"{g_pass}/{len(g)}",
         "grade": grade,
         "grade_note": grade_note,
+        "proven_optimal": None,          # WS2 精确层：见 exactness 块
+        "gap": None,
+        "exactness": _exactness_block(exactness),
+        "regularity": _regularity_block(graph, nodes),
         "honest_notes": notes + [
             "硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性",
             "交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，"
@@ -488,3 +494,49 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "CLD 环多常不可平面，交叉数是目标函数最小化项而非定理保证；"
             "本证书只对本图本布局成立"),
     }
+
+
+_EXACT_SCOPE_NOTE = (
+    "proven_optimal 只相对 docs/crossing-exact.md §1-5 定义的模型类成立："
+    "good-drawing 交叉数口径（相邻边不交叉、每对至多一次、无三边共点）、"
+    "安全缩减后的 2-边-连通核族、B&B 覆盖的可平面子图 × 全嵌入族。"
+    "不虚称全体指标集或任意画法空间的最优性。")
+
+
+def _exactness_block(exactness):
+    """WS2 证书精确性块：未计算时如实标 computed=False。"""
+    if not exactness:
+        return {"computed": False, "proven_optimal": None, "gap": None,
+                "crossing_number": None, "lb": None, "coverage": None,
+                "method": "crossing-number exactness not computed "
+                          "(pass --exact to compute)", "scope": _EXACT_SCOPE_NOTE}
+    return {
+        "computed": True,
+        "proven_optimal": bool(exactness.get("proven_optimal")),
+        "gap": exactness.get("gap"),
+        "crossing_number": exactness.get("crossing_number"),
+        "lb": exactness.get("lb"),
+        "coverage": exactness.get("coverage"),
+        "method": exactness.get("method"),
+        "witness_digest": len(json.dumps(exactness.get("witness") or [],
+                                         ensure_ascii=False, sort_keys=True)),
+        "scope": _EXACT_SCOPE_NOTE,
+        "caliber_note": (
+            "crossing_number 是**图本身**的交叉数 cr(G)（任意画法的下界）；"
+            "metrics.crossings 是**本布局**的交叉数（布局实现达到的值）。"
+            "两者口径不同：cr(G)=0 只保证存在 0 交叉画法，"
+            "不代表本布局实现了它"),
+    }
+
+
+def _regularity_block(graph, nodes):
+    """WS2 排布规律性块（结构检测驱动，定义见 stdraw/regularity.py 与
+    docs/crossing-exact.md §6；全部指标可计算、可复算）。"""
+    if graph is None:
+        return None
+    try:
+        from . import regularity
+        positions = {v: (nodes[v]["x"], nodes[v]["y"]) for v in nodes}
+        return regularity.regularity_report(graph, positions)
+    except Exception:
+        return None

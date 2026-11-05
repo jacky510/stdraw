@@ -69,6 +69,10 @@ stdraw/
 │   ├── routing.py       #   直线/弧线/绕行布线（框不压线、净距≥16px 硬门）
 │   ├── textmetrics.py   #   框界真值（布局侧：真实字体最坏度量）
 │   ├── rendercheck.py   #   框界真值（CI 侧：无头浏览器 DOM 实测，可选层）
+│   ├── visibility.py    # WS3：布线数学（膨胀障碍可见性图最短路 + 弧平滑）
+│   ├── crossing_exact.py  # WS2：精确交叉数层（OIL 插入 ILP + 平面化 oracle + B&B 夹逼，可选 ortools）
+│   ├── regularity.py    # WS2：结构检测 + 规律性可计算定义（正多边形偏差/直线度/对称轴）
+│   ├── placement.py     # WS2：槽位离散化放置（结构驱动槽型；general 分支 CP-SAT）
 │   ├── planar.py        #   ortho-v1：2D 平面布局（0 交叉定理保证，行为冻结）
 │   ├── layout3d.py      #   3D 五形体排布（球面/立方体/四面体/圆锥）
 │   ├── metrics.py       #   质量证书 v1/v2 + 诚实分级
@@ -84,7 +88,7 @@ stdraw/
 ├── viewer/              # 零依赖交互查看器（四形态 + 页面内实时证书）
 ├── skills/stdraw/       # Agent Skill（skills add 即装）
 ├── tests/baselines/     # ortho-v1 逐字节回归基线（生产行为冻结铁门）
-├── docs/                # DSL 规范 + gallery + OR-Tools 对比报告
+├── docs/                # DSL 规范 + gallery + OR-Tools 对比 + 精确交叉数数学（WS2）
 └── .github/workflows/   # CI：配方回归 + 新硬门 + DOM 实测 + 确定性
 ```
 
@@ -149,6 +153,15 @@ loop R1 "采纳扩散" "R" [rate, adopters, word]
 | **未获证书** | 其余情况——如实不评级 |
 
 另有 `geometry_report.json`（几何自检，CI 门禁形态，fail>0 时 CLI exit 1）可直接当回归门禁用。
+
+**精确交叉数层（WS2，`--exact`）**：CLI 可计算可证明的交叉数 cr(G)
+（排序式插入 ILP + 平面化 oracle 裁决 + 可平面子图 × 全嵌入的 B&B 夹逼）。
+证书随之携带 `exactness` 块的 `proven_optimal` / `gap` / `lb` / `crossing_number`
+——并附严谨范围声明：最优性只相对 [docs/crossing-exact.md](docs/crossing-exact.md)
+§0–5 定义的模型类成立，不虚称全体指标集。需要可选求解层
+（`pip install "stdraw[solver]"`）；未装时字段如实 `computed: false`。
+布局另附可计算**规律性**块（结构驱动：环图→正多边形偏差、链图→直线度、
+对称轴对齐度；定义见 docs/crossing-exact.md §7）。
 
 ### Recipes · 配方
 
