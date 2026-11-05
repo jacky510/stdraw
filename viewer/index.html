@@ -38,6 +38,12 @@
   .loop .tag.B{background:#0c3a55;color:#7dd3fc}
   .loop .nodes{color:#e2e8f0}
   .loop .lm{color:#64748b;margin-left:4px}
+  #webgl-fallback{display:none;position:fixed;inset:0;z-index:99;background:#0b0e14;
+       color:#e2e8f0;font-size:15px;line-height:1.8;align-items:center;justify-content:center;text-align:center}
+  #webgl-fallback .card{max-width:660px;margin:0 24px;padding:32px 36px;border:1px solid #334155;
+       border-radius:12px;background:#111827}
+  #webgl-fallback h2{margin:0 0 12px;font-size:18px;color:#fbbf24}
+  #webgl-fallback code{background:#1e293b;padding:2px 8px;border-radius:6px;font-size:13px;color:#7dd3fc}
 </style>
 </head>
 <body>
@@ -63,6 +69,14 @@
 </div>
 <div class="hint" id="hint"></div>
 <canvas id="c"></canvas>
+<div id="webgl-fallback"><div class="card">
+  <h2>无法启用 WebGL，交互查看器不可用</h2>
+  <p class="why" id="webgl-why"></p>
+  <p>本页四个形态（2D / 3D）全部由 WebGL 渲染，WebGL 被禁用或初始化失败时只会显示空白。
+  可以改用引擎的 <b>2D 静态形态</b>（内联 SVG，不依赖 WebGL）：</p>
+  <p><code>stdraw layout input.cld --outdir out</code>，然后打开 <code>out/demo-2d.html</code></p>
+  <p>或在浏览器设置中启用「硬件加速 / Use graphics acceleration when available」后刷新本页。</p>
+</div></div>
 <script>
 /**
  * @license
@@ -1275,7 +1289,29 @@ function makeLabel(text, wW, hW){
 }
 
 // ── 场景 ─────────────────────────────────────────────────
-const renderer=new THREE.WebGLRenderer({canvas:document.getElementById("c"),antialias:true,preserveDrawingBuffer:true});
+// F3-1：WebGL 可用性守卫——禁用/初始化失败时显示降级提示层，不再黑屏
+function webglAvailable(){
+  try{
+    if(!window.WebGLRenderingContext) return "浏览器不支持 WebGL（缺少 WebGLRenderingContext）";
+    const c=document.createElement("canvas");
+    const gl=c.getContext("webgl")||c.getContext("experimental-webgl");
+    if(!gl) return "WebGL 上下文创建失败（可能被浏览器或系统禁用）";
+    return null;
+  }catch(err){ return "WebGL 探测异常："+(err&&err.message||err); }
+}
+let renderer=null, webglFail=webglAvailable();
+if(webglFail===null){
+  try{
+    renderer=new THREE.WebGLRenderer({canvas:document.getElementById("c"),antialias:true,preserveDrawingBuffer:true});
+  }catch(err){ renderer=null; webglFail="WebGL 初始化失败："+(err&&err.message||err); }
+}
+if(!renderer){
+  window.__webglFallback=webglFail;
+  document.getElementById("webgl-why").textContent=webglFail;
+  document.getElementById("webgl-fallback").style.display="flex";
+  document.getElementById("hint").textContent="";
+  window.__ready=true; // 降级路径同样标记就绪（自动化探针用）
+}else{
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x0b0e14);
@@ -1560,6 +1596,14 @@ function build(m){
   scene.add(group);
   if(m<2) group.userData.sprites.forEach(sp=>sp.position.z=2);
   fitCamera(m>=2);
+  if(m>=2){
+    // F3-2：深度透明度参考——近端 D0-Rm → 不透明度 1.0，远端 D0+Rm → 0.30（布局常量，确定性）
+    const D0=window.__fitDist||1200;
+    const Rm=Math.max(...P.map(p=>p.length()));
+    group.userData.depthNear=Math.max(1,D0-Rm);
+    group.userData.depthFar=D0+Rm;
+    window.__depthRefs=[group.userData.depthNear,group.userData.depthFar];
+  } else { window.__depthRefs=null; }
   let metaText = N+" 节点 / "+GRAPH.edges.length+" 边 · "+desc;
   if(m<2){ const c=certify2d(false); group.userData.baseDesc=desc; metaText += " · "+c; window.__cert=c; }
   document.getElementById("meta").textContent = metaText;
@@ -1795,19 +1839,90 @@ document.getElementById("btnLoops").onclick=()=>{
 document.getElementById("loopClose").onclick=()=>{ document.getElementById("loops").style.display="none"; };
 renderLoopList();
 
+// ── F3-3：3D 标签避让——投影屏幕框两两重叠时按最小平移分开（确定性，每帧复算） ──
+function labelRects3d(){
+  const sps=group.userData.sprites, out=[];
+  const tanH=Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+  const fwd=new THREE.Vector3(); camera.getWorldDirection(fwd);
+  const v=new THREE.Vector3();
+  for(let i=0;i<sps.length;i++){
+    const toNode=P[i].clone().sub(camera.position);
+    if(toNode.dot(fwd)<=0){ out.push({skip:true}); continue; } // 相机背面不参与避让
+    const d=camera.position.distanceTo(P[i]);
+    const ppw=(innerHeight/2)/(tanH*d); // 像素/世界单位（透视各向同性）
+    v.copy(P[i]).project(camera);
+    out.push({x:(v.x*0.5+0.5)*innerWidth, y:(-v.y*0.5+0.5)*innerHeight,
+      hw:sps[i].scale.x/2*ppw, hh:sps[i].scale.y/2*ppw, skip:false});
+  }
+  return out;
+}
+function declutter3d(){
+  if(MODE<2||!group||!group.userData.sprites) return -1;
+  const rects=labelRects3d();
+  const PAD=2; // 像素净距
+  for(let pass=0;pass<16;pass++){
+    let moved=false;
+    for(let i=0;i<rects.length;i++){
+      if(rects[i].skip) continue;
+      for(let j=0;j<rects.length;j++){
+        if(j===i||rects[j].skip) continue;
+        const dx=rects[i].x-rects[j].x, dy=rects[i].y-rects[j].y;
+        const ox=rects[i].hw+rects[j].hw+PAD-Math.abs(dx);
+        const oy=rects[i].hh+rects[j].hh+PAD-Math.abs(dy);
+        if(ox>0&&oy>0){
+          if(ox<oy){ rects[i].x+=dx>=0?ox:-ox; } // 最小平移轴；平局走 y 轴（确定性）
+          else{ rects[i].y+=dy>=0?oy:-oy; }
+          moved=true;
+        }
+      }
+    }
+    if(!moved) break;
+  }
+  let overlaps=0;
+  for(let i=0;i<rects.length;i++){ if(rects[i].skip) continue;
+    for(let j=i+1;j<rects.length;j++){ if(rects[j].skip) continue;
+      if(Math.abs(rects[i].x-rects[j].x)<rects[i].hw+rects[j].hw&&
+         Math.abs(rects[i].y-rects[j].y)<rects[i].hh+rects[j].hh) overlaps++;
+    } }
+  // 位移后的屏幕位置 → 保持节点深度的相机平面世界位置（标签仍朝向相机）
+  const sps=group.userData.sprites;
+  sps.forEach((sp,i)=>{
+    const r=rects[i];
+    if(r.skip){ sp.position.copy(P[i]); return; }
+    const d=camera.position.distanceTo(P[i]);
+    const ndc=new THREE.Vector3((r.x/innerWidth)*2-1, -(r.y/innerHeight)*2+1, 0.5).unproject(camera);
+    const dir=ndc.sub(camera.position).normalize();
+    sp.position.copy(camera.position).add(dir.multiplyScalar(d));
+  });
+  window.__labelOverlaps=overlaps;
+  window.__labelRects=rects.map(r=>r.skip?null:
+    ({x:Math.round(r.x*10)/10,y:Math.round(r.y*10)/10,hw:Math.round(r.hw*10)/10,hh:Math.round(r.hh*10)/10}));
+  return overlaps;
+}
 build(0); syncRot();
 let frames=0;
 (function loop(){ requestAnimationFrame(loop); controls.update();
   if(group && group.userData.sprites){
+    if(MODE>=2) declutter3d(); // F3-3：每帧确定性避让（相机静止时结果恒定，旋转中连续跟随）
     const D0=window.__fitDist||1200;
     group.userData.sprites.forEach((sp,i)=>{
-      const d=sp.position.distanceTo(camera.position);
-      let o=Math.max(0.28,Math.min(1,1.55-d/(D0*1.35)));
+      let o;
+      if(MODE>=2 && group.userData.depthFar>group.userData.depthNear){
+        // F3-2：深度衰减——近端(≤depthNear)1.0，远端(≥depthFar)0.30，线性内插（确定性阈值）
+        const d=camera.position.distanceTo(P[i]);
+        const t=THREE.MathUtils.clamp((d-group.userData.depthNear)/(group.userData.depthFar-group.userData.depthNear),0,1);
+        o=1-0.70*t;
+      } else {
+        const d=sp.position.distanceTo(camera.position);
+        o=Math.max(0.28,Math.min(1,1.55-d/(D0*1.35)));
+      }
       if(HL) o = HL.nodes.has(i) ? 1 : Math.min(o,0.14);
       sp.material.opacity=o;
     });
+    window.__labelOpacity=group.userData.sprites.map(sp=>Math.round(sp.material.opacity*1000)/1000);
   }
   renderer.render(scene,camera); frames++; if(frames===1) window.__ready=true; })();
+} // end WebGL OK
 </script>
 </body>
 </html>
