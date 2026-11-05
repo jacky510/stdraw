@@ -14,7 +14,8 @@ import math
 from collections import defaultdict
 
 from . import textmetrics
-from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W)
+from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
+                      ANCHOR_MIN_DEG)
 
 
 class AutoConfig:
@@ -250,12 +251,19 @@ def _content_w(rows, widths, cfg):
                for vs in rows) + 2 * cfg.margin
 
 
-def _route_total(nodes_px, edges, cfg):
-    """路由真值总成本：压线/净距/交叉/重合/边长的加权和（布局层真目标函数）。"""
-    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+def _route_total(nodes_px, edges, cfg, hard_gates=False, quality=False):
+    """路由真值总成本：压线/净距/交叉/重合/边长的加权和（布局层真目标函数）。
+
+    hard_gates：净距/锚点硬罚（1500/条）。默认 False——历史评分口径不变
+    （classic 与既有通过实例的 polish 轨迹逐字节保持）；仅在布线质量返修的
+    门控重排路径启用。quality：Router 扩充 stair 候选池，同样仅门控路径。
+    """
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch, quality=quality)
     routes = router.route_all()
     eset = set(edges)
     total = 0.0
+    clr_hard = 0
+    ang_hard = 0
     for i, info in routes.items():
         a, b = edges[i]
         clr = info.get("min_clear")
@@ -263,6 +271,11 @@ def _route_total(nodes_px, edges, cfg):
         if (b, a) in eset:      # F1：互环对净距加严与 _evaluate 同口径
             clr_pen += 120 * (max(0.0, cfg.clearance - clr) if clr is not None
                               else cfg.clearance)
+        if hard_gates and clr is not None and clr < cfg.clearance - 1e-6:
+            clr_hard += 1
+        if hard_gates and min(info.get("ang_a", ANCHOR_MIN_DEG),
+                              info.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9:
+            ang_hard += 1
         total += (4000 * info.get("press", 0) + 40 * info.get("cross", 0) +
                   PAIR_SEP_W * info.get("sep_def", 0.0) +
                   (200.0 if info.get("kind") == "wrap" else 0.0) +
@@ -271,10 +284,137 @@ def _route_total(nodes_px, edges, cfg):
                              for k in range(len(info["points"]) - 1)))
     # CI 硬门回喂：交叉边对数 > 2 时重罚（证书 gate crossings ≤ 2）
     total += 1500.0 * max(0, router.final_crossing_pairs(routes) - 2)
+    total += 1500.0 * clr_hard
+    total += 1500.0 * ang_hard
     return total, routes, router
 
 
-def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2):
+def _interleave_count(edges, order):
+    """拓扑交错对数（固定行分配下布线不可回避的交叉下界代理）。
+
+    两独立边（无共享端点）的行区间重叠 ≥1 行，且两端点的行内序都反转 →
+    交错对。行内序相等（同列）不计数。O(m²) 纯算术，确定性。
+    """
+    pos, row_of = {}, {}
+    for r, vs in enumerate(order):
+        for k, v in enumerate(vs):
+            pos[v] = k
+            row_of[v] = r
+    f = 0
+    for i in range(len(edges)):
+        a1, b1 = edges[i]
+        for j in range(i + 1, len(edges)):
+            a2, b2 = edges[j]
+            if {a1, b1} & {a2, b2}:
+                continue
+            r11, r12 = row_of[a1], row_of[b1]
+            r21, r22 = row_of[a2], row_of[b2]
+            lo1, hi1 = min(r11, r12), max(r11, r12)
+            lo2, hi2 = min(r21, r22), max(r21, r22)
+            if min(hi1, hi2) - max(lo1, lo2) < 1:
+                continue
+            t1 = a1 if r11 < r12 else b1
+            q1 = b1 if r11 < r12 else a1
+            t2 = a2 if r21 < r22 else b2
+            q2 = b2 if r21 < r22 else a2
+            if pos[t1] == pos[t2] or pos[q1] == pos[q2]:
+                continue
+            if (pos[t1] > pos[t2]) != (pos[q1] > pos[q2]):
+                f += 1
+    return f
+
+
+def _order_score(edges, order):
+    """重排目标：交错对为主项，行距×列距边长为次项（并列时保紧凑）。"""
+    pos, row_of = {}, {}
+    for r, vs in enumerate(order):
+        for k, v in enumerate(vs):
+            pos[v] = k
+            row_of[v] = r
+    lensum = 0
+    for a, b in edges:
+        lensum += abs(pos[a] - pos[b]) + abs(row_of[a] - row_of[b])
+    return _interleave_count(edges, order) * 1000.0 + lensum
+
+
+def _reorder_rows(edges, rows):
+    """确定性 (行, 行内序) 局部搜索：最小化拓扑交错对（布线质量返修）。
+
+    邻域 = 全部同row对交换 + 全部单节点跨行移动（保留每行 ≥1 节点）。
+    最速下降至局部最优；随后确定性扰动（取当前最优非改进邻点）再下降，
+    共 REORDER_CYCLES 轮，全程记录全局最优。无 RNG，同输入同输出。
+    """
+    REORDER_CYCLES = 16
+    order = [list(vs) for vs in rows]
+
+    def neighbors(cur):
+        out = []
+        for r, vs in enumerate(cur):
+            for i in range(len(vs)):
+                for j in range(i + 1, len(vs)):
+                    c2 = [list(v) for v in cur]
+                    c2[r][i], c2[r][j] = c2[r][j], c2[r][i]
+                    out.append(c2)
+        for r, vs in enumerate(cur):
+            for i, v in enumerate(vs):
+                for r2, vs2 in enumerate(cur):
+                    if r2 == r or len(cur[r]) < 2:
+                        continue
+                    for p in range(len(vs2) + 1):
+                        c2 = [list(v) for v in cur]
+                        c2[r].pop(i)
+                        c2[r2].insert(p, v)
+                        out.append(c2)
+        return out
+
+    def descend(cur):
+        cur_sc = _order_score(edges, cur)
+        while True:
+            best, best_sc = None, cur_sc
+            for cand in neighbors(cur):
+                sc = _order_score(edges, cand)
+                if sc < best_sc - 1e-9:
+                    best, best_sc = cand, sc
+            if best is None:
+                return cur, cur_sc
+            cur, cur_sc = best, best_sc
+
+    best, best_sc = descend(order)
+    cur = order
+    for _ in range(REORDER_CYCLES):
+        # 确定性扰动：当前邻域中得分最低的非改进邻点（含并列取首个）
+        cur_sc = _order_score(edges, cur)
+        best_n, best_nsc = None, None
+        for cand in neighbors(cur):
+            sc = _order_score(edges, cand)
+            if best_n is None or sc < best_nsc - 1e-9:
+                best_n, best_nsc = cand, sc
+        if best_n is None:
+            break
+        cur, cur_sc = descend(best_n)
+        if cur_sc < best_sc - 1e-9:
+            best, best_sc = cur, cur_sc
+    return best
+
+
+def _repack_x(order, widths, cfg):
+    """按重排后的行内序重打包 x（24px 吸附，与 construct 同口径，确定性）。"""
+    snap = cfg.snap_regular
+    pos = {}
+    for vs in order:
+        xs, cursor = [], 0
+        for v in vs:
+            xs.append(cursor + widths[v] / 2 + cfg.min_gap)
+            cursor += widths[v] + cfg.min_gap * 2
+        total = xs[-1] + widths[vs[-1]] / 2 + cfg.min_gap
+        shift = (max(0, _content_w(order, widths, cfg)) - total) / 2
+        for v, x in zip(vs, xs):
+            pos[v] = int(round((x + shift) / snap)) * snap
+    return pos
+
+
+def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2,
+            hard_gates=False):
     """局部搜索：逐节点 ±24/±48 横移（保同行净距），以路由真值总成本择优。
 
     CP-SAT 全局定位的补充精化——把「布线可行性」显式喂回定位层。
@@ -284,7 +424,8 @@ def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2):
         return {v: (p[v], y[v], widths[v], card_h) for v in nodes}
 
     best_pos = dict(pos)
-    best_score, best_routes, _ = _route_total(nodes_px(best_pos), edges, cfg)
+    best_score, best_routes, _ = _route_total(nodes_px(best_pos), edges, cfg,
+                                              hard_gates, quality=hard_gates)
     row_of = {v: r for r, vs in enumerate(rows) for v in vs}
     for _ in range(rounds):
         improved = False
@@ -299,7 +440,8 @@ def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2):
                     continue
                 cand = dict(best_pos)
                 cand[v] = nx
-                sc, routes, _ = _route_total(nodes_px(cand), edges, cfg)
+                sc, routes, _ = _route_total(nodes_px(cand), edges, cfg,
+                                             hard_gates, quality=hard_gates)
                 if sc < best_score - 1e-6:
                     best_pos, best_score, best_routes = cand, sc, routes
                     improved = True
@@ -309,7 +451,8 @@ def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2):
                 u, w = vs[i], vs[i + 1]
                 cand = dict(best_pos)
                 cand[u], cand[w] = best_pos[w], best_pos[u]
-                sc, routes, _ = _route_total(nodes_px(cand), edges, cfg)
+                sc, routes, _ = _route_total(nodes_px(cand), edges, cfg,
+                                             hard_gates, quality=hard_gates)
                 if sc < best_score - 1e-6:
                     best_pos, best_score, best_routes = cand, sc, routes
                     improved = True
@@ -454,6 +597,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     card_h = max(heights.values()) if heights else cfg.card_h
 
     # ②③ 定位：--from-layout 手动坐标，或自动分层+定位
+    _routes_final = None
     from_meta = None
     if manual is not None:
         pos, y, rows, from_meta = _manual_positions(nodes, widths, manual)
@@ -504,11 +648,81 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             if len(core) <= 10:
                 pos, _sc, _rt = _polish(core, EDGES_REF[0], rows, pos, y,
                                         widths, card_h, cfg)
+                # —— WS3 布线质量返修（随机稠密图 check1 交叉>2 / check3 净距<16）：
+                #    布线硬门不过时，布局层瓶颈不在路由（图可平面而摆放把拓扑交错对
+                #    顶到 3+，贪心路由只能躲掉一部分）而在「行分配 + 行内序」。触发
+                #    确定性 (行,序) 重排 → 24px 重打包 → hard-gate polish，同一评估
+                #    口径下与原摆放择优（不劣于基线）。门控触发：硬门本来达标的布局
+                #    （classic 全域、既有通过实例）零扰动、输出逐字节不变。
+                _r0 = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
+                             EDGES_REF[0], cfg.clearance, cfg.pitch)
+                _routes0 = _r0.route_all()
+                _pairs0 = _r0.final_crossing_pairs(_routes0)
+                _clrbad0 = sum(1 for _i in _routes0.values()
+                               if _i.get("min_clear") is not None
+                               and _i["min_clear"] < cfg.clearance - 1e-6)
+                _angbad0 = sum(1 for _i in _routes0.values()
+                               if min(_i.get("ang_a", ANCHOR_MIN_DEG),
+                                      _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
+                _pressbad0 = sum(1 for _i in _routes0.values() if _i.get("press", 0))
+                if _pairs0 > 2 or _clrbad0 or _angbad0 or _pressbad0:
+                    # 路由层第二手：交叉对联合重定线（打破互为最优僵局）。
+                    # quality=True 才扩充 stair 候选池——门控路径专用，普通路径
+                    # （含 polish 的 _route_total）保持历史候选池，通过实例零扰动。
+                    _rq = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
+                                 EDGES_REF[0], cfg.clearance, cfg.pitch, quality=True)
+                    _routesA = _rq.joint_reroute(dict(_routes0))
+                    _pairsA = _rq.final_crossing_pairs(_routesA)
+                    _clrbadA = sum(1 for _i in _routesA.values()
+                                   if _i.get("min_clear") is not None
+                                   and _i["min_clear"] < cfg.clearance - 1e-6)
+                    _angbadA = sum(1 for _i in _routesA.values()
+                                   if min(_i.get("ang_a", ANCHOR_MIN_DEG),
+                                          _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
+                    _pressbadA = sum(1 for _i in _routesA.values() if _i.get("press", 0))
+                    _gate0 = (_pairs0, _clrbad0, _angbad0, _pressbad0)
+                    _best = (_gate0, None, None, None, _routes0)
+                    if (_pairsA, _clrbadA, _angbadA, _pressbadA) < _best[0]:
+                        _best = ((_pairsA, _clrbadA, _angbadA, _pressbadA), pos, y, rows, _routesA)
+                    # 布局层第二手：确定性 (行,序) 重排 → 24px 重打包 → hard-gate
+                    # polish → 路由 → 联合重定线
+                    _order2 = _reorder_rows(EDGES_REF[0], rows)
+                    _pos2 = _repack_x(_order2, widths, cfg)
+                    _y2 = dict(y)
+                    for _r, _vs in enumerate(_order2):
+                        for _v in _vs:
+                            _y2[_v] = cfg.top + _r * cfg.pitch
+                    _pos2, _sc2, _rt2 = _polish(core, EDGES_REF[0], _order2, _pos2,
+                                                _y2, widths, card_h, cfg,
+                                                hard_gates=True)
+                    _r2 = Router({v: (_pos2[v], _y2[v], widths[v], card_h)
+                                  for v in nodes}, EDGES_REF[0], cfg.clearance, cfg.pitch,
+                                 quality=True)
+                    _rt2 = _r2.route_all()
+                    _rt2 = _r2.joint_reroute(dict(_rt2))
+                    _pairs2 = _r2.final_crossing_pairs(_rt2)
+                    _clrbad2 = sum(1 for _i in _rt2.values()
+                                   if _i.get("min_clear") is not None
+                                   and _i["min_clear"] < cfg.clearance - 1e-6)
+                    _angbad2 = sum(1 for _i in _rt2.values()
+                                   if min(_i.get("ang_a", ANCHOR_MIN_DEG),
+                                          _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
+                    _pressbad2 = sum(1 for _i in _rt2.values() if _i.get("press", 0))
+                    if (_pairs2, _clrbad2, _angbad2, _pressbad2) < _best[0]:
+                        _best = ((_pairs2, _clrbad2, _angbad2, _pressbad2),
+                                 _pos2, _y2, _order2, _rt2)
+                    if _best[1] is None:
+                        _routes_final = _best[4]      # 摆放未变但路线已换优
+                    elif _best[0] < _gate0:
+                        pos, y, rows = _best[1], _best[2], _best[3]
+                        _routes_final = _best[4]
 
     # ④ 布线（直线/弧线一等，框不压线）+ WS3 理论口径（最终路线交叉对数）
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
     router = Router(nodes_px, EDGES_REF[0], cfg.clearance, cfg.pitch)
     routes = router.route_all()
+    if _routes_final is not None:
+        routes = _routes_final
     router_pairs = router.final_crossing_pairs(routes)
 
     edges_out = []

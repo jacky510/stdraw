@@ -36,6 +36,16 @@ EXAMPLES = [
 AUTO_EXAMPLES = EXAMPLES + [
     "benchmarks/corpus/classic/bullwhip.cld",
 ]
+# B2 层（WS3-Q 布线质量返修 ref-scrubbed）：随机稠密图抽样——random n10 固定
+# 种子语料中曾 4/10 例 check1 交叉>2 / check3 净距不足（d483639 存量）。门控
+# (行,序) 重排 + 联合重定线 + stair 候选池修复后，这 4 例必须保持 exit 0。
+# 运行较慢（门控重排+hard-gate polish，每例 ~2min），与 B 层分开成层。
+RANDOM_SAMPLES = [
+    "benchmarks/corpus/random/random-n10-i00.cld",
+    "benchmarks/corpus/random/random-n10-i01.cld",
+    "benchmarks/corpus/random/random-n10-i04.cld",
+    "benchmarks/corpus/random/random-n10-i05.cld",
+]
 HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
               "min_gap_ge_16", "cv_le_035", "regularity_simple",
               "mutual_pairs_separated")
@@ -150,6 +160,35 @@ def main():
                         failures.append(f"auto {ex}: {fn} 不确定（两次运行不一致）")
             print(f"OK  auto {ex}: hard gates pass, crossings={m['crossings']}, "
                   f"grade={cert['grade']}, deterministic")
+
+        # ── B2. 随机稠密图抽样（WS3-Q 布线质量门控回归）──
+        for ex in RANDOM_SAMPLES:
+            name = os.path.splitext(os.path.basename(ex))[0]
+            out1 = os.path.join(tmp, name + "-auto-1")
+            out2 = os.path.join(tmp, name + "-auto-2")
+            r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
+            if r1.returncode != 0:
+                tail = "\n".join(r1.stdout.strip().splitlines()[-10:])
+                failures.append(f"random {ex}: CLI exit {r1.returncode}\n{tail}")
+                continue
+            run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
+            geo = load(out1, "geometry_report.json")
+            if geo.get("fail", 0) != 0:
+                failures.append(f"random {ex}: geometry fail={geo['fail']}")
+            cert = load(out1, "certificate.json")
+            m = cert["metrics"]
+            if m["crossings"] > 2:
+                failures.append(f"random {ex}: crossings={m['crossings']} > 2")
+            if m.get("min_edge_box_clear_px", 0) < 16:
+                failures.append(f"random {ex}: min_edge_box_clear_px="
+                                f"{m.get('min_edge_box_clear_px')} < 16")
+            for fn in ("layout.json", "demo-2d.html"):
+                with open(os.path.join(out1, fn), "rb") as a, \
+                     open(os.path.join(out2, fn), "rb") as b:
+                    if a.read() != b.read():
+                        failures.append(f"random {ex}: {fn} 不确定（两次运行不一致）")
+            print(f"OK  random {ex}: crossings={m['crossings']}, "
+                  f"min_clear={m.get('min_edge_box_clear_px')}px, deterministic")
 
         # ── C. DOM 实测框界（可选层）──
         r = subprocess.run(

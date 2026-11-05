@@ -123,12 +123,19 @@ def seg_cross(p1, p2, p3, p4):
 class Router:
     """按图上节点框位规划每条边的路线。确定性：固定候选序 + 固定评分。"""
 
-    def __init__(self, nodes: dict, edges: list, clearance=CLEARANCE, pitch=80):
-        """nodes: {id: (x,y,w,h)} 中心+尺寸；edges: [(a,b)] 有向。"""
+    def __init__(self, nodes: dict, edges: list, clearance=CLEARANCE, pitch=80,
+                 quality=False):
+        """nodes: {id: (x,y,w,h)} 中心+尺寸；edges: [(a,b)] 有向。
+
+        quality=False（默认）：历史候选池，输出与 v0.4.x 逐字节一致；
+        quality=True：WS3-Q 布线质量返修扩充候选池（跨多行 stair）——仅在
+        布局层布线硬门失败后的门控重排路径启用，不进普通布局路径。
+        """
         self.N = {v: (p[0], p[1], p[2] / 2.0, p[3] / 2.0) for v, p in nodes.items()}
         self.edges = list(edges)
         self.cl = clearance
         self.pitch = pitch
+        self.quality = quality
         mutual = set()
         for a, b in edges:
             if (b, a) in set(edges) and a < b:
@@ -284,12 +291,50 @@ class Router:
                         xs = (min([n[0] - n[2] for n in others] + [ex]) - SIDE_MARGIN if s < 0
                               else max([n[0] + n[2] for n in others] + [ex]) + SIDE_MARGIN)
                         side_opts.append(xs)
-                for xs in side_opts:
-                    bx2 = bcx + max(-(bhw2 - 6), min(bhw2 - 6, ex - bcx))
-                    pb_e = [bx2, bcy - bhh2]
-                    pts_e = [pa_e, [ex, y_out], [xs, y_out], [xs, y_mid],
-                             [bx2, y_mid], pb_e]
-                    cands.append(("poly", pts_e, pa_e, pb_e))
+            for xs in side_opts:
+                bx2 = bcx + max(-(bhw2 - 6), min(bhw2 - 6, ex - bcx))
+                pb_e = [bx2, bcy - bhh2]
+                pts_e = [pa_e, [ex, y_out], [xs, y_out], [xs, y_mid],
+                         [bx2, y_mid], pb_e]
+                cands.append(("poly", pts_e, pa_e, pb_e))
+        # WS3-Q 布线质量返修：跨多行 S 型（stair）。单 lane 候选全部压在
+        # 中点行 y 上，稠密图中间行的水平连接器会把它们全部封死（实测 i04
+        # N02->N03 全候选 cross≥1）。stair 走 a/b 行旁的行间走廊（y=行心
+        # ±pitch/2，距卡边 18px ≥16 净距门），中段垂直在中间行所有卡的
+        # 侧外 x_s 通过——结构上不进任何中间行卡带。固定变体序：侧别 ×
+        # a 出口（侧锚/顶底锚 × 横向偏移），确定性。
+        _ca, _cb = self.N[a], self.N[b]
+        if self.quality and abs(_cb[1] - _ca[1]) > self.pitch * 1.5:
+            a_top = _cb[1] > _ca[1]    # b 在 a 下方
+            band = [n for v, n in self.N.items() if v not in (a, b) and
+                    (_ca[1] < n[1] < _cb[1] if a_top else _cb[1] < n[1] < _ca[1])]
+            y_cor_b = (bcy - self.pitch / 2) if a_top else (bcy + self.pitch / 2)
+            y_cor_a = (acy + self.pitch / 2) if a_top else (acy - self.pitch / 2)
+            bx3 = bcx + (bhw2 - 6)
+            for s in (1, -1):
+                if band:
+                    x_s = (max([n[0] + n[2] for n in band] +
+                               [acx + ahw2, bcx + bhw2]) + SIDE_MARGIN if s > 0
+                           else min([n[0] - n[2] for n in band] +
+                                    [acx - ahw2, bcx - bhw2]) - SIDE_MARGIN)
+                else:
+                    x_s = (max(acx + ahw2, bcx + bhw2) + SIDE_MARGIN if s > 0
+                           else min(acx - ahw2, bcx - bhw2) - SIDE_MARGIN)
+                # 形态 1：a 侧边水平出 → x_s 垂直 → b 旁走廊水平 → b 顶/底垂直入
+                pa_s3 = [acx + s * ahw2, acy]
+                # a_top（自上方进入 b）→ 入顶边（bcy−bhh）；自下方 → 入底边
+                pb_s3 = [bx3, bcy + (-bhh2 if a_top else bhh2)]
+                cands.append(("poly", [pa_s3, [x_s, acy], [x_s, y_cor_b],
+                                       [bx3, y_cor_b], pb_s3], pa_s3, pb_s3))
+                # 形态 2：a 顶/底锚垂直出 → a 旁走廊 → x_s → b 旁走廊 → b 顶/底入
+                # （a 同行邻居封死侧锚水平出口时的兜底；出口横向偏移固定枚举）
+                for off in (0, ahw2 - 6, -(ahw2 - 6)):
+                    ex3 = acx + off
+                    pa_s4 = [ex3, acy + (ahh2 if a_top else -ahh2)]
+                    pb_s4 = pb_s3
+                    cands.append(("poly", [pa_s4, [ex3, y_cor_a], [x_s, y_cor_a],
+                                           [x_s, y_cor_b], [bx3, y_cor_b],
+                                           pb_s4], pa_s4, pb_s4))
         # F1 互环对外围绕行：行间通道 = pitch − 卡高 = 36px（16+16+4），双线同
         # 通道且各自保 16px 净距时分离上限恰 4px——不可靠。不可分时从行外
         # 整体绕行：a 顶/底出框 → 全局上/下走廊 → 侧外垂直 → b 顶/底车道
@@ -445,7 +490,7 @@ class Router:
         info = {"kind": kind, "points": pts, "press": press,
                 "min_clear": round(min_clr, 1) if min_clr < 1e9 else None,
                 "cross": cross, "cross_edges": hit_edges,
-                "ang_a": round(ang_a, 1), "ang_b": round(ang_b, 1),
+                "ang_a": ang_a, "ang_b": ang_b,
                 "pair_sep": round(pair_sep, 1) if pair_sep is not None else None,
                 "sep_def": round(sep_def, 2)}
         if kind == "arc":
@@ -494,6 +539,130 @@ class Router:
                 if hit:
                     total += 1
         return total
+
+    # -- WS3-Q 布线质量返修：交叉对联合重定线 --
+    def _poly_cross(self, pa, pb):
+        """两条折线是否严格相交（共享端点豁免由调用方处理）。"""
+        for s1 in zip(pa[:-1], pa[1:]):
+            for s2 in zip(pb[:-1], pb[1:]):
+                if seg_cross(s1[0], s1[1], s2[0], s2[1]):
+                    return True
+        return False
+
+    def joint_reroute(self, out, max_sweeps=3, top_k=25):
+        """交叉对联合重定线：打破 pass2 坐标下降的「互为最优」僵局。
+
+        对每个当前交叉的独立边对 (i,j)：先以「其余已定线（互斥 i/j）」
+        分别预评两边的全部候选，按 (交叉数, 评分) 取各自前 top_k，再对
+        组合精确联合评估（i 对 其余+cj、j 对 其余+ci），总评严格下降才
+        整对替换。固定遍历序 + 固定截断，无 RNG，同图同输出。
+        """
+        idx = sorted(out.keys())
+        for _ in range(max_sweeps):
+            changed = False
+            for ii in range(len(idx)):
+                i = idx[ii]
+                for jj in range(ii + 1, len(idx)):
+                    j = idx[jj]
+                    ea, eb = self.edges[i], self.edges[j]
+                    if ea[0] in eb or ea[1] in eb:
+                        continue
+                    pi, pj = out[i]["points"], out[j]["points"]
+                    if not self._poly_cross(pi, pj):
+                        continue
+
+                    def base_segs():
+                        d = {}
+                        for k in idx:
+                            if k in (i, j):
+                                continue
+                            pts = out[k]["points"]
+                            segs = list(zip(pts[:-1], pts[1:]))
+                            bb = [(min(p[0], q[0]), min(p[1], q[1]),
+                                   max(p[0], q[0]), max(p[1], q[1]))
+                                  for p, q in segs]
+                            d[k] = (segs, bb)
+                        return d
+
+                    a, b = self.edges[i]
+                    base = base_segs()
+                    li = []
+                    for cand in self._candidates(ea[0], ea[1], i):
+                        sc, info = self._evaluate(cand, ea[0], ea[1], base, None)
+                        if info is not None:
+                            li.append((info["cross"], sc, cand, info))
+                    lj = []
+                    c, d = self.edges[j]
+                    for cand in self._candidates(c, d, j):
+                        sc, info = self._evaluate(cand, c, d, base, None)
+                        if info is not None:
+                            lj.append((info["cross"], sc, cand, info))
+                    if not li or not lj:
+                        continue
+                    li.sort(key=lambda t: (t[0], t[1]))
+                    lj.sort(key=lambda t: (t[0], t[1]))
+                    best = None
+                    for ci in li[:top_k]:
+                        segs_j = list(zip(ci[3]["points"][:-1], ci[3]["points"][1:]))
+                        bb_j = [(min(p[0], q[0]), min(p[1], q[1]),
+                                 max(p[0], q[0]), max(p[1], q[1])) for p, q in segs_j]
+                        base_ij = dict(base)
+                        base_ij[j] = (segs_j, bb_j)
+                        for cj in lj[:top_k]:
+                            segs_i = list(zip(cj[3]["points"][:-1], cj[3]["points"][1:]))
+                            bb_i = [(min(p[0], q[0]), min(p[1], q[1]),
+                                     max(p[0], q[0]), max(p[1], q[1])) for p, q in segs_i]
+                            base_ji = dict(base)
+                            base_ji[i] = (segs_i, bb_i)
+                            _, info_i = self._evaluate(ci[2], ea[0], ea[1],
+                                                       base_ij, None)
+                            _, info_j = self._evaluate(cj[2], c, d,
+                                                       base_ji, None)
+                            if info_i is None or info_j is None:
+                                continue
+                            tot = (self._joint_score(info_i) +
+                                   self._joint_score(info_j))
+                            if best is None or tot < best[0]:
+                                best = (tot, info_i, info_j)
+                    if best is None:
+                        continue
+                    cur_tot = (self._joint_score(out[i]) +
+                               self._joint_score(out[j]))
+                    if best[0] < cur_tot - 1e-9:
+                        out[i], out[j] = best[1], best[2]
+                        changed = True
+            if not changed:
+                break
+        return out
+
+    def _joint_score(self, info):
+        """联合评估用评分（与 _evaluate 同权重口径 + 锚点软拒同罚）。"""
+        length = sum(math.dist(info["points"][k], info["points"][k + 1])
+                     for k in range(len(info["points"]) - 1))
+        clr = info.get("min_clear")
+        clr_pen = (30.0 * max(0.0, self.cl - clr) if clr is not None
+                   else 30.0 * self.cl)
+        ang_pen = (1500.0 if min(info.get("ang_a", ANCHOR_MIN_DEG),
+                                 info.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG
+                   else 0.0)
+        return (4000 * info.get("press", 0) + 40 * info.get("cross", 0) +
+                clr_pen + ang_pen + 0.01 * length)
+
+    def _pair_cross_vs_base(self, pts, base):
+        """（诊断保留）单边对其余已定线快照的交叉边数。"""
+        n = 0
+        for k, (segs, bb) in base.items():
+            hit = False
+            for s1 in zip(pts[:-1], pts[1:]):
+                for s2 in segs:
+                    if seg_cross(s1[0], s1[1], s2[0], s2[1]):
+                        hit = True
+                        break
+                if hit:
+                    break
+            if hit:
+                n += 1
+        return n
 
     # -- 主入口 --
     def route_all(self):
