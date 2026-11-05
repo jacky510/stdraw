@@ -347,9 +347,34 @@ class Router:
         # 加 ROUND_GUARD 保守余量，防止 0.0x 级贴边候选舍入后翻成违例
         press, clr_def = 0, 0.0
         min_clr = 1e9
+        # WS5 性能：候选包围盒 × 节点（膨胀 PRESS_MARGIN）包围盒距离下界——
+        # 下界 > ROUND_GUARD 时不可能 press；下界 ≥ 当前 min_clr 时不可能刷新
+        # min_clr。两者都成立则整节点跳过（精确等价，不改变任何数值）。
+        bxl = min(p[0] for p in pts)
+        bxh = max(p[0] for p in pts)
+        byl = min(p[1] for p in pts)
+        byh = max(p[1] for p in pts)
         for v, (cx, cy, hw, hh) in self.N.items():
             if v in (a, b):
                 continue
+            mhw = hw + PRESS_MARGIN
+            mhh = hh + PRESS_MARGIN
+            gx = cx - mhw - bxh
+            g = bxl - cx - mhw
+            if g > gx:
+                gx = g
+            gy = cy - mhh - byh
+            g = byl - cy - mhh
+            if g > gy:
+                gy = g
+            if gx > ROUND_GUARD or gy > ROUND_GUARD:
+                lb2 = 0.0
+                if gx > 0.0:
+                    lb2 = gx * gx
+                if gy > 0.0:
+                    lb2 += gy * gy
+                if lb2 >= min_clr * min_clr:
+                    continue          # 不可能 press 也不可能刷新 min_clr
             for (px, py) in samples:
                 d = dist_point_rect(px, py, cx, cy, hw + PRESS_MARGIN, hh + PRESS_MARGIN)
                 if d <= ROUND_GUARD:
@@ -479,6 +504,9 @@ class Router:
         routed = {}
         out = {}
         order = self.order
+        # WS5 性能：routed_segs 增量维护——同一条已定线的段/包围盒只算一次
+        # （旧版每条边都对全部已定线全量重建，O(m²) 重复派生；内容逐项等价）
+        seg_cache = {}
         for _pass in (1, 2):
             for i in order:
                 a, b = self.edges[i]
@@ -489,11 +517,15 @@ class Router:
                 for j, rpts in routed.items():
                     if j == i:
                         continue
-                    segs = list(zip(rpts[:-1], rpts[1:]))
-                    bb = [(min(p[0], q[0]), min(p[1], q[1]),
-                           max(p[0], q[0]), max(p[1], q[1]))
-                          for p, q in segs]
-                    routed_segs[j] = (segs, bb)
+                    ent = seg_cache.get(j)
+                    if ent is None:
+                        segs = list(zip(rpts[:-1], rpts[1:]))
+                        bb = [(min(p[0], q[0]), min(p[1], q[1]),
+                               max(p[0], q[0]), max(p[1], q[1]))
+                              for p, q in segs]
+                        ent = (segs, bb)
+                        seg_cache[j] = ent
+                    routed_segs[j] = ent
                     if self.eidx.get((b, a)) == j:
                         sib = sample_polyline(rpts, step=12)
                 best = None
@@ -511,5 +543,6 @@ class Router:
                                      "ang_a": 0.0, "ang_b": 0.0})
                 sc, cand, info = best
                 routed[i] = info["points"]
+                seg_cache.pop(i, None)   # 本边重定线：旧缓存作废
                 out[i] = info
         return out
