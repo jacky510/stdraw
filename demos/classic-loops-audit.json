@@ -1,0 +1,190 @@
+{
+ "loops": [
+  {
+   "id": "R1",
+   "label": "采纳扩散",
+   "declared_kind": "R",
+   "nodes": [
+    "rate",
+    "adopters",
+    "word"
+   ],
+   "closed": true,
+   "walk": [
+    "rate",
+    "adopters",
+    "word",
+    "rate"
+   ],
+   "neg_edges": 0,
+   "parity_kind": "R",
+   "kind_consistent": true
+  },
+  {
+   "id": "B1",
+   "label": "市场饱和",
+   "declared_kind": "B",
+   "nodes": [
+    "rate",
+    "adopters",
+    "potential"
+   ],
+   "closed": true,
+   "walk": [
+    "rate",
+    "adopters",
+    "potential",
+    "rate"
+   ],
+   "neg_edges": 1,
+   "parity_kind": "B",
+   "kind_consistent": true
+  },
+  {
+   "id": "B2",
+   "label": "拥挤制约",
+   "declared_kind": "B",
+   "nodes": [
+    "rate",
+    "adopters",
+    "crowding"
+   ],
+   "closed": true,
+   "walk": [
+    "rate",
+    "adopters",
+    "crowding",
+    "rate"
+   ],
+   "neg_edges": 1,
+   "parity_kind": "B",
+   "kind_consistent": true
+  },
+  {
+   "id": "B3",
+   "label": "症状缓解",
+   "declared_kind": "B",
+   "nodes": [
+    "crowding",
+    "quickfix"
+   ],
+   "closed": true,
+   "walk": [
+    "crowding",
+    "quickfix",
+    "crowding"
+   ],
+   "neg_edges": 1,
+   "parity_kind": "B",
+   "kind_consistent": true
+  },
+  {
+   "id": "B4",
+   "label": "根本治理",
+   "declared_kind": "B",
+   "nodes": [
+    "crowding",
+    "fundamental"
+   ],
+   "closed": true,
+   "walk": [
+    "crowding",
+    "fundamental",
+    "crowding"
+   ],
+   "neg_edges": 1,
+   "parity_kind": "B",
+   "kind_consistent": true
+  },
+  {
+   "id": "R2",
+   "label": "饮鸩止渴",
+   "declared_kind": "R",
+   "nodes": [
+    "quickfix",
+    "sideeffect",
+    "crowding"
+   ],
+   "closed": true,
+   "walk": [
+    "quickfix",
+    "sideeffect",
+    "crowding",
+    "quickfix"
+   ],
+   "neg_edges": 0,
+   "parity_kind": "R",
+   "kind_consistent": true
+  }
+ ],
+ "problems": [],
+ "extra_cycles": [
+  {
+   "nodes": [
+    "adopters",
+    "crowding",
+    "rate"
+   ],
+   "kind": "B",
+   "neg_edges": 1,
+   "matches_declared": "B2"
+  },
+  {
+   "nodes": [
+    "adopters",
+    "potential",
+    "rate"
+   ],
+   "kind": "B",
+   "neg_edges": 1,
+   "matches_declared": "B1"
+  },
+  {
+   "nodes": [
+    "adopters",
+    "rate",
+    "word"
+   ],
+   "kind": "R",
+   "neg_edges": 0,
+   "matches_declared": "R1"
+  },
+  {
+   "nodes": [
+    "crowding",
+    "fundamental"
+   ],
+   "kind": "R",
+   "neg_edges": 2,
+   "matches_declared": "B4"
+  },
+  {
+   "nodes": [
+    "crowding",
+    "quickfix"
+   ],
+   "kind": "R",
+   "neg_edges": 2,
+   "matches_declared": "B3"
+  },
+  {
+   "nodes": [
+    "crowding",
+    "quickfix",
+    "sideeffect"
+   ],
+   "kind": "B",
+   "neg_edges": 1,
+   "matches_declared": "R2"
+  }
+ ],
+ "summary": {
+  "declared": 6,
+  "closed": 6,
+  "kind_consistent": 6,
+  "enumerated": 6,
+  "undeclared": 0,
+  "problems": 0
+ },
+ "pass": true
+}

@@ -1,0 +1,54 @@
+{
+ "tool": "stdraw",
+ "version": "0.1.0",
+ "layer": "2D",
+ "graph": "增长极限×转嫁负担",
+ "n": 8,
+ "m": 13,
+ "coords": "delivered/rounded",
+ "metrics": {
+  "crossings": 0,
+  "crossing_details": [],
+  "occlusions_inflated4px": 4,
+  "occlusions_true_0px": 4,
+  "occlusion_details_true": [
+   {
+    "edge": "rate->adopters",
+    "card": "word"
+   },
+   {
+    "edge": "word->rate",
+    "card": "potential"
+   },
+   {
+    "edge": "adopters->potential",
+    "card": "word"
+   },
+   {
+    "edge": "crowding->rate",
+    "card": "potential"
+   }
+  ],
+  "avg_edge_length": 109.7,
+  "row_align_rate": 0.625,
+  "min_card_gap": 20.0,
+  "spacing_cv": 0.179,
+  "bbox": [
+   582,
+   290
+  ]
+ },
+ "gates": {
+  "crossings_zero": true,
+  "min_gap_ge_16": true,
+  "row_align_ge_060": true,
+  "cv_le_035": true
+ },
+ "gates_passed": "4/4",
+ "grade": "最优",
+ "grade_note": "排布要求满足 + 线 0 交叉",
+ "honest_notes": [
+  "无关线遮挡式穿卡为设计允许（卡片不透明）"
+ ],
+ "no_zero_crossing_claim_for_all_graphs": "CLD 环多常不可平面，0 交叉有数学边界；本证书只对本图本布局成立"
+}
