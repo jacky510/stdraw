@@ -91,7 +91,7 @@ def _has_solver():
 def _solve_positions(nodes, rows, widths, cfg: AutoConfig, linestyle):
     """定位求解器：CP-SAT 可用 → 交叉数+边长+规律目标；否则构造法。
 
-    返回 {v: x_px}（框心）。y 由 rows 决定。
+    返回 ({v: x_px}, engine, extra_meta)（框心）。y 由 rows 决定。
     """
     row_of = {v: r for r, vs in enumerate(rows) for v in vs}
     # 每行最小总宽 → 内容宽度
@@ -105,25 +105,48 @@ def _solve_positions(nodes, rows, widths, cfg: AutoConfig, linestyle):
     for (a, b) in EDGES_REF[0]:
         einfo.append((a, b, row_of[a], row_of[b]))
 
+    # WS5 可扩展性：大图 CP-SAT 求到全局最优不可扩展（交叉对 O(m²) 布尔化后
+    # 证明最优耗时随 n 爆炸——n20 实测 5min+ 无解完）。改用 **确定性时间预算**
+    # （max_deterministic_time，OR-Tools 的可复现性专用口径：按操作计数而非
+    # 墙钟，同版本同输入在任何机器上得到同一 incumbent）。预算取宽：小图
+    # （≤10 节点，classic 全域）在预算内照常证到 OPTIMAL，输出与无预算版
+    # 逐字节一致；仅 n>10 的新域受预算约束（FEASIBLE 如实标注，不冒充最优）。
+    det_budget = CP_SAT_DET_BUDGET if len(nodes) > 10 else None
+
     if _has_solver():
         snap = cfg.snap_regular if len(nodes) <= 10 else cfg.grid
-        res = _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, snap)
+        res, status = _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, snap,
+                                       det_budget)
         if res is None and snap != cfg.grid:      # 24px 吸附不可行 → 退 8px 网格
-            res = _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, cfg.grid)
+            res, status = _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x,
+                                           cfg.grid, det_budget)
         if res is not None:
-            return res, "cp-sat"
-    return _construct_positions(nodes, rows, widths, cfg), "construct"
+            extra = {}
+            if det_budget is not None:
+                # 仅预算路径（n>10）写入 meta：小图路径保持历史输出逐字节不变
+                extra = {"solver_status": status,
+                         "solver_det_budget": det_budget}
+            return res, "cp-sat", extra
+    return _construct_positions(nodes, rows, widths, cfg), "construct", {}
+
+
+CP_SAT_DET_BUDGET = 8.0   # 确定性时间预算（det 单位；n20 实测 ≈17s 墙钟/8det）
 
 
 EDGES_REF = [()]   # 模块级引用坑位——由 layout() 注入，避免长参表
 
 
-def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid):
-    """CP-SAT：决策变量 = 框心 x；目标 = 交叉数 + Σ|Δx|；约束 = 净距/网格/边界。"""
+def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid, det_budget=None):
+    """CP-SAT：决策变量 = 框心 x；目标 = 交叉数 + Σ|Δx|；约束 = 净距/网格/边界。
+
+    det_budget：确定性时间预算（max_deterministic_time，操作计数口径）——
+    超预算取当前最优 incumbent（FEASIBLE），不再证最优。None = 无预算（历史
+    行为：求到最优为止）。返回 (解 or None, "optimal"/"feasible")。
+    """
     try:
         from ortools.sat.python import cp_model
     except Exception:
-        return None
+        return None, "no-solver"
     m = cp_model.CpModel()
     row_of = {v: r for r, vs in enumerate(rows) for v in vs}
     xs = {v: m.NewIntVar(cfg.margin, max_x - cfg.margin, f"x_{v}") for v in nodes}
@@ -177,11 +200,16 @@ def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid):
     solver = cp_model.CpSolver()
     solver.parameters.num_workers = 1        # 确定性铁律
     solver.parameters.random_seed = 42
-    # 不设墙钟时限：时限截断会随机器负载漂移（破坏确定性）；小模型求到最优本来就快
+    # 墙钟时限会随机器负载漂移（破坏确定性）——预算只用确定性时间口径；
+    # 无预算 = 求到最优（历史行为，小图本来快）
+    if det_budget is not None:
+        solver.parameters.max_deterministic_time = det_budget
     st = solver.Solve(m)
-    if st not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        return None
-    return {v: int(solver.Value(xs[v])) for v in nodes}
+    if st == cp_model.OPTIMAL:
+        return {v: int(solver.Value(xs[v])) for v in nodes}, "optimal"
+    if st == cp_model.FEASIBLE:
+        return {v: int(solver.Value(xs[v])) for v in nodes}, "feasible"
+    return None, "no-solution"
 
 
 def _construct_positions(nodes, rows, widths, cfg):
@@ -317,7 +345,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
     rows = [r for r in rows if r]
 
     # ③ 定位
-    pos, engine = _solve_positions(core, rows, widths, cfg, linestyle)
+    pos, engine, pos_meta = _solve_positions(core, rows, widths, cfg, linestyle)
 
     # y 坐标（行均匀 → 规律性门禁的基座）
     y = {v: cfg.top + r * cfg.pitch for r, vs in enumerate(rows) for v in vs}
@@ -420,6 +448,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
             "clearance": CLEARANCE,
             "router_cross_pairs": router_pairs,
             "solver_available": _has_solver(),
+            **pos_meta,
             "routing_math": ("visibility-graph Dijkstra shortest path (clearance-"
                              "inflated obstacles) + tangent-arc fillet smoothing "
                              "(G1, clearance-verified); crossing dual-caliber: "

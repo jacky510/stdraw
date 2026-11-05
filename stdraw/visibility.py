@@ -116,10 +116,35 @@ def _graph_nodes(src, dst, rects, c):
 
 
 def _visible(p1, p2, rects, c):
-    """线段对全部障碍净距 ≥ c − ε（解析复核，不采样）。"""
+    """线段对全部障碍净距 ≥ c − ε（解析复核，不采样）。
+
+    性能（WS5）：先用「线段包围盒 × 矩形包围盒」距离做下界快筛——线段上
+    任意点到矩形的距离 ≥ 两包围盒距离，故包围盒距离 ≥ c−ε 时精确距离必
+    ≥ c−ε，可跳过精确计算（精确等价，不改变任何判定结果）。
+    """
+    t = c - VIS_EPS
+    t2 = t * t
+    x1l, x1h = (p1[0], p2[0]) if p1[0] <= p2[0] else (p2[0], p1[0])
+    y1l, y1h = (p1[1], p2[1]) if p1[1] <= p2[1] else (p2[1], p1[1])
     for rect in rects:
-        if seg_rect_distance(p1, p2, rect) < c - VIS_EPS:
-            return False
+        cx, cy, hw, hh = rect
+        gx = cx - hw - x1h
+        g = x1l - cx - hw
+        if g > gx:
+            gx = g
+        if gx < 0.0:
+            gx = 0.0
+        if gx < t:
+            gy = cy - hh - y1h
+            g = y1l - cy - hh
+            if g > gy:
+                gy = g
+            if gy < 0.0:
+                gy = 0.0
+            # gx/gy 已钳 0：hypot(gx,gy) = 两包围盒距离；< t 才可能挡线
+            if gy < t and (gx == 0.0 or gy == 0.0 or gx * gx + gy * gy < t2):
+                if seg_rect_distance(p1, p2, rect) < t:
+                    return False
     return True
 
 

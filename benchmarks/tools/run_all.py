@@ -2,10 +2,13 @@
 # 可重入：已存在的输出跳过。进度写 run_all.log。
 #
 # 预算（秒，REPORT §2 口径）：
-#   ortho 60；auto classic 300 / 随机 n≤10 350（实测 n10 完整跑通 285s，350s 让它跑完）
-#             / 随机 n≥20 100（实测 n30/n50 在 300-420s 仍不完成，DNF 如实记录）；
+#   ortho 60；auto classic 300 / 随机 n≤10 350 / 随机 n≥20 100；
 #   auto-exact = auto 布局复用（WS2 已证确定性逐字节一致）+ 单独跑 cr(G)（300s）；
 #   graphviz/elk 120。
+# WS5 后引擎口径：n>10 的 CP-SAT 定位带确定性时间预算（max_deterministic_time
+# =8det，输出仍逐字节可复现），n≤10 与布线层不变（求到最优）；旧版 n≥20 全 DNF
+# 的根因是 CP-SAT 证最优耗时随 n 爆炸（不是 polish——polish 有 core≤10 门），
+# 详见 REPORT §5。
 import glob
 import json
 import os
@@ -68,8 +71,9 @@ def one(cld, family, log):
         rc = run([PY, os.path.join(HERE, "run_stdraw.py"), cld, RAW, "auto"], b, log)
         if rc == "TIMEOUT":
             save_json(out, {"tool": "stdraw-auto", "graph": base, "status": "dnf",
-                            "why": f"timeout at budget {b}s (engine has no internal limit; "
-                                   f"bottleneck = _polish full-route re-runs, see REPORT §5)",
+                            "why": f"timeout at budget {b}s (engine has no wall-clock "
+                                   f"limit by determinism design; CP-SAT uses a "
+                                   f"deterministic-time budget for n>10, see REPORT §5)",
                             "budget_s": b})
     # stdraw auto+WS2 精确层：布局复用 auto（确定性逐字节一致）+ 单独跑 cr(G)
     out = os.path.join(RAW, f"{base}.auto-exact.json")
