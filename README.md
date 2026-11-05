@@ -109,6 +109,29 @@ stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62
 A ready-made deliverable ships in the repo: open [`demos/classic-cld-2d.html`](demos/classic-cld-2d.html) / [`demos/classic-cld-3d.html`](demos/classic-cld-3d.html).
 Interactive viewer (four forms + node dragging + loop panel): open `viewer/index.html` in a browser, nothing to install.
 
+### Manual touch-up loop (drag → export → re-certify)
+
+Every `demo-2d.html` (auto recipe) ships with a built-in touch-up layer — drag
+nodes (mouse or touch), live metrics recompute in the toolbar, then:
+
+```bash
+# 1. Open out/demo-2d.html, drag cards, click 「导出布局」 (Export layout)
+#    -> downloads graph-manual-layout.json (layout.json-compatible subset)
+
+# 2. Re-run routing + certificate on YOUR coordinates — same hard gates,
+#    honest scoring (a manual layout is never graded leniently):
+stdraw layout input.cld --outdir out-manual --skip-3d --from-layout graph-manual-layout.json
+
+# 3. (optional) Side-by-side auto-vs-manual certificate comparison
+#    (the gap is the engine-vs-human aesthetic distance):
+stdraw layout input.cld --outdir out-manual --skip-3d \
+    --from-layout graph-manual-layout.json --compare-auto
+
+# 4. Three-layer diff (node-level moves / structural metrics / loop semantics)
+#    — the data source for distilling aesthetic rules from human edits:
+stdraw layout-diff out/layout.json out-manual/layout.json --cld input.cld --diff-out diff.json
+```
+
 ## DSL in One Minute
 
 Line-oriented text, `#` starts a comment:

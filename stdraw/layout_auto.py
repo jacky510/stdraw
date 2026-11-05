@@ -318,8 +318,52 @@ def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2):
     return best_pos, best_score, best_routes
 
 
-def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
-    """auto 配方入口：图 → v4 兼容布局 dict（含折线/弧线路由 + 元数据）。"""
+def _manual_positions(nodes, widths, manual):
+    """--from-layout：吃手动布局（layout.json 兼容子集），返回 (pos, y, rows, meta)。
+
+    手动坐标取整并对齐 2px 网格（与几何自检 6b 口径一致，snap 影响如实记录）；
+    卡宽按标签用 textmetrics 重算（与自动管线同口径）。id 集合必须与图完全
+    一致（缺/多节点 → ValueError，CLI 转诚实报错）。
+    """
+    mn = manual.get("nodes") or {}
+    if not isinstance(mn, dict) or not mn:
+        raise ValueError("手动布局缺少 nodes（节点 id→x,y）")
+    def _xy(entry):
+        if isinstance(entry, dict):
+            return entry.get("x"), entry.get("y")
+        if isinstance(entry, (list, tuple)) and len(entry) >= 2:
+            return entry[0], entry[1]
+        raise ValueError(f"手动布局节点格式不识别：{entry!r}")
+    missing = [v for v in nodes if v not in mn]
+    extra = [v for v in mn if v not in set(nodes)]
+    if missing or extra:
+        raise ValueError(f"手动布局与图节点集不一致：缺 {missing}，多 {extra}")
+    pos, y, snapped = {}, {}, []
+    for v in nodes:
+        xv, yv = _xy(mn[v])
+        try:
+            xi, yi = int(round(float(xv))), int(round(float(yv)))
+        except (TypeError, ValueError):
+            raise ValueError(f"手动布局节点 {v} 坐标非数值：{xv!r},{yv!r}")
+        if xi % 2 or yi % 2:
+            snapped.append(v)
+        pos[v] = xi - (xi % 2)      # 对齐 2px 网格（几何自检 6b 口径）
+        y[v] = yi - (yi % 2)
+    rows = [[v for v in nodes if y[v] == yy] for yy in sorted({y[v] for v in nodes})]
+    meta = {"source": manual.get("source"),
+            "manual_viewBox": manual.get("viewBox"),
+            "snapped_to_2px": sorted(snapped)}
+    return pos, y, rows, meta
+
+
+def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
+           manual: dict = None):
+    """auto 配方入口：图 → v4 兼容布局 dict（含折线/弧线路由 + 元数据）。
+
+    manual：--from-layout 手动布局（{nodes: {id: x,y}, viewBox, source}）。
+    给定时跳过分层/定位/精化，按手动坐标走同一布线+交付管线（硬门口径
+    不变、如实评分）。manual=None（默认）时代码路径与历史逐字节一致。
+    """
     global EDGES_REF
     cfg = config or AutoConfig()
     EDGES_REF = [tuple((e.a, e.b) for e in graph.edges)]
@@ -337,34 +381,41 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
         widths[v], heights[v] = w, h
     card_h = max(heights.values()) if heights else cfg.card_h
 
-    # ② 分层（破环 + 最长路 + 空层压缩）
-    _, dag = _cycle_break(core, EDGES_REF[0])
-    layer = _layers(core, dag)
-    nrow = max(layer.values()) + 1 if core else 1
-    rows = [[v for v in core if layer[v] == r] for r in range(nrow)]
-    rows = [r for r in rows if r]
+    # ②③ 定位：--from-layout 手动坐标，或自动分层+定位
+    from_meta = None
+    if manual is not None:
+        pos, y, rows, from_meta = _manual_positions(nodes, widths, manual)
+        deg0 = []
+        engine, pos_meta = "manual", {}
+    else:
+        # ② 分层（破环 + 最长路 + 空层压缩）
+        _, dag = _cycle_break(core, EDGES_REF[0])
+        layer = _layers(core, dag)
+        nrow = max(layer.values()) + 1 if core else 1
+        rows = [[v for v in core if layer[v] == r] for r in range(nrow)]
+        rows = [r for r in rows if r]
 
-    # ③ 定位
-    pos, engine, pos_meta = _solve_positions(core, rows, widths, cfg, linestyle)
+        # ③ 定位
+        pos, engine, pos_meta = _solve_positions(core, rows, widths, cfg, linestyle)
 
-    # y 坐标（行均匀 → 规律性门禁的基座）
-    y = {v: cfg.top + r * cfg.pitch for r, vs in enumerate(rows) for v in vs}
-    # 孤立节点停车带：顶部均匀排布（小图 24px 列吸附，与正则门禁一致）
-    if deg0:
-        total = sum(widths[v] for v in deg0) + cfg.min_gap * (len(deg0) + 1)
-        cw = _content_w(rows, widths, cfg)
-        cur = max(cfg.margin, (cw - total) / 2)
-        snap = cfg.snap_regular if len(nodes) <= 10 else cfg.grid
-        for v in deg0:
-            pos[v] = int(round((cur + widths[v] / 2) / snap)) * snap
-            y[v] = cfg.park_y
-            cur += widths[v] + cfg.min_gap
+        # y 坐标（行均匀 → 规律性门禁的基座）
+        y = {v: cfg.top + r * cfg.pitch for r, vs in enumerate(rows) for v in vs}
+        # 孤立节点停车带：顶部均匀排布（小图 24px 列吸附，与正则门禁一致）
+        if deg0:
+            total = sum(widths[v] for v in deg0) + cfg.min_gap * (len(deg0) + 1)
+            cw = _content_w(rows, widths, cfg)
+            cur = max(cfg.margin, (cw - total) / 2)
+            snap = cfg.snap_regular if len(nodes) <= 10 else cfg.grid
+            for v in deg0:
+                pos[v] = int(round((cur + widths[v] / 2) / snap)) * snap
+                y[v] = cfg.park_y
+                cur += widths[v] + cfg.min_gap
 
-    # ③b 局部精化（小图 ≤10 节点）：以路由真值总成本 hill-climb 横移，
-    # 把布线可行性（压线/净距/交叉）显式喂回定位层
-    if len(core) <= 10:
-        pos, _sc, _rt = _polish(core, EDGES_REF[0], rows, pos, y,
-                                widths, card_h, cfg)
+        # ③b 局部精化（小图 ≤10 节点）：以路由真值总成本 hill-climb 横移，
+        # 把布线可行性（压线/净距/交叉）显式喂回定位层
+        if len(core) <= 10:
+            pos, _sc, _rt = _polish(core, EDGES_REF[0], rows, pos, y,
+                                    widths, card_h, cfg)
 
     # ④ 布线（直线/弧线一等，框不压线）+ WS3 理论口径（最终路线交叉对数）
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
@@ -459,21 +510,29 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
             e["route"]["path_d"] = _route_svg_d(corners, fillets)
             e["route"]["via"] = [[round(px, 1), round(py, 1)] for px, py in corners]
 
+    if manual is not None:
+        row_y_out = [yy + dy for yy in sorted({y[v] for v in nodes})]
+        pitch_out = None
+    else:
+        row_y_out = [dy + cfg.top + r * cfg.pitch for r in range(len(rows))]
+        pitch_out = cfg.pitch
     v4 = {
         "viewBox": [0, 0, W, H],
         "nodes": {v: {"x": pos[v], "y": y[v], "w": widths[v]} for v in nodes},
         "edges": edges_out,
         "bars": {},
         "meta": {
-            "rows": len(rows),
-            "rowY": [dy + cfg.top + r * cfg.pitch for r in range(len(rows))],
-            "pitch": cfg.pitch,
+            "rows": len(row_y_out),
+            "rowY": row_y_out,
+            "pitch": pitch_out,
             "deg0": deg0,
             "cardH": card_h,
             "fs": [cfg.fs_title, cfg.fs_value],
             "recipe": "auto-v2",
             "line_style": linestyle,
             "position_engine": engine,
+            # --from-layout 元数据（仅手动路径写入；auto 路径逐字节不变）
+            **({} if from_meta is None else {"from_layout": from_meta}),
             "clearance": CLEARANCE,
             "router_cross_pairs": router_pairs,
             "solver_available": _has_solver(),

@@ -157,6 +157,9 @@ def auto_geometry_report(layout: dict) -> dict:
                           PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE)
     nodes, edges = layout["nodes"], layout["edges"]
     meta = layout["meta"]
+    # --from-layout 手动布局：卡距恒等/简单图规律性是「自动管线结构检查」，
+    # 对手动坐标不适用（证书的 regularity 门仍如实评分，不因此放水）。
+    manual_mode = bool(meta.get("from_layout"))
     W, H = layout["viewBox"][2], layout["viewBox"][3]
     CARD_H = meta.get("cardH", 44)
     CW = {v: p.get("w", 140) for v, p in nodes.items()}
@@ -267,7 +270,8 @@ def auto_geometry_report(layout: dict) -> dict:
         rowy.setdefault(p["y"], []).append(v)
     pitch_ok = len({b - a for a, b in zip(sorted(rowy), sorted(rowy)[1:])}) <= 1
     odd = [v for v, p in nodes.items() if p["x"] % 2 or p["y"] % 2]
-    chk("6a. 行距恒等 pitch（停车带除外）", pitch_ok, f"pitch={meta['pitch']}")
+    chk("6a. 行距恒等 pitch（停车带除外）" + ("（manual: N/A）" if manual_mode else ""),
+        True if manual_mode else pitch_ok, f"pitch={meta['pitch']}")
     chk("6b. 全部坐标 2px 网格（偶数）", not odd, str(odd))
 
     # 7. viewBox 完整包含
@@ -288,15 +292,18 @@ def auto_geometry_report(layout: dict) -> dict:
         f"viewBox {W}×{H} → s={s:.3f}；标题 {fs_title}×{s:.2f}≈{fs_title * s:.1f}px")
 
     # 9. 简单图规律性（≤10 节点：行距恒等 + 24px 列吸附 ≥ 60%）
+    # manual 布局：规律性属自动管线结构检查 → N/A（证书 regularity 门仍评分）
     snap = sum(1 for p in nodes.values() if p["x"] % 24 == 0) / len(nodes)
     simple = len(nodes) <= 10
-    chk("9. 简单图排布规律性", (not simple) or (pitch_ok and snap >= 0.6),
-        f"n={len(nodes)}，24px 列吸附 {snap:.2f}，行距恒等 {pitch_ok}")
+    chk("9. 简单图排布规律性" + ("（manual: N/A）" if manual_mode else ""),
+        True if manual_mode else ((not simple) or (pitch_ok and snap >= 0.6)),
+        f"n={len(nodes)}，24px 列吸附 {snap:.2f}，行距恒等 {pitch_ok}"
+        + ("；manual 布局不适用" if manual_mode else ""))
 
     # 10. 元数据完备（recipe / line_style / engine）
     ok10 = (meta.get("recipe") == "auto-v2" and
             meta.get("line_style") in ("straight", "arc") and
-            meta.get("position_engine") in ("cp-sat", "construct"))
+            (meta.get("position_engine") in ("cp-sat", "construct", "manual")))
     chk("10. auto-v2 元数据完备", ok10,
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "
         f"engine={meta.get('position_engine')}")

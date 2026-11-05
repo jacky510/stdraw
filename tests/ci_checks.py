@@ -181,8 +181,52 @@ def main():
                 else:
                     print(f"OK  {t}: 全过")
         else:
-            print("SKIP  test_crossing_exact/test_placement: "
+            print("SKIP test_crossing_exact/test_placement: "
                   "ortools 不可用（CI workflow 安装 [solver] 可选层兜底）")
+
+        # ── F. 手动布局闭环（ref-scrubbed）：--from-layout 恒等复现 + layout-diff ──
+        ex = EXAMPLES[0]
+        name = os.path.splitext(os.path.basename(ex))[0]
+        out_f = os.path.join(tmp, name + "-manual-f")
+        r_f = run_cli(ex, out_f, (), pitch=None)          # auto 基线（F 层自持）
+        if r_f.returncode != 0:
+            failures.append(f"manual-loop {ex}: auto 基线 exit {r_f.returncode}")
+        else:
+            lay = load(out_f, "layout.json")
+            ident = {"viewBox": lay["viewBox"],
+                     "nodes": {v: {"x": p["x"], "y": p["y"]}
+                               for v, p in lay["nodes"].items()}}
+            ipath = os.path.join(tmp, "ci-ident-manual.json")
+            with open(ipath, "w", encoding="utf-8") as f:
+                json.dump(ident, f, ensure_ascii=False)
+            out_f2 = os.path.join(tmp, name + "-manual-f2")
+            r_f2 = run_cli(ex, out_f2, ("--from-layout", ipath), pitch=None)
+            geo_f = load(out_f2, "geometry_report.json")
+            lay_f = load(out_f2, "layout.json")
+            if r_f2.returncode != 0 or geo_f.get("fail", 0) != 0:
+                failures.append(f"manual-loop {ex}: 恒等手动布局 exit "
+                                f"{r_f2.returncode} fail={geo_f.get('fail')}")
+            elif lay_f["nodes"] != lay["nodes"] or \
+                    lay_f["meta"].get("position_engine") != "manual":
+                failures.append(f"manual-loop {ex}: 恒等手动布局漂移/engine 非 manual")
+            else:
+                dpath = os.path.join(tmp, "ci-layout-diff.json")
+                r_d = subprocess.run(
+                    [sys.executable, "-m", "stdraw", "layout-diff",
+                     os.path.join(out_f, "layout.json"),
+                     os.path.join(out_f2, "layout.json"),
+                     "--cld", ex, "--diff-out", dpath],
+                    capture_output=True, text=True)
+                try:
+                    with open(dpath, encoding="utf-8") as f:
+                        diff = json.load(f)
+                    assert (diff["node_level"] and diff["structural"]
+                            and diff["semantic"])
+                except Exception as e:
+                    failures.append(f"manual-loop layout-diff: {e}\n{r_d.stdout[-300:]}")
+                if not failures or all("manual-loop" not in x for x in failures):
+                    print("OK  manual-loop: --from-layout 恒等复现 fail=0 + "
+                          "layout-diff 三层齐备")
 
         if failures:
             print("\nFAILURES:")

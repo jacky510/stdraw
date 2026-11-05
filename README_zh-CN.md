@@ -111,6 +111,28 @@ stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62
 仓库内已有跑好的交付形态：直接打开 [`demos/classic-cld-2d.html`](demos/classic-cld-2d.html) / [`demos/classic-cld-3d.html`](demos/classic-cld-3d.html)。
 交互查看器（四形态 + 节点拖拽 + 环路面板）：浏览器打开 `viewer/index.html`，无需安装任何东西。
 
+### 手动微调闭环（拖拽 → 导出 → 复算证书）
+
+每份 `demo-2d.html`（auto 配方）都内置微调层——直接拖卡片（鼠标/触摸），
+顶栏指标实时复算，然后：
+
+```bash
+# 1. 打开 out/demo-2d.html，拖动卡片，点「导出布局」
+#    -> 下载 graph-manual-layout.json（layout.json 兼容子集）
+
+# 2. 按你的坐标重跑布线+证书——硬门口径不变、如实评分
+#    （手动布局绝不因「是人排的」就放水）：
+stdraw layout input.cld --outdir out-manual --skip-3d --from-layout graph-manual-layout.json
+
+# 3. （可选）auto vs manual 双证书对照（差距即引擎与人的审美距离）：
+stdraw layout input.cld --outdir out-manual --skip-3d \
+    --from-layout graph-manual-layout.json --compare-auto
+
+# 4. 三层 diff（节点位移 / 结构指标 / 回路语义）——从人工编辑里
+#    归纳审美规律的数据源：
+stdraw layout-diff out/layout.json out-manual/layout.json --cld input.cld --diff-out diff.json
+```
+
 ## DSL 一分钟
 
 行导向文本，`#` 起注释：

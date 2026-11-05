@@ -3,6 +3,8 @@
 import html
 import json
 
+from ._interactive_js import _INTERACTIVE_JS
+
 
 def render_html(v4: dict, graph_name: str = "", cert: dict = None,
                 loops_report: dict = None, labels: dict = None,
@@ -214,18 +216,19 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     values = values or {}
 
     parts = []
-    parts.append(f'<svg viewBox="0 0 {W} {H}" font-family="Microsoft YaHei,sans-serif">')
+    parts.append(f'<svg id="stdraw-svg" viewBox="0 0 {W} {H}" '
+                 f'font-family="Microsoft YaHei,sans-serif">')
     polys = {i: e["route"]["points"] for i, e in enumerate(edges)}
     boxes = [(p["x"], p["y"], p.get("w", 140) / 2, card_h / 2) for p in nodes.values()]
     for i, e in enumerate(edges):
         e["_idx"] = i
-        parts.append(_edge_svg(e, labels, values))
+        parts.append(f'<g data-edge="{i}">' + _edge_svg(e, labels, values) + '</g>')
     # WS3：R/B 极性标记（确定性放置，白底盘 + 字母）
     for i, e in enumerate(edges):
         mk = _polarity_marker(e, polys, boxes, W, H)
         if mk:
             (mx, my), letter, mcolor = mk
-            parts.append(f'<g transform="translate({mx:.1f} {my:.1f})">'
+            parts.append(f'<g data-pol="{i}" transform="translate({mx:.1f} {my:.1f})">'
                          f'<circle r="7.5" fill="#ffffff" stroke="{mcolor}" '
                          f'stroke-width="1.2"/>'
                          f'<text y="3.2" text-anchor="middle" font-size="9.5" '
@@ -234,7 +237,8 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         x, y, w = p["x"], p["y"], p["w"]
         label = html.escape(labels.get(v, v))
         value = html.escape(values.get(v, ""))
-        parts.append(f'<g><rect x="{x - w / 2:.0f}" y="{y - card_h / 2:.0f}" width="{w}" '
+        parts.append(f'<g data-node="{html.escape(v, quote=True)}">'
+                     f'<rect x="{x - w / 2:.0f}" y="{y - card_h / 2:.0f}" width="{w}" '
                      f'height="{card_h}" rx="7" fill="#fffbeb" stroke="#f59e0b" '
                      f'stroke-width="1.5"/>'
                      f'<text x="{x:.0f}" y="{y + 4:.0f}" text-anchor="middle" '
@@ -246,6 +250,33 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                          f'fill="#1f2937">{value}</text>')
         parts.append('</g>')
     parts.append('</svg>')
+    # ── 交互层（ref-scrubbed 拖拽重排）：工具栏 + 内嵌数据 + 脚本 ──
+    # 零依赖零联网；不拖时初始几何与静态渲染完全一致（脚本只挂监听）。
+    payload = {
+        "name": graph_name,
+        "viewBox": [0, 0, W, H],
+        "cardH": card_h,
+        "nodes": [{"id": v, "x": p["x"], "y": p["y"], "w": p.get("w", 140)}
+                  for v, p in nodes.items()],
+        "edges": [{"a": e["a"], "b": e["b"], "pol": e.get("polarity", "+"),
+                   "arc": bool(e["route"].get("arc")),
+                   "ctrl": e["route"].get("ctrl"),
+                   "pts": e["route"]["points"]}
+                  for e in edges],
+    }
+    parts.append(
+        '<div class="stdraw-toolbar">'
+        '<span class="stdraw-hint">拖动卡片重排（鼠标/触摸）· 指标为预览几何实时复算，'
+        '证书以 CLI --from-layout 复算为准</span>'
+        '<span id="stdraw-metrics">…</span>'
+        '<button id="stdraw-export" type="button">导出布局</button>'
+        '<button id="stdraw-reset" type="button">重置</button>'
+        '</div>')
+    parts.append('<script id="stdraw-data" type="application/json">' +
+                 json.dumps(payload, ensure_ascii=False,
+                            separators=(",", ":")).replace("</", "<\\/") +
+                 '</script>')
+    parts.append('<scr' + 'ipt>' + _INTERACTIVE_JS + '</scr' + 'ipt>')
 
     cert_html = ""
     if cert:
@@ -301,6 +332,14 @@ h1{{font-size:18px}} svg{{background:#fff;border:1px solid #e2e8f0;border-radius
 .cert table{{border-collapse:collapse}} .cert td{{border:1px solid #e2e8f0;padding:2px 10px}}
 .ok{{color:#16a34a}} .bad{{color:#dc2626}} .note{{color:#64748b;font-size:12px}}
 .grade{{color:#1d4ed8}}
+.stdraw-toolbar{{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:8px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;max-width:1280px}}
+.stdraw-toolbar button{{padding:4px 14px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;cursor:pointer;font-size:13px}}
+.stdraw-toolbar button:hover{{background:#e2e8f0}}
+.stdraw-hint{{color:#64748b;font-size:12px}}
+#stdraw-metrics{{font-weight:600;color:#1f2937}}
+#stdraw-svg [data-node]{{cursor:grab}}
+#stdraw-svg [data-node] rect{{touch-action:none}}
+#stdraw-svg [data-node].dragging{{cursor:grabbing}}
 </style>
 <h1>stdraw 2D 布局 · {html.escape(graph_name)}（auto-v2：直线/弧线一等、框不压线硬门、边-框净距≥16px；定位引擎 {engine}，线型 {ls}）</h1>
 {''.join(parts)}

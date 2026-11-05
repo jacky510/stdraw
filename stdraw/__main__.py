@@ -38,6 +38,20 @@ def load_graph(path: str) -> Graph:
     return parse(text)
 
 
+def load_manual_layout(path: str) -> dict:
+    """手动布局 JSON → layout() 的 manual 参数。
+
+    接受完整 layout.json 或 demo-2d.html「导出布局」子集
+    （{nodes: {id: {x,y}|[x,y]}, viewBox}）。source 记文件名供 meta 溯源。
+    """
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+    if "nodes" not in raw:
+        raise ValueError(f"{path}: 手动布局缺 nodes（节点 id→x,y）")
+    return {"nodes": raw["nodes"], "viewBox": raw.get("viewBox"),
+            "source": os.path.basename(path)}
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="stdraw",
@@ -52,8 +66,11 @@ def main(argv=None):
             "demo-2d.html / positions3d.json / demo-3d.html"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["layout"], help="子命令")
+    ap.add_argument("command", choices=["layout", "layout-diff"],
+                    help="子命令：layout=布局全管线；layout-diff=auto vs 手动布局三层 diff")
     ap.add_argument("input", help="输入 .cld（DSL）或 .json（图模型）")
+    ap.add_argument("input2", nargs="?",
+                    help="layout-diff 第二参数：手动布局 layout.json")
     ap.add_argument("--outdir", default="stdraw-out")
     ap.add_argument("--recipe", default="auto", choices=["auto", "ortho"],
                     help="布局配方：auto=auto-v2（默认，直线/弧线+新硬门）；"
@@ -70,10 +87,32 @@ def main(argv=None):
                     help="WS2 精确交叉数层：B&B 夹逼计算 cr(G) 并写入证书 "
                          "exactness 块（proven_optimal/gap；需可选依赖 ortools，"
                          "未装时如实降级标注）")
+    ap.add_argument("--from-layout", default=None, metavar="MANUAL_JSON",
+                    help="手动布局 JSON（demo-2d.html「导出布局」产物或 "
+                         "layout.json 子集：节点 id→x,y + viewBox）。按手动坐标"
+                         "跑同一布线+证书管线，硬门口径不变、如实评分")
+    ap.add_argument("--compare-auto", action="store_true",
+                    help="配合 --from-layout：同图另跑自动布局到 <outdir>-compare-auto/，"
+                         "输出双证书对比 compare-auto.json（引擎与人的审美距离）")
+    ap.add_argument("--cld", default=None,
+                    help="layout-diff：图源（.cld/.json），启用语义级（回路归属/聚拢）")
+    ap.add_argument("--diff-out", default="layout-diff.json",
+                    help="layout-diff：机器可读 JSON 输出路径")
     a = ap.parse_args(argv)
+
+    if a.command == "layout-diff":
+        if not a.input2:
+            print("layout-diff 需要 <auto-layout.json> <manual-layout.json> 两个参数",
+                  file=sys.stderr)
+            sys.exit(2)
+        from .layoutdiff import main as diff_main
+        sys.exit(diff_main([a.input, a.input2] +
+                           (["--cld", a.cld] if a.cld else []) +
+                           ["--out", a.diff_out]))
 
     g = load_graph(a.input)
     os.makedirs(a.outdir, exist_ok=True)
+    deferred_exit = 0        # --compare-auto：先出对照报告，再按几何 fail 退出
     name = a.name or g.name or os.path.splitext(os.path.basename(a.input))[0]
     problems = g.validate()
     if problems:
@@ -144,7 +183,17 @@ def main(argv=None):
         cfg = AutoConfig()
         if a.pitch:
             cfg.pitch = a.pitch
-        v4 = recipes_run("auto-v2", g, cfg, a.linestyle)
+        if a.from_layout:
+            # 手动布局：同一布线+证书管线，硬门口径不变、如实评分
+            from .layout_auto import layout as _auto_layout_fn
+            try:
+                _manual = load_manual_layout(a.from_layout)
+                v4 = _auto_layout_fn(g, cfg, a.linestyle, manual=_manual)
+            except ValueError as e:
+                print(f"手动布局不可用：{e}", file=sys.stderr)
+                sys.exit(2)
+        else:
+            v4 = recipes_run("auto-v2", g, cfg, a.linestyle)
         labels = {n.id: n.label for n in g.nodes}
         values = {n.id: n.value for n in g.nodes if n.value}
         p = w("layout.json", v4)
@@ -175,7 +224,10 @@ def main(argv=None):
             f.write(render_html(v4, name, cert, lr, labels, values))
         print(f"      demo -> {hp}")
         if rc:
-            sys.exit(1)
+            if a.from_layout and a.compare_auto:
+                deferred_exit = 1     # 先出对照报告，退出码延后
+            else:
+                sys.exit(1)
 
     # 3D 各形体指派
     if not a.skip_3d:
@@ -196,8 +248,57 @@ def main(argv=None):
         with open(hp, "w", encoding="utf-8") as f:
             f.write(render_3d_html(gd, layouts, name, note))
         print(f"      demo -> {hp}（需与 assets/three.min.js 相对路径同仓）")
+    # ── compare-auto：同图自动布局对照（双证书对比）──
+    if a.from_layout and a.compare_auto:
+        cmp_dir = a.outdir.rstrip("/\\") + "-compare-auto"
+        print("\n── compare-auto：同图自动布局对照 ──")
+        try:
+            rc_cmp = main(["layout", a.input, "--outdir", cmp_dir, "--skip-3d"]
+                          + (["--name", name] if name else []))
+        except SystemExit as _e:                    # 几何 fail → exit 1，如实记录
+            rc_cmp = _e.code
+
+        def _cert(d):
+            with open(os.path.join(d, "certificate.json"), encoding="utf-8") as f:
+                return json.load(f)
+
+        cert_m, cert_a = _cert(a.outdir), _cert(cmp_dir)
+        keys = ("crossings", "box_press_1px", "edge_box_min_clear",
+                "anchor_violations", "avg_edge_length", "row_align_rate",
+                "min_card_gap", "spacing_cv", "column_snap24_rate")
+        table = {}
+        for k in keys:
+            mv, av = cert_m["metrics"].get(k), cert_a["metrics"].get(k)
+            delta = (mv - av) if isinstance(mv, (int, float)) and \
+                isinstance(av, (int, float)) else None
+            table[k] = {"manual": mv, "auto": av,
+                        "delta_manual_minus_auto": delta}
+        cmp_obj = {
+            "tool": "stdraw --compare-auto", "graph": name,
+            "manual_outdir": a.outdir, "auto_outdir": cmp_dir,
+            "auto_cli_exit": rc_cmp,
+            "metrics": table,
+            "grade": {"manual": cert_m["grade"], "auto": cert_a["grade"]},
+            "gates_passed": {"manual": cert_m["gates_passed"],
+                             "auto": cert_a["gates_passed"]},
+            "note": ("差距即引擎与人的审美距离（后续优化目标函数的依据）；"
+                     "硬门口径对 manual 同样适用、如实评分不因手动放水；"
+                     "对照自动布局未跑 --exact 精确层"),
+        }
+        p = os.path.join(a.outdir, "compare-auto.json")
+        with open(p, "w", encoding="utf-8") as f:
+            json.dump(cmp_obj, f, ensure_ascii=False, indent=1)
+        print("  指标                        manual       auto")
+        for k, v in table.items():
+            print(f"  {k:<26} {str(v['manual']):>8} {str(v['auto']):>10}"
+                  f"  Δ={v['delta_manual_minus_auto']}")
+        print(f"  分级：manual={cert_m['grade']} / auto={cert_a['grade']}；"
+              f"门禁 manual {cert_m['gates_passed']} / auto {cert_a['gates_passed']}"
+              f"（auto_cli_exit={rc_cmp}）")
+        print(f"  -> {p}")
+
     print("[6/6] 完成。")
-    return 0
+    return deferred_exit
 
 
 if __name__ == "__main__":
