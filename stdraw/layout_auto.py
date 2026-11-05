@@ -393,26 +393,55 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
 
     xs_all = [pos[v] - widths[v] / 2 for v in nodes] + [pos[v] + widths[v] / 2 for v in nodes]
     ys_all = [y[v] - card_h / 2 for v in nodes] + [y[v] + card_h / 2 for v in nodes]
-    min_x = min(xs_all) - cfg.margin / 2
+
+    # F3 返修（ref-scrubbed，bullwhip check7 fail）：弧线鼓出可越过节点框外包络
+    # （实测 inventory->forecast 向左鼓 7.5px 出 viewBox 左缘，而 viewBox 自
+    # v0.2 起只按节点框计算）。边几何（采样点 ∪ 弧 ctrl——二次贝塞尔凸包上界，
+    # 保守）必须与节点框一并纳入平移量与 W/H 计算；布线层决策不动，只在交付
+    # 层扩 viewBox，与 check7「全部内容在 viewBox 内」的校验口径（直接取交付
+    # route.points）构造性一致。
+    def _edge_geom_bounds():
+        exs, eys = [], []
+        for e in edges_out:
+            for px, py in e["route"]["points"]:
+                exs.append(px)
+                eys.append(py)
+            c = e["route"].get("ctrl")
+            if c:
+                exs.append(c[0])
+                eys.append(c[1])
+        return exs, eys
+
+    exs0, eys0 = _edge_geom_bounds()
+    min_x = min(xs_all + exs0) - cfg.margin / 2
     dx = max(0, int(math.ceil(cfg.margin / 2 - min_x)))
     dx = ((dx + 23) // 24) * 24          # 平移量对齐 24px，保持列吸附/网格不变
-    if dx:
+    min_y = min(ys_all + eys0) - cfg.margin / 2
+    dy = max(0, int(math.ceil(cfg.margin / 2 - min_y)))
+    dy = ((dy + 7) // 8) * 8             # 8px 对齐：保持 2px 网格与 H 取整口径
+    if dx or dy:
         for e in edges_out:
-            e["route"]["points"] = [[px + dx, py] for px, py in e["route"]["points"]]
-            e["anchors"] = {"a": [e["anchors"]["a"][0] + dx, e["anchors"]["a"][1]],
-                            "b": [e["anchors"]["b"][0] + dx, e["anchors"]["b"][1]]}
+            e["route"]["points"] = [[px + dx, py + dy] for px, py in e["route"]["points"]]
+            e["anchors"] = {"a": [e["anchors"]["a"][0] + dx, e["anchors"]["a"][1] + dy],
+                            "b": [e["anchors"]["b"][0] + dx, e["anchors"]["b"][1] + dy]}
             e["arrow"][0] += dx
-            if "ctrl" in e["route"]:      # bugfix：弧线控制点必须随 dx 平移
+            e["arrow"][1] += dy
+            if "ctrl" in e["route"]:      # bugfix：弧线控制点必须随 dx/dy 平移
                 e["route"]["ctrl"][0] += dx
+                e["route"]["ctrl"][1] += dy
         for v in nodes:
             pos[v] += dx
+            y[v] += dy
 
     # W/H 必须在平移后的最终坐标上取。bugfix（CI 暴露的 v0.2.0 遗留）：
     # 原实现用平移前 xs_all 算 W，dx>0 时右移后内容溢出 viewBox
     # （无字体环境的解析式框宽窄 → min 左缘越界触发大 dx → 右缘超出）。
+    # F3 返修补充：max 一并纳入边几何，弧/vg 鼓出不得越过右/下缘。
     xs_all = [pos[v] - widths[v] / 2 for v in nodes] + [pos[v] + widths[v] / 2 for v in nodes]
-    W = int(math.ceil(max(xs_all))) + cfg.margin
-    H = int(math.ceil(max(ys_all))) + cfg.margin
+    ys_all = [y[v] - card_h / 2 for v in nodes] + [y[v] + card_h / 2 for v in nodes]
+    exs1, eys1 = _edge_geom_bounds()
+    W = int(math.ceil(max(xs_all + exs1))) + cfg.margin
+    H = int(math.ceil(max(ys_all + eys1))) + cfg.margin
     W = ((W + 7) // 8) * 8
     H = ((H + 7) // 8) * 8
 
@@ -422,10 +451,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
         vg = e.pop("_vg", None)
         if vg:
             corners, fillets = vg
-            corners = [[p[0] + dx, p[1]] for p in corners]
-            fillets = [dict(f, ta=[f["ta"][0] + dx, f["ta"][1]],
-                            tb=[f["tb"][0] + dx, f["tb"][1]],
-                            center=[f["center"][0] + dx, f["center"][1]])
+            corners = [[p[0] + dx, p[1] + dy] for p in corners]
+            fillets = [dict(f, ta=[f["ta"][0] + dx, f["ta"][1] + dy],
+                            tb=[f["tb"][0] + dx, f["tb"][1] + dy],
+                            center=[f["center"][0] + dx, f["center"][1] + dy])
                        for f in fillets]
             e["route"]["path_d"] = _route_svg_d(corners, fillets)
             e["route"]["via"] = [[round(px, 1), round(py, 1)] for px, py in corners]
@@ -437,7 +466,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
         "bars": {},
         "meta": {
             "rows": len(rows),
-            "rowY": [cfg.top + r * cfg.pitch for r in range(len(rows))],
+            "rowY": [dy + cfg.top + r * cfg.pitch for r in range(len(rows))],
             "pitch": cfg.pitch,
             "deg0": deg0,
             "cardH": card_h,
