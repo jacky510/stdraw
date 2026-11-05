@@ -288,18 +288,36 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         rows = "".join(
             f'<tr><td>{k}</td><td class="{_cls(v)}">{_mark(v)}</td></tr>'
             for k, v in cert["gates"].items())
+        if cert.get("placement") == "ring-cycle":
+            metric_rows = (
+                f'<tr><td>交叉</td><td>{m["crossings"]}</td></tr>'
+                f'<tr><td>框压线(1px余量)</td><td>{m["box_press_1px"]}</td></tr>'
+                f'<tr><td>边-框最小净距</td><td>{m["edge_box_min_clear"]}</td></tr>'
+                f'<tr><td>锚点违例</td><td>{m["anchor_violations"]}</td></tr>'
+                f'<tr><td>平均边长</td><td>{m["avg_edge_length"]}</td></tr>'
+                f'<tr><td>环上等间距 CV</td><td>{m.get("ring_spacing_cv")}</td></tr>'
+                f'<tr><td>正多边形模板偏差</td><td>{m.get("ring_template_deviation")}</td></tr>'
+                f'<tr><td>卡间最小净距</td><td>{m["min_card_gap"]}</td></tr>')
+            placement_html = (
+                '<h4>排布模式：环形（主环正多边形槽位 + 弦内布线；'
+                '行对齐率/列吸附口径不适用）</h4>')
+        else:
+            metric_rows = (
+                f'<tr><td>交叉</td><td>{m["crossings"]}</td></tr>'
+                f'<tr><td>框压线(1px余量)</td><td>{m["box_press_1px"]}</td></tr>'
+                f'<tr><td>边-框最小净距</td><td>{m["edge_box_min_clear"]}</td></tr>'
+                f'<tr><td>锚点违例</td><td>{m["anchor_violations"]}</td></tr>'
+                f'<tr><td>平均边长</td><td>{m["avg_edge_length"]}</td></tr>'
+                f'<tr><td>行对齐率</td><td>{m["row_align_rate"]}</td></tr>'
+                f'<tr><td>卡间最小净距</td><td>{m["min_card_gap"]}</td></tr>'
+                f'<tr><td>间距变异系数 CV</td><td>{m["spacing_cv"]}</td></tr>'
+                f'<tr><td>24px 列吸附率</td><td>{m["column_snap24_rate"]}</td></tr>')
+            placement_html = ""
         cert_html = f'''<div class="cert"><h3>质量证书（交付坐标复检 · auto-v2 硬门）</h3>
 <table>
-<tr><td>交叉</td><td>{m["crossings"]}</td></tr>
-<tr><td>框压线(1px余量)</td><td>{m["box_press_1px"]}</td></tr>
-<tr><td>边-框最小净距</td><td>{m["edge_box_min_clear"]}</td></tr>
-<tr><td>锚点违例</td><td>{m["anchor_violations"]}</td></tr>
-<tr><td>平均边长</td><td>{m["avg_edge_length"]}</td></tr>
-<tr><td>行对齐率</td><td>{m["row_align_rate"]}</td></tr>
-<tr><td>卡间最小净距</td><td>{m["min_card_gap"]}</td></tr>
-<tr><td>间距变异系数 CV</td><td>{m["spacing_cv"]}</td></tr>
-<tr><td>24px 列吸附率</td><td>{m["column_snap24_rate"]}</td></tr>
+{metric_rows}
 </table>
+{placement_html}
 <h4>门禁 {cert["gates_passed"]}</h4><table>{rows}</table>
 <p class="grade">分级：<b>{cert["grade"]}</b> — {html.escape(cert["grade_note"])}</p>
 <p class="note">{html.escape(" / ".join(cert.get("honest_notes", [])))}</p>

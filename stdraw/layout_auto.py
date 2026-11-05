@@ -356,6 +356,74 @@ def _manual_positions(nodes, widths, manual):
     return pos, y, rows, meta
 
 
+def _ring_trial(plan, nodes, widths, card_h, cfg):
+    """环形排布 + 布线试验：硬门代理全过才采纳；否则 None（回退分层，逐字节不变）。
+
+    代理口径与交付证书同源：交叉（路由理论）≤2、框压线=0、边-框净距≥clearance、
+    互环对分离 ≥4px、卡间净距 ≥16、锚点平滑 ≥20°。最终以 certificate_auto
+    在交付坐标上的复检为准（本层只是采纳/回退的确定性闸门）。
+    """
+    from . import ringlayout
+    from .routing import (min_pair_dist, sample_polyline, ANCHOR_MIN_DEG)
+    adj, _ = ringlayout._adjacency(EDGES_REF[0])
+    try:
+        pos, y, meta = ringlayout.place_ring(plan, widths, card_h, cfg, adj,
+                                             EDGES_REF[0])
+    except ringlayout.InfeasibleRing:
+        return None
+    nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
+    # 卡间净距 ≥16（place_ring 按 18 放置，逐对复核兜底）
+    vs = sorted(nodes)
+    for i in range(len(vs)):
+        for j in range(i + 1, len(vs)):
+            a, b = vs[i], vs[j]
+            gap_x = abs(pos[a] - pos[b]) - (widths[a] + widths[b]) / 2
+            gap_y = abs(y[a] - y[b]) - card_h
+            if max(gap_x, gap_y) < cfg.min_gap - 2:      # rect_gap 口径（≥16 门）
+                return None
+    router = Router(nodes_px, EDGES_REF[0], cfg.clearance, cfg.pitch)
+    routes = router.route_all()
+    if router.final_crossing_pairs(routes) > 2:
+        return None
+    eset = set(EDGES_REF[0])
+    for i, info in routes.items():
+        if info.get("press", 0):
+            return None
+        clr = info.get("min_clear")
+        if clr is None or clr < cfg.clearance:
+            return None
+        # 锚点平滑代理（与 check 第 4 项同口径）
+        pts = info["points"]
+        for v, p_idx, n_idx in ((EDGES_REF[0][i][0], 0, 1),
+                                (EDGES_REF[0][i][1], len(pts) - 1, len(pts) - 2)):
+            p = nodes_px[v]
+            a0 = pts[p_idx]
+            if (abs(abs(a0[0] - p[0]) - p[2] / 2) > abs(abs(a0[1] - p[1]) - p[3] / 2) + 1e-9
+                    and abs(abs(a0[1] - p[1]) - p[3] / 2) > 0.75):
+                return None                      # 锚点不在框边
+            dx, dy = pts[n_idx][0] - a0[0], pts[n_idx][1] - a0[1]
+            n = math.hypot(dx, dy)
+            if n < 1e-9:
+                return None
+            on_x = abs(abs(a0[0] - p[0]) - p[2] / 2) <= abs(abs(a0[1] - p[1]) - p[3] / 2)
+            tx, ty = (0.0, 1.0) if on_x else (1.0, 0.0)
+            c = abs(dx * tx + dy * ty) / n
+            if math.degrees(math.acos(max(0.0, min(1.0, c)))) < ANCHOR_MIN_DEG:
+                return None
+    # 互环对分离 ≥4px（F1 口径）
+    for i in range(len(EDGES_REF[0])):
+        for j in range(i + 1, len(EDGES_REF[0])):
+            if EDGES_REF[0][i] != (EDGES_REF[0][j][1], EDGES_REF[0][j][0]):
+                continue
+            md = min_pair_dist(sample_polyline(routes[i]["points"]),
+                               sample_polyline(routes[j]["points"]))
+            if md is None or md < 4.0:
+                return None
+    plan = dict(plan)
+    plan["placed"] = (pos, y, meta)
+    return plan
+
+
 def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
            manual: dict = None):
     """auto 配方入口：图 → v4 兼容布局 dict（含折线/弧线路由 + 元数据）。
@@ -363,6 +431,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     manual：--from-layout 手动布局（{nodes: {id: x,y}, viewBox, source}）。
     给定时跳过分层/定位/精化，按手动坐标走同一布线+交付管线（硬门口径
     不变、如实评分）。manual=None（默认）时代码路径与历史逐字节一致。
+
+    ref-scrubbed 回路主导环形排布：manual=None 时先做确定性触发判定
+    （ringlayout.detect_ring），命中且布线试验过门 → 主环正多边形槽位；
+    不命中/试验不过 → 既有分层路径（逐字节不变）。
     """
     global EDGES_REF
     cfg = config or AutoConfig()
@@ -388,34 +460,50 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         deg0 = []
         engine, pos_meta = "manual", {}
     else:
-        # ② 分层（破环 + 最长路 + 空层压缩）
-        _, dag = _cycle_break(core, EDGES_REF[0])
-        layer = _layers(core, dag)
-        nrow = max(layer.values()) + 1 if core else 1
-        rows = [[v for v in core if layer[v] == r] for r in range(nrow)]
-        rows = [r for r in rows if r]
+        # ②' 回路主导环形排布（2026-11-05 产品定调，ref-scrubbed）：确定性触发判定
+        ring_plan = None
+        if len(nodes) <= 12:
+            from . import ringlayout as _ringlayout
+            _plan = _ringlayout.detect_ring(graph)
+            if _plan is not None:
+                ring_plan = _ring_trial(_plan, nodes, widths, card_h, cfg)
+        if ring_plan is not None:
+            rpos, ry, rmeta = ring_plan["placed"]
+            pos, y = rpos, ry
+            deg0 = list(ring_plan["deg0"])
+            rows = [[v for v in nodes if y[v] == yy]
+                    for yy in sorted({y[v] for v in nodes})]
+            engine = "ring-construct"
+            pos_meta = rmeta
+        else:
+            # ② 分层（破环 + 最长路 + 空层压缩）
+            _, dag = _cycle_break(core, EDGES_REF[0])
+            layer = _layers(core, dag)
+            nrow = max(layer.values()) + 1 if core else 1
+            rows = [[v for v in core if layer[v] == r] for r in range(nrow)]
+            rows = [r for r in rows if r]
 
-        # ③ 定位
-        pos, engine, pos_meta = _solve_positions(core, rows, widths, cfg, linestyle)
+            # ③ 定位
+            pos, engine, pos_meta = _solve_positions(core, rows, widths, cfg, linestyle)
 
-        # y 坐标（行均匀 → 规律性门禁的基座）
-        y = {v: cfg.top + r * cfg.pitch for r, vs in enumerate(rows) for v in vs}
-        # 孤立节点停车带：顶部均匀排布（小图 24px 列吸附，与正则门禁一致）
-        if deg0:
-            total = sum(widths[v] for v in deg0) + cfg.min_gap * (len(deg0) + 1)
-            cw = _content_w(rows, widths, cfg)
-            cur = max(cfg.margin, (cw - total) / 2)
-            snap = cfg.snap_regular if len(nodes) <= 10 else cfg.grid
-            for v in deg0:
-                pos[v] = int(round((cur + widths[v] / 2) / snap)) * snap
-                y[v] = cfg.park_y
-                cur += widths[v] + cfg.min_gap
+            # y 坐标（行均匀 → 规律性门禁的基座）
+            y = {v: cfg.top + r * cfg.pitch for r, vs in enumerate(rows) for v in vs}
+            # 孤立节点停车带：顶部均匀排布（小图 24px 列吸附，与正则门禁一致）
+            if deg0:
+                total = sum(widths[v] for v in deg0) + cfg.min_gap * (len(deg0) + 1)
+                cw = _content_w(rows, widths, cfg)
+                cur = max(cfg.margin, (cw - total) / 2)
+                snap = cfg.snap_regular if len(nodes) <= 10 else cfg.grid
+                for v in deg0:
+                    pos[v] = int(round((cur + widths[v] / 2) / snap)) * snap
+                    y[v] = cfg.park_y
+                    cur += widths[v] + cfg.min_gap
 
-        # ③b 局部精化（小图 ≤10 节点）：以路由真值总成本 hill-climb 横移，
-        # 把布线可行性（压线/净距/交叉）显式喂回定位层
-        if len(core) <= 10:
-            pos, _sc, _rt = _polish(core, EDGES_REF[0], rows, pos, y,
-                                    widths, card_h, cfg)
+            # ③b 局部精化（小图 ≤10 节点）：以路由真值总成本 hill-climb 横移，
+            # 把布线可行性（压线/净距/交叉）显式喂回定位层
+            if len(core) <= 10:
+                pos, _sc, _rt = _polish(core, EDGES_REF[0], rows, pos, y,
+                                        widths, card_h, cfg)
 
     # ④ 布线（直线/弧线一等，框不压线）+ WS3 理论口径（最终路线交叉对数）
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
@@ -511,6 +599,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             e["route"]["via"] = [[round(px, 1), round(py, 1)] for px, py in corners]
 
     if manual is not None:
+        row_y_out = [yy + dy for yy in sorted({y[v] for v in nodes})]
+        pitch_out = None
+    elif engine == "ring-construct":
+        # 环形排布无行结构语义：rowY 记实际 y 去重序，pitch 不适用
         row_y_out = [yy + dy for yy in sorted({y[v] for v in nodes})]
         pitch_out = None
     else:

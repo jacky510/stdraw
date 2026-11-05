@@ -12,7 +12,7 @@
 
 [![CI](https://github.com/jacky510/stdraw/actions/workflows/ci.yml/badge.svg)](https://github.com/jacky510/stdraw/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](pyproject.toml)
 [![Stars](https://img.shields.io/github/stars/jacky510/stdraw.svg?style=flat)](https://github.com/jacky510/stdraw/stargazers)
 
 [安装](#安装) · [Gallery](#gallery) · [Quickstart](#get-started--quickstart) · [DSL](#dsl-一分钟) · [证书与硬门](#certificates--质量证书) · [Agent 集成](#agent-integration)
@@ -30,6 +30,7 @@ pip install stdraw
 主流图工具全停在「交叉最小化」启发式，并且**没有一个敢对自己的输出做承诺**。stdraw 反过来：
 
 - **auto-v2（默认配方）**：分层 + 交叉数进目标函数（CP-SAT 精化可选）+ 直线/弧线一等布线，带**硬质量门**：框压线=0（任何角度）、边-框净距≥16px、锚点平滑、简单图（≤10 节点）对称/规律排布；
+- **回路主导小图环形排布（v0.5.0）**：小图（≤12 节点）存在覆盖 ≥ n−2 节点的主环（或环边占比 ≥90%）时，主环按环序上**正多边形环槽位**（优先声明环序——R/B 极性徽标沿环可读）、弦走环内、残节点确定性环内/环外指派；证书切换为**环形口径指标**（环上等间距 CV + 正多边形模板拟合误差），不再拿行对齐门槛误判环形排布；不触发的图保持分层路径逐字节不变；
 - **WS3 布线数学**：绕障是**可证最短**——障碍按净距膨胀后，在角点可见性图上跑精确 Dijkstra 最短路（图上最优）；折角以相切圆弧平滑（G1 切线连续、曲率有界、逐弧净距复核）；交叉按**双口径**复检——路由理论口径（最终路线）必须等于交付坐标几何复检，不一致拒发证书；R/B 极性标记随局部切线确定性放置，不遮字不压线；
 - **ortho-v1（经典配方，可选）**：平面嵌入 + st 编号 + 可见性表示，可平面图的线全竖直、**0 交叉有定理保证**（行为冻结，逐字节回归保护，供生产调用方 pin 用）；
 - **诚实分级**：拿不到证书就如实说拿不到——**绝不宣称任意图 0 交叉**（auto-v2 的交叉数是目标函数最小化项，不是定理保证）；
@@ -39,14 +40,14 @@ pip install stdraw
 
 ## Gallery
 
-全部为当前引擎（v0.4.0）对仓内语料的真实渲染截图——非手改、非旧版残留（点击跳转对应 demo）。
+全部为当前引擎（v0.5.0）对仓内语料的真实渲染截图——非手改、非旧版残留（点击跳转对应 demo）。
 
 | | |
 |---|---|
 | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a> | <a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a> |
-| **2D · auto-v2 硬门布局**（增长极限×转嫁负担，8n/13e，直线/弧线、框不压线） | **3D · 球面排布**（任意角度旋转，投影交叉由相机解决） |
+| **2D · auto-v2 环形布局**（增长极限×转嫁负担，8n/13e，主环正多边形槽位、弦走环内、0 交叉） | **3D · 球面排布**（任意角度旋转，投影交叉由相机解决） |
 | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a> | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/before-after.png" alt="before/after comparison" width="420"/></a> |
-| **质量证书面板**（硬门 + 门禁 + 诚实分级，随 demo 交付） | **前后对比**（同一输入、当前引擎双配方渲染：ortho-v1 冻结配方线从卡下穿过 → auto-v2 硬门布局、门禁 9/10、R/B 极性徽标） |
+| **质量证书面板**（硬门 + 门禁 + 诚实分级，随 demo 交付；环形口径：环上等间距 CV + 模板拟合） | **前后对比**（同一输入、当前引擎双配方渲染：ortho-v1 冻结配方线从卡下穿过 → auto-v2 环形布局、门禁 9/9、0 交叉、R/B 极性徽标沿环可读） |
 
 ## 对 agent 说人话
 
@@ -73,6 +74,7 @@ stdraw/
 │   ├── crossing_exact.py  # WS2：精确交叉数层（OIL 插入 ILP + 平面化 oracle + B&B 夹逼，可选 ortools）
 │   ├── regularity.py    # WS2：结构检测 + 规律性可计算定义（正多边形偏差/直线度/对称轴）
 │   ├── placement.py     # WS2：槽位离散化放置（结构驱动槽型；general 分支 CP-SAT）
+│   ├── ringlayout.py    # v0.5.0：回路主导环形排布（触发判定 + 主环正多边形槽位 + 残节点指派）
 │   ├── planar.py        #   ortho-v1：2D 平面布局（0 交叉定理保证，行为冻结）
 │   ├── layout3d.py      #   3D 五形体排布（球面/立方体/四面体/圆锥）
 │   ├── metrics.py       #   质量证书 v1/v2 + 诚实分级
@@ -154,18 +156,22 @@ loop R1 "采纳扩散" "R" [rate, adopters, word]
 
 ```json
 {
-  "metrics": { "crossings": 1, "box_press_1px": 0, "edge_box_min_clear": 18.0,
-               "min_card_gap": 22.0, "row_align_rate": 0.625,
-               "spacing_cv": 0.162, "column_snap24_rate": 1.0,
-               "mutual_pair_min_sep": 12.0 },
-  "gates":   { "crossings_zero": false, "box_press_zero": true,
+  "metrics": { "crossings": 0, "box_press_1px": 0, "edge_box_min_clear": 18.0,
+               "min_card_gap": 40.0, "row_align_rate": null,
+               "spacing_cv": 0.405, "ring_spacing_cv": 0.0,
+               "ring_template_deviation": 0.0, "mutual_pair_min_sep": 15.8 },
+  "gates":   { "crossings_zero": true, "box_press_zero": true,
                "edge_box_clear_ge_16": true, "anchors_smooth": true,
-               "min_gap_ge_16": true, "row_align_ge_060": true,
-               "cv_le_035": true, "regularity_simple": true,
+               "min_gap_ge_16": true, "ring_spacing_cv_le_005": true,
+               "ring_template_fit_le_005": true,
                "mutual_pairs_separated": true, "routing_consistent": true },
-  "grade": "其次"
+  "placement": "ring-cycle",
+  "grade": "最优"
 }
 ```
+
+（环形排布证书：行对齐率/列吸附如实为 `null`——规律性门按排布模式切换为
+环上等间距 CV + 正多边形模板拟合误差；分层布局仍用行对齐口径。）
 
 诚实分级语义（分级铁律：**绝不冒充成品**）：
 
@@ -191,7 +197,7 @@ loop R1 "采纳扩散" "R" [rate, adopters, word]
 
 | 配方 | 线型 | 保证 | 适用 |
 |---|---|---|---|
-| `auto-v2`（默认） | 直线/弧线一等（`--linestyle straight\|arc`） | 硬质量门 + 交叉最小化（CP-SAT 可选 `pip install "stdraw[solver]"`） | 一般 CLD / 教学 / 报告 |
+| `auto-v2`（默认） | 直线/弧线一等（`--linestyle straight\|arc`） | 硬质量门 + 交叉最小化（CP-SAT 可选 `pip install "stdraw[solver]"`）；回路主导小图（≤12 节点）走环形排布 + 环形口径门 | 一般 CLD / 教学 / 报告 |
 | `ortho-v1`（`--recipe ortho`） | 全竖直正交 | 可平面图 0 交叉定理保证（**行为冻结**，CI 逐字节回归） | 生产调用方 pin / 正交风格偏好 |
 
 ## Agent Integration

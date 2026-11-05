@@ -261,7 +261,10 @@ def scene_from_auto(v4: dict) -> dict:
             "anchors": anchors,
             "router_pairs": v4["meta"].get("router_cross_pairs"),
             "line_style": v4["meta"].get("line_style", "straight"),
-            "deg0": set(v4["meta"].get("deg0", []))}
+            "deg0": set(v4["meta"].get("deg0", [])),
+            # ref-scrubbed 环形排布口径：证书按排布模式选指标
+            "placement": v4["meta"].get("placement"),
+            "ring_nodes": (v4["meta"].get("ring") or {}).get("nodes")}
 
 
 def _anchor_tangent_angle(node, anchor, direction):
@@ -292,6 +295,10 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     ids = list(nodes)
     notes = list(notes or [])
     line_style = scene.get("line_style", "straight")
+    # ref-scrubbed 环形排布口径：行对齐率/列吸附对环形排布天然不适用，
+    # 按排布模式选指标（环形 = 环上等间距 CV + 正多边形模板拟合误差）。
+    ring_mode = scene.get("placement") == "ring-cycle"
+    ring_nodes = scene.get("ring_nodes") or []
 
     # 1. 交叉（折线两两求交）
     crossings = []
@@ -379,16 +386,19 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     avg_len = sum(sum(math.dist(polys[i][k], polys[i][k + 1])
                       for k in range(len(polys[i]) - 1))
                   for i in polys) / len(polys) if polys else 0.0
-    ysorted = sorted(p["y"] for p in nodes.values())
-    aligned, i2 = 0, 0
-    while i2 < len(ysorted):
-        j = i2
-        while j + 1 < len(ysorted) and ysorted[j + 1] - ysorted[j] <= ROW_EPS:
-            j += 1
-        if j > i2:
-            aligned += j - i2 + 1
-        i2 = j + 1
-    row_rate = aligned / len(ids) if ids else 0.0
+    if ring_mode:
+        row_rate = None          # 环形排布：行对齐率不适用（口径如实区分）
+    else:
+        ysorted = sorted(p["y"] for p in nodes.values())
+        aligned, i2 = 0, 0
+        while i2 < len(ysorted):
+            j = i2
+            while j + 1 < len(ysorted) and ysorted[j + 1] - ysorted[j] <= ROW_EPS:
+                j += 1
+            if j > i2:
+                aligned += j - i2 + 1
+            i2 = j + 1
+        row_rate = aligned / len(ids) if ids else 0.0
     gaps = []
     for a in range(len(ids)):
         for b in range(a + 1, len(ids)):
@@ -407,14 +417,37 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     cv = (math.sqrt(sum((d - mean_nn) ** 2 for d in nn) / len(nn)) / mean_nn) if nn and mean_nn else 0.0
 
     # 规律性（简单图 ≤10 节点）：行距恒等 + 24px 列吸附占比（停车带节点不计行距）
+    # 环形排布：规律性口径切换为「环上等间距 CV + 正多边形模板拟合误差」
+    # （行距恒等/列吸附对环排布天然不成立，不得拿行口径误判环形不合格）
     deg0 = scene.get("deg0", set())
-    ys = sorted({p["y"] for v, p in nodes.items() if v not in deg0})
-    pitch_uniform = (len(set(b - a for a, b in zip(ys, ys[1:]))) <= 1
-                     if len(ys) > 1 else True)
-    snap_n = sum(1 for p in nodes.values() if abs(p["x"] % 24) < EPS)
-    snap_rate = snap_n / len(ids) if ids else 0.0
-    simple = len(ids) <= 10
-    regularity_ok = pitch_uniform and (snap_rate >= 0.6 if simple else snap_rate >= 0.0)
+    ring_spacing_cv = None
+    ring_template_dev = None
+    if ring_mode and len(ring_nodes) >= 3:
+        rpts = [(nodes[v]["x"], nodes[v]["y"]) for v in ring_nodes
+                if v in nodes]
+        if len(rpts) >= 3:
+            dists = [math.dist(rpts[i], rpts[(i + 1) % len(rpts)])
+                     for i in range(len(rpts))]
+            md = sum(dists) / len(dists)
+            ring_spacing_cv = (math.sqrt(sum((d - md) ** 2 for d in dists)
+                                         / len(dists)) / md) if md else 0.0
+            try:
+                from . import regularity as _reg
+                ring_template_dev = _reg.cycle_polygon_deviation(
+                    {v: (nodes[v]["x"], nodes[v]["y"]) for v in ring_nodes},
+                    ring_nodes)
+            except Exception:
+                ring_template_dev = None
+    if ring_mode:
+        pitch_uniform, snap_rate, simple, regularity_ok = True, None, False, True
+    else:
+        ys = sorted({p["y"] for v, p in nodes.items() if v not in deg0})
+        pitch_uniform = (len(set(b - a for a, b in zip(ys, ys[1:]))) <= 1
+                         if len(ys) > 1 else True)
+        snap_n = sum(1 for p in nodes.values() if abs(p["x"] % 24) < EPS)
+        snap_rate = snap_n / len(ids) if ids else 0.0
+        simple = len(ids) <= 10
+        regularity_ok = pitch_uniform and (snap_rate >= 0.6 if simple else snap_rate >= 0.0)
 
     W = max(p["x"] + p["w"] / 2 for p in nodes.values()) - min(p["x"] - p["w"] / 2 for p in nodes.values())
     H = max(p["y"] + p["h"] / 2 for p in nodes.values()) - min(p["y"] - p["h"] / 2 for p in nodes.values())
@@ -439,27 +472,46 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "anchor_violations": len(anchor_bad),
         "anchor_details": anchor_bad[:10],
         "avg_edge_length": round(avg_len, 1),
-        "row_align_rate": round(row_rate, 3),
+        "row_align_rate": round(row_rate, 3) if row_rate is not None else None,
         "min_card_gap": round(min_gap, 1),
         "spacing_cv": round(cv, 3),
-        "column_snap24_rate": round(snap_rate, 3),
+        "column_snap24_rate": round(snap_rate, 3) if snap_rate is not None else None,
         "mutual_pair_min_sep": mutual_min_sep,
         "mutual_pair_details": pair_infos[:10],
         "bbox": [round(W), round(H)],
     }
+    if ring_mode:
+        metrics["ring_spacing_cv"] = (round(ring_spacing_cv, 4)
+                                      if ring_spacing_cv is not None else None)
+        metrics["ring_template_deviation"] = (round(ring_template_dev, 4)
+                                              if ring_template_dev is not None else None)
 
-    g = {
-        "crossings_zero": metrics["crossings"] == 0,
-        "box_press_zero": metrics["box_press_1px"] == 0,
-        "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
-        "anchors_smooth": metrics["anchor_violations"] == 0,
-        "min_gap_ge_16": metrics["min_card_gap"] >= 16,
-        "row_align_ge_060": metrics["row_align_rate"] >= 0.60,
-        "cv_le_035": metrics["spacing_cv"] <= 0.35,
-        "regularity_simple": regularity_ok,
-        # F1 硬门：互环对两线最小间距 ≥ 4px（无互环对时平凡通过）
-        "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
-    }
+    if ring_mode:
+        # 环形口径门：环上等间距 CV + 模板拟合误差（2px 量化容差内 ≈0）
+        g = {
+            "crossings_zero": metrics["crossings"] == 0,
+            "box_press_zero": metrics["box_press_1px"] == 0,
+            "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
+            "anchors_smooth": metrics["anchor_violations"] == 0,
+            "min_gap_ge_16": metrics["min_card_gap"] >= 16,
+            "ring_spacing_cv_le_005": (metrics["ring_spacing_cv"] is not None
+                                       and metrics["ring_spacing_cv"] <= 0.05),
+            "ring_template_fit_le_005": (metrics["ring_template_deviation"] is not None
+                                         and metrics["ring_template_deviation"] <= 0.05),
+            "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+        }
+    else:
+        g = {
+            "box_press_zero": metrics["box_press_1px"] == 0,
+            "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
+            "anchors_smooth": metrics["anchor_violations"] == 0,
+            "min_gap_ge_16": metrics["min_card_gap"] >= 16,
+            "row_align_ge_060": metrics["row_align_rate"] >= 0.60,
+            "cv_le_035": metrics["spacing_cv"] <= 0.35,
+            "regularity_simple": regularity_ok,
+            # F1 硬门：互环对两线最小间距 ≥ 4px（无互环对时平凡通过）
+            "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+        }
     if routing_consistent is not None:
         g["routing_consistent"] = routing_consistent
     if gates:
@@ -467,8 +519,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             g[k] = v
     g_pass = sum(1 for v in g.values() if v)
 
-    hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
-               g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"])
+    if ring_mode:
+        hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
+                   g["anchors_smooth"] and g["min_gap_ge_16"] and
+                   g["ring_spacing_cv_le_005"] and g["ring_template_fit_le_005"])
+    else:
+        hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
+                   g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"])
     dual_ok = routing_consistent is not False   # 双口径不一致 → 拒发证书
     if metrics["crossings"] == 0 and hard_ok and dual_ok:
         grade = "最优"
@@ -486,13 +543,14 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         grade_note = ("硬门未全过或交叉 >2 处——如实不评级，"
                       "放宽预算换的证书不冒充成品")
 
-    return {
-        "tool": "stdraw", "version": "0.4.0", "layer": layer,
+    out = {
+        "tool": "stdraw", "version": "0.5.0", "layer": layer,
         "graph": graph_name,
         "n": len(ids), "m": len(edges),
         "coords": "delivered/rounded",
         "recipe": "auto-v2",
         "line_style": line_style,
+        "placement": "ring-cycle" if ring_mode else "layered",
         "metrics": metrics,
         "gates": g,
         "gates_passed": f"{g_pass}/{len(g)}",
@@ -516,6 +574,17 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "CLD 环多常不可平面，交叉数是目标函数最小化项而非定理保证；"
             "本证书只对本图本布局成立"),
     }
+    if ring_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "环形排布口径（ref-scrubbed）：行对齐率/24px 列吸附对环形排布不适用，"
+            "规律性门切换为环上等间距 CV ≤0.05 + 正多边形模板拟合误差 ≤0.05；"
+            "主环按环序正多边形槽位、弦走环内，环路极性（R/B）徽标沿环可读"]
+        out["ring"] = {
+            "nodes": list(ring_nodes),
+            "spacing_cv": metrics.get("ring_spacing_cv"),
+            "template_deviation": metrics.get("ring_template_deviation"),
+        }
+    return out
 
 
 _EXACT_SCOPE_NOTE = (
