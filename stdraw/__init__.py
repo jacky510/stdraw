@@ -18,10 +18,14 @@ from . import recipes
 from .metrics import certificate, certificate_auto
 from .check import geometry_report
 from .loops import loops_audit
+from . import crossing_exact          # WS2：精确交叉数层（可选 ortools）
+from . import regularity              # WS2：结构检测 + 规律性可计算定义
+from . import placement               # WS2：槽位离散化放置（可选 ortools）
 
 __all__ = [
     "Graph", "Node", "Edge", "Loop", "Group",
     "parse", "dumps",
     "PlanarLayout", "certificate", "certificate_auto", "geometry_report",
     "loops_audit", "recipes",
+    "crossing_exact", "regularity", "placement",
 ]
