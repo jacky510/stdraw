@@ -38,6 +38,8 @@
     ]
    }
   ],
+  "line_line_coincident_pairs": 0,
+  "line_line_coincident_details": [],
   "bbox": [
    722,
    664
@@ -54,9 +56,10 @@
   "ring_spacing_cv_le_005": true,
   "ring_template_fit_le_005": true,
   "mutual_pairs_separated": true,
+  "lines_no_coincidence": true,
   "routing_consistent": true
  },
- "gates_passed": "9/9",
+ "gates_passed": "10/10",
  "grade": "最优",
  "grade_note": "硬门全过（框压线0/净距≥16/锚点平滑/规律）+ 线 0 交叉",
  "proven_optimal": null,
@@ -81,6 +84,7 @@
  "honest_notes": [
   "硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性",
   "互环对（a↔b 双向边）两线最小间距 ≥4px（透镜双弧/平行偏移/外围绕行，禁止重合成双箭头线；穿卡计数按边×卡去重）",
+  "线-线视觉重合对数=0（ref-scrubbed：任意两线 <1px 并行同走 >8px 判重合；端点锚点处的瞬时会合不计；机器可查指标）",
   "交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，不一致拒发证书",
   "布线数学：绕障 = 净距膨胀障碍可见性图 Dijkstra 最短路（图上精确最优；相对圆角障碍连续空间真最短路每贴角至多多 (2−π/2)·膨胀余量 px）；平滑 = 折角相切圆弧（G1 切线连续、曲率有界），凸角相切弧向障碍侧下探 r·(1/cos(θ/2)−1)，受膨胀余量约束",
   "环形排布口径（ref-scrubbed）：行对齐率/24px 列吸附对环形排布不适用，规律性门切换为环上等间距 CV ≤0.05 + 正多边形模板拟合误差 ≤0.05；主环按环序正多边形槽位、弦走环内，环路极性（R/B）徽标沿环可读"

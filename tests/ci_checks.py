@@ -48,13 +48,13 @@ RANDOM_SAMPLES = [
 ]
 HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
               "min_gap_ge_16", "cv_le_035", "regularity_simple",
-              "mutual_pairs_separated")
+              "mutual_pairs_separated", "lines_no_coincidence")
 # ref-scrubbed 环形排布（placement=ring-cycle）：规律性门切换为环口径
 # （行对齐/列吸附对环形不适用，不得拿行口径误判环形不合格）
 RING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "min_gap_ge_16", "ring_spacing_cv_le_005",
                    "ring_template_fit_le_005", "mutual_pairs_separated",
-                   "crossings_zero")
+                   "crossings_zero", "lines_no_coincidence")
 
 
 def run_cli(path, outdir, extra=(), pitch="62"):

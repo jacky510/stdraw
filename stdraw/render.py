@@ -168,11 +168,13 @@ def _pt_poly_dist(px, py, pts):
     return best
 
 
-def _polarity_marker(e, polys, boxes, W, H):
+def _polarity_marker(e, polys, boxes, W, H, placed=()):
     """R/B 标记位置：确定性候选序（t × 法向偏移），首个不遮字不压线的位置。
 
     boxes: [(cx, cy, hw, hh)] 全部框；不遮字 = 与框外缘保持 ≥8px；
-    不压线 = 与其他边折线保持 ≥11px。
+    不压线 = 与其他边折线保持 ≥11px；
+    不互撞（ref-scrubbed #10②）= 与已放置徽标圆心保持 ≥17px
+    （徽标圆 r=7.5，两圆不相交需 >15px，留 2px 视觉余量）。
     """
     pol = e.get("polarity", "+")
     if pol not in ("+", "-"):
@@ -184,9 +186,13 @@ def _polarity_marker(e, polys, boxes, W, H):
     for t in (0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74):
         p, tan = _poly_point_at(own, t)
         nx, ny = -tan[1], tan[0]
-        for off in (10, -10, 14, -14, 18, -18):
+        for off in (10, -10, 14, -14, 18, -18, 22, -22):
             cand = (p[0] + nx * off, p[1] + ny * off)
             if not (8 <= cand[0] <= W - 8 and 8 <= cand[1] <= H - 8):
+                continue
+            # 不互撞：与已放置徽标 ≥17px
+            if any((cand[0] - bx) ** 2 + (cand[1] - by) ** 2 < 17.0 ** 2
+                   for (bx, by) in placed):
                 continue
             # 不遮字：与任何框（含端点框）外缘保持 ≥8px
             near_box = False
@@ -223,11 +229,14 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     for i, e in enumerate(edges):
         e["_idx"] = i
         parts.append(f'<g data-edge="{i}">' + _edge_svg(e, labels, values) + '</g>')
-    # WS3：R/B 极性标记（确定性放置，白底盘 + 字母）
+    # WS3：R/B 极性标记（确定性放置，白底盘 + 字母）；
+    # ref-scrubbed #10②：逐个放置时与已放徽标保持 ≥17px（互撞避让）。
+    placed_pol = []
     for i, e in enumerate(edges):
-        mk = _polarity_marker(e, polys, boxes, W, H)
+        mk = _polarity_marker(e, polys, boxes, W, H, placed_pol)
         if mk:
             (mx, my), letter, mcolor = mk
+            placed_pol.append((mx, my))
             parts.append(f'<g data-pol="{i}" transform="translate({mx:.1f} {my:.1f})">'
                          f'<circle r="7.5" fill="#ffffff" stroke="{mcolor}" '
                          f'stroke-width="1.2"/>'

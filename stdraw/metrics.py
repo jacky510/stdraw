@@ -276,6 +276,54 @@ def _anchor_tangent_angle(node, anchor, direction):
     return math.degrees(math.acos(max(0.0, min(1.0, c))))
 
 
+# ── 线-线视觉重合（ref-scrubbed #10①/#05 检测：机器可查）─────────────
+COINCIDE_THR = 1.0     # 距离 <1px 视为贴合
+COINCIDE_SPAN = 8.0    # 贴合累计长度 >8px 才判「视觉重合」（端点会合豁免）
+
+
+def _pt_seg_dist(p, a, b):
+    """点到线段距离。"""
+    vx, vy = b[0] - a[0], b[1] - a[1]
+    l2 = vx * vx + vy * vy
+    if l2 < EPS:
+        return math.hypot(p[0] - a[0], p[1] - a[1])
+    t = max(0.0, min(1.0, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / l2))
+    return math.hypot(p[0] - a[0] - t * vx, p[1] - a[1] - t * vy)
+
+
+def _coincidence_span(sa, sb, step, thr=COINCIDE_THR):
+    """两条采样折线在 <thr 距离上并行同走的长度（px，双向取大；确定性）。
+
+    对 A 的采样点逐个算到 B 折线（点-线段）的最小距离，<thr 的采样步
+    累计为贴合长度；再对称算 B→A，取大者。两端点锚点处的瞬时会合
+    贴合长度只有 ~1-2px，不越 8px 跨度门；真重合（长跨度并行贴合）
+    会被任一方向稳定捕获。
+    """
+    def one_way(src, other):
+        total = 0.0
+        for p in src:
+            dmin = float("inf")
+            for k in range(len(other) - 1):
+                d = _pt_seg_dist(p, other[k], other[k + 1])
+                if d < dmin:
+                    dmin = d
+                    if dmin < thr:
+                        break
+            if dmin < thr:
+                total += step
+        return total
+    return max(one_way(sa, sb), one_way(sb, sa))
+
+
+def _bbox_gap(pa, pb):
+    """两折线包围盒的间隔（0 = 相交/重叠）。"""
+    ax0 = min(p[0] for p in pa); ax1 = max(p[0] for p in pa)
+    ay0 = min(p[1] for p in pa); ay1 = max(p[1] for p in pa)
+    bx0 = min(p[0] for p in pb); bx1 = max(p[0] for p in pb)
+    by0 = min(p[1] for p in pb); by1 = max(p[1] for p in pb)
+    return max(0.0, max(bx0 - ax1, ax0 - bx1, by0 - ay1, ay0 - by1))
+
+
 def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                      gates: Optional[dict] = None,
                      notes: Optional[List[str]] = None,
@@ -329,6 +377,24 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                                         round(md, 1) if md is not None else None]})
     mutual_min_sep = (min(p["pair"][1] for p in pair_infos if p["pair"][1] is not None)
                       if any(p["pair"][1] is not None for p in pair_infos) else None)
+
+    # 1c. 线-线视觉重合对数（ref-scrubbed #10①/#05）：任意两条边（含共享
+    # 节点的边对——端点会合由 8px 跨度门豁免）交付几何 <1px 并行同走
+    # >8px 判重合。bbox 间隔预过滤（重合对 bbox 必重叠，等价加速）。
+    coincide_pairs = []
+    _step = 4.0
+    for i in range(len(edges)):
+        sa = sample_polyline(polys[i])
+        for j in range(i + 1, len(edges)):
+            sb = sample_polyline(polys[j])
+            if _bbox_gap(sa, sb) > COINCIDE_THR:
+                continue
+            span = _coincidence_span(sa, sb, _step)
+            if span > COINCIDE_SPAN:
+                coincide_pairs.append(
+                    {"pair": [f"{edges[i]['a']}->{edges[i]['b']}",
+                              f"{edges[j]['a']}->{edges[j]['b']}"],
+                     "span_px": round(span, 1)})
 
     # 2. 框压线（1px 余量）+ 边-框净距 + 自家框端点合规
     press, clear_details, anchor_bad = [], [], []
@@ -478,6 +544,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "column_snap24_rate": round(snap_rate, 3) if snap_rate is not None else None,
         "mutual_pair_min_sep": mutual_min_sep,
         "mutual_pair_details": pair_infos[:10],
+        "line_line_coincident_pairs": len(coincide_pairs),
+        "line_line_coincident_details": coincide_pairs[:10],
         "bbox": [round(W), round(H)],
     }
     if ring_mode:
@@ -499,6 +567,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "ring_template_fit_le_005": (metrics["ring_template_deviation"] is not None
                                          and metrics["ring_template_deviation"] <= 0.05),
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     else:
         g = {
@@ -511,6 +580,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "regularity_simple": regularity_ok,
             # F1 硬门：互环对两线最小间距 ≥ 4px（无互环对时平凡通过）
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            # ref-scrubbed #10①/#05 硬门：线-线视觉重合对数 = 0
+            "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     if routing_consistent is not None:
         g["routing_consistent"] = routing_consistent
@@ -564,6 +635,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性",
             "互环对（a↔b 双向边）两线最小间距 ≥4px（透镜双弧/平行偏移/外围绕行，"
             "禁止重合成双箭头线；穿卡计数按边×卡去重）",
+            "线-线视觉重合对数=0（ref-scrubbed：任意两线 <1px 并行同走 >8px 判重合；"
+            "端点锚点处的瞬时会合不计；机器可查指标）",
             "交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，"
             "不一致拒发证书",
             "布线数学：绕障 = 净距膨胀障碍可见性图 Dijkstra 最短路（图上精确最优；"
