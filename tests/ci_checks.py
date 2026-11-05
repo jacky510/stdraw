@@ -39,6 +39,12 @@ AUTO_EXAMPLES = EXAMPLES + [
 HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
               "min_gap_ge_16", "cv_le_035", "regularity_simple",
               "mutual_pairs_separated")
+# ref-scrubbed 环形排布（placement=ring-cycle）：规律性门切换为环口径
+# （行对齐/列吸附对环形不适用，不得拿行口径误判环形不合格）
+RING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
+                   "min_gap_ge_16", "ring_spacing_cv_le_005",
+                   "ring_template_fit_le_005", "mutual_pairs_separated",
+                   "crossings_zero")
 
 
 def run_cli(path, outdir, extra=(), pitch="62"):
@@ -123,7 +129,9 @@ def main():
                 failures.append(f"auto {ex}: geometry fail={geo['fail']}")
             cert = load(out1, "certificate.json")
             m = cert["metrics"]
-            for k in HARD_GATES:
+            gates = (RING_HARD_GATES if cert.get("placement") == "ring-cycle"
+                     else HARD_GATES)
+            for k in gates:
                 if not cert["gates"].get(k, False):
                     failures.append(f"auto {ex}: 硬门 {k} FAIL "
                                     f"(metrics={json.dumps(m, ensure_ascii=False)[:300]})")
@@ -227,6 +235,74 @@ def main():
                 if not failures or all("manual-loop" not in x for x in failures):
                     print("OK  manual-loop: --from-layout 恒等复现 fail=0 + "
                           "layout-diff 三层齐备")
+
+        # ── G. 回路主导环形排布（ref-scrubbed）：触发/口径/负例/回退 ──
+        r = subprocess.run([sys.executable, os.path.join(root, "tests",
+                                                          "test_ring_layout.py")],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            failures.append(f"test_ring_layout: exit {r.returncode}\n"
+                            f"{r.stdout}\n{r.stderr}")
+        else:
+            print("OK  test_ring_layout: 环形触发/口径/负例不误伤/确定性 全过")
+
+        # G2. debt-spiral 实测：主环成圆、0 交叉、环形口径门全过
+        ds = os.path.join(root, "benchmarks/corpus/classic/debt-spiral.cld")
+        out_g = os.path.join(tmp, "debt-spiral-ring")
+        r_g = run_cli(ds, out_g, (), pitch=None)
+        if r_g.returncode != 0:
+            failures.append(f"ring debt-spiral: CLI exit {r_g.returncode}\n{r_g.stdout[-800:]}")
+        else:
+            lay_g = load(out_g, "layout.json")
+            cert_g = load(out_g, "certificate.json")
+            if lay_g["meta"].get("placement") != "ring-cycle" or \
+                    lay_g["meta"].get("position_engine") != "ring-construct":
+                failures.append("ring debt-spiral: 未走环形排布 "
+                                f"(engine={lay_g['meta'].get('position_engine')})")
+            if cert_g["metrics"]["crossings"] != 0 or \
+                    cert_g.get("placement") != "ring-cycle":
+                failures.append(f"ring debt-spiral: crossings="
+                                f"{cert_g['metrics']['crossings']} placement="
+                                f"{cert_g.get('placement')}")
+            for k in RING_HARD_GATES:
+                if not cert_g["gates"].get(k, False):
+                    failures.append(f"ring debt-spiral: 环形口径门 {k} FAIL")
+            if cert_g["grade"] != "最优":
+                failures.append(f"ring debt-spiral: grade={cert_g['grade']}")
+            if not failures or all("debt-spiral" not in x for x in failures):
+                print("OK  ring debt-spiral: 主环成圆(5节点) 交叉0 最优 "
+                      "环形口径门全过")
+
+        # G3. 负例不误伤：链/树/13节点环/双三角+桥 → 不触发，分层路径原样
+        neg_fixtures = {
+            "ci-neg-chain.cld": 'graph "链"\nvar a "A"\nvar b "B"\nvar c "C"\n'
+                                'var d "D"\na -> + b\nb -> + c\nc -> + d\n',
+            "ci-neg-tree.cld": 'graph "树"\nvar root "根"\nvar x1 "子一"\n'
+                               'var x2 "子二"\nroot -> + x1\nroot -> + x2\n',
+            "ci-neg-big-ring.cld": "graph \"大环\"\n" + "".join(
+                f'var v{i} "节点{i}"\n' for i in range(13)) + "".join(
+                f'v{i} -> + v{(i + 1) % 13}\n' for i in range(13)),
+            "ci-neg-two-tri.cld": 'graph "双三角"\nvar a1 "甲一"\nvar a2 "甲二"\n'
+                                  'var a3 "甲三"\nvar b1 "乙一"\nvar b2 "乙二"\n'
+                                  'var b3 "乙三"\na1 -> + a2\na2 -> + a3\n'
+                                  'a3 -> + a1\nb1 -> + b2\nb2 -> + b3\n'
+                                  'b3 -> + b1\na1 -> + b1\n',
+        }
+        for fn, text in neg_fixtures.items():
+            p = os.path.join(tmp, fn)
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(text)
+            out_n = os.path.join(tmp, fn + "-out")
+            r_n = run_cli(p, out_n, (), pitch=None)
+            if r_n.returncode not in (0, 1):     # 几何 fail=存量语义，exit 1 合法
+                failures.append(f"ring 负例 {fn}: CLI exit {r_n.returncode}")
+                continue
+            lay_n = load(out_n, "layout.json")
+            if lay_n["meta"].get("position_engine") == "ring-construct" or \
+                    "placement" in lay_n["meta"]:
+                failures.append(f"ring 负例 {fn}: 误触发环形排布")
+        if not failures or all("负例" not in x for x in failures):
+            print("OK  ring 负例 4 张（链/树/13节点环/双三角+桥）：不触发、分层原样")
 
         if failures:
             print("\nFAILURES:")

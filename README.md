@@ -12,7 +12,7 @@ English | [简体中文](README_zh-CN.md)
 
 [![CI](https://github.com/jacky510/stdraw/actions/workflows/ci.yml/badge.svg)](https://github.com/jacky510/stdraw/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](pyproject.toml)
 [![Stars](https://img.shields.io/github/stars/jacky510/stdraw.svg?style=flat)](https://github.com/jacky510/stdraw/stargazers)
 
 [Install](#install) · [Gallery](#gallery) · [Quickstart](#quickstart) · [DSL](#dsl-in-one-minute) · [Certificates](#certificates--quality-gates) · [Agent Integration](#agent-integration)
@@ -28,6 +28,7 @@ pip install stdraw
 Mainstream diagram tools stop at "crossing minimization" heuristics, and **none of them make a verifiable promise about their own output**. stdraw is built the other way around:
 
 - **auto-v2 (default recipe)**: layered layout with crossings as a first-class term of the objective function (optional CP-SAT refinement) plus straight/arc-first routing, enforced by **hard quality gates**: box-over-line = 0 (any angle), edge-to-box clearance ≥ 16px, smooth border anchors, and symmetric/regular arrangement for simple graphs (≤ 10 nodes);
+- **Ring layout for loop-dominated small graphs (v0.5.0)**: when a small graph (≤ 12 nodes) has a dominant simple cycle covering ≥ n−2 nodes (or ≥ 90% of its edges lie on cycles), the main loop is placed on **regular-polygon ring slots** in cycle order (declared loop order preferred, so R/B polarity markers read along the ring), chords route inside the ring, and residual nodes get deterministic inner/outer slots; the certificate switches to **ring-appropriate metrics** (ring-spacing CV + polygon template-fit error) instead of row alignment — layout mode is stated honestly, never judged by row-gate yardsticks; non-triggering graphs keep the layered path byte-identical;
 - **WS3 routing math**: detours are **provably shortest** — obstacles inflated by the clearance, then an exact Dijkstra shortest path over the corner visibility graph (graph-optimal); polyline corners are smoothed with tangent circular arcs (G1-continuous, bounded curvature, per-arc clearance re-verified); crossings are re-checked in **dual calibers** — the router's theoretical count on final geometry must equal the geometric recount on delivered coordinates, or no certificate is issued; R/B polarity markers are placed deterministically along the local tangent, never covering text or other wires;
 - **ortho-v1 (classic recipe, optional)**: planar embedding + st-numbering + visibility representation — all wires strictly vertical with a **theorem-level 0-crossing guarantee** on planar graphs (behavior frozen, byte-regression protected, safe for production callers to pin);
 - **Honest grading**: if it can't earn a certificate it says so — **never claims 0 crossings for arbitrary graphs** (in auto-v2, crossings are minimized, not guaranteed);
@@ -37,14 +38,14 @@ Mainstream diagram tools stop at "crossing minimization" heuristics, and **none 
 
 ## Gallery
 
-All images are real renderings produced by the current engine (v0.4.0) from the in-repo corpus — no mock-ups, no stale artifacts (click through to each demo).
+All images are real renderings produced by the current engine (v0.5.0) from the in-repo corpus — no mock-ups, no stale artifacts (click through to each demo).
 
 | | |
 |---|---|
 | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a> | <a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a> |
-| **2D · auto-v2 hard-gate layout** (limits-to-growth × shifting-the-burden, 8n/13e, straight/arc lines, no box over a line) | **3D · sphere arrangement** (rotate freely; projection crossings solved by the camera) |
+| **2D · auto-v2 ring layout** (limits-to-growth × shifting-the-burden, 8n/13e, main loop on regular-polygon ring slots, chords inside, 0 crossings) | **3D · sphere arrangement** (rotate freely; projection crossings solved by the camera) |
 | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a> | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/before-after.png" alt="before/after comparison" width="420"/></a> |
-| **Quality certificate panel** (hard gates + gate tally + honest grade, exactly as shipped in the demo) | **Before/after** (same input, both rendered by the current engine: frozen ortho-v1 recipe with wires occluded under cards → auto-v2 hard-gate layout, gates 9/10, R/B polarity markers) |
+| **Quality certificate panel** (hard gates + gate tally + honest grade, exactly as shipped in the demo; ring caliber: ring-spacing CV + template fit) | **Before/after** (same input, both rendered by the current engine: frozen ortho-v1 recipe with wires occluded under cards → auto-v2 ring layout, gates 9/9, 0 crossings, R/B polarity markers readable along the ring) |
 
 ## Ask your agent in plain words
 
@@ -71,6 +72,7 @@ stdraw/
 │   ├── crossing_exact.py  # WS2: 精确交叉数层（OIL 插入 ILP + 平面化 oracle + B&B 夹逼，可选 ortools）
 │   ├── regularity.py    # WS2: 结构检测 + 规律性可计算定义（正多边形偏差/直线度/对称轴）
 │   ├── placement.py     # WS2: 槽位离散化放置（结构驱动槽型；general 分支 CP-SAT）
+│   ├── ringlayout.py    # v0.5.0: 回路主导环形排布（触发判定 + 主环正多边形槽位 + 残节点指派）
 │   ├── planar.py        #   ortho-v1: 2D planar layout (theorem-level 0 crossings, frozen behavior)
 │   ├── layout3d.py      #   3D five-solid arrangements (sphere/cube/tetrahedron/cone)
 │   ├── metrics.py       #   quality certificates v1/v2 + honest grading
@@ -155,18 +157,23 @@ Every deliverable directory contains `certificate.json`:
 
 ```json
 {
-  "metrics": { "crossings": 1, "box_press_1px": 0, "edge_box_min_clear": 18.0,
-               "min_card_gap": 22.0, "row_align_rate": 0.625,
-               "spacing_cv": 0.162, "column_snap24_rate": 1.0,
-               "mutual_pair_min_sep": 12.0 },
-  "gates":   { "crossings_zero": false, "box_press_zero": true,
+  "metrics": { "crossings": 0, "box_press_1px": 0, "edge_box_min_clear": 18.0,
+               "min_card_gap": 40.0, "row_align_rate": null,
+               "spacing_cv": 0.405, "ring_spacing_cv": 0.0,
+               "ring_template_deviation": 0.0, "mutual_pair_min_sep": 15.8 },
+  "gates":   { "crossings_zero": true, "box_press_zero": true,
                "edge_box_clear_ge_16": true, "anchors_smooth": true,
-               "min_gap_ge_16": true, "row_align_ge_060": true,
-               "cv_le_035": true, "regularity_simple": true,
+               "min_gap_ge_16": true, "ring_spacing_cv_le_005": true,
+               "ring_template_fit_le_005": true,
                "mutual_pairs_separated": true, "routing_consistent": true },
-  "grade": "其次"
+  "placement": "ring-cycle",
+  "grade": "最优"
 }
 ```
+
+(Ring-layout certificate: row alignment / column snap are honestly `null` — the
+regularity gates switch to ring spacing CV + polygon template fit, per placement
+mode. Layered layouts keep the row-alignment caliber.)
 
 Honest grading semantics (iron rule: **never pass off a non-certificate as one**):
 
@@ -195,7 +202,7 @@ symmetry-axis alignment; definitions in docs/crossing-exact.md §7).
 
 | Recipe | Line style | Guarantee | Use when |
 |---|---|---|---|
-| `auto-v2` (default) | straight/arc first-class (`--linestyle straight\|arc`) | hard quality gates + crossing minimization (optional CP-SAT via `pip install "stdraw[solver]"`) | general CLDs / teaching / reports |
+| `auto-v2` (default) | straight/arc first-class (`--linestyle straight\|arc`) | hard quality gates + crossing minimization (optional CP-SAT via `pip install "stdraw[solver]"`); loop-dominated small graphs (≤12n) get ring layout with ring-caliber gates | general CLDs / teaching / reports |
 | `ortho-v1` (`--recipe ortho`) | all-vertical orthogonal | theorem-level 0 crossings on planar graphs (**frozen behavior**, byte-regression in CI) | production callers pinning behavior / orthogonal style preference |
 
 ## Agent Integration

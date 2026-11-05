@@ -160,6 +160,9 @@ def auto_geometry_report(layout: dict) -> dict:
     # --from-layout 手动布局：卡距恒等/简单图规律性是「自动管线结构检查」，
     # 对手动坐标不适用（证书的 regularity 门仍如实评分，不因此放水）。
     manual_mode = bool(meta.get("from_layout"))
+    # ref-scrubbed 环形排布：行距恒等/列吸附同属行结构检查，对环排布不适用
+    # （证书改用环上等间距 CV + 正多边形模板拟合误差，见 metrics）。
+    ring_mode = meta.get("placement") == "ring-cycle"
     W, H = layout["viewBox"][2], layout["viewBox"][3]
     CARD_H = meta.get("cardH", 44)
     CW = {v: p.get("w", 140) for v, p in nodes.items()}
@@ -270,8 +273,9 @@ def auto_geometry_report(layout: dict) -> dict:
         rowy.setdefault(p["y"], []).append(v)
     pitch_ok = len({b - a for a, b in zip(sorted(rowy), sorted(rowy)[1:])}) <= 1
     odd = [v for v, p in nodes.items() if p["x"] % 2 or p["y"] % 2]
-    chk("6a. 行距恒等 pitch（停车带除外）" + ("（manual: N/A）" if manual_mode else ""),
-        True if manual_mode else pitch_ok, f"pitch={meta['pitch']}")
+    _6a_na = "（manual: N/A）" if manual_mode else ("（ring: N/A）" if ring_mode else "")
+    chk("6a. 行距恒等 pitch（停车带除外）" + _6a_na,
+        True if (manual_mode or ring_mode) else pitch_ok, f"pitch={meta['pitch']}")
     chk("6b. 全部坐标 2px 网格（偶数）", not odd, str(odd))
 
     # 7. viewBox 完整包含
@@ -293,17 +297,36 @@ def auto_geometry_report(layout: dict) -> dict:
 
     # 9. 简单图规律性（≤10 节点：行距恒等 + 24px 列吸附 ≥ 60%）
     # manual 布局：规律性属自动管线结构检查 → N/A（证书 regularity 门仍评分）
+    # ring 排布：行口径不适用 → 环上等间距 CV + 正多边形模板拟合误差（与证书同口径）
     snap = sum(1 for p in nodes.values() if p["x"] % 24 == 0) / len(nodes)
     simple = len(nodes) <= 10
-    chk("9. 简单图排布规律性" + ("（manual: N/A）" if manual_mode else ""),
-        True if manual_mode else ((not simple) or (pitch_ok and snap >= 0.6)),
-        f"n={len(nodes)}，24px 列吸附 {snap:.2f}，行距恒等 {pitch_ok}"
-        + ("；manual 布局不适用" if manual_mode else ""))
+    if ring_mode:
+        import math as _rm
+        rnodes = (meta.get("ring") or {}).get("nodes") or []
+        rpts = [(nodes[v]["x"], nodes[v]["y"]) for v in rnodes if v in nodes]
+        if len(rpts) >= 3:
+            ds = [_rm.dist(rpts[i], rpts[(i + 1) % len(rpts)]) for i in range(len(rpts))]
+            md = sum(ds) / len(ds)
+            rsv = (sum((d - md) ** 2 for d in ds) / len(ds)) ** 0.5 / md if md else 0.0
+            from . import regularity as _reg
+            rdev = _reg.cycle_polygon_deviation(
+                {v: (nodes[v]["x"], nodes[v]["y"]) for v in rnodes}, rnodes)
+            ring_ok = rsv <= 0.05 and rdev <= 0.05
+            ring_detail = f"环上等间距 CV={rsv:.4f}，正多边形偏差 D={rdev:.4f}（门 ≤0.05）"
+        else:
+            ring_ok, ring_detail = False, "meta.ring.nodes 缺失/不足 3 节点"
+        chk("9. 环形排布规律性（环上等间距 CV + 模板拟合）", ring_ok, ring_detail)
+    else:
+        chk("9. 简单图排布规律性" + ("（manual: N/A）" if manual_mode else ""),
+            True if manual_mode else ((not simple) or (pitch_ok and snap >= 0.6)),
+            f"n={len(nodes)}，24px 列吸附 {snap:.2f}，行距恒等 {pitch_ok}"
+            + ("；manual 布局不适用" if manual_mode else ""))
 
     # 10. 元数据完备（recipe / line_style / engine）
     ok10 = (meta.get("recipe") == "auto-v2" and
             meta.get("line_style") in ("straight", "arc") and
-            (meta.get("position_engine") in ("cp-sat", "construct", "manual")))
+            (meta.get("position_engine") in ("cp-sat", "construct", "manual",
+                                             "ring-construct")))
     chk("10. auto-v2 元数据完备", ok10,
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "
         f"engine={meta.get('position_engine')}")

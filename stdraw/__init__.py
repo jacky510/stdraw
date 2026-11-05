@@ -9,7 +9,7 @@
 诚实分级承诺：拿不到证书就说拿不到；绝不宣称任意图 0 交叉。
 """
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 from .model import Graph, Node, Edge, Loop, Group
 from .dsl import parse, dumps
@@ -21,6 +21,7 @@ from .loops import loops_audit
 from . import crossing_exact          # WS2：精确交叉数层（可选 ortools）
 from . import regularity              # WS2：结构检测 + 规律性可计算定义
 from . import placement               # WS2：槽位离散化放置（可选 ortools）
+from . import ringlayout              # ref-scrubbed：回路主导环形排布（触发判定+槽位）
 
 __all__ = [
     "Graph", "Node", "Edge", "Loop", "Group",
