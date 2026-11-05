@@ -178,11 +178,22 @@ LB 与 UB 相等时无论枚举覆盖如何都可证最优（K5=1、K3,3=1 即�
 ## 9. 测试与真值出处
 
 `tests/test_crossing_exact.py`：
-- K5=1、K3,3=1（Kuratowski）；K6=3（Guy 1972，n≤10 完全证明）；
-  **Petersen=2**（Wikipedia "Petersen graph" §crossing number；cut-the-knot
-  给出 girth 下界证明 k ≥ ⌈5/3⌉=2 加 2 交叉画法）。
-  **勘误**：常见「Petersen 交叉数 5」是五角星 naive 画法的交叉数，不是
-  交叉数；本文与实现取文献真值 2。
+- K5=1、K3,3=1（Kuratowski）；**K6=3**（Guy 1960 公式 cr(K_p)=¼⌊p/2⌋⌊(p−1)/2⌋
+  ⌊(p−2)/2⌋⌊(p−3)/2⌋ 给出 p=5,6,7 → 1,3,9；Saaty 1964 证明该公式对 p≤10
+  给出最优——故 K6=3、K7=9 是**已证明真值**，不是猜想；
+  en.wikipedia.org/wiki/Crossing_number_(graph_theory) §Complete graphs）；
+  **Petersen=2**（Wikipedia "Petersen graph" §Embeddings 原文：
+  "The Petersen graph has crossing number 2"；并明示五角星画法的 5 处交叉
+  不是最优画法）。**勘误（2026-11-05 验收打回核查）**：两个常见误读都不是
+  真值——「Petersen=5」是五角星 naive 画法的交叉数；「K6=15」是 K6 的
+  **边数**（C(6,2)=15），与交叉数无关。本文与实现取文献真值 2 / 3。
+- **验收复跑环境纪律**：任何「proven/lb/coverage」证据必须同时声明解释器
+  版本与 ortools 可用性。**无 ortools 时输出 proven=False、lb=0、
+  coverage=partial 是 §5 的诚实降级特征**（测试 D 节专门验证其如实标注），
+  不是 soundness 缺陷——2026-11-05 验收打回所引 evidence（全线 proven=False、
+  lb=0、coverage=partial）逐字吻合该降级特征，即产自 ortools 不可用的环境。
+  另注意：降级路径的 crossing_number 是启发式界（核心数回退 len(F)），
+  恰在 Petersen/K6 上与真值重合属巧合，不构成「UB 恒真」证据。
 - 随机图（5-7 节点）与独立 brute-force（≤2 交叉对全枚举 + 路径级平面化
   判定）逐图对照。
 - 确定性：同图两次运行 JSON 逐字节一致。
