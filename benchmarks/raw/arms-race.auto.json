@@ -1,1 +1,1 @@
-{"tool": "stdraw-auto", "graph": "arms-race", "n": 4, "m": 4, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 18.4, "spacing_cv": 0.065, "row_align_rate": 0.0, "runtime_s": 4.582, "bbox": [158, 284], "bbox_area": 44872, "status": "ok", "exactness": null}
+{"tool": "stdraw-auto", "graph": "arms-race", "n": 4, "m": 4, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 18.4, "spacing_cv": 0.065, "row_align_rate": 0.0, "runtime_s": 1.854, "bbox": [158, 284], "bbox_area": 44872, "status": "ok", "exactness": null}

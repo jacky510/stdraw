@@ -1,1 +1,1 @@
-{"tool": "stdraw-auto", "graph": "random-n30-i16", "status": "dnf", "why": "timeout at budget 100s (engine has no internal limit; bottleneck = _polish full-route re-runs, see REPORT §5)", "budget_s": 100}
+{"tool": "stdraw-auto", "graph": "random-n30-i16", "n": 30, "m": 48, "crossings": 89, "box_press": 5, "clear_violations": 25, "min_edge_box_clear_px": 0.0, "spacing_cv": 0.119, "row_align_rate": 0.933, "runtime_s": 29.653, "bbox": [832, 508], "bbox_area": 422656, "status": "ok", "exactness": null}

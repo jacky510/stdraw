@@ -1,1 +1,1 @@
-{"tool": "stdraw-auto-exact", "graph": "random-n10-i10", "status": "dnf", "why": "auto form not ok — layout unavailable", "budget_s": 0}
+{"tool": "stdraw-auto-exact", "graph": "random-n10-i10", "n": 10, "m": 16, "crossings": 3, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 17.4, "spacing_cv": 0.125, "row_align_rate": 1.0, "runtime_s": 59.801, "bbox": [312, 364], "bbox_area": 113568, "status": "ok", "exactness": null}
