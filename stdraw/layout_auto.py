@@ -356,10 +356,6 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
 
     xs_all = [pos[v] - widths[v] / 2 for v in nodes] + [pos[v] + widths[v] / 2 for v in nodes]
     ys_all = [y[v] - card_h / 2 for v in nodes] + [y[v] + card_h / 2 for v in nodes]
-    W = int(math.ceil(max(xs_all))) + cfg.margin
-    H = int(math.ceil(max(ys_all))) + cfg.margin
-    W = ((W + 7) // 8) * 8
-    H = ((H + 7) // 8) * 8
     min_x = min(xs_all) - cfg.margin / 2
     dx = max(0, int(math.ceil(cfg.margin / 2 - min_x)))
     dx = ((dx + 23) // 24) * 24          # 平移量对齐 24px，保持列吸附/网格不变
@@ -373,6 +369,15 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight"):
                 e["route"]["ctrl"][0] += dx
         for v in nodes:
             pos[v] += dx
+
+    # W/H 必须在平移后的最终坐标上取。bugfix（CI 暴露的 v0.2.0 遗留）：
+    # 原实现用平移前 xs_all 算 W，dx>0 时右移后内容溢出 viewBox
+    # （无字体环境的解析式框宽窄 → min 左缘越界触发大 dx → 右缘超出）。
+    xs_all = [pos[v] - widths[v] / 2 for v in nodes] + [pos[v] + widths[v] / 2 for v in nodes]
+    W = int(math.ceil(max(xs_all))) + cfg.margin
+    H = int(math.ceil(max(ys_all))) + cfg.margin
+    W = ((W + 7) // 8) * 8
+    H = ((H + 7) // 8) * 8
 
     # WS3 finalize：vg 路线在平移后的交付坐标上生成精确 SVG path（L+A 命令）
     from .visibility import route_svg_d as _route_svg_d
