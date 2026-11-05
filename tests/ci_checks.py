@@ -98,8 +98,17 @@ def main():
             # auto 配方不传 pitch（自调 80）
             if r1.returncode != 0:
                 tail = "\n".join(r1.stdout.strip().splitlines()[-25:])
+                try:
+                    lj = json.load(open(os.path.join(out1, "layout.json"),
+                                        encoding="utf-8"))
+                    dump = json.dumps({"viewBox": lj["viewBox"],
+                                       "nodes": {v: p for v, p in lj["nodes"].items()}},
+                                      ensure_ascii=False)
+                except Exception as _e:
+                    dump = f"layout.json unreadable: {_e}"
                 failures.append(f"auto {ex}: CLI exit {r1.returncode}\n"
-                                f"stderr={r1.stderr}\nstdout_tail:\n{tail}")
+                                f"stderr={r1.stderr}\nstdout_tail:\n{tail}\n"
+                                f"layout_dump={dump}")
                 continue
             run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
             geo = load(out1, "geometry_report.json")
