@@ -14,7 +14,7 @@ import math
 from collections import defaultdict
 
 from . import textmetrics
-from .routing import Router, CLEARANCE, SIDE_MARGIN
+from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W)
 
 
 class AutoConfig:
@@ -223,17 +223,26 @@ def _content_w(rows, widths, cfg):
 
 
 def _route_total(nodes_px, edges, cfg):
-    """路由真值总成本：压线/净距/交叉/边长的加权和（布局层真目标函数）。"""
+    """路由真值总成本：压线/净距/交叉/重合/边长的加权和（布局层真目标函数）。"""
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
     routes = router.route_all()
+    eset = set(edges)
     total = 0.0
-    for info in routes.values():
+    for i, info in routes.items():
+        a, b = edges[i]
         clr = info.get("min_clear")
         clr_pen = (30 * max(0.0, cfg.clearance - clr)) if clr is not None else 30 * cfg.clearance
+        if (b, a) in eset:      # F1：互环对净距加严与 _evaluate 同口径
+            clr_pen += 120 * (max(0.0, cfg.clearance - clr) if clr is not None
+                              else cfg.clearance)
         total += (4000 * info.get("press", 0) + 40 * info.get("cross", 0) +
+                  PAIR_SEP_W * info.get("sep_def", 0.0) +
+                  (200.0 if info.get("kind") == "wrap" else 0.0) +
                   clr_pen +
                   0.01 * sum(math.dist(info["points"][k], info["points"][k + 1])
                              for k in range(len(info["points"]) - 1)))
+    # CI 硬门回喂：交叉边对数 > 2 时重罚（证书 gate crossings ≤ 2）
+    total += 1500.0 * max(0, router.final_crossing_pairs(routes) - 2)
     return total, routes, router
 
 

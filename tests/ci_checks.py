@@ -31,7 +31,8 @@ EXAMPLES = [
     "examples/classic-cld-growth-and-burden.cld",
 ]
 HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
-              "min_gap_ge_16", "cv_le_035", "regularity_simple")
+              "min_gap_ge_16", "cv_le_035", "regularity_simple",
+              "mutual_pairs_separated")
 
 
 def run_cli(path, outdir, extra=(), pitch="62"):
