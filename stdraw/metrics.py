@@ -235,3 +235,230 @@ def _interpolate(si, sj):
     px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
     py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
     return [round(px), round(py)]
+
+
+# ═══ ② 2026-11-05 六点返修：auto 配方 v2 证书（新硬门）═══
+# v1 certificate() 保持逐字节兼容（ortho-v1 生产行为 pin），auto 走 certificate_auto。
+
+from .routing import (sample_polyline, dist_point_rect, seg_cross as _rc_seg_cross,
+                      PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE)
+
+
+def scene_from_auto(v4: dict) -> dict:
+    """auto 布局 JSON → v2 scene（折线/弧线离散采样 + 锚点）。"""
+    nodes = {}
+    ch = v4["meta"].get("cardH", 44)
+    for v, p in v4["nodes"].items():
+        nodes[v] = {"x": p["x"], "y": p["y"], "w": p.get("w", 140), "h": ch}
+    edges, polylines, anchors = [], {}, {}
+    for i, e in enumerate(v4["edges"]):
+        edges.append({"a": e["a"], "b": e["b"]})
+        polylines[i] = [tuple(p) for p in e["route"]["points"]]
+        anchors[i] = e["anchors"]
+    return {"nodes": nodes, "edges": edges, "polylines": polylines,
+            "anchors": anchors, "line_style": v4["meta"].get("line_style", "straight"),
+            "deg0": set(v4["meta"].get("deg0", []))}
+
+
+def _anchor_tangent_angle(node, anchor, direction):
+    """锚点处路线方向与所属框边切线的夹角（度）。方向为离开锚点的单位向量。"""
+    cx, cy, hw, hh = node["x"], node["y"], node["w"] / 2, node["h"] / 2
+    on_x_border = abs(abs(anchor[0] - cx) - hw) <= abs(abs(anchor[1] - cy) - hh)
+    tx, ty = (0.0, 1.0) if on_x_border else (1.0, 0.0)
+    c = abs(direction[0] * tx + direction[1] * ty)
+    return math.degrees(math.acos(max(0.0, min(1.0, c))))
+
+
+def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
+                     gates: Optional[dict] = None,
+                     notes: Optional[List[str]] = None) -> dict:
+    """v2 质量证书：五指标 + 新硬门 + 诚实分级。一切验证跑在交付坐标上。
+
+    新硬门（v0.2 质量返修）：
+      box_press_zero      框压线 = 0（任何边任何角度，含 1px 余量；端点只贴自家框边）
+      edge_box_clear_ge16 边-框净距 ≥ 16px（非端点框，采样最小距离）
+      anchors_smooth      锚点平滑：出发方向与框边切线夹角 ≥ ANCHOR_MIN_DEG
+      regularity_simple   简单图（≤10 节点）排布规律：行距恒等 + 24px 列吸附 ≥ 60%
+    """
+    nodes = scene["nodes"]
+    edges = scene["edges"]
+    polys = scene["polylines"]
+    anchors = scene.get("anchors", {})
+    ids = list(nodes)
+    notes = list(notes or [])
+    line_style = scene.get("line_style", "straight")
+
+    # 1. 交叉（折线两两求交）
+    crossings = []
+    for i in range(len(edges)):
+        for j in range(i + 1, len(edges)):
+            ei, ej = edges[i], edges[j]
+            if ei["a"] in (ej["a"], ej["b"]) or ei["b"] in (ej["a"], ej["b"]):
+                continue
+            for s1 in zip(polys[i][:-1], polys[i][1:]):
+                for s2 in zip(polys[j][:-1], polys[j][1:]):
+                    if _rc_seg_cross(s1[0], s1[1], s2[0], s2[1]):
+                        crossings.append({"edges": [f"{ei['a']}->{ei['b']}",
+                                                    f"{ej['a']}->{ej['b']}"]})
+                        break
+                else:
+                    continue
+                break
+
+    # 2. 框压线（1px 余量）+ 边-框净距 + 自家框端点合规
+    press, clear_details, anchor_bad = [], [], []
+    min_clear = None
+    for i, e in enumerate(edges):
+        pts = sample_polyline(polys[i])
+        for v in ids:
+            p = nodes[v]
+            hw, hh = p["w"] / 2, p["h"] / 2
+            if v in (e["a"], e["b"]):
+                continue
+            dmin = min(dist_point_rect(px, py, p["x"], p["y"], hw, hh)
+                       for (px, py) in pts)
+            if dmin <= 0:
+                press.append({"edge": f"{e['a']}->{e['b']}", "card": v})
+            dmin1 = min(dist_point_rect(px, py, p["x"], p["y"], hw + PRESS_MARGIN, hh + PRESS_MARGIN)
+                        for (px, py) in pts)
+            if dmin1 <= 0:
+                press.append({"edge": f"{e['a']}->{e['b']}", "card": v, "margin": 1})
+            min_clear = dmin if min_clear is None else min(min_clear, dmin)
+        # 自家框：其余采样点不得进入框内（含 1px 余量）；锚点须在框边上
+        for v, end_key in ((e["a"], "a"), (e["b"], "b")):
+            p = nodes[v]
+            hw, hh = p["w"] / 2, p["h"] / 2
+            a0 = anchors.get(i, {}).get(end_key)
+            if a0 is None or dist_point_rect(a0[0], a0[1], p["x"], p["y"], hw, hh) > 0.75:
+                anchor_bad.append({"edge": f"{e['a']}->{e['b']}", "end": end_key,
+                                   "why": "anchor off-border"})
+                continue
+            interior = any(dist_point_rect(px, py, p["x"], p["y"], hw + PRESS_MARGIN, hh + PRESS_MARGIN) <= 0
+                           for (px, py) in pts[1:-1])
+            if interior:
+                press.append({"edge": f"{e['a']}->{e['b']}", "card": v, "why": "own-box"})
+        # 锚点平滑（角度独立复算）
+        poly = polys[i]
+        for end_key, p_idx, nxt_idx in (("a", 0, 1), ("b", len(poly) - 1, len(poly) - 2)):
+            a0 = anchors.get(i, {}).get(end_key)
+            if a0 is None:
+                continue
+            dx, dy = poly[nxt_idx][0] - a0[0], poly[nxt_idx][1] - a0[1]
+            n = math.hypot(dx, dy)
+            if n < EPS:
+                anchor_bad.append({"edge": f"{e['a']}->{e['b']}", "end": end_key,
+                                   "why": "zero-length departure"})
+                continue
+            v = e["a"] if end_key == "a" else e["b"]
+            ang = _anchor_tangent_angle(nodes[v], a0, (dx / n, dy / n))
+            if ang < ANCHOR_MIN_DEG:
+                anchor_bad.append({"edge": f"{e['a']}->{e['b']}", "end": end_key,
+                                   "angle": round(ang, 1)})
+
+    # 3. 平均边长 / 行对齐 / 卡间净距 / CV（与 v1 同口径）
+    avg_len = sum(sum(math.dist(polys[i][k], polys[i][k + 1])
+                      for k in range(len(polys[i]) - 1))
+                  for i in polys) / len(polys) if polys else 0.0
+    ysorted = sorted(p["y"] for p in nodes.values())
+    aligned, i2 = 0, 0
+    while i2 < len(ysorted):
+        j = i2
+        while j + 1 < len(ysorted) and ysorted[j + 1] - ysorted[j] <= ROW_EPS:
+            j += 1
+        if j > i2:
+            aligned += j - i2 + 1
+        i2 = j + 1
+    row_rate = aligned / len(ids) if ids else 0.0
+    gaps = []
+    for a in range(len(ids)):
+        for b in range(a + 1, len(ids)):
+            va, vb = nodes[ids[a]], nodes[ids[b]]
+            gaps.append(rect_gap(va["x"], va["y"], va["w"], va["h"],
+                                 vb["x"], vb["y"], vb["w"], vb["h"]))
+    min_gap = min(gaps) if gaps else 0.0
+    nn = []
+    for a in ids:
+        dists = [math.dist((nodes[a]["x"], nodes[a]["y"]),
+                           (nodes[b]["x"], nodes[b]["y"]))
+                 for b in ids if b != a]
+        if dists:
+            nn.append(min(dists))
+    mean_nn = sum(nn) / len(nn) if nn else 0.0
+    cv = (math.sqrt(sum((d - mean_nn) ** 2 for d in nn) / len(nn)) / mean_nn) if nn and mean_nn else 0.0
+
+    # 规律性（简单图 ≤10 节点）：行距恒等 + 24px 列吸附占比（停车带节点不计行距）
+    deg0 = scene.get("deg0", set())
+    ys = sorted({p["y"] for v, p in nodes.items() if v not in deg0})
+    pitch_uniform = (len(set(b - a for a, b in zip(ys, ys[1:]))) <= 1
+                     if len(ys) > 1 else True)
+    snap_n = sum(1 for p in nodes.values() if abs(p["x"] % 24) < EPS)
+    snap_rate = snap_n / len(ids) if ids else 0.0
+    simple = len(ids) <= 10
+    regularity_ok = pitch_uniform and (snap_rate >= 0.6 if simple else snap_rate >= 0.0)
+
+    W = max(p["x"] + p["w"] / 2 for p in nodes.values()) - min(p["x"] - p["w"] / 2 for p in nodes.values())
+    H = max(p["y"] + p["h"] / 2 for p in nodes.values()) - min(p["y"] - p["h"] / 2 for p in nodes.values())
+
+    metrics = {
+        "crossings": len(crossings),
+        "crossing_details": crossings[:10],
+        "box_press_1px": len(press),
+        "press_details": press[:10],
+        "edge_box_min_clear": round(min_clear, 1) if min_clear is not None else None,
+        "anchor_violations": len(anchor_bad),
+        "anchor_details": anchor_bad[:10],
+        "avg_edge_length": round(avg_len, 1),
+        "row_align_rate": round(row_rate, 3),
+        "min_card_gap": round(min_gap, 1),
+        "spacing_cv": round(cv, 3),
+        "column_snap24_rate": round(snap_rate, 3),
+        "bbox": [round(W), round(H)],
+    }
+
+    g = {
+        "crossings_zero": metrics["crossings"] == 0,
+        "box_press_zero": metrics["box_press_1px"] == 0,
+        "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
+        "anchors_smooth": metrics["anchor_violations"] == 0,
+        "min_gap_ge_16": metrics["min_card_gap"] >= 16,
+        "row_align_ge_060": metrics["row_align_rate"] >= 0.60,
+        "cv_le_035": metrics["spacing_cv"] <= 0.35,
+        "regularity_simple": regularity_ok,
+    }
+    if gates:
+        for k, v in gates.items():
+            g[k] = v
+    g_pass = sum(1 for v in g.values() if v)
+
+    hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
+               g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"])
+    if metrics["crossings"] == 0 and hard_ok:
+        grade = "最优"
+        grade_note = "硬门全过（框压线0/净距≥16/锚点平滑/规律）+ 线 0 交叉"
+    elif hard_ok and metrics["crossings"] <= 2:
+        grade = "其次"
+        grade_note = ("硬门全过 + 交叉 ≤2 处（明细已入证书供复核）；"
+                      "互斥时保硬门、放交叉")
+    else:
+        grade = "未获证书"
+        grade_note = ("硬门未全过或交叉 >2 处——如实不评级，"
+                      "放宽预算换的证书不冒充成品")
+
+    return {
+        "tool": "stdraw", "version": "0.2.0", "layer": layer,
+        "graph": graph_name,
+        "n": len(ids), "m": len(edges),
+        "coords": "delivered/rounded",
+        "recipe": "auto-v2",
+        "line_style": line_style,
+        "metrics": metrics,
+        "gates": g,
+        "gates_passed": f"{g_pass}/{len(g)}",
+        "grade": grade,
+        "grade_note": grade_note,
+        "honest_notes": notes + [
+            "硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性"],
+        "no_zero_crossing_claim_for_all_graphs": (
+            "CLD 环多常不可平面，交叉数是目标函数最小化项而非定理保证；"
+            "本证书只对本图本布局成立"),
+    }

@@ -1,0 +1,171 @@
+{
+ "viewBox": [
+  0,
+  0,
+  520,
+  304
+ ],
+ "nodes": {
+  "rate": {
+   "x": 122,
+   "y": 76,
+   "w": 96
+  },
+  "adopters": {
+   "x": 266,
+   "y": 262,
+   "w": 96
+  },
+  "word": {
+   "x": 80,
+   "y": 138,
+   "w": 96
+  },
+  "potential": {
+   "x": 348,
+   "y": 138,
+   "w": 96
+  },
+  "crowding": {
+   "x": 142,
+   "y": 200,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "adopters",
+   "b": "word",
+   "x": 80,
+   "y1": 262,
+   "y2": 138,
+   "arrow": [
+    80,
+    164,
+    -1
+   ]
+  },
+  {
+   "a": "word",
+   "b": "rate",
+   "x": 80,
+   "y1": 138,
+   "y2": 76,
+   "arrow": [
+    80,
+    85,
+    -1
+   ]
+  },
+  {
+   "a": "rate",
+   "b": "adopters",
+   "x": 40,
+   "y1": 76,
+   "y2": 262,
+   "arrow": [
+    40,
+    253,
+    1
+   ]
+  },
+  {
+   "a": "potential",
+   "b": "rate",
+   "x": 204,
+   "y1": 138,
+   "y2": 76,
+   "arrow": [
+    204,
+    85,
+    -1
+   ]
+  },
+  {
+   "a": "adopters",
+   "b": "potential",
+   "x": 492,
+   "y1": 262,
+   "y2": 138,
+   "arrow": [
+    492,
+    147,
+    -1
+   ]
+  },
+  {
+   "a": "adopters",
+   "b": "crowding",
+   "x": 122,
+   "y1": 262,
+   "y2": 200,
+   "arrow": [
+    122,
+    226,
+    -1
+   ]
+  },
+  {
+   "a": "crowding",
+   "b": "rate",
+   "x": 162,
+   "y1": 200,
+   "y2": 76,
+   "arrow": [
+    162,
+    85,
+    -1
+   ]
+  }
+ ],
+ "bars": {
+  "rate": [
+   36,
+   208
+  ],
+  "adopters": [
+   36,
+   496
+  ],
+  "potential": [
+   200,
+   496
+  ],
+  "crowding": [
+   118,
+   166
+  ]
+ },
+ "meta": {
+  "rows": 4,
+  "rowY": [
+   76,
+   138,
+   200,
+   262
+  ],
+  "pitch": 62,
+  "deg0": [],
+  "cols": [
+   40,
+   80,
+   122,
+   162,
+   204,
+   492
+  ],
+  "cardH": 42,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "st": [
+   "rate",
+   "adopters"
+  ],
+  "down": 1,
+  "n": 5,
+  "m": 7,
+  "method": "visibility-representation (Rosenstiehl-Tarjan) 0-crossing guaranteed; wires strictly vertical; compact packing (occlusion allowed under cards)"
+ }
+}

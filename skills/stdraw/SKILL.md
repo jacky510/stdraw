@@ -30,10 +30,17 @@ pip install stdraw        # or inside the repo: pip install -e .
 ## How to Run
 
 ```bash
-# Layout + certificate + loops audit + 2D/3D demo HTML
+# Layout + certificate + loops audit + 2D/3D demo HTML (auto-v2 recipe, straight/arc lines)
 stdraw layout model.cld --outdir out --pitch 62
 # 2D only (faster)
 stdraw layout model.cld --outdir out --skip-3d
+# Classic orthogonal recipe (all-vertical wires, provably 0 crossings on planar graphs;
+# behavior frozen — pinned by production callers, byte-regression protected)
+stdraw layout model.cld --outdir out --recipe ortho
+# Arc-prefixed lines (auto recipe)
+stdraw layout model.cld --outdir out --linestyle arc
+# Optional positioning refinement (better uniformity on dense graphs)
+pip install "stdraw[solver]"
 ```
 
 ## Quick Reference
@@ -41,21 +48,23 @@ stdraw layout model.cld --outdir out --skip-3d
 - Input: `.cld` DSL — `var id "label"` / `a -> + b @loops R1` /
   `loop R1 "label" "R" [a, b, c]`. JSON graph model also accepted.
 - Outputs in `--outdir`: `certificate.json` (grade + metrics),
-  `geometry_report.json` (11 checks; CLI exits 1 on fail),
+  `geometry_report.json` (checks; CLI exits 1 on fail),
   `loops_audit.json` (semantic lint), `demo-2d.html`, `demo-3d.html`,
   `layout.json`, `positions3d.json`.
+- Default recipe `auto-v2` enforces hard gates: box-over-line = 0 (any angle,
+  1px margin), edge-to-box clearance >= 16px, smooth border anchors, and
+  symmetric/regular arrangement for simple graphs (<=10 nodes).
 
 ## Certificate Reading Rules (honest grading — pass through verbatim)
 
 | `grade` | Meaning | What you may tell the user |
 |---|---|---|
-| `最优` | arrangement OK + provably 0 crossings | "zero crossings, guaranteed" |
-| `其次` | arrangement OK + ≤2 crossings (coords in cert) | report crossing count + coords |
+| `最优` | hard gates all pass + 0 crossings | "hard gates pass, zero crossings" (auto-v2: crossings are minimized, not theorem-guaranteed; ortho recipe: theorem-guaranteed) |
+| `其次` | hard gates all pass + ≤2 crossings (coords in cert) | report crossing count + coords |
 | `最次` | 3D delivery (rotate freely; projection crossings solved by camera) | no 2D crossing claim |
 | `未获证书` | everything else — honestly ungraded | **never** dress this up as success |
 
-Iron rule: stdraw never claims arbitrary graphs are 0-crossing; non-planar
-input raises `NotPlanarError` and degrades honestly to 3D. Relay grades as-is.
+Iron rule: stdraw never claims arbitrary graphs are 0-crossing. Relay grades as-is.
 
 ## Pitfalls
 
