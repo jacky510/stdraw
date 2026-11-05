@@ -2,14 +2,21 @@
 # -*- coding: utf-8 -*-
 """WS2：精确交叉数层测试（经典图真值 + brute-force 交叉验证 + 确定性 + 降级）。
 
-已知真值（文献）：
+已知真值（文献，均为主流教科书/维基百科可核验口径）：
   cr(K5)=1、cr(K3,3)=1（Kuratowski 基本事实）
-  cr(K6)=3（Guy 1972：cr(K_n) 公式对 n≤10 完全证明）
-  cr(Petersen)=2（Wikipedia "Petersen graph: crossing number 2"；cut-the-knot
-      给出 girth 下界证明 k ≥ ⌈5/3⌉ = 2 + 2 交叉画法；注意五角星 naive 画法的
-      5 处交叉不是交叉数）
+  cr(K6)=3（Guy 1960 公式 ⌊6/2⌋⌊5/2⌋⌊4/2⌋⌊3/2⌋/4 = 3；Saaty 1964 证明该
+      公式对 n≤10 给出最优——是已证明真值。Wikipedia "Crossing number
+      (graph theory)" §Complete graphs：公式值 1,3,9,… 对应 p=5,6,7,…）
+  cr(Petersen)=2（Wikipedia "Petersen graph" §Embeddings 原文
+      "The Petersen graph has crossing number 2"；并明示最常见的五角星
+      画法有 5 处交叉但并非最优画法——「Petersen=5」是知名误读）
   可平面图 = 0（平面性 witness）
   细分不改变交叉数（homeomorphism invariance）
+  ⚠ 常见误读对照：「K6=15」是 K6 的边数 |E|=C(6,2)=15，不是交叉数。
+
+环境自报：main() 开头打印解释器版本与 ortools 可用性——proven/lb/coverage
+证据必须连同该环境行一起引用（无 ortools 时全线 proven=False/lb=0/
+coverage=partial 是诚实降级特征，见 docs/crossing-exact.md §9）。
 """
 import itertools
 import json
@@ -95,6 +102,17 @@ def _rand_graph(rng, seed):
 
 def main():
     failures = []
+    try:
+        import ortools
+        env_line = (f"python {sys.version.split()[0]} | ortools "
+                    f"{ortools.__version__} available -> exact paths armed")
+    except Exception:
+        env_line = (f"python {sys.version.split()[0]} | ortools NOT available "
+                    f"-> honest degradation expected (proven=False, lb=0, "
+                    f"coverage=partial)")
+    print(f"== 0. 环境: {env_line}")
+    print("   文献真值: K5=1, K3,3=1, Petersen=2, K4=0, K3,3-subdiv=1, "
+          "K6=3 (Guy/Saaty n<=10)")
     petersen = [(1, 2), (2, 3), (3, 4), (4, 5), (5, 1)]
     petersen += [(i + 1, 6 + i) for i in range(5)]
     petersen += [(6 + i, 6 + (i + 2) % 5) for i in range(5)]
