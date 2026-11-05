@@ -30,6 +30,12 @@ EXAMPLES = [
     "examples/limits-to-growth.cld",
     "examples/classic-cld-growth-and-burden.cld",
 ]
+# B 层（auto-v2）补盲（F3 返修 ref-scrubbed）：原 B 层只跑 EXAMPLES 两例，
+# bullwhip 的弧线鼓出 viewBox（check7 fail）漏检。独立列表，不与 A 层
+# ortho 冻结 pin（逐字节基线）共用，避免 ortho 基线连锁。
+AUTO_EXAMPLES = EXAMPLES + [
+    "benchmarks/corpus/classic/bullwhip.cld",
+]
 HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
               "min_gap_ge_16", "cv_le_035", "regularity_simple",
               "mutual_pairs_separated")
@@ -91,7 +97,7 @@ def main():
             print(f"OK  ortho {ex}: 11 checks fail=0, baseline byte-identical, deterministic")
 
         # ── B. auto-v2 新硬门 ──
-        for ex in EXAMPLES:
+        for ex in AUTO_EXAMPLES:
             name = os.path.splitext(os.path.basename(ex))[0]
             out1 = os.path.join(tmp, name + "-auto-1")
             out2 = os.path.join(tmp, name + "-auto-2")
