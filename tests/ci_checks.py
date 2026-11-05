@@ -97,7 +97,9 @@ def main():
             r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
             # auto 配方不传 pitch（自调 80）
             if r1.returncode != 0:
-                failures.append(f"auto {ex}: CLI exit {r1.returncode}\n{r1.stderr}")
+                tail = "\n".join(r1.stdout.strip().splitlines()[-25:])
+                failures.append(f"auto {ex}: CLI exit {r1.returncode}\n"
+                                f"stderr={r1.stderr}\nstdout_tail:\n{tail}")
                 continue
             run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
             geo = load(out1, "geometry_report.json")
