@@ -256,7 +256,9 @@ def scene_from_auto(v4: dict) -> dict:
         polylines[i] = [tuple(p) for p in e["route"]["points"]]
         anchors[i] = e["anchors"]
     return {"nodes": nodes, "edges": edges, "polylines": polylines,
-            "anchors": anchors, "line_style": v4["meta"].get("line_style", "straight"),
+            "anchors": anchors,
+            "router_pairs": v4["meta"].get("router_cross_pairs"),
+            "line_style": v4["meta"].get("line_style", "straight"),
             "deg0": set(v4["meta"].get("deg0", []))}
 
 
@@ -399,10 +401,21 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     W = max(p["x"] + p["w"] / 2 for p in nodes.values()) - min(p["x"] - p["w"] / 2 for p in nodes.values())
     H = max(p["y"] + p["h"] / 2 for p in nodes.values()) - min(p["y"] - p["h"] / 2 for p in nodes.values())
 
+    # WS3 交叉双口径：路由理论口径（最终未取整路线的交叉边对数）vs
+    # 交付坐标几何复检（本节第 1 项，严格求交/Liang-Barsky）。双口径一致
+    # 才发证书；不一致 → 未获证书（如实写明两口径数值）。
+    router_xe = scene.get("router_pairs")
+    routing_consistent = None
+    router_pairs = None
+    if router_xe is not None:
+        router_pairs = router_xe
+        routing_consistent = abs(router_pairs - len(crossings)) < 0.5
+
     metrics = {
         "crossings": len(crossings),
         "crossing_details": crossings[:10],
         "box_press_1px": len(press),
+        "routing_router_pairs": router_pairs,
         "press_details": press[:10],
         "edge_box_min_clear": round(min_clear, 1) if min_clear is not None else None,
         "anchor_violations": len(anchor_bad),
@@ -425,6 +438,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "cv_le_035": metrics["spacing_cv"] <= 0.35,
         "regularity_simple": regularity_ok,
     }
+    if routing_consistent is not None:
+        g["routing_consistent"] = routing_consistent
     if gates:
         for k, v in gates.items():
             g[k] = v
@@ -432,20 +447,25 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
 
     hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"])
-    if metrics["crossings"] == 0 and hard_ok:
+    dual_ok = routing_consistent is not False   # 双口径不一致 → 拒发证书
+    if metrics["crossings"] == 0 and hard_ok and dual_ok:
         grade = "最优"
         grade_note = "硬门全过（框压线0/净距≥16/锚点平滑/规律）+ 线 0 交叉"
-    elif hard_ok and metrics["crossings"] <= 2:
+    elif hard_ok and dual_ok and metrics["crossings"] <= 2:
         grade = "其次"
         grade_note = ("硬门全过 + 交叉 ≤2 处（明细已入证书供复核）；"
                       "互斥时保硬门、放交叉")
+    elif not dual_ok:
+        grade = "未获证书"
+        grade_note = (f"交叉双口径不一致（路由理论 {router_pairs} vs 几何复检 "
+                      f"{len(crossings)}）——理论与几何必须一致才发证书")
     else:
         grade = "未获证书"
         grade_note = ("硬门未全过或交叉 >2 处——如实不评级，"
                       "放宽预算换的证书不冒充成品")
 
     return {
-        "tool": "stdraw", "version": "0.2.0", "layer": layer,
+        "tool": "stdraw", "version": "0.3.0", "layer": layer,
         "graph": graph_name,
         "n": len(ids), "m": len(edges),
         "coords": "delivered/rounded",
@@ -457,7 +477,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "grade": grade,
         "grade_note": grade_note,
         "honest_notes": notes + [
-            "硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性"],
+            "硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性",
+            "交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，"
+            "不一致拒发证书",
+            "布线数学：绕障 = 净距膨胀障碍可见性图 Dijkstra 最短路（图上精确最优；"
+            "相对圆角障碍连续空间真最短路每贴角至多多 (2−π/2)·膨胀余量 px）；"
+            "平滑 = 折角相切圆弧（G1 切线连续、曲率有界），"
+            "凸角相切弧向障碍侧下探 r·(1/cos(θ/2)−1)，受膨胀余量约束"],
         "no_zero_crossing_claim_for_all_graphs": (
             "CLD 环多常不可平面，交叉数是目标函数最小化项而非定理保证；"
             "本证书只对本图本布局成立"),

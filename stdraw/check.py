@@ -301,6 +301,14 @@ def auto_geometry_report(layout: dict) -> dict:
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "
         f"engine={meta.get('position_engine')}")
 
+    # 11. WS3 交叉双口径一致性：路由理论（最终路线交叉对数）vs 交付坐标几何复检
+    router_pairs = meta.get("router_cross_pairs")
+    if router_pairs is not None:
+        geom_pairs = len(bad)      # 第 1 项的几何复检结果（边对数）
+        chk("11. 交叉双口径一致（路由理论 vs 交付坐标几何复检）",
+            abs(router_pairs - geom_pairs) < 0.5,
+            f"router={router_pairs} geometric={geom_pairs}")
+
     report["summary"] = {
         "viewBox": [W, H], "aspect": round(W / H, 3) if H else 0,
         "nodes": len(nodes), "edges": len(edges),

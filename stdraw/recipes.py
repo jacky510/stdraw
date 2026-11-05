@@ -19,7 +19,9 @@ from . import __version__
 
 RECIPE_VERSIONS = {
     "ortho-v1": "1 (frozen 2026-11-05, byte-stable, pin-safe)",
-    "auto-v2": "2 (2026-11-05: hard gates + straight/arc routing)",
+    "auto-v2": "2 (2026-11-05: hard gates + straight/arc routing; "
+               "2026-11-05 WS3: visibility-graph Dijkstra detour + arc fillet "
+               "smoothing + crossing dual-caliber + R/B markers)",
 }
 
 

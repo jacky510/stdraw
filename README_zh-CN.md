@@ -12,7 +12,7 @@
 
 [![CI](https://github.com/jacky510/stdraw/actions/workflows/ci.yml/badge.svg)](https://github.com/jacky510/stdraw/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](pyproject.toml)
 [![Stars](https://img.shields.io/github/stars/jacky510/stdraw.svg?style=flat)](https://github.com/jacky510/stdraw/stargazers)
 
 [安装](#安装) · [Gallery](#gallery) · [Quickstart](#get-started--quickstart) · [DSL](#dsl-一分钟) · [证书与硬门](#certificates--质量证书) · [Agent 集成](#agent-integration)
@@ -30,6 +30,7 @@ pip install stdraw
 主流图工具全停在「交叉最小化」启发式，并且**没有一个敢对自己的输出做承诺**。stdraw 反过来：
 
 - **auto-v2（默认配方）**：分层 + 交叉数进目标函数（CP-SAT 精化可选）+ 直线/弧线一等布线，带**硬质量门**：框压线=0（任何角度）、边-框净距≥16px、锚点平滑、简单图（≤10 节点）对称/规律排布；
+- **WS3 布线数学**：绕障是**可证最短**——障碍按净距膨胀后，在角点可见性图上跑精确 Dijkstra 最短路（图上最优）；折角以相切圆弧平滑（G1 切线连续、曲率有界、逐弧净距复核）；交叉按**双口径**复检——路由理论口径（最终路线）必须等于交付坐标几何复检，不一致拒发证书；R/B 极性标记随局部切线确定性放置，不遮字不压线；
 - **ortho-v1（经典配方，可选）**：平面嵌入 + st 编号 + 可见性表示，可平面图的线全竖直、**0 交叉有定理保证**（行为冻结，逐字节回归保护，供生产调用方 pin 用）；
 - **诚实分级**：拿不到证书就如实说拿不到——**绝不宣称任意图 0 交叉**（auto-v2 的交叉数是目标函数最小化项，不是定理保证）；
 - **框界真值两层验证**：布局侧按真实字体最坏度量规划框界；验证侧在真实渲染后量 DOM 实际框界——证书量的是渲染真值，不是估算值；

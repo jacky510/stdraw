@@ -12,12 +12,15 @@
 """
 import math
 
+from . import visibility as _vis
+
 CLEARANCE = 16          # 边-框最小净距（v0.2 硬门口径）
 PRESS_MARGIN = 1        # 框压线判定余量 px
 ANCHOR_MIN_DEG = 20     # 出发方向与框边切线最小夹角
 SAMPLE_STEP = 4         # 候选验证采样步长 px
 ARC_KS = (0.14, 0.24, 0.36, 0.55, 0.75)   # 弧线弯曲系数 × 距离
 SIDE_MARGIN = 18.5                        # 侧通道与遮挡框的净距（16 + 1px 余量 + 建设余量）
+VG_PAD = 1.5                              # WS3 可见性建图膨胀余量（弧线切角下探的兜底）
 
 EPS = 1e-9
 
@@ -174,8 +177,18 @@ class Router:
                     ctrl = [(pa[0] + pb[0]) / 2 + ux * k * dist * s,
                             (pa[1] + pb[1]) / 2 + uy * k * dist * s]
                     cands.append(("arc", quad_points(pa, ctrl, pb), pa, pb, ctrl))
-        # 绕行通道：行间水平车道
+        # WS3 可见性图最短路候选（数学最优绕障）：直线被挡才生成（确定性）
         pa0, pb0 = self._anchors(a, b, 0)
+        rects = [n for v, n in self.N.items() if v not in (a, b)]
+        if rects:
+            c_vg = self.cl + VG_PAD
+            blocked = any(_vis.seg_rect_distance(pa0, pb0, rect) < c_vg - 1e-6
+                          for rect in rects)
+            if blocked:
+                route = _vis.plan_route(pa0, pb0, rects, c_vg)
+                if route:
+                    cands.append(("vg", route["dense"], pa0, pb0, route))
+        # 绕行通道：行间水平车道
         ax, ay = pa0
         bx, by = pb0
         if abs(by - ay) > 4:
@@ -269,15 +282,20 @@ class Router:
                     break
             if interior:
                 return (1e9, None)
-        # 与已定路线交叉
+        # 与已定路线交叉（逐段计数 cross + 逐边命中口径 cross_edges 供双口径核对）
         cross = 0
+        hit_edges = 0
         segs = list(zip(pts[:-1], pts[1:]))
         for j, rpts in routed.items():
             rsegs = list(zip(rpts[:-1], rpts[1:]))
+            hit = False
             for s1 in segs:
                 for s2 in rsegs:
                     if seg_cross(s1[0], s1[1], s2[0], s2[1]):
                         cross += 1
+                        hit = True
+            if hit:
+                hit_edges += 1
         length = sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
         kind_pref = 0.0
         score = 4000 * press + 40 * cross + 30.0 * clr_def + 0.01 * length + kind_pref
@@ -290,9 +308,13 @@ class Router:
             score += 1500.0     # 切线出锚软拒：存在平滑候选时不选它（硬门保平滑）
         info = {"kind": kind, "points": pts, "press": press,
                 "min_clear": round(min_clr, 1) if min_clr < 1e9 else None,
-                "cross": cross, "ang_a": round(ang_a, 1), "ang_b": round(ang_b, 1)}
+                "cross": cross, "cross_edges": hit_edges,
+                "ang_a": round(ang_a, 1), "ang_b": round(ang_b, 1)}
         if kind == "arc":
             info["ctrl"] = cand[4]
+        if kind == "vg":
+            info["vg_corners"] = [list(p) for p in cand[4]["corner_pts"]]
+            info["vg_fillets"] = cand[4]["fillets"]
         return (score, info)
 
     def _anchor_angle(self, v, anchor, p_in, p_out):
@@ -304,6 +326,36 @@ class Router:
         tx, ty = (0.0, 1.0) if on_x else (1.0, 0.0)
         c = abs(dx * tx + dy * ty)
         return math.degrees(math.acos(max(0.0, min(1.0, c))))
+
+    # -- WS3 双口径·理论口径 --
+    def final_crossing_pairs(self, out):
+        """最终路线（未取整浮点几何）的交叉边对数。
+
+        评估时的逐边计数含「对旧路线快照」的陈旧交叉，不能当理论口径；
+        本方法在 route_all 收尾后对最终路线两两复算（严格求交，共享端点除外）。
+        """
+        items = sorted(out.items())
+        total = 0
+        for a in range(len(items)):
+            ia, info_a = items[a]
+            ea = self.edges[ia]
+            for b in range(a + 1, len(items)):
+                ib, info_b = items[b]
+                eb = self.edges[ib]
+                if ea[0] in eb or ea[1] in eb:
+                    continue
+                pa, pb = info_a["points"], info_b["points"]
+                hit = False
+                for s1 in zip(pa[:-1], pa[1:]):
+                    for s2 in zip(pb[:-1], pb[1:]):
+                        if seg_cross(s1[0], s1[1], s2[0], s2[1]):
+                            hit = True
+                            break
+                    if hit:
+                        break
+                if hit:
+                    total += 1
+        return total
 
     # -- 主入口 --
     def route_all(self):
@@ -326,9 +378,11 @@ class Router:
                 if best is None:
                     cand = self._candidates(a, b, i)[0]
                     sc, info = self._evaluate(cand, a, b, others)
-                    best = (sc, cand, info or {"kind": "line", "points": cand[1],
-                                               "press": 0, "min_clear": None,
-                                               "cross": 0, "ang_a": 0.0, "ang_b": 0.0})
+                    best = (sc, cand,
+                            info or {"kind": "line", "points": cand[1],
+                                     "press": 0, "min_clear": None,
+                                     "cross": 0, "cross_edges": 0,
+                                     "ang_a": 0.0, "ang_b": 0.0})
                 sc, cand, info = best
                 routed[i] = info["points"]
                 out[i] = info
