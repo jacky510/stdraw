@@ -48,13 +48,13 @@ RANDOM_SAMPLES = [
 ]
 HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
               "min_gap_ge_16", "cv_le_035", "regularity_simple",
-              "mutual_pairs_separated")
+              "mutual_pairs_separated", "lines_no_coincidence")
 # ref-scrubbed 环形排布（placement=ring-cycle）：规律性门切换为环口径
 # （行对齐/列吸附对环形不适用，不得拿行口径误判环形不合格）
 RING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "min_gap_ge_16", "ring_spacing_cv_le_005",
                    "ring_template_fit_le_005", "mutual_pairs_separated",
-                   "crossings_zero")
+                   "crossings_zero", "lines_no_coincidence")
 
 
 def run_cli(path, outdir, extra=(), pitch="62"):
@@ -179,16 +179,16 @@ def main():
             m = cert["metrics"]
             if m["crossings"] > 2:
                 failures.append(f"random {ex}: crossings={m['crossings']} > 2")
-            if m.get("min_edge_box_clear_px", 0) < 16:
-                failures.append(f"random {ex}: min_edge_box_clear_px="
-                                f"{m.get('min_edge_box_clear_px')} < 16")
+            if (m.get("edge_box_min_clear") or 0) < 16:
+                failures.append(f"random {ex}: edge_box_min_clear="
+                                f"{m.get('edge_box_min_clear')} < 16")
             for fn in ("layout.json", "demo-2d.html"):
                 with open(os.path.join(out1, fn), "rb") as a, \
                      open(os.path.join(out2, fn), "rb") as b:
                     if a.read() != b.read():
                         failures.append(f"random {ex}: {fn} 不确定（两次运行不一致）")
             print(f"OK  random {ex}: crossings={m['crossings']}, "
-                  f"min_clear={m.get('min_edge_box_clear_px')}px, deterministic")
+                  f"min_clear={m.get('edge_box_min_clear')}px, deterministic")
 
         # ── C. DOM 实测框界（可选层）──
         r = subprocess.run(
