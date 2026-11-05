@@ -242,6 +242,7 @@ def _interpolate(si, sj):
 # v1 certificate() 保持逐字节兼容（ortho-v1 生产行为 pin），auto 走 certificate_auto。
 
 from .routing import (sample_polyline, dist_point_rect, seg_cross as _rc_seg_cross,
+                      min_pair_dist,
                       PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE)
 
 
@@ -309,6 +310,19 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                     continue
                 break
 
+    # 1b. 互环对分离度（F1）：双向边对两线最小间距（按「边对」计，无互环对为 None）
+    pair_infos = []
+    for i in range(len(edges)):
+        for j in range(i + 1, len(edges)):
+            ei, ej = edges[i], edges[j]
+            if (ei["a"], ei["b"]) != (ej["b"], ej["a"]):
+                continue
+            md = min_pair_dist(sample_polyline(polys[i]), sample_polyline(polys[j]))
+            pair_infos.append({"pair": [f"{ei['a']}<->{ei['b']}",
+                                        round(md, 1) if md is not None else None]})
+    mutual_min_sep = (min(p["pair"][1] for p in pair_infos if p["pair"][1] is not None)
+                      if any(p["pair"][1] is not None for p in pair_infos) else None)
+
     # 2. 框压线（1px 余量）+ 边-框净距 + 自家框端点合规
     press, clear_details, anchor_bad = [], [], []
     min_clear = None
@@ -321,11 +335,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                 continue
             dmin = min(dist_point_rect(px, py, p["x"], p["y"], hw, hh)
                        for (px, py) in pts)
-            if dmin <= 0:
-                press.append({"edge": f"{e['a']}->{e['b']}", "card": v})
             dmin1 = min(dist_point_rect(px, py, p["x"], p["y"], hw + PRESS_MARGIN, hh + PRESS_MARGIN)
                         for (px, py) in pts)
-            if dmin1 <= 0:
+            # 穿卡计数按「边×卡」去重：同一对 (edge, card) 只记一条
+            # （0 余量命中时不再重复记 1px 余量条目）
+            if dmin <= 0:
+                press.append({"edge": f"{e['a']}->{e['b']}", "card": v})
+            elif dmin1 <= 0:
                 press.append({"edge": f"{e['a']}->{e['b']}", "card": v, "margin": 1})
             min_clear = dmin if min_clear is None else min(min_clear, dmin)
         # 自家框：其余采样点不得进入框内（含 1px 余量）；锚点须在框边上
@@ -427,6 +443,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "min_card_gap": round(min_gap, 1),
         "spacing_cv": round(cv, 3),
         "column_snap24_rate": round(snap_rate, 3),
+        "mutual_pair_min_sep": mutual_min_sep,
+        "mutual_pair_details": pair_infos[:10],
         "bbox": [round(W), round(H)],
     }
 
@@ -439,6 +457,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "row_align_ge_060": metrics["row_align_rate"] >= 0.60,
         "cv_le_035": metrics["spacing_cv"] <= 0.35,
         "regularity_simple": regularity_ok,
+        # F1 硬门：互环对两线最小间距 ≥ 4px（无互环对时平凡通过）
+        "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
     }
     if routing_consistent is not None:
         g["routing_consistent"] = routing_consistent
@@ -467,7 +487,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                       "放宽预算换的证书不冒充成品")
 
     return {
-        "tool": "stdraw", "version": "0.3.0", "layer": layer,
+        "tool": "stdraw", "version": "0.4.0", "layer": layer,
         "graph": graph_name,
         "n": len(ids), "m": len(edges),
         "coords": "delivered/rounded",
@@ -484,6 +504,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "regularity": _regularity_block(graph, nodes),
         "honest_notes": notes + [
             "硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性",
+            "互环对（a↔b 双向边）两线最小间距 ≥4px（透镜双弧/平行偏移/外围绕行，"
+            "禁止重合成双箭头线；穿卡计数按边×卡去重）",
             "交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，"
             "不一致拒发证书",
             "布线数学：绕障 = 净距膨胀障碍可见性图 Dijkstra 最短路（图上精确最优；"

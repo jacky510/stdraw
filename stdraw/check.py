@@ -309,6 +309,23 @@ def auto_geometry_report(layout: dict) -> dict:
             abs(router_pairs - geom_pairs) < 0.5,
             f"router={router_pairs} geometric={geom_pairs}")
 
+    # 12. F1：互环对（双向边对）两线最小间距 ≥ 4px（透镜双弧；禁止重合成双箭头线）
+    from .routing import min_pair_dist
+    pair_bad = []
+    pair_note = []
+    for i in range(len(P)):
+        for j in range(i + 1, len(P)):
+            (pi, ei), (pj, ej) = P[i], P[j]
+            if (ei["a"], ei["b"]) != (ej["b"], ej["a"]):
+                continue
+            md = min_pair_dist(sample_polyline(pi), sample_polyline(pj))
+            pair_note.append(f"{ei['a']}<->{ei['b']}:{md if md is None else round(md, 1)}px")
+            if md is None or md < 4.0:
+                pair_bad.append((f"{ei['a']}<->{ei['b']}",
+                                 md if md is None else round(md, 1)))
+    chk("12. 互环对两线最小间距 ≥ 4px（透镜双弧，禁止重合）",
+        not pair_bad, (str(pair_bad[:5]) if pair_bad else "; ".join(pair_note[:6])))
+
     report["summary"] = {
         "viewBox": [W, H], "aspect": round(W / H, 3) if H else 0,
         "nodes": len(nodes), "edges": len(edges),
