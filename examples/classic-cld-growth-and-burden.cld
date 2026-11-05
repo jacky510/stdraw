@@ -1,0 +1,36 @@
+# 经典 CLD 教学原型：增长极限 × 转嫁负担（公开教科书内容，《系统之美》原型群）
+# 8 节点 / 13 边 / 5 条反馈环（2 增强 + 3 平衡）——环多、不可平面化倾向，走 3D 层。
+graph "增长极限×转嫁负担"
+
+var rate "采纳率"
+var adopters "采纳者"
+var word "口碑效应"
+var potential "潜在采纳者"
+var crowding "拥挤效应"
+var quickfix "症状解·限流扩容"
+var fundamental "根本解·产品打磨"
+var sideeffect "副作用·资源被占用"
+
+rate -> + adopters @loops R1,B1,B2
+adopters -> + word @loops R1
+word -> + rate @loops R1
+potential -> + rate @loops B1
+adopters -> - potential @loops B1
+adopters -> + crowding @loops B2
+crowding -> - rate @loops B2
+crowding -> + quickfix @loops B3,R2
+quickfix -> - crowding @loops B3
+crowding -> + fundamental @loops B4
+fundamental -> - crowding @loops B4
+quickfix -> + sideeffect @loops R2
+sideeffect -> + crowding @loops R2
+
+loop R1 "采纳扩散" "R" [rate, adopters, word]
+loop B1 "市场饱和" "B" [rate, adopters, potential]
+loop B2 "拥挤制约" "B" [rate, adopters, crowding]
+loop B3 "症状缓解" "B" [crowding, quickfix]
+loop B4 "根本治理" "B" [crowding, fundamental]
+loop R2 "饮鸩止渴" "R" [quickfix, sideeffect, crowding]
+
+group growth "增长引擎"
+group burden "转嫁负担"
