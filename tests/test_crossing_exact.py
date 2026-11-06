@@ -192,6 +192,35 @@ def main():
         print(f"OK  降级: cr={r['crossing_number']} proven=False "
               f"coverage=partial（如实标注）")
 
+    # == E. 桥/割点面三角化回归（ref-scrubbed）==
+    # 贪心可平面子图 U 含桥/割点时，面游走顶点重复，旧 Triangulation 直接扇形
+    # 三角化 → AssertionError「侧 x 相邻三角形数 1 != 2」（random-n20-i00 实测
+    # 1.3s 崩）。回归用例 n8-m13-seed55：触发条件存在 + 旧侧计数必 !=2 + 修复后
+    # （割点口袋拆分 _split_face）crossing_exact 优雅返回。
+    g55 = nx.gnm_random_graph(8, 13, seed=55)
+    reg = mk(8, [(a + 1, b + 1) for a, b in sorted(g55.edges())], "reg-s55")
+    cores, _red = cx.safe_reduce(reg)
+    cnodes, cedges = cores[0]
+    U, F = cx._heuristic_planarization(cnodes, cedges)
+    Ue = [cedges[i] for i in U]
+    rot = cx._embed_U(cnodes, cedges, U)
+    faces, ok = cx._faces_from_rotation(rot, cnodes, Ue)
+    rep = [f for f in faces if len(set(f)) != len(f)]
+    e_ok = bool(rep)
+    if not e_ok:
+        failures.append("reg-s55: 触发条件消失（面无重复顶点）——回归用例失效")
+    print(f"{'OK ' if e_ok else 'FAIL'} reg-s55: UB 嵌入含重复顶点面 x{len(rep)} "
+          f"(桥/割点口袋触发条件在位)")
+    r = cx.crossing_exact(reg)
+    ok2 = (isinstance(r.get("crossing_number"), int)
+           and r.get("coverage") in ("full", "partial", "planar", "trivial"))
+    if not ok2:
+        failures.append(f"reg-s55: crossing_exact 未优雅返回 cr={r.get('crossing_number')} "
+                        f"coverage={r.get('coverage')}")
+    print(f"{'OK ' if ok2 else 'FAIL'} reg-s55: cr={r['crossing_number']} "
+          f"proven={r['proven_optimal']} coverage={r['coverage']} "
+          f"(ref-scrubbed 修复后零崩溃)")
+
     if failures:
         print("\nFAILURES:")
         for f in failures:

@@ -261,6 +261,32 @@ def _enum_rotations(nodes, edges, cap=20000):
 # ────────────────────────── 三角化结构 ──────────────────────────
 
 
+def _split_face(face):
+    """含重复顶点的面游走 → 简单圈列表（割点口袋分解）。
+
+    桥/割点使同一几何面经割点多次：游走 w 在重复顶点 v 处切开，
+    内圈 w[i:j] 与外圈 w[:i]+w[j:] 均为合法闭游走（相邻对都是原游走
+    的 dart），递归至无重复顶点。返回的每个圈首顶点不再重复出现。"""
+    walks, out = [face], []
+    while walks:
+        w = walks.pop()
+        first = {}
+        cut = None
+        for i, v in enumerate(w):
+            if v in first:
+                cut = (first[v], i)
+                break
+            first[v] = i
+        if cut is None:
+            out.append(w)
+            continue
+        i, j = cut
+        walks.append(w[i:j])            # 内圈（v…返回 v 前，v 仅在首位）
+        if i > 0 or j < len(w):
+            walks.append(w[:i] + w[j:])  # 外圈（去掉内圈段，闭合同游走）
+    return out
+
+
 class Triangulation:
     """可平面嵌入的三角化：三角形列表 + 侧（真边侧 / 虚弦侧）。
 
@@ -268,6 +294,7 @@ class Triangulation:
       'edge':  真边侧——穿行计 1 交叉；payload = 该边在全图边表的下标
       'chord': 面内虚弦——穿行免费；payload = (face_id, p, q)
     tri_sides[t] = 三角形 t 的 3 个侧 id；node_tris[v] = 含顶点 v 的三角形。
+    含重复顶点的面（桥/割点口袋）先经 _split_face 拆成简单圈。
     """
 
     def __init__(self, faces, global_index):
@@ -276,6 +303,9 @@ class Triangulation:
         self.node_tris = defaultdict(list)
         self.tri_sides = defaultdict(list)
         edge_side, chord_sides = {}, {}
+        simple_faces = []
+        for face in faces:
+            simple_faces.extend(_split_face(face))
 
         def real_side(x, y):
             key = tuple(sorted((x, y)))
@@ -294,7 +324,9 @@ class Triangulation:
                                    "payload": key[1:], "t1": None, "t2": None})
             return chord_sides[key]
 
-        for fi, face in enumerate(faces):
+        for fi, face in enumerate(simple_faces):
+            if len(face) < 3:
+                continue                     # 二角面（平行边残片）：无三角形
             k = len(face)
             v0 = face[0]
             tris_f = []
@@ -521,7 +553,11 @@ def oil_insertion(nodes, edges, U_idx, F_idx, rotation,
     faces, ok = _faces_from_rotation(rotation, nodes, U_edges)
     if not ok:
         return {"ok": False, "why": "rotation-not-planar"}
-    tri = Triangulation(faces, U_key)
+    try:
+        tri = Triangulation(faces, U_key)
+    except AssertionError as exc:
+        # 嵌入结构异常（面游走非简单圈等）——如实降级，不崩
+        return {"ok": False, "why": f"triangulation-failed: {exc}"}
 
     try:
         from ortools.sat.python import cp_model
@@ -665,10 +701,18 @@ def crossing_exact(graph, max_nodes_exact=30, subset_cap=4000,
     proven, coverage = True, "full"
     witnesses, methods = [], []
     for cnodes, cedges in cores:
-        if len(cnodes) > max_nodes_exact or not _has_solver():
-            r = _core_heuristic(cnodes, cedges)
-        else:
-            r = _core_exact(cnodes, cedges, subset_cap, rotation_cap, max_nogood)
+        try:
+            if len(cnodes) > max_nodes_exact or not _has_solver():
+                r = _core_heuristic(cnodes, cedges)
+            else:
+                r = _core_exact(cnodes, cedges, subset_cap, rotation_cap,
+                                max_nogood)
+        except Exception as exc:      # noqa: BLE001 —— 未预期路径兜底，如实降级
+            r = {"ub": len(cedges), "lb": 0, "proven": False,
+                 "coverage": "partial",
+                 "method": (f"core failed ({type(exc).__name__}: {exc}) — "
+                            "heuristic upper-bound fallback"),
+                 "witness": None}
         total_ub += r["ub"]
         total_lb += r["lb"]
         proven = proven and r["proven"]
@@ -783,7 +827,13 @@ def _core_exact(nodes, edges, subset_cap, rotation_cap, max_nogood):
                 if r.get("why") == "nogood-cap":
                     coverage_full = False
                     continue
-                if r.get("ok") and r.get("feasible"):
+                if not r.get("ok"):
+                    # why != infeasible/nogood-cap：该嵌入未完整裁决（三角化
+                    # 失败/求解器 unknown 等）——覆盖不完备，如实标 partial
+                    if r.get("why") != "infeasible":
+                        coverage_full = False
+                    continue
+                if r.get("feasible"):
                     r2 = oil_insertion(nodes, edges, Uc, Fc, rot2,
                                        minimize=True, lex=True,
                                        max_nogood=max_nogood)

@@ -18,14 +18,20 @@ def main(cld_path, rawdir):
     if os.path.exists(out):
         print(out)
         return
-    g = parse(open(cld_path, encoding="utf-8").read())
-    from stdraw.crossing_exact import crossing_exact
     t0 = time.perf_counter()
-    ex = crossing_exact(g)
-    rec = {"tool": "stdraw-exact", "graph": base, "n": len(g.nodes), "m": len(g.edges),
-           "cr": ex.get("crossing_number"), "proven_optimal": ex.get("proven_optimal"),
-           "lb": ex.get("lb"), "gap": ex.get("gap"), "coverage": ex.get("coverage"),
-           "status": "ok", "runtime_s": round(time.perf_counter() - t0, 3)}
+    try:
+        g = parse(open(cld_path, encoding="utf-8").read())
+        from stdraw.crossing_exact import crossing_exact
+        ex = crossing_exact(g)
+        rec = {"tool": "stdraw-exact", "graph": base, "n": len(g.nodes), "m": len(g.edges),
+               "cr": ex.get("crossing_number"), "proven_optimal": ex.get("proven_optimal"),
+               "lb": ex.get("lb"), "gap": ex.get("gap"), "coverage": ex.get("coverage"),
+               "status": "ok", "runtime_s": round(time.perf_counter() - t0, 3)}
+    except Exception as exc:      # noqa: BLE001 —— 最后兜底：如实 error 落盘，不崩
+        rec = {"tool": "stdraw-exact", "graph": base, "cr": None,
+               "proven_optimal": False, "coverage": "error",
+               "status": "error", "error": f"{type(exc).__name__}: {exc}",
+               "runtime_s": round(time.perf_counter() - t0, 3)}
     with open(out, "w", encoding="utf-8") as f:
         json.dump(rec, f, ensure_ascii=False)
     print(out)
