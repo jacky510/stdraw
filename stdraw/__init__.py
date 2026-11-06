@@ -9,7 +9,7 @@
 诚实分级承诺：拿不到证书就说拿不到；绝不宣称任意图 0 交叉。
 """
 
-__version__ = "0.5.3"
+__version__ = "0.6.0"
 
 from .model import Graph, Node, Edge, Loop, Group
 from .dsl import parse, dumps

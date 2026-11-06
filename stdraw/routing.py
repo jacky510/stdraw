@@ -472,6 +472,12 @@ class Router:
                 sep_def = max(0.0, PAIR_SEP_MIN - pair_sep)
         if mutual_pair and kind == "arc":
             kind_pref = -2.0      # 透镜双弧轻微优先（分离度相同时避免双直线胜出）
+        # ref-scrubbed 线型层级：弧线 > 直线 > 折线——vg 绕障折角与 poly 车道
+        # 折线加固定类型代价，直线/弧线可行时不再与折线抢分（折线=最后手段）
+        if kind == "vg":
+            kind_pref += 120.0
+        if kind == "poly":
+            kind_pref += 40.0
         if kind == "wrap":
             # 外围绕行固定代价：修重合（600·缺口）才值得，不与短候选抢分
             kind_pref += 200.0

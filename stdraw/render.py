@@ -109,11 +109,21 @@ h1{{font-size:18px}} svg{{background:#fff;border:1px solid #e2e8f0;border-radius
 
 
 # ═══ auto-v2 渲染（2026-11-05 六点返修）：直线/弧线一等 + 锚点方向箭头 ═══
+# ref-scrubbed R/B 颜色化：回路边按所属声明回路极性着色（R=琥珀 #d97706 /
+# B=天蓝 #0284c7——线上惯例色相的白底可读加深档），去掉 R/B 文字
+# 徽标（复杂图文字干扰）；负极性边虚线（+/- 语义保留）；极性数据在
+# layout.json / certificate.json 不变。
+LOOP_COLOR_R = "#d97706"
+LOOP_COLOR_B = "#0284c7"
+NEUTRAL_COLOR = "#64748b"
+
+
 def _edge_svg(e, labels, values):
     """单条边 → SVG（line/poly 折线，arc 真贝塞尔，vg 精确 L+A 路径），箭头按末段方向。"""
     r = e["route"]
     pts = r["points"]
-    color = "#64748b"
+    color = e.get("loop_color") or NEUTRAL_COLOR
+    dash = ' stroke-dasharray="6 4"' if e.get("polarity") == "-" else ""
     if r.get("path_d"):
         d = r["path_d"]
     elif r["kind"] == "arc" and "ctrl" in r:
@@ -122,7 +132,7 @@ def _edge_svg(e, labels, values):
              f'{pts[-1][0]} {pts[-1][1]}')
     else:
         d = 'M ' + ' L '.join(f'{p[0]} {p[1]}' for p in pts)
-    out = [f'<path d="{d}" fill="none" stroke="{color}" stroke-width="1.3"/>']
+    out = [f'<path d="{d}" fill="none" stroke="{color}" stroke-width="1.3"{dash}/>']
     # 箭头：末段方向
     import math as _m
     (x1, y1), (x2, y2) = pts[-2], pts[-1]
@@ -133,82 +143,10 @@ def _edge_svg(e, labels, values):
     return ''.join(out)
 
 
-# ═══ WS3：R/B 极性标记（随切线方向确定性放置，不遮字不压线）═══
-def _poly_point_at(pts, t):
-    """折线按弧长比例取点与局部切向。"""
-    import math as _m
-    segs = [(_m.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]))
-            for i in range(len(pts) - 1)]
-    total = sum(segs)
-    target = total * max(0.0, min(1.0, t))
-    acc = 0.0
-    for i, L in enumerate(segs):
-        if acc + L >= target and L > 0:
-            f = (target - acc) / L
-            p = (pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f,
-                 pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f)
-            d = (pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
-            n = _m.hypot(*d) or 1.0
-            return p, (d[0] / n, d[1] / n)
-        acc += L
-    return pts[-1], (0.0, 1.0)
-
-
-def _pt_poly_dist(px, py, pts):
-    """点到折线的最小距离。"""
-    best = float("inf")
-    for i in range(len(pts) - 1):
-        ax, ay = pts[i]
-        bx, by = pts[i + 1]
-        vx, vy = bx - ax, by - ay
-        L2 = vx * vx + vy * vy
-        t = 0.0 if L2 < 1e-12 else max(0.0, min(1.0, ((px - ax) * vx + (py - ay) * vy) / L2))
-        d = ((px - ax - t * vx) ** 2 + (py - ay - t * vy) ** 2) ** 0.5
-        best = min(best, d)
-    return best
-
-
-def _polarity_marker(e, polys, boxes, W, H, placed=()):
-    """R/B 标记位置：确定性候选序（t × 法向偏移），首个不遮字不压线的位置。
-
-    boxes: [(cx, cy, hw, hh)] 全部框；不遮字 = 与框外缘保持 ≥8px；
-    不压线 = 与其他边折线保持 ≥11px；
-    不互撞（ref-scrubbed #10②）= 与已放置徽标圆心保持 ≥17px
-    （徽标圆 r=7.5，两圆不相交需 >15px，留 2px 视觉余量）。
-    """
-    pol = e.get("polarity", "+")
-    if pol not in ("+", "-"):
-        return None
-    letter = "R" if pol == "+" else "B"
-    color = "#dc2626" if pol == "+" else "#2563eb"
-    own = e["route"]["points"]
-    other_polys = [p for j, p in polys.items() if j != e.get("_idx")]
-    for t in (0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74):
-        p, tan = _poly_point_at(own, t)
-        nx, ny = -tan[1], tan[0]
-        for off in (10, -10, 14, -14, 18, -18, 22, -22):
-            cand = (p[0] + nx * off, p[1] + ny * off)
-            if not (8 <= cand[0] <= W - 8 and 8 <= cand[1] <= H - 8):
-                continue
-            # 不互撞：与已放置徽标 ≥17px
-            if any((cand[0] - bx) ** 2 + (cand[1] - by) ** 2 < 17.0 ** 2
-                   for (bx, by) in placed):
-                continue
-            # 不遮字：与任何框（含端点框）外缘保持 ≥8px
-            near_box = False
-            for (cx, cy, hw, hh) in boxes:
-                dx = max(abs(cand[0] - cx) - hw, 0.0)
-                dy = max(abs(cand[1] - cy) - hh, 0.0)
-                if (dx * dx + dy * dy) ** 0.5 < 8:
-                    near_box = True
-                    break
-            if near_box:
-                continue
-            # 不压线：与其他边折线保持 ≥11px
-            if any(_pt_poly_dist(cand[0], cand[1], p2) < 11 for p2 in other_polys):
-                continue
-            return cand, letter, color
-    return None
+# ref-scrubbed：R/B 文字徽标（_polarity_marker/_poly_point_at/_pt_poly_dist）
+# 已随「回路极性颜色化」移除——徽标语义由边着色（R=琥珀/B=天蓝）+ 负边
+# 虚线承载；极性数据保留在 layout.json / certificate.json。
+# 拖拽层同步：_interactive_js 的徽标重放（refreshMarkers/polGroups）一并移除。
 
 
 def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
@@ -224,24 +162,11 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     parts = []
     parts.append(f'<svg id="stdraw-svg" viewBox="0 0 {W} {H}" '
                  f'font-family="Microsoft YaHei,sans-serif">')
-    polys = {i: e["route"]["points"] for i, e in enumerate(edges)}
-    boxes = [(p["x"], p["y"], p.get("w", 140) / 2, card_h / 2) for p in nodes.values()]
+    # ref-scrubbed：R/B 文字徽标已去除（回路极性改由边着色表达：R=琥珀/B=天蓝；
+    # 负极性边虚线）。极性数据保留在 layout.json / certificate.json。
     for i, e in enumerate(edges):
         e["_idx"] = i
         parts.append(f'<g data-edge="{i}">' + _edge_svg(e, labels, values) + '</g>')
-    # WS3：R/B 极性标记（确定性放置，白底盘 + 字母）；
-    # ref-scrubbed #10②：逐个放置时与已放徽标保持 ≥17px（互撞避让）。
-    placed_pol = []
-    for i, e in enumerate(edges):
-        mk = _polarity_marker(e, polys, boxes, W, H, placed_pol)
-        if mk:
-            (mx, my), letter, mcolor = mk
-            placed_pol.append((mx, my))
-            parts.append(f'<g data-pol="{i}" transform="translate({mx:.1f} {my:.1f})">'
-                         f'<circle r="7.5" fill="#ffffff" stroke="{mcolor}" '
-                         f'stroke-width="1.2"/>'
-                         f'<text y="3.2" text-anchor="middle" font-size="9.5" '
-                         f'font-weight="bold" fill="{mcolor}">{letter}</text></g>')
     for v, p in nodes.items():
         x, y, w = p["x"], p["y"], p["w"]
         label = html.escape(labels.get(v, v))
@@ -299,38 +224,61 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         rows = "".join(
             f'<tr><td>{k}</td><td class="{_cls(v)}">{_mark(v)}</td></tr>'
             for k, v in cert["gates"].items())
-        if cert.get("placement") == "ring-cycle":
-            metric_rows = (
-                f'<tr><td>交叉</td><td>{m["crossings"]}</td></tr>'
-                f'<tr><td>框压线(1px余量)</td><td>{m["box_press_1px"]}</td></tr>'
-                f'<tr><td>边-框最小净距</td><td>{m["edge_box_min_clear"]}</td></tr>'
-                f'<tr><td>锚点违例</td><td>{m["anchor_violations"]}</td></tr>'
-                f'<tr><td>平均边长</td><td>{m["avg_edge_length"]}</td></tr>'
+        placement = cert.get("placement")
+        metric_rows = (
+            f'<tr><td>交叉（软目标·报告项）</td><td>{m["crossings"]}</td></tr>'
+            f'<tr><td>框压线(1px余量)</td><td>{m["box_press_1px"]}</td></tr>'
+            f'<tr><td>边-框最小净距</td><td>{m["edge_box_min_clear"]}</td></tr>'
+            f'<tr><td>锚点违例</td><td>{m["anchor_violations"]}</td></tr>'
+            f'<tr><td>平均边长</td><td>{m["avg_edge_length"]}</td></tr>'
+            f'<tr><td>卡间最小净距</td><td>{m["min_card_gap"]}</td></tr>'
+            f'<tr><td>线型分布</td><td>{m.get("line_kind_counts")}</td></tr>')
+        if placement == "ring-cycle":
+            metric_rows += (
                 f'<tr><td>环上等间距 CV</td><td>{m.get("ring_spacing_cv")}</td></tr>'
-                f'<tr><td>正多边形模板偏差</td><td>{m.get("ring_template_deviation")}</td></tr>'
-                f'<tr><td>卡间最小净距</td><td>{m["min_card_gap"]}</td></tr>')
+                f'<tr><td>正多边形模板偏差</td><td>{m.get("ring_template_deviation")}</td></tr>')
             placement_html = (
                 '<h4>排布模式：环形（主环正多边形槽位 + 弦内布线；'
                 '行对齐率/列吸附口径不适用）</h4>')
+        elif placement == "column-chain":
+            metric_rows += (
+                f'<tr><td>主链列轴偏差</td><td>{m.get("column_axis_deviation")}</td></tr>'
+                f'<tr><td>回路聚拢度</td><td>{m.get("loop_cohesion_spread")}</td></tr>')
+            placement_html = (
+                '<h4>排布模式：纵列（主链纵向对齐一列 + 支路挂近邻侧 + '
+                '闭合边左侧大弧；行对齐率/列吸附口径不适用）</h4>')
+        elif placement == "symmetric":
+            metric_rows += (
+                f'<tr><td>镜像轴误差</td><td>{m.get("symmetry_mirror_err")}</td></tr>')
+            placement_html = (
+                '<h4>排布模式：对称（共享边居纵轴 + 左右顶点镜像；'
+                '轴边直线 + 侧边全弧）</h4>')
         else:
-            metric_rows = (
-                f'<tr><td>交叉</td><td>{m["crossings"]}</td></tr>'
-                f'<tr><td>框压线(1px余量)</td><td>{m["box_press_1px"]}</td></tr>'
-                f'<tr><td>边-框最小净距</td><td>{m["edge_box_min_clear"]}</td></tr>'
-                f'<tr><td>锚点违例</td><td>{m["anchor_violations"]}</td></tr>'
-                f'<tr><td>平均边长</td><td>{m["avg_edge_length"]}</td></tr>'
-                f'<tr><td>行对齐率</td><td>{m["row_align_rate"]}</td></tr>'
-                f'<tr><td>卡间最小净距</td><td>{m["min_card_gap"]}</td></tr>'
+            metric_rows += (
+                f'<tr><td>行对齐率（报告项）</td><td>{m["row_align_rate"]}</td></tr>'
                 f'<tr><td>间距变异系数 CV</td><td>{m["spacing_cv"]}</td></tr>'
                 f'<tr><td>24px 列吸附率</td><td>{m["column_snap24_rate"]}</td></tr>')
             placement_html = ""
+        rep = cert.get("reports") or {}
+        rep_html = ""
+        if rep:
+            rep_html = (f'<h4>报告项（不一票否决）</h4><table>'
+                        f'<tr><td>0 交叉</td><td class="{_cls(rep.get("crossings_zero"))}">'
+                        f'{_mark(rep.get("crossings_zero"))}</td></tr>'
+                        f'<tr><td>行对齐 ≥0.60</td>'
+                        f'<td class="{_cls(rep.get("row_align_ge_060"))}">'
+                        f'{_mark(rep.get("row_align_ge_060"))}</td></tr></table>')
+        legend = ('<p class="note">边着色：琥珀=增强回路(R) · 天蓝=平衡回路(B) · '
+                  '灰=非回路边/多环异色；虚线=负极性（−）</p>')
         cert_html = f'''<div class="cert"><h3>质量证书（交付坐标复检 · auto-v2 硬门）</h3>
 <table>
 {metric_rows}
 </table>
 {placement_html}
 <h4>门禁 {cert["gates_passed"]}</h4><table>{rows}</table>
+{rep_html}
 <p class="grade">分级：<b>{cert["grade"]}</b> — {html.escape(cert["grade_note"])}</p>
+{legend}
 <p class="note">{html.escape(" / ".join(cert.get("honest_notes", [])))}</p>
 </div>'''
     loops_html = ""

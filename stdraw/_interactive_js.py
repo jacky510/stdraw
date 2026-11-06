@@ -62,9 +62,8 @@ edges.forEach(function (e, i) {
   }
 });
 var polGroups = {};
-svg.querySelectorAll('[data-pol]').forEach(function (g) {
-  polGroups[+g.getAttribute('data-pol')] = {g: g, t: g.getAttribute('transform')};
-});
+// ref-scrubbed：R/B 文字徽标已移除（回路极性由边着色表达，静态 stroke 属性
+// 拖拽时保留）；polGroups/refreshMarkers 保留为空实现以兼容旧页面结构。
 var incidentMap = {};
 Object.keys(nodes).forEach(function (v) {
   incidentMap[v] = [];
@@ -416,44 +415,7 @@ function ptPolyDist(px, py, pts) {
   return best;
 }
 function refreshMarkers() {
-  var ids = Object.keys(nodes);
-  var placedPts = [];   // ref-scrubbed #10②：徽标互撞避让（与 render._polarity_marker 同口径 ≥17px）
-  edges.forEach(function (e, i) {
-    var rec = polGroups[i];
-    if (!rec) return;
-    var placed = null;
-    var others = [];
-    edges.forEach(function (e2, j) { if (j !== i) others.push(e2.pts); });
-    var ts = [0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74];
-    for (var ti = 0; ti < ts.length && !placed; ti++) {
-      var r = polyPointAt(e.pts, ts[ti]);
-      var nx = -r.tan[1], ny = r.tan[0];
-      var offs = [10, -10, 14, -14, 18, -18, 22, -22];
-      for (var oi = 0; oi < offs.length && !placed; oi++) {
-        var cx = r.p[0] + nx * offs[oi], cy = r.p[1] + ny * offs[oi];
-        if (cx < 8 || cx > VB[2] - 8 || cy < 8 || cy > VB[3] - 8) continue;
-        var bad = false;
-        for (var pi = 0; pi < placedPts.length; pi++) {
-          if (Math.hypot(cx - placedPts[pi][0], cy - placedPts[pi][1]) < 17) { bad = true; break; }
-        }
-        if (bad) continue;
-        for (var bi = 0; bi < ids.length && !bad; bi++) {
-          var n = nodes[ids[bi]];
-          var ddx = Math.max(Math.abs(cx - n.x) - n.w / 2, 0);
-          var ddy = Math.max(Math.abs(cy - n.y) - cardH / 2, 0);
-          if (Math.hypot(ddx, ddy) < 8) bad = true;
-        }
-        if (bad) continue;
-        for (var k = 0; k < others.length; k++) if (ptPolyDist(cx, cy, others[k]) < 11) { bad = true; break; }
-        if (bad) continue;
-        placed = [cx, cy];
-      }
-    }
-    if (placed) {
-      rec.g.setAttribute('transform', 'translate(' + placed[0].toFixed(1) + ' ' + placed[1].toFixed(1) + ')');
-      placedPts.push(placed);
-    }
-  });
+  // ref-scrubbed：徽标已移除（边着色承载 R/B 极性）——空实现保留接口。
 }
 var drag = null, rafPending = false;
 function svgPoint(ev) {
