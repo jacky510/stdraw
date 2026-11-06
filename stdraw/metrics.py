@@ -243,7 +243,8 @@ def _interpolate(si, sj):
 
 from .routing import (sample_polyline, dist_point_rect, seg_cross as _rc_seg_cross,
                       min_pair_dist,
-                      PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE)
+                      PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE,
+                      span_one_way_segs, COINCIDE_THR, COINCIDE_SPAN)
 
 
 def scene_from_auto(v4: dict) -> dict:
@@ -283,42 +284,19 @@ def _anchor_tangent_angle(node, anchor, direction):
 
 
 # ── 线-线视觉重合（ref-scrubbed #10①/#05 检测：机器可查）─────────────
-COINCIDE_THR = 1.0     # 距离 <1px 视为贴合
-COINCIDE_SPAN = 8.0    # 贴合累计长度 >8px 才判「视觉重合」（端点会合豁免）
-
-
-def _pt_seg_dist(p, a, b):
-    """点到线段距离。"""
-    vx, vy = b[0] - a[0], b[1] - a[1]
-    l2 = vx * vx + vy * vy
-    if l2 < EPS:
-        return math.hypot(p[0] - a[0], p[1] - a[1])
-    t = max(0.0, min(1.0, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / l2))
-    return math.hypot(p[0] - a[0] - t * vx, p[1] - a[1] - t * vy)
+# 口径常量（COINCIDE_THR=1.0 <1px 贴合 / COINCIDE_SPAN=8.0 >8px 计重合，
+# 端点会合豁免）正本在 routing.py——路由罚（ref-scrubbed）与证书必须同源。
 
 
 def _coincidence_span(sa, sb, step, thr=COINCIDE_THR):
     """两条采样折线在 <thr 距离上并行同走的长度（px，双向取大；确定性）。
 
-    对 A 的采样点逐个算到 B 折线（点-线段）的最小距离，<thr 的采样步
-    累计为贴合长度；再对称算 B→A，取大者。两端点锚点处的瞬时会合
-    贴合长度只有 ~1-2px，不越 8px 跨度门；真重合（长跨度并行贴合）
-    会被任一方向稳定捕获。
+    两方向都委托 routing.span_one_way_segs（与布线重定线口径同源，副本必漂移）。
+    两端点锚点处的瞬时会合贴合长度只有 ~1-2px，不越 8px 跨度门；真重合
+    （长跨度并行贴合）会被任一方向稳定捕获。
     """
-    def one_way(src, other):
-        total = 0.0
-        for p in src:
-            dmin = float("inf")
-            for k in range(len(other) - 1):
-                d = _pt_seg_dist(p, other[k], other[k + 1])
-                if d < dmin:
-                    dmin = d
-                    if dmin < thr:
-                        break
-            if dmin < thr:
-                total += step
-        return total
-    return max(one_way(sa, sb), one_way(sb, sa))
+    return max(span_one_way_segs(sa, list(zip(sb[:-1], sb[1:])), step, thr),
+               span_one_way_segs(sb, list(zip(sa[:-1], sa[1:])), step, thr))
 
 
 def _bbox_gap(pa, pb):

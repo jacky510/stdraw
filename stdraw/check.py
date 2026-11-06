@@ -87,7 +87,7 @@ def _path_d_all_points(elems):
 
 def _max_poly_dev(pa, pb):
     """两折线（采样点列）的双向最大最小距（Hausdorff 采样口径）。"""
-    from .metrics import _pt_seg_dist
+    from .routing import _pt_seg_dist
     def one_way(src, other):
         worst = 0.0
         for p in src:

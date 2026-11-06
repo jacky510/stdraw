@@ -902,6 +902,11 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     _pos2, _sc2, _rt2 = _polish(core, EDGES_REF[0], _order2, _pos2,
                                                 _y2, widths, card_h, cfg,
                                                 hard_gates=True)
+                    # ref-scrubbed：孤立节点不在 rows（顶部停车带交付），门控重排
+                    # 只重排 core——停车带坐标原样带回，Router 全节点键完备
+                    # （存量缺口：门控路径在有孤立节点的图上首次触发即 KeyError）
+                    for _v in deg0:
+                        _pos2.setdefault(_v, pos[_v])
                     _r2 = Router({v: (_pos2[v], _y2[v], widths[v], card_h)
                                   for v in nodes}, EDGES_REF[0], cfg.clearance, cfg.pitch,
                                  quality=True)
@@ -969,6 +974,14 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                      "ang_a": 0.0, "ang_b": 0.0}
     if manual_wps and from_meta is not None:
         from_meta["waypoint_edges"] = len(manual_wps)
+    # ref-scrubbed：线-线视觉重合定向重定线——扇出边同走廊贴合（stair/lane
+    # 共享车道）的兜底修复。构造路线与用户锚定 waypoints 边不动；只对重合
+    # 对涉及边在硬门不回退（压线/净距/锚点/交叉数）前提下重定线。
+    _frozen = set()
+    for i, (a, b) in enumerate(EDGES_REF[0]):
+        if constructed.get((a, b)) is not None or manual_wps.get((a, b)):
+            _frozen.add(i)
+    routes = router.coincide_reroute(routes, frozen=_frozen)
     router_pairs = router.final_crossing_pairs(routes)
 
     # ref-scrubbed R/B 回路着色：边 → 所属声明回路 kind 集合（确定性规则见
