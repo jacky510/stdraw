@@ -39,6 +39,8 @@ stdraw layout model.cld --outdir out --skip-3d
 stdraw layout model.cld --outdir out --recipe ortho
 # Arc-prefixed lines (auto recipe)
 stdraw layout model.cld --outdir out --linestyle arc
+# Exact crossing-number layer (proven-optimal cr(G), needs stdraw[solver])
+stdraw layout model.cld --outdir out --exact
 # Optional positioning refinement (better uniformity on dense graphs)
 pip install "stdraw[solver]"
 ```
@@ -53,7 +55,9 @@ pip install "stdraw[solver]"
   `layout.json`, `positions3d.json`.
 - Default recipe `auto-v2` enforces hard gates: box-over-line = 0 (any angle,
   1px margin), edge-to-box clearance >= 16px, smooth border anchors, and
-  symmetric/regular arrangement for simple graphs (<=10 nodes).
+  mode-aware arrangement regularity (ring / vertical-column / mirror-symmetric /
+  layered auto-selected by structure with trial gates; crossings and row
+  alignment are reported soft targets since v0.6.0).
 
 ## Certificate Reading Rules (honest grading — pass through verbatim)
 
@@ -71,4 +75,8 @@ Iron rule: stdraw never claims arbitrary graphs are 0-crossing. Relay grades as-
 - Small graphs: pass `--pitch 62` to clear the min-gap gate.
 - `demo-3d.html` needs the repo's `assets/three.min.js` at the relative path.
 - `loops_audit.json` `problems` must be 0 before trusting declared loops.
+- Loop polarity is shown by edge color (single-loop R amber `#d97706` /
+B sky `#0284c7`, mixed/acyclic neutral, negative edges dashed) - no letter
+badges. Manual touch-up loop: drag nodes in `demo-2d.html`, export layout,
+re-run with `--from-layout` (waypoints included) - see AGENTS.md.
 - All outputs are deterministic — safe to commit; re-runs diff clean.
