@@ -84,10 +84,22 @@ function updateEdge(i) {
   }
 }
 function borderPoint(c, hw, hh, toward) {
+  // ref-scrubbed 连接点交付口径：射线定边出口 → 锚点沿该边切向钳制到边中点
+  // ±1/4 边长带内（正交出边即边中点，斜线出口拉回带内，转角排除）。
+  // 与 Python routing.border_point + Router.midband_reanchor 同口径。
   var dx = toward[0] - c[0], dy = toward[1] - c[1];
   if (!dx && !dy) return [c[0], c[1]];
+  if (!dx) return [c[0], c[1] + (dy > 0 ? hh : -hh)];
+  if (!dy) return [c[0] + (dx > 0 ? hw : -hw), c[1]];
   var t = Math.min(hw / Math.abs(dx), hh / Math.abs(dy));
-  return [c[0] + dx * t, c[1] + dy * t];
+  var px = c[0] + dx * t, py = c[1] + dy * t;
+  var onX = Math.abs(Math.abs(px - c[0]) - hw) <= Math.abs(Math.abs(py - c[1]) - hh);
+  if (onX) {
+    var limY = hh / 2;
+    return [px, c[1] + Math.max(-limY, Math.min(limY, py - c[1]))];
+  }
+  var limX = hw / 2;
+  return [c[0] + Math.max(-limX, Math.min(limX, px - c[0])), py];
 }
 function reanchor(i) {
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];

@@ -338,19 +338,32 @@ def route_svg_d(corner_pts, fillets, nd=1):
 
 
 def plan_route(src, dst, rects, c):
-    """高层入口：src→dst 的绕障路线（带确定性缓存——纯函数，同输入同输出）。"""
+    """高层入口：src→dst 的绕障路线（带确定性缓存——纯函数，同输入同输出）。
+
+    ref-scrubbed 缓存命中返回**深拷贝**：调用方会把 dense 列表就地当交付
+    points（midband_reanchor/fan_spread 原位改锚点），若直接返回缓存对象
+    会把变异毒化进全局缓存，破坏跨 run 确定性（n20 实测 vg 路线漂移）。
+    """
     key = ((round(float(src[0]), 3), round(float(src[1]), 3)),
            (round(float(dst[0]), 3), round(float(dst[1]), 3)),
            tuple((round(r[0], 3), round(r[1], 3), round(r[2], 3), round(r[3], 3))
                  for r in rects), round(float(c), 3))
     hit = _ROUTE_CACHE.get(key)
     if hit is not None:
-        return hit
+        return {"corner_pts": [list(p) for p in hit["corner_pts"]],
+                "fillets": [dict(f) for f in hit["fillets"]],
+                "dense": [tuple(p) for p in hit["dense"]],
+                "path_d": hit["path_d"]}
     result = _plan_route(src, dst, rects, c)
     if len(_ROUTE_CACHE) > 8192:
         _ROUTE_CACHE.clear()
     _ROUTE_CACHE[key] = result
-    return result
+    if result is None:
+        return None
+    return {"corner_pts": [list(p) for p in result["corner_pts"]],
+            "fillets": [dict(f) for f in result["fillets"]],
+            "dense": [tuple(p) for p in result["dense"]],
+            "path_d": result["path_d"]}
 
 
 _ROUTE_CACHE = {}

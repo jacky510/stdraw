@@ -66,6 +66,8 @@ COLUMN_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
 SYM_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                   "min_gap_ge_16", "cv_le_035", "symmetry_mirror_le_2px",
                   "mutual_pairs_separated", "lines_no_coincidence")
+# ref-scrubbed（美学 v3）领结共点：规律性门 = 镜像轴误差（同 symmetric 口径）
+BOWTIE_HARD_GATES = SYM_HARD_GATES
 
 
 def _hard_gates_for(cert):
@@ -74,7 +76,7 @@ def _hard_gates_for(cert):
         return RING_HARD_GATES
     if p == "column-chain":
         return COLUMN_HARD_GATES
-    if p == "symmetric":
+    if p in ("symmetric", "bowtie-vertex"):
         return SYM_HARD_GATES
     return HARD_GATES
 

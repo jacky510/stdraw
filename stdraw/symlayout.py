@@ -21,7 +21,7 @@
 import math
 
 SYM_GAP = 36              # 呼吸感目标净距
-ARC_K = 0.22              # 侧边弧弯曲系数（与 routing.ARC_KS 同量级）
+ARC_K_FALLBACK = 0.22     # 侧弧 k 兜底档（side_geom 为空时不可达，防御用）
 
 
 class InfeasibleBowtie(Exception):
@@ -69,6 +69,41 @@ def _quad_points(p0, ctrl, p1, seg=24):
             for t in (i / seg for i in range(seg + 1))]
 
 
+def _own_press(pts, na, nb):
+    """弧线中间采样点是否进入两端自家框（含 1px 余量；与 check2 同口径）。
+
+    诊断辅助（ctrl 平移口径下正常不触发，保留供调试复算）。
+    """
+    from .routing import dist_point_rect
+    for p in pts[1:-1]:
+        for bx, by, bw, bh in (na, nb):
+            if dist_point_rect(p[0], p[1], bx, by, bw / 2 + 1, bh / 2 + 1) <= 0:
+                return True
+    return False
+
+
+def _natural_border(cx, cy, hw, hh, dx, dy):
+    """射线与框边的自然交点（不带带钳制；用于计算锚点钳制增量）。"""
+    if abs(dx) < 1e-9 and abs(dy) < 1e-9:
+        return [cx, cy]
+    if abs(dx) < 1e-9:
+        return [cx, cy + (hh if dy > 0 else -hh)]
+    if abs(dy) < 1e-9:
+        return [cx + (hw if dx > 0 else -hw), cy]
+    t = min(hw / abs(dx), hh / abs(dy))
+    return [cx + dx * t, cy + dy * t]
+
+
+def _clamp_band(p, nx, ny, nw, nh):
+    """锚点钳制到所属边中点 ±1/4 边长带（转角排除；连接点交付口径）。"""
+    hw, hh = nw / 2.0, nh / 2.0
+    dxo, dyo = p[0] - nx, p[1] - ny
+    on_x = abs(abs(dxo) - hw) <= abs(abs(dyo) - hh)
+    if on_x:
+        return [p[0], ny + max(-hh / 2, min(hh / 2, dyo))]
+    return [nx + max(-hw / 2, min(hw / 2, dxo)), p[1]]
+
+
 def place_bowtie(plan, widths, card_h, cfg, edges):
     """领结对称排布 → ({v: x}, {v: y}, meta, constructed_routes)。
 
@@ -113,7 +148,13 @@ def place_bowtie(plan, widths, card_h, cfg, edges):
         pa = _border_point(pos[u], y[u], widths[u] / 2, card_h / 2, 0, dy_u)
         pb = _border_point(pos[v], y[v], widths[v] / 2, card_h / 2, 0, dy_v)
         constructed[(u, v)] = {"kind": "line", "points": [pa, pb]}
-    # 侧边：镜像弧（顶点↔轴点；ctrl 向外侧偏移，左右镜像同 |ctrl 偏移|）
+    # 侧边：镜像弧（顶点↔轴点；ctrl 向外侧偏移，左右镜像同 |ctrl 偏移|）。
+    # ref-scrubbed 弧度参数化：k 统一取 4 条侧弦长的 median 档（adaptive）——
+    # 同一对称结构弧度一致、视觉均匀（「同环弧度一致」硬规则）。
+    # 连接点口径：弧先按**自然锚点**（旧射线口径）定型，再映射到钳制后
+    # 锚点——ctrl 取弦坐标变换（α 弦比例不变 + β 垂偏向量不变），弧相对
+    # 形状/出发切向保持，不翻进自家框。
+    side_geom = []
     for apex, s in ((L, -1), (R, 1)):
         for axis_v in (A, B):
             for e in ((apex, axis_v), (axis_v, apex)):
@@ -121,23 +162,43 @@ def place_bowtie(plan, widths, card_h, cfg, edges):
                     continue
                 a, b = e
                 na, nb = _np(a), _np(b)
-                pa = _border_point(na[0], na[1], na[2] / 2, na[3] / 2,
-                                   nb[0] - na[0], nb[1] - na[1])
-                pb = _border_point(nb[0], nb[1], nb[2] / 2, nb[3] / 2,
-                                   na[0] - nb[0], na[1] - nb[1])
-                vx, vy = pb[0] - pa[0], pb[1] - pa[1]
-                dist = math.hypot(vx, vy)
-                ux, uy = -vy / dist, vx / dist
-                # 外侧法向：与「顶点→轴」方向的选择使 ctrl 远离纵轴
-                mx, my = (pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2
-                cx = mx + ux * ARC_K * dist * s
-                cy = my + uy * ARC_K * dist * s
-                if (cx - 0) * s < (mx - 0) * s:      # ctrl 必须比中点更靠外
-                    cx = mx - ux * ARC_K * dist * s
-                    cy = my - uy * ARC_K * dist * s
-                constructed[e] = {"kind": "arc",
-                                  "points": _quad_points(pa, [cx, cy], pb),
-                                  "ctrl": [cx, cy]}
+                dx, dy = nb[0] - na[0], nb[1] - na[1]
+                pa_n = _natural_border(na[0], na[1], na[2] / 2, na[3] / 2,
+                                       dx, dy)
+                pb_n = _natural_border(nb[0], nb[1], nb[2] / 2, nb[3] / 2,
+                                       -dx, -dy)
+                pa_c = _clamp_band(pa_n, na[0], na[1], na[2], na[3])
+                pb_c = _clamp_band(pb_n, nb[0], nb[1], nb[2], nb[3])
+                dist = math.hypot(pb_n[0] - pa_n[0], pb_n[1] - pa_n[1])
+                side_geom.append((e, pa_n, pb_n, pa_c, pb_c, dist, s))
+    from .routing import adaptive_arc_k
+    k_uni = ARC_K_FALLBACK
+    if side_geom:
+        dists = sorted(g[5] for g in side_geom)
+        med = dists[len(dists) // 2] if len(dists) % 2 else \
+            (dists[len(dists) // 2 - 1] + dists[len(dists) // 2]) / 2
+        k_uni = adaptive_arc_k(med)
+    for e, pa, pb, pa_c, pb_c, dist, s in side_geom:
+        vx, vy = pb[0] - pa[0], pb[1] - pa[1]
+        ux, uy = -vy / dist, vx / dist
+        # 外侧法向：与「顶点→轴」方向的选择使 ctrl 远离纵轴
+        mx, my = (pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2
+        cx = mx + ux * k_uni * dist * s
+        cy = my + uy * k_uni * dist * s
+        if (cx - 0) * s < (mx - 0) * s:      # ctrl 必须比中点更靠外
+            cx = mx - ux * k_uni * dist * s
+            cy = my - uy * k_uni * dist * s
+        # 弦坐标映射到钳制锚点：ctrl = pa_c + α·(pb_c−pa_c) + β_vec
+        wx, wy = cx - pa[0], cy - pa[1]
+        alpha = (wx * vx + wy * vy) / (dist * dist)
+        betax = wx - alpha * vx
+        betay = wy - alpha * vy
+        v2x, v2y = pb_c[0] - pa_c[0], pb_c[1] - pa_c[1]
+        cx2 = pa_c[0] + alpha * v2x + betax
+        cy2 = pa_c[1] + alpha * v2y + betay
+        constructed[e] = {"kind": "arc",
+                          "points": _quad_points(pa_c, [cx2, cy2], pb_c),
+                          "ctrl": [cx2, cy2]}
     meta = {
         "placement": "symmetric",
         "symmetry": {

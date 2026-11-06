@@ -334,6 +334,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # ref-scrubbed 纵列/对称排布口径
     column_mode = scene.get("placement") == "column-chain"
     sym_mode = scene.get("placement") == "symmetric"
+    # ref-scrubbed（美学 v3）领结共点模式证书口径：镜像轴误差（上下环镜像）
+    bowtie_mode = scene.get("placement") == "bowtie-vertex"
     column_spine = scene.get("column_spine") or []
     symmetry = scene.get("symmetry") or {}
 
@@ -524,6 +526,29 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         snap_rate, simple = None, len(ids) <= 10
         regularity_ok = (sym_mirror_err is not None and sym_mirror_err <= 2.0
                          and pitch_uniform)
+    elif bowtie_mode and symmetry.get("mirror_pairs"):
+        # 领结共点：上下环镜像（竖直轴 x 等距 + 水平轴 y 对称），共享节点居中
+        axis_x = (symmetry.get("axis_x") if symmetry.get("axis_x") is not None
+                  else 0.0)
+        axis_y = (symmetry.get("axis_y") if symmetry.get("axis_y") is not None
+                  else 0.0)
+        pairs = symmetry.get("mirror_pairs")
+        errs = []
+        for l, r in pairs:
+            if l in nodes and r in nodes:
+                errs.append(abs(nodes[l]["x"] - nodes[r]["x"]))
+                errs.append(abs((nodes[l]["y"] + nodes[r]["y"]) / 2 - axis_y))
+        sh = symmetry.get("shared_node")
+        if sh in nodes:
+            errs.append(abs(nodes[sh]["x"] - axis_x))
+            errs.append(abs(nodes[sh]["y"] - axis_y))
+        sym_mirror_err = max(errs) if errs else None
+        ys = sorted({p["y"] for v, p in nodes.items() if v not in deg0})
+        pitch_uniform = (len(set(b - a for a, b in zip(ys, ys[1:]))) <= 1
+                         if len(ys) > 1 else True)
+        snap_rate, simple = None, len(ids) <= 10
+        regularity_ok = (sym_mirror_err is not None and sym_mirror_err <= 2.0
+                         and pitch_uniform)
     else:
         ys = sorted({p["y"] for v, p in nodes.items() if v not in deg0})
         pitch_uniform = (len(set(b - a for a, b in zip(ys, ys[1:]))) <= 1
@@ -605,7 +630,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     if column_mode:
         metrics["column_axis_deviation"] = (round(col_axis_dev, 2)
                                             if col_axis_dev is not None else None)
-    if sym_mode:
+    if sym_mode or bowtie_mode:
         metrics["symmetry_mirror_err"] = (round(sym_mirror_err, 2)
                                           if sym_mirror_err is not None else None)
 
@@ -639,7 +664,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
-    elif sym_mode:
+    elif sym_mode or bowtie_mode:
         g = {
             "box_press_zero": metrics["box_press_1px"] == 0,
             "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
@@ -692,7 +717,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
                    g["cv_le_035"] and g["column_axis_aligned"] and
                    g["spine_pitch_uniform"])
-    elif sym_mode:
+    elif sym_mode or bowtie_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
                    g["cv_le_035"] and g["symmetry_mirror_le_2px"])
@@ -718,7 +743,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                       "放宽预算换的证书不冒充成品")
 
     out = {
-        "tool": "stdraw", "version": "0.6.0", "layer": layer,
+        "tool": "stdraw", "version": "0.7.0", "layer": layer,
         "graph": graph_name,
         "n": len(ids), "m": len(edges),
         "coords": "delivered/rounded",
@@ -726,7 +751,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "line_style": line_style,
         "placement": ("ring-cycle" if ring_mode else
                       "column-chain" if column_mode else
-                      "symmetric" if sym_mode else "layered"),
+                      "symmetric" if sym_mode else
+                      "bowtie-vertex" if bowtie_mode else "layered"),
         "metrics": metrics,
         "gates": g,
         "gates_passed": f"{g_pass}/{len(g)}",
@@ -781,6 +807,20 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "线型一致性硬规则：轴边直线 + 侧边全弧（不直弧折混杂）；"
             "行对齐率/列吸附报告不适用（如实 None）"]
         out["symmetry"] = {
+            "mirror_pairs": symmetry.get("mirror_pairs"),
+            "mirror_err": metrics.get("symmetry_mirror_err"),
+        }
+    if bowtie_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "领结共点口径（ref-scrubbed 美学 v3）：双环共享单节点结构显式对称——"
+            "共享节点居中、两环分占上下半平面镜像（镜像轴误差 ≤2px 门，"
+            "对拍 jacky 手拉样本 wage-price-spiral）；判定=枚举简单环"
+            "（恰 2 环恰共享 1 节点），声明 loops 不作判据；"
+            "线型一致性硬规则：全直线（外边水平 + 辐条直连，"
+            "共享侧锚点边中点 ±14px 对称展开）；"
+            "行对齐率/列吸附报告不适用（如实 None）"]
+        out["symmetry"] = {
+            "shared_node": symmetry.get("shared_node"),
             "mirror_pairs": symmetry.get("mirror_pairs"),
             "mirror_err": metrics.get("symmetry_mirror_err"),
         }

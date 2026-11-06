@@ -24,24 +24,25 @@ class TestModeTriggers(unittest.TestCase):
     """触发判定（确定性图论度量）：点名图进新模式，环形保持图不误伤。"""
 
     def test_named_graphs_get_column(self):
-        # jacky 点名 #17/#18/#19 → 纵列
-        for name in ("tragedy-of-the-commons", "urban-migration",
-                     "wage-price-spiral"):
+        # jacky 点名 #17/#18 → 纵列（#19 wage-price-spiral 自 v3 起进领结共点）
+        for name in ("tragedy-of-the-commons", "urban-migration"):
             v4 = layout(load(name))
             self.assertEqual(v4["meta"]["placement"], "column-chain", name)
             self.assertEqual(v4["meta"]["position_engine"],
                              "column-construct", name)
 
-    def test_isomorphic_column_family(self):
-        # {eroding-goals, shifting-the-burden, wage-price-spiral} 有向同构
-        # → 同为纵列且主链环长一致（同构骨架 → 同布局模板）
-        spines = {}
+    def test_isomorphic_bowtie_vertex_family(self):
+        # ref-scrubbed（美学 v3）：{eroding-goals, shifting-the-burden,
+        # wage-price-spiral} 有向同构 = 双环共享单节点 → 领结共点对称
         for name in ("eroding-goals", "shifting-the-burden",
                      "wage-price-spiral"):
             v4 = layout(load(name))
-            self.assertEqual(v4["meta"]["placement"], "column-chain", name)
-            spines[name] = len(v4["meta"]["column"]["spine"])
-        self.assertEqual(len(set(spines.values())), 1, spines)
+            self.assertEqual(v4["meta"]["placement"], "bowtie-vertex", name)
+            self.assertEqual(v4["meta"]["position_engine"],
+                             "bowtie-construct", name)
+            sym = v4["meta"]["symmetry"]
+            self.assertIn("shared_node", sym)
+            self.assertEqual(len(sym["loops"]), 2, name)
 
     def test_bowtie_symmetric(self):
         # #11 learning-flywheel 与其有向同构 fixes-that-fail → 领结对对称
@@ -69,6 +70,66 @@ class TestModeTriggers(unittest.TestCase):
         self.assertNotIn("symmetry", v4["meta"])
 
 
+    def test_bowtie_vertex_not_misfired(self):
+        # 领结判定不误伤：08/10/17 虽也只有 2 个简单环但共享 2 节点（共边型）；
+        # classic-cld 4 个简单环（含派生环）——均不得进领结共点模式
+        for name in ("fishing-collapse", "induced-demand",
+                     "tragedy-of-the-commons",
+                     "classic-cld-growth-and-burden"):
+            v4 = layout(load(name))
+            self.assertNotEqual(v4["meta"].get("placement"),
+                                "bowtie-vertex", name)
+            self.assertNotIn("bowtie", str(v4["meta"].get("position_engine")),
+                             name)
+
+
+class TestBowtieVertexGeometry(unittest.TestCase):
+    """ref-scrubbed（美学 v3）领结共点几何：对拍 jacky 手拉样本的相对几何。"""
+
+    def _layout(self, name):
+        from stdraw.metrics import certificate_auto, scene_from_auto
+        g = load(name)
+        v4 = layout(g)
+        cert = certificate_auto(scene_from_auto(v4), graph_name=name, graph=g)
+        return g, v4, cert
+
+    def test_shared_centered_and_mirror_symmetric(self):
+        g, v4, cert = self._layout("wage-price-spiral")
+        sym = v4["meta"]["symmetry"]
+        nodes = v4["nodes"]
+        sh = nodes[sym["shared_node"]]
+        self.assertEqual(sh["x"], sym["axis_x"])
+        self.assertEqual(sh["y"], sym["axis_y"])
+        for l, r in sym["mirror_pairs"]:
+            self.assertEqual(nodes[l]["x"], nodes[r]["x"], "镜像对 x 相等")
+            self.assertEqual((nodes[l]["y"] + nodes[r]["y"]) / 2, sym["axis_y"])
+        self.assertEqual(cert["metrics"]["symmetry_mirror_err"], 0)
+
+    def test_two_half_planes_and_horizontal_outer_edge(self):
+        # 两环分占上下半平面；三角形外边水平（同样本「顶边近水平」）
+        g, v4, _ = self._layout("wage-price-spiral")
+        sym = v4["meta"]["symmetry"]
+        nodes = v4["nodes"]
+        sh_y = nodes[sym["shared_node"]]["y"]
+        tops = [v for v in sym["loops"][0] if v != sym["shared_node"]]
+        bots = [v for v in sym["loops"][1] if v != sym["shared_node"]]
+        self.assertTrue(all(nodes[v]["y"] < sh_y for v in tops))
+        self.assertTrue(all(nodes[v]["y"] > sh_y for v in bots))
+        self.assertEqual(nodes[tops[0]]["y"], nodes[tops[1]]["y"])
+        self.assertEqual(nodes[bots[0]]["y"], nodes[bots[1]]["y"])
+        # 样本左右位：wages 左 / cost 右；real_income 左 / demand 右
+        self.assertLess(nodes["wages"]["x"], nodes["cost"]["x"])
+        self.assertLess(nodes["real_income"]["x"], nodes["demand"]["x"])
+
+    def test_all_lines_and_cert_optimal(self):
+        # 线型一致性硬规则：全直线；证书最优（规律门含镜像 ≤2px）
+        g, v4, cert = self._layout("shifting-the-burden")
+        kinds = {e["route"]["kind"] for e in v4["edges"]}
+        self.assertEqual(kinds, {"line"}, kinds)
+        self.assertEqual(cert["grade"], "最优")
+        self.assertIn("symmetry_mirror_le_2px", cert["gates"])
+
+
 class TestColumnGeometry(unittest.TestCase):
     def test_spine_axis_aligned_and_pitch_uniform(self):
         v4 = layout(load("tragedy-of-the-commons"))
@@ -82,7 +143,7 @@ class TestColumnGeometry(unittest.TestCase):
 
     def test_closing_edge_is_arc(self):
         # 主链闭合边构造为左侧大弧（回路聚拢/圆环感）
-        v4 = layout(load("wage-price-spiral"))
+        v4 = layout(load("tragedy-of-the-commons"))
         spine = v4["meta"]["column"]["spine"]
         closing = (spine[-1], spine[0])
         e = [x for x in v4["edges"]
@@ -133,9 +194,9 @@ class TestSymmetricGeometry(unittest.TestCase):
 class TestCrossingsSoftTarget(unittest.TestCase):
     def test_gates_exclude_crossings_and_rowalign(self):
         # 交叉/行对齐从硬门降为报告项（不再一票否决）
-        v4 = layout(load("wage-price-spiral"))
+        v4 = layout(load("tragedy-of-the-commons"))
         from stdraw.metrics import certificate_auto, scene_from_auto
-        g = load("wage-price-spiral")
+        g = load("tragedy-of-the-commons")
         cert = certificate_auto(scene_from_auto(v4), graph_name="w",
                                 graph=g)
         self.assertNotIn("crossings_zero", cert["gates"])
