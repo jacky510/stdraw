@@ -257,7 +257,11 @@ def _route_total(nodes_px, edges, cfg, hard_gates=False, quality=False):
     hard_gates：净距/锚点硬罚（1500/条）。默认 False——历史评分口径不变
     （classic 与既有通过实例的 polish 轨迹逐字节保持）；仅在布线质量返修的
     门控重排路径启用。quality：Router 扩充 stair 候选池，同样仅门控路径。
+    ref-scrubbed 呼吸感（14 张手动样本：min_card_gap 平均 +35.8px）：新增
+    卡间净距目标 36px 的软惩罚（缺多少罚多少 ×8），间距权重升第一梯队；
+    不设硬门（挤了由既有净距门兜底）。
     """
+    from .metrics import rect_gap
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch, quality=quality)
     routes = router.route_all()
     eset = set(edges)
@@ -286,7 +290,16 @@ def _route_total(nodes_px, edges, cfg, hard_gates=False, quality=False):
     total += 1500.0 * max(0, router.final_crossing_pairs(routes) - 2)
     total += 1500.0 * clr_hard
     total += 1500.0 * ang_hard
+    # ref-scrubbed 呼吸感：卡间净距 ≥36px 目标（软惩罚，第一梯队）
+    ids = list(nodes_px)
+    if len(ids) > 1:
+        mg = min(rect_gap(*nodes_px[u], *nodes_px[v])
+                 for i2, u in enumerate(ids) for v in ids[i2 + 1:])
+        total += 8.0 * max(0.0, GAP_TARGET - mg)
     return total, routes, router
+
+
+GAP_TARGET = 36.0        # 呼吸感：卡间净距目标（jacky 14 张手动样本均值 +35.8px）
 
 
 def _interleave_count(edges, order):
@@ -610,6 +623,120 @@ def _ring_trial(plan, nodes, widths, card_h, cfg):
     return plan
 
 
+def _constructed_gates(nodes_px, edges, routes, cfg, constructed):
+    """构造路线（闭合弧/镜像弧）与路由路线的统一硬门代理（ref-scrubbed）。
+
+    与 _ring_trial 同口径：压线=0、边-框净距≥clearance、锚点在框边且平滑
+    ≥ANCHOR_MIN_DEG、卡间净距 ≥ min_gap-2、互环对分离 ≥4px、交叉 ≤2。
+    返回 True=过门。"""
+    from .routing import (dist_point_rect, min_pair_dist, sample_polyline,
+                          ANCHOR_MIN_DEG)
+    # 卡间净距（rect_gap 口径 ≥ min_gap-2）
+    vs = sorted(nodes_px)
+    for i in range(len(vs)):
+        for j in range(i + 1, len(vs)):
+            a, b = vs[i], vs[j]
+            ax, ay, aw, ah = nodes_px[a]
+            bx, by, bw, bh = nodes_px[b]
+            gap_x = abs(ax - bx) - (aw + bw) / 2
+            gap_y = abs(ay - by) - (ah + bh) / 2
+            if max(gap_x, gap_y) < cfg.min_gap - 2:
+                return False
+    if _final_pairs(nodes_px, edges, routes, cfg) > 2:
+        return False
+    for i, info in routes.items():
+        a, b = edges[i]
+        pts = info["points"]
+        # 与 check3 同口径：加密采样复核净距（弦切效应兜底）
+        dense = sample_polyline([tuple(p) for p in pts], step=4.0)
+        for v, (cx, cy, w, h) in nodes_px.items():
+            if v in (a, b):
+                continue
+            for px, py in dense:
+                if dist_point_rect(px, py, cx, cy, w / 2, h / 2) < cfg.clearance:
+                    return False
+        # 锚点在框边 + 平滑
+        for v, p_idx, n_idx in ((a, 0, 1), (b, len(pts) - 1, len(pts) - 2)):
+            cx, cy, w, h = nodes_px[v]
+            a0 = pts[p_idx]
+            if (abs(abs(a0[0] - cx) - w / 2) > abs(abs(a0[1] - cy) - h / 2) + 1e-9
+                    and abs(abs(a0[1] - cy) - h / 2) > 0.75):
+                return False
+            dx, dy = pts[n_idx][0] - a0[0], pts[n_idx][1] - a0[1]
+            n = math.hypot(dx, dy)
+            if n < 1e-9:
+                return False
+            on_x = abs(abs(a0[0] - cx) - w / 2) <= abs(abs(a0[1] - cy) - h / 2)
+            tx, ty = (0.0, 1.0) if on_x else (1.0, 0.0)
+            c = abs(dx * tx + dy * ty) / n
+            if math.degrees(math.acos(max(0.0, min(1.0, c)))) < ANCHOR_MIN_DEG:
+                return False
+    # 互环对分离 ≥4px
+    for i in range(len(edges)):
+        for j in range(i + 1, len(edges)):
+            if edges[i] != (edges[j][1], edges[j][0]):
+                continue
+            md = min_pair_dist(sample_polyline(routes[i]["points"]),
+                               sample_polyline(routes[j]["points"]))
+            if md is None or md < 4.0:
+                return False
+    return True
+
+
+def _final_pairs(nodes_px, edges, routes, cfg):
+    """合并构造路线后的交叉边对数（与 Router.final_crossing_pairs 同口径）。"""
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+    return router.final_crossing_pairs(routes)
+
+
+def _sym_trial(plan, nodes, widths, card_h, cfg):
+    """领结对对称排布 + 布线试验闸门：过门才采纳；否则 None（回退，逐字节不变）。"""
+    from . import symlayout
+    edges = EDGES_REF[0]
+    try:
+        pos, y, meta, constructed = symlayout.place_bowtie(plan, widths,
+                                                           card_h, cfg, edges)
+    except symlayout.InfeasibleBowtie:
+        return None
+    nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+    routes = router.route_all()
+    for i, (a, b) in enumerate(edges):
+        cr = constructed.get((a, b))
+        if cr is not None:
+            routes[i] = dict(cr)
+    # 线型一致性硬规则：对称结构内不得出现 vg/poly 折线（弧线>直线>折线）
+    for i, info in routes.items():
+        if info["kind"] in ("vg", "poly", "wrap"):
+            return None
+    if not _constructed_gates(nodes_px, edges, routes, cfg, constructed):
+        return None
+    return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
+
+
+def _column_trial(plan, nodes, widths, card_h, cfg):
+    """纵列排布 + 布线试验闸门：过门才采纳；否则 None（回退分层，逐字节不变）。"""
+    from . import columnlayout
+    from .routing import min_pair_dist, sample_polyline
+    edges = EDGES_REF[0]
+    adj = columnlayout._adjacency(edges)
+    try:
+        pos, y, meta, constructed = columnlayout.place_column(
+            plan, widths, card_h, cfg, adj, edges)
+    except columnlayout.InfeasibleColumn:
+        return None
+    nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+    routes = router.route_all()
+    for i, (a, b) in enumerate(edges):
+        cr = constructed.get((a, b))
+        if cr is not None:
+            routes[i] = dict(cr)
+    if not _constructed_gates(nodes_px, edges, routes, cfg, constructed):
+        return None
+    return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
+
+
 def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
            manual: dict = None):
     """auto 配方入口：图 → v4 兼容布局 dict（含折线/弧线路由 + 元数据）。
@@ -641,20 +768,57 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
 
     # ②③ 定位：--from-layout 手动坐标，或自动分层+定位
     _routes_final = None
+    constructed = {}
     from_meta = None
     if manual is not None:
         pos, y, rows, from_meta = _manual_positions(nodes, widths, manual)
         deg0 = []
         engine, pos_meta = "manual", {}
     else:
-        # ②' 回路主导环形排布（2026-11-05 产品定调，ref-scrubbed）：确定性触发判定
+        # ②'' 布局美学 v2（ref-scrubbed，jacky 2026-11-05 全图定调）：模式优先级
+        #  = 领结对对称（learning-flywheel 类）→ 纵列（长链/少环，主环 ≤4）
+        #  → 环形（回路主导小图，ref-scrubbed）→ 既有分层路径。
+        #  每个新模式都带试验闸门：不过门静默回退，回退路径逐字节不变。
+        sym_plan = None
+        column_plan = None
         ring_plan = None
         if len(nodes) <= 12:
+            from . import symlayout as _symlayout
+            _sym = _symlayout.detect_bowtie(graph)
+            if _sym is not None:
+                sym_plan = _sym_trial(_sym, nodes, widths, card_h, cfg)
+        if sym_plan is None and len(nodes) <= 12:
             from . import ringlayout as _ringlayout
-            _plan = _ringlayout.detect_ring(graph)
-            if _plan is not None:
-                ring_plan = _ring_trial(_plan, nodes, widths, card_h, cfg)
-        if ring_plan is not None:
+            from . import columnlayout as _columnlayout
+            _ring_detect = _ringlayout.detect_ring(graph)
+            # 纵列只在「环形不走 pure-cycle/ratio 分支」时判定（cover 触发
+            # 且主环 ≤4 的图归纵列；k≥5 的大环仍归环形）
+            if _ring_detect is None or _ring_detect["trigger"] == "cover":
+                _col = _columnlayout.detect_column(graph)
+                if _col is not None:
+                    column_plan = _column_trial(_col, nodes, widths, card_h, cfg)
+            if column_plan is None and _ring_detect is not None:
+                ring_plan = _ring_trial(_ring_detect, nodes, widths, card_h, cfg)
+        constructed = {}
+        if sym_plan is not None:
+            spos, sy, smeta, sconstructed = sym_plan["placed"]
+            pos, y = spos, sy
+            deg0 = list(sym_plan["deg0"])
+            rows = [[v for v in nodes if y[v] == yy]
+                    for yy in sorted({y[v] for v in nodes})]
+            engine = "sym-construct"
+            pos_meta = smeta
+            constructed = sconstructed
+        elif column_plan is not None:
+            cpos, cy, cmeta, cconstructed = column_plan["placed"]
+            pos, y = cpos, cy
+            deg0 = list(column_plan["deg0"])
+            rows = [[v for v in nodes if y[v] == yy]
+                    for yy in sorted({y[v] for v in nodes})]
+            engine = "column-construct"
+            pos_meta = cmeta
+            constructed = cconstructed
+        elif ring_plan is not None:
             rpos, ry, rmeta = ring_plan["placed"]
             pos, y = rpos, ry
             deg0 = list(ring_plan["deg0"])
@@ -766,6 +930,19 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     routes = router.route_all()
     if _routes_final is not None:
         routes = _routes_final
+    # ref-scrubbed 构造路线注入（纵列闭合弧/领结镜像弧）：该边不走候选池，
+    # 按构造几何交付（试验闸门已复核硬门）；须在 final_crossing_pairs 之前
+    # 注入，保证交叉双口径（check11）含构造路线。
+    for i, (a, b) in enumerate(EDGES_REF[0]):
+        cr = constructed.get((a, b))
+        if cr is None:
+            continue
+        info = {"kind": cr["kind"], "points": [list(p) for p in cr["points"]],
+                "press": 0, "min_clear": None, "cross": 0, "cross_edges": 0,
+                "ang_a": 90.0, "ang_b": 90.0}
+        if cr.get("ctrl") is not None:
+            info["ctrl"] = list(cr["ctrl"])
+        routes[i] = info
     # ref-scrubbed：用户锚定 waypoints 覆盖（demo-2d 折点把手导出）——该边不走
     # 候选池，按「锚点=框边朝向首/末 waypoint + waypoints 原样」构造交付路线，
     # 几何/证书复检按同一 points 如实评分（不放水）。覆盖须在
@@ -794,10 +971,33 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         from_meta["waypoint_edges"] = len(manual_wps)
     router_pairs = router.final_crossing_pairs(routes)
 
+    # ref-scrubbed R/B 回路着色：边 → 所属声明回路 kind 集合（确定性规则见
+    # docs/layout-modes.md）：单环单色（R=琥珀/B=天蓝）；多环同色取该色；
+    # 多环异色或无环 → 中性（渲染层 slate）；极性（+/-）数据不变。
+    _eset_dir = {(e.a, e.b) for e in graph.edges}
+    _edge_loops = defaultdict(set)
+    for lp in getattr(graph, "loops", []):
+        seq = list(lp.nodes)
+        kind = getattr(lp, "kind", None)
+        if not kind:
+            continue
+        for i in range(len(seq)):
+            a, b = seq[i], seq[(i + 1) % len(seq)]
+            if (a, b) in _eset_dir:
+                _edge_loops[(a, b)].add(kind)
+            elif (b, a) in _eset_dir:
+                _edge_loops[(b, a)].add(kind)
+    _LOOP_COLORS = {"R": "#d97706", "B": "#0284c7"}   # R=琥珀 B=天蓝（线上惯例）
+
     edges_out = []
     for i, (a, b) in enumerate(EDGES_REF[0]):
         info = routes[i]
+        kinds = sorted(_edge_loops.get((a, b), ()))
+        loop_color = (_LOOP_COLORS[kinds[0]] if len(set(kinds)) == 1
+                      else None)
         e = {"a": a, "b": b, "polarity": getattr(graph.edges[i], "polarity", "+"),
+             "loop_kinds": kinds,
+             "loop_color": loop_color,
              "route": {"kind": info["kind"],
                        "points": [[round(px, 1), round(py, 1)]
                                   for px, py in info["points"]]},
@@ -858,6 +1058,14 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         for v in nodes:
             pos[v] += dx
             y[v] += dy
+        # ref-scrubbed：排布元数据里的绝对轴坐标随平移同步（对称轴/纵列轴）
+        if isinstance(pos_meta, dict):
+            if isinstance(pos_meta.get("symmetry"), dict):
+                pos_meta["symmetry"]["axis_x"] = \
+                    pos_meta["symmetry"].get("axis_x", 0) + dx
+            if isinstance(pos_meta.get("column"), dict):
+                pos_meta["column"]["axis_x"] = \
+                    pos_meta["column"].get("axis_x", 0) + dx
 
     # W/H 必须在平移后的最终坐标上取。bugfix（CI 暴露的 v0.2.0 遗留）：
     # 原实现用平移前 xs_all 算 W，dx>0 时右移后内容溢出 viewBox

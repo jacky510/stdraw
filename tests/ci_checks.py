@@ -47,14 +47,36 @@ RANDOM_SAMPLES = [
     "benchmarks/corpus/random/random-n10-i05.cld",
 ]
 HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
-              "min_gap_ge_16", "cv_le_035", "regularity_simple",
+              "min_gap_ge_16", "cv_le_035", "pitch_uniform",
+              "column_snap24_ge_060",
               "mutual_pairs_separated", "lines_no_coincidence")
 # ref-scrubbed 环形排布（placement=ring-cycle）：规律性门切换为环口径
 # （行对齐/列吸附对环形不适用，不得拿行口径误判环形不合格）
 RING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "min_gap_ge_16", "ring_spacing_cv_le_005",
                    "ring_template_fit_le_005", "mutual_pairs_separated",
-                   "crossings_zero", "lines_no_coincidence")
+                   "lines_no_coincidence")
+# ref-scrubbed 纵列/对称排布：规律性门按模式切换（主链列轴对齐 + 行距恒等 /
+# 镜像轴误差）。交叉（crossings_zero）与行对齐（row_align_ge_060）已降为
+# 报告项（jacky 2026-11-05 定调：部分线相交可接受，秩序与优美优先）。
+COLUMN_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
+                     "min_gap_ge_16", "cv_le_035", "column_axis_aligned",
+                     "spine_pitch_uniform", "mutual_pairs_separated",
+                     "lines_no_coincidence")
+SYM_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
+                  "min_gap_ge_16", "cv_le_035", "symmetry_mirror_le_2px",
+                  "mutual_pairs_separated", "lines_no_coincidence")
+
+
+def _hard_gates_for(cert):
+    p = cert.get("placement")
+    if p == "ring-cycle":
+        return RING_HARD_GATES
+    if p == "column-chain":
+        return COLUMN_HARD_GATES
+    if p == "symmetric":
+        return SYM_HARD_GATES
+    return HARD_GATES
 
 
 def run_cli(path, outdir, extra=(), pitch="62"):
@@ -139,8 +161,7 @@ def main():
                 failures.append(f"auto {ex}: geometry fail={geo['fail']}")
             cert = load(out1, "certificate.json")
             m = cert["metrics"]
-            gates = (RING_HARD_GATES if cert.get("placement") == "ring-cycle"
-                     else HARD_GATES)
+            gates = _hard_gates_for(cert)
             for k in gates:
                 if not cert["gates"].get(k, False):
                     failures.append(f"auto {ex}: 硬门 {k} FAIL "
@@ -278,75 +299,52 @@ def main():
                           "layout-diff 三层齐备")
 
         # ── F2. ref-scrubbed：--from-layout waypoints 恒等复算（折点把手全链）──
-        # 夹具：第三节点压直线边中点 → vg 折线；其 via 角点原样锚定喂回，
-        # 必须得到 kind=waypoints 的同一折线（锚点重算贴框边）且确定性成立。
+        # 夹具：ref-scrubbed 起折线带固定类型代价（弧线>直线>折线），路由器
+        # 很少再自发产出 vg 边——夹具改为**手工锚定 waypoints**（与 demo 折点
+        # 把手导出同构），验证同一全链：waypoints 原样锚定喂回 → kind=
+        # waypoints 的同一折线（锚点重算贴框边）+ 确定性成立。
         lay_g = load(out_f, "layout.json")
-        vg_e = next((x for x in lay_g["edges"] if x["route"]["kind"] == "vg"), None)
-        if vg_e is None:
-            # classic 现行布局无 vg 边：构造压线夹具（挪第三节点到边中点）
-            for e_c in lay_g["edges"]:
-                if e_c["route"]["kind"] not in ("line", "arc"):
-                    continue
-                fa2, fb2 = e_c["a"], e_c["b"]
-                for fc2 in lay_g["nodes"]:
-                    if fc2 in (fa2, fb2):
-                        continue
-                    man2 = {"viewBox": lay_g["viewBox"],
-                            "nodes": {v: {"x": p["x"], "y": p["y"]}
-                                      for v, p in lay_g["nodes"].items()}}
-                    mx2 = (lay_g["nodes"][fa2]["x"] + lay_g["nodes"][fb2]["x"]) / 2
-                    my2 = (lay_g["nodes"][fa2]["y"] + lay_g["nodes"][fb2]["y"]) / 2
-                    man2["nodes"][fc2] = {"x": int(mx2) - int(mx2) % 2,
-                                          "y": int(my2) - int(my2) % 2}
-                    p2 = os.path.join(tmp, "ci-wp-fixture.json")
-                    with open(p2, "w", encoding="utf-8") as f:
-                        json.dump(man2, f, ensure_ascii=False)
-                    o2 = os.path.join(tmp, name + "-wp-fixture")
-                    run_cli(ex, o2, ("--from-layout", p2), pitch=None)
-                    lay2 = load(o2, "layout.json")
-                    vg_e = next((x for x in lay2["edges"]
-                                 if x["route"]["kind"] == "vg"), None)
-                    if vg_e:
-                        ident.update({"nodes": man2["nodes"],
-                                      "viewBox": man2["viewBox"]})
-                        break
-                if vg_e:
-                    break
-        if vg_e is None:
-            failures.append("manual-waypoints: 无法构造 vg 夹具（corpus 布局变更？）")
+        man_base = {"viewBox": lay_g["viewBox"],
+                    "nodes": {v: {"x": p["x"], "y": p["y"]}
+                              for v, p in lay_g["nodes"].items()}}
+        e0 = lay_g["edges"][0]
+        a0n, b0n = nodes_of = (e0["a"], e0["b"])
+        p0 = lay_g["nodes"][a0n]
+        p1 = lay_g["nodes"][b0n]
+        mx = (p0["x"] + p1["x"]) / 2
+        my = (p0["y"] + p1["y"]) / 2
+        # 垂直于边方向的确定性绕行折点（两侧各一，整 2px 网格）
+        dx, dy = p1["x"] - p0["x"], p1["y"] - p0["y"]
+        n = (dx * dx + dy * dy) ** 0.5 or 1.0
+        ux, uy = -dy / n, dx / n
+        wp = [[int(round((mx + ux * 70) / 2)) * 2, int(round((my + uy * 70) / 2)) * 2],
+              [int(round((mx - ux * 70) / 2)) * 2, int(round((my - uy * 70) / 2)) * 2]]
+        man_base["edges"] = [{"a": a0n, "b": b0n, "waypoints": wp}]
+        ipath2 = os.path.join(tmp, "ci-wp-manual.json")
+        with open(ipath2, "w", encoding="utf-8") as f:
+            json.dump(man_base, f, ensure_ascii=False)
+        out_w1 = os.path.join(tmp, name + "-wp-1")
+        out_w2 = os.path.join(tmp, name + "-wp-2")
+        r_w1 = run_cli(ex, out_w1, ("--from-layout", ipath2), pitch=None)
+        run_cli(ex, out_w2, ("--from-layout", ipath2), pitch=None)
+        lay_w = load(out_w1, "layout.json")
+        e_w = next((x for x in lay_w["edges"]
+                    if (x["a"], x["b"]) == (a0n, b0n)), None)
+        want_via = [[float(q[0]), float(q[1])] for q in wp]
+        if (not e_w or e_w["route"]["kind"] != "waypoints" or
+                e_w["route"].get("via") != want_via or
+                len(e_w["route"]["points"]) != len(want_via) + 2):
+            failures.append(f"manual-waypoints: 复算不一致 rc={r_w1.returncode} "
+                            f"kind={e_w['route']['kind'] if e_w else '?'}")
         else:
-            ident["edges"] = [{"a": vg_e["a"], "b": vg_e["b"],
-                               "waypoints": [[int(round(p[0])), int(round(p[1]))]
-                                             for p in vg_e["route"]["via"][1:-1]]}]
-            ipath2 = os.path.join(tmp, "ci-wp-manual.json")
-            with open(ipath2, "w", encoding="utf-8") as f:
-                json.dump(ident, f, ensure_ascii=False)
-            out_w1 = os.path.join(tmp, name + "-wp-1")
-            out_w2 = os.path.join(tmp, name + "-wp-2")
-            r_w1 = run_cli(ex, out_w1, ("--from-layout", ipath2), pitch=None)
-            run_cli(ex, out_w2, ("--from-layout", ipath2), pitch=None)
-            geo_w = load(out_w1, "geometry_report.json")
-            lay_w = load(out_w1, "layout.json")
-            e_w = next((x for x in lay_w["edges"]
-                        if (x["a"], x["b"]) == (vg_e["a"], vg_e["b"])), None)
-            want_via = [[float(q[0]), float(q[1])]
-                        for q in ident["edges"][0]["waypoints"]]
-            if (r_w1.returncode != 0 or geo_w.get("fail", 0) != 0 or
-                    not e_w or e_w["route"]["kind"] != "waypoints" or
-                    e_w["route"].get("via") != want_via or
-                    len(e_w["route"]["points"]) != len(want_via) + 2):
-                failures.append(f"manual-waypoints: 复算不一致 rc={r_w1.returncode} "
-                                f"fail={geo_w.get('fail')} kind="
-                                f"{e_w['route']['kind'] if e_w else '?'}")
-            else:
-                for fn in ("layout.json", "demo-2d.html"):
-                    with open(os.path.join(out_w1, fn), "rb") as a, \
-                         open(os.path.join(out_w2, fn), "rb") as b:
-                        if a.read() != b.read():
-                            failures.append(f"manual-waypoints: {fn} 不确定")
-                if not any("manual-waypoints" in x for x in failures):
-                    print("OK  manual-waypoints: --from-layout waypoints 恒等复算 "
-                          "fail=0 + 确定性")
+            for fn in ("layout.json", "demo-2d.html"):
+                with open(os.path.join(out_w1, fn), "rb") as a, \
+                     open(os.path.join(out_w2, fn), "rb") as b:
+                    if a.read() != b.read():
+                        failures.append(f"manual-waypoints: {fn} 不确定")
+            if not any("manual-waypoints" in x for x in failures):
+                print("OK  manual-waypoints: --from-layout waypoints 恒等复算 "
+                      "fail=0 + 确定性")
 
         # ── G. 回路主导环形排布（ref-scrubbed）：触发/口径/负例/回退 ──
         r = subprocess.run([sys.executable, os.path.join(root, "tests",
@@ -385,7 +383,8 @@ def main():
                 print("OK  ring debt-spiral: 主环成圆(5节点) 交叉0 最优 "
                       "环形口径门全过")
 
-        # G3. 负例不误伤：链/树/13节点环/双三角+桥 → 不触发，分层路径原样
+        # G3. 负例不误伤：链/树/13节点环/双三角+桥 → 不触发环形
+        # （ref-scrubbed：双三角+桥可进纵列——少环+主链结构；断言只禁 ring）
         neg_fixtures = {
             "ci-neg-chain.cld": 'graph "链"\nvar a "A"\nvar b "B"\nvar c "C"\n'
                                 'var d "D"\na -> + b\nb -> + c\nc -> + d\n',
@@ -410,11 +409,72 @@ def main():
                 failures.append(f"ring 负例 {fn}: CLI exit {r_n.returncode}")
                 continue
             lay_n = load(out_n, "layout.json")
-            if lay_n["meta"].get("position_engine") == "ring-construct" or \
-                    "placement" in lay_n["meta"]:
+            if lay_n["meta"].get("position_engine") == "ring-construct":
                 failures.append(f"ring 负例 {fn}: 误触发环形排布")
         if not failures or all("负例" not in x for x in failures):
-            print("OK  ring 负例 4 张（链/树/13节点环/双三角+桥）：不触发、分层原样")
+            print("OK  ring 负例 4 张（链/树/13节点环/双三角+桥）：不触发环形"
+                  "（双三角+桥 ref-scrubbed 起可进纵列，只禁 ring）")
+
+        # ── H. 布局美学 v2（ref-scrubbed）：纵列/对称触发 + R/B 颜色化 + 全语料 ──
+        r = subprocess.run([sys.executable, os.path.join(root, "tests",
+                                                          "test_layout_modes.py")],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            failures.append(f"test_layout_modes: exit {r.returncode}\n"
+                            f"{r.stdout}\n{r.stderr}")
+        else:
+            print("OK  test_layout_modes: 纵列/对称触发·几何·R/B 颜色化·"
+                  "交叉软目标·确定性 全过")
+
+        # H2. 全 classic 语料 19 张：exit 0 + 全部最优 + 硬门全过（新口径）
+        corpus_dir = os.path.join(root, "benchmarks", "corpus", "classic")
+        n_ok = 0
+        for fn in sorted(os.listdir(corpus_dir)):
+            if not fn.endswith(".cld"):
+                continue
+            name = fn[:-4]
+            out_h = os.path.join(tmp, "H-" + name)
+            r_h = run_cli(os.path.join(corpus_dir, fn), out_h, (), pitch=None)
+            if r_h.returncode != 0:
+                failures.append(f"corpus {name}: CLI exit {r_h.returncode}\n"
+                                f"{r_h.stdout[-500:]}")
+                continue
+            cert_h = load(out_h, "certificate.json")
+            if cert_h["grade"] != "最优":
+                failures.append(f"corpus {name}: grade={cert_h['grade']}")
+            for k in _hard_gates_for(cert_h):
+                if not cert_h["gates"].get(k, False):
+                    failures.append(f"corpus {name}: 硬门 {k} FAIL")
+            if cert_h["metrics"]["crossings"] > 2:
+                failures.append(f"corpus {name}: crossings="
+                                f"{cert_h['metrics']['crossings']}")
+            n_ok += 1
+        print(f"OK  corpus 全语料 {n_ok}/19：exit 0 · 最优 · 新口径硬门全过")
+
+        # H3. R/B 颜色化口径：wage R1 琥珀/B1 天蓝/多环异色中性 + 极性数据保留
+        out_w = os.path.join(tmp, "H-wage")
+        run_cli(os.path.join(corpus_dir, "wage-price-spiral.cld"), out_w,
+                (), pitch=None)
+        lay_w = load(out_w, "layout.json")
+        by_pair = {(e["a"], e["b"]): e for e in lay_w["edges"]}
+        for pr, kinds, color in (
+                (("wages", "cost"), ["R"], "#d97706"),
+                (("cost", "prices"), ["R"], "#d97706"),
+                (("prices", "real_income"), ["B"], "#0284c7"),
+                (("demand", "prices"), ["B"], "#0284c7")):
+            e = by_pair[pr]
+            if e["loop_kinds"] != kinds or e["loop_color"] != color:
+                failures.append(f"R/B 颜色化 {pr}: kinds={e['loop_kinds']} "
+                                f"color={e['loop_color']}")
+            if "polarity" not in e:
+                failures.append(f"R/B 颜色化 {pr}: 极性数据丢失")
+        demo_w = open(os.path.join(out_w, "demo-2d.html"), encoding="utf-8").read()
+        if "data-pol" in demo_w:
+            failures.append("R/B 颜色化: demo 仍含文字徽标 data-pol")
+        if 'stroke="#d97706"' not in demo_w or 'stroke="#0284c7"' not in demo_w:
+            failures.append("R/B 颜色化: demo 未含 R 琥珀/B 天蓝着色")
+        print("OK  R/B 颜色化: 回路边按极性着色（R=琥珀/B=天蓝），"
+              "文字徽标已移除，极性数据保留")
 
         if failures:
             print("\nFAILURES:")

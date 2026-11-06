@@ -14,7 +14,6 @@ import unittest
 from stdraw.visibility import route_svg_d
 from stdraw.check import (_parse_path_d, _path_d_all_points, _max_poly_dev,
                           _path_d_g1_max_deg)
-from stdraw.render import _polarity_marker
 from stdraw.metrics import _coincidence_span, certificate_auto, scene_from_auto
 
 
@@ -106,28 +105,52 @@ class TestCoincidenceMetric(unittest.TestCase):
         self.assertLessEqual(_coincidence_span(a, c, 4.0), 8.0)
 
 
-class TestBadgeMutualAvoidance(unittest.TestCase):
-    def test_second_badge_moves_away(self):
-        # 边 11 同款场景：先放徽标占住首选位 (90,50)，后放者必须 ≥17px
-        e = {"a": "u", "b": "v", "polarity": "+", "_idx": 0,
-             "route": {"points": [(100.0, 0.0), (100.0, 100.0)]}}
-        polys = {0: e["route"]["points"]}
-        boxes = [(400.0, 500.0, 30.0, 22.0)]        # 框远离
-        mk = _polarity_marker(e, polys, boxes, 1000, 1000, placed=[(90.0, 50.0)])
-        self.assertIsNotNone(mk)
-        (mx, my), letter, _ = mk
-        d = math_dist = ((mx - 90.0) ** 2 + (my - 50.0) ** 2) ** 0.5
-        self.assertGreaterEqual(d, 17.0)
-        self.assertEqual(letter, "R")
+class TestLoopColoring(unittest.TestCase):
+    """ref-scrubbed：R/B 文字徽标移除，回路极性改由边着色表达。"""
 
-    def test_first_badge_unchanged(self):
-        e = {"a": "u", "b": "v", "polarity": "-", "_idx": 0,
-             "route": {"points": [(100.0, 0.0), (100.0, 100.0)]}}
-        polys = {0: e["route"]["points"]}
-        boxes = [(400.0, 500.0, 30.0, 22.0)]
-        mk = _polarity_marker(e, polys, boxes, 1000, 1000)
-        self.assertIsNotNone(mk)
-        self.assertEqual(mk[0], (90.0, 50.0))       # 无冲突时首选位不变
+    def _layout_edges(self, cld_text):
+        from stdraw.dsl import parse
+        from stdraw.layout_auto import layout
+        g = parse(cld_text)
+        v4 = layout(g)
+        return g, v4
+
+    def test_loop_edge_colored_by_declared_kind(self):
+        g, v4 = self._layout_edges(open(
+            "benchmarks/corpus/classic/wage-price-spiral.cld",
+            encoding="utf-8").read())
+        by_pair = {(e["a"], e["b"]): e for e in v4["edges"]}
+        # R1 [wages, cost, prices]：环上边全琥珀
+        for a, b in (("wages", "cost"), ("cost", "prices"),
+                     ("prices", "wages")):
+            self.assertEqual(by_pair[(a, b)]["loop_kinds"], ["R"], (a, b))
+            self.assertEqual(by_pair[(a, b)]["loop_color"], "#d97706", (a, b))
+        # B1 [prices, real_income, demand]：环上边全天蓝
+        for a, b in (("prices", "real_income"), ("real_income", "demand"),
+                     ("demand", "prices")):
+            self.assertEqual(by_pair[(a, b)]["loop_kinds"], ["B"], (a, b))
+            self.assertEqual(by_pair[(a, b)]["loop_color"], "#0284c7", (a, b))
+
+    def test_mixed_loop_edge_neutral(self):
+        # brand-flywheel：ad_effect->awareness 同时属 R1(R) 与 B1(B) → 中性
+        g, v4 = self._layout_edges(open(
+            "benchmarks/corpus/classic/brand-flywheel.cld",
+            encoding="utf-8").read())
+        by_pair = {(e["a"], e["b"]): e for e in v4["edges"]}
+        e = by_pair[("ad_effect", "awareness")]
+        self.assertEqual(set(e["loop_kinds"]), {"R", "B"})
+        self.assertIsNone(e["loop_color"])
+
+    def test_render_no_letter_badges(self):
+        from stdraw.render import render_auto_html
+        g, v4 = self._layout_edges(open(
+            "benchmarks/corpus/classic/wage-price-spiral.cld",
+            encoding="utf-8").read())
+        html = render_auto_html(v4, "wage")
+        self.assertNotIn("data-pol", html)          # 徽标组不再输出
+        self.assertIn('stroke="#d97706"', html)     # R 琥珀
+        self.assertIn('stroke="#0284c7"', html)     # B 天蓝
+        self.assertIn('stroke-dasharray="6 4"', html)   # 负极性虚线
 
 
 if __name__ == "__main__":

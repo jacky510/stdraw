@@ -1,6 +1,6 @@
 {
  "tool": "stdraw",
- "version": "0.5.0",
+ "version": "0.6.0",
  "layer": "2D",
  "graph": "classic-cld",
  "n": 8,
@@ -40,6 +40,20 @@
   ],
   "line_line_coincident_pairs": 0,
   "line_line_coincident_details": [],
+  "loop_cohesion_spread": {
+   "R1": 0.6321,
+   "B1": 0.6321,
+   "B2": 0.6321,
+   "B3": 0.2306,
+   "B4": 0.1835,
+   "R2": 0.2306
+  },
+  "center_offset_x": 47.2,
+  "line_kind_counts": {
+   "line": 9,
+   "poly": 1,
+   "arc": 3
+  },
   "bbox": [
    722,
    664
@@ -48,7 +62,6 @@
   "ring_template_deviation": 0.0
  },
  "gates": {
-  "crossings_zero": true,
   "box_press_zero": true,
   "edge_box_clear_ge_16": true,
   "anchors_smooth": true,
@@ -59,7 +72,13 @@
   "lines_no_coincidence": true,
   "routing_consistent": true
  },
- "gates_passed": "10/10",
+ "gates_passed": "9/9",
+ "reports": {
+  "crossings_zero": true,
+  "crossings_note": "软目标：排布规律达标时允许 ≤2 交叉（jacky 2026-11-05：部分线相交可以接受，秩序与优美优先）；分级口径不变（最优=硬门全过+0 交叉）",
+  "row_align_ge_060": true,
+  "row_align_note": "报告项：行对齐不再一票否决（手动样本 row_align delta≈0）"
+ },
  "grade": "最优",
  "grade_note": "硬门全过（框压线0/净距≥16/锚点平滑/规律）+ 线 0 交叉",
  "proven_optimal": null,

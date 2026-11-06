@@ -278,6 +278,10 @@ def auto_geometry_report(layout: dict) -> dict:
     # ref-scrubbed 环形排布：行距恒等/列吸附同属行结构检查，对环排布不适用
     # （证书改用环上等间距 CV + 正多边形模板拟合误差，见 metrics）。
     ring_mode = meta.get("placement") == "ring-cycle"
+    # ref-scrubbed 纵列/对称排布：行口径按模式切换（纵列=主链行距恒等+列轴
+    # 对齐；对称=镜像轴误差）；24px 列吸附对两模式不适用。
+    column_mode = meta.get("placement") == "column-chain"
+    sym_mode = meta.get("placement") == "symmetric"
     W, H = layout["viewBox"][2], layout["viewBox"][3]
     CARD_H = meta.get("cardH", 44)
     CW = {v: p.get("w", 140) for v, p in nodes.items()}
@@ -388,7 +392,14 @@ def auto_geometry_report(layout: dict) -> dict:
         rowy.setdefault(p["y"], []).append(v)
     pitch_ok = len({b - a for a, b in zip(sorted(rowy), sorted(rowy)[1:])}) <= 1
     odd = [v for v, p in nodes.items() if p["x"] % 2 or p["y"] % 2]
-    _6a_na = "（manual: N/A）" if manual_mode else ("（ring: N/A）" if ring_mode else "")
+    _6a_na = ("（manual: N/A）" if manual_mode else
+              "（ring: N/A）" if ring_mode else
+              "（column: 主链行判）" if column_mode else
+              "（sym: 全行判）" if sym_mode else "")
+    if column_mode:
+        spine = (meta.get("column") or {}).get("spine") or []
+        sys_ = [nodes[v]["y"] for v in spine if v in nodes]
+        pitch_ok = len({b - a for a, b in zip(sys_, sys_[1:])}) <= 1 if len(sys_) > 1 else True
     chk("6a. 行距恒等 pitch（停车带除外）" + _6a_na,
         True if (manual_mode or ring_mode) else pitch_ok, f"pitch={meta['pitch']}")
     chk("6b. 全部坐标 2px 网格（偶数）", not odd, str(odd))
@@ -431,6 +442,30 @@ def auto_geometry_report(layout: dict) -> dict:
         else:
             ring_ok, ring_detail = False, "meta.ring.nodes 缺失/不足 3 节点"
         chk("9. 环形排布规律性（环上等间距 CV + 模板拟合）", ring_ok, ring_detail)
+    elif column_mode:
+        import math as _cm
+        spine = (meta.get("column") or {}).get("spine") or []
+        spts = [(nodes[v]["x"], nodes[v]["y"]) for v in spine if v in nodes]
+        if len(spts) >= 2:
+            axis = sum(p[0] for p in spts) / len(spts)
+            dev = max(abs(p[0] - axis) for p in spts)
+            col_ok = dev <= 2.0 and pitch_ok
+            col_detail = f"主链列轴偏差 {dev:.2f}px（门 ≤2px），主链行距恒等 {pitch_ok}"
+        else:
+            col_ok, col_detail = False, "meta.column.spine 缺失/不足 2 节点"
+        chk("9. 纵列排布规律性（主链列轴对齐 + 行距恒等）", col_ok, col_detail)
+    elif sym_mode:
+        sym = meta.get("symmetry") or {}
+        axis_x = sym.get("axis_x") or 0.0
+        pairs = sym.get("mirror_pairs") or []
+        errs = []
+        for l, r in pairs:
+            if l in nodes and r in nodes:
+                errs.append(abs((nodes[l]["x"] + nodes[r]["x"]) / 2 - axis_x))
+                errs.append(abs(nodes[l]["y"] - nodes[r]["y"]))
+        sym_ok = bool(errs) and max(errs) <= 2.0
+        chk("9. 对称排布规律性（镜像轴误差 ≤2px）", sym_ok,
+            f"镜像轴误差 {max(errs):.2f}px" if errs else "meta.symmetry.mirror_pairs 缺失")
     else:
         chk("9. 简单图排布规律性" + ("（manual: N/A）" if manual_mode else ""),
             True if manual_mode else ((not simple) or (pitch_ok and snap >= 0.6)),
@@ -441,7 +476,8 @@ def auto_geometry_report(layout: dict) -> dict:
     ok10 = (meta.get("recipe") == "auto-v2" and
             meta.get("line_style") in ("straight", "arc") and
             (meta.get("position_engine") in ("cp-sat", "construct", "manual",
-                                             "ring-construct")))
+                                             "ring-construct",
+                                             "column-construct", "sym-construct")))
     chk("10. auto-v2 元数据完备", ok10,
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "
         f"engine={meta.get('position_engine')}")

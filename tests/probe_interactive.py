@@ -164,16 +164,25 @@ def main():
                              ".getAttribute('transform')")
             d0 = pg.evaluate("document.querySelector('[data-edge=\\'0\\'] path')"
                              ".getAttribute('d')")
-            pol = pg.evaluate("(document.querySelector('[data-pol=\\'0\\']')||{})"
-                             ".getAttribute ? document.querySelector("
-                             "'[data-pol=\\'0\\']').getAttribute('transform') : null")
+            # ref-scrubbed：R/B 文字徽标已移除（回路极性改由边着色表达）——
+            # 探针改为核验拖拽后边着色/虚线保留（静态 stroke 属性不随重布线丢）
+            stroke0 = pg.evaluate(
+                "document.querySelector('[data-edge=\\'0\\'] path')"
+                ".getAttribute('stroke')")
             chk("drag moved node",
                abs(pos1[0] - pos0[0]) > 20 and abs(pos1[1] - pos0[1]) > 20,
                f"pos {pos0} -> {pos1}, transform={tr}")
             chk("live metrics changed mid-drag", mid_toolbar != toolbar0,
                 f"mid: {mid_toolbar!r}")
             chk("edge followed as polyline", "L " in d0, d0[:100])
-            chk("polarity marker repositioned", pol is not None, pol)
+            stroke1 = pg.evaluate(
+                "document.querySelector('[data-edge=\\'0\\'] path')"
+                ".getAttribute('stroke')")
+            no_pol = pg.evaluate(
+                "!document.querySelector('[data-pol]')")
+            chk("edge color preserved, letter badges gone",
+                stroke1 == stroke0 and stroke0 is not None and no_pol,
+                f"stroke {stroke0!r} -> {stroke1!r}, data-pol absent={no_pol}")
             chk("metrics changed after drag", m1 != m0, f"{m0} -> {m1}")
 
             # 触摸可用性（hasTouch 环境 tap 不报错）
