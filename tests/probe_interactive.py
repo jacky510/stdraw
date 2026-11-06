@@ -37,6 +37,31 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EX = os.path.join(ROOT, "examples", "classic-cld-growth-and-burden.cld")
 PY = sys.executable
 
+
+def _pin_local_stdraw():
+    """ref-scrubbed 本树自证（同 probe_drag_follow）：脚本模式 sys.path[0]=tests/ 时
+    in-process import 命中 site-packages editable 安装（指向共享主树），渲染用本树、
+    对拍用主树——两树不同步时对拍失真。剥离 editable 钩子，强制从本树加载。"""
+    if not os.path.isfile(os.path.join(ROOT, "stdraw", "__init__.py")):
+        print("SKIP  probe_interactive: 未找到本树 stdraw 包: %s" % ROOT)
+        sys.exit(2)
+    for f in [m for m in sys.meta_path
+              if "__editable__" in str(getattr(m, "__module__", ""))]:
+        sys.meta_path.remove(f)
+    for m in list(sys.modules):
+        if m == "stdraw" or m.startswith("stdraw."):
+            del sys.modules[m]
+    sys.path.insert(0, ROOT)
+    import stdraw
+    if os.path.realpath(os.path.dirname(stdraw.__file__)) != \
+            os.path.realpath(os.path.join(ROOT, "stdraw")):
+        print("SKIP  probe_interactive: stdraw 未从本树加载: %s"
+              % stdraw.__file__)
+        sys.exit(2)
+
+
+_pin_local_stdraw()
+
 result = {"checks": []}
 
 

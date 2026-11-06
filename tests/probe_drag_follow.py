@@ -34,6 +34,32 @@ except Exception:
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PY = sys.executable
+
+
+def _pin_local_stdraw():
+    """ref-scrubbed 本树自证：脚本模式 sys.path[0]=tests/，in-process import 会命中
+    site-packages editable 安装（__editable__.stdraw-*.pth 指向共享主树），而 demo
+    渲染子进程用 cwd=ROOT 的本树代码——两树不同步时对拍恒红（存量 0/19 根因）。
+    剥离 editable meta_path 钩子并强制 stdraw 从本探针所在的树加载。"""
+    if not os.path.isfile(os.path.join(ROOT, "stdraw", "__init__.py")):
+        print("SKIP  probe_drag_follow: 未找到本树 stdraw 包: %s" % ROOT)
+        sys.exit(2)
+    for f in [m for m in sys.meta_path
+              if "__editable__" in str(getattr(m, "__module__", ""))]:
+        sys.meta_path.remove(f)
+    for m in list(sys.modules):
+        if m == "stdraw" or m.startswith("stdraw."):
+            del sys.modules[m]
+    sys.path.insert(0, ROOT)
+    import stdraw
+    if os.path.realpath(os.path.dirname(stdraw.__file__)) != \
+            os.path.realpath(os.path.join(ROOT, "stdraw")):
+        print("SKIP  probe_drag_follow: stdraw 未从本树加载: %s"
+              % stdraw.__file__)
+        sys.exit(2)
+
+
+_pin_local_stdraw()
 # jacky 手动布局导出目录（本机验收源）；缺省/不存在时回退 corpus 自动布局。
 # 用环境变量注入，避免把机器特定路径写死进仓：STDRAW_MANUAL_SWEEP_DIR=...
 MANUAL_DIR = os.environ.get("STDRAW_MANUAL_SWEEP_DIR", "")
