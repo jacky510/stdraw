@@ -744,6 +744,32 @@ def _bowtie_trial(plan, nodes, widths, card_h, cfg):
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
+def _spine_trial(plan, nodes, widths, card_h, cfg):
+    """纵柱+翼位排布 + 布线试验闸门：过门才采纳；否则 None（回退，逐字节不变）。
+
+    ref-scrubbed（v0.7.1）：中枢对纵柱 + 中线翼位带 + 翼外镜像簇
+    （classic-cld-growth-and-burden 类，jacky 手拉样本为基准）；纵柱边
+    构造竖直直线注入，其余走 Router 候选池。
+    """
+    from . import spinewinglayout
+    edges = EDGES_REF[0]
+    try:
+        pos, y, meta, constructed = spinewinglayout.place_spine_wing(
+            plan, widths, card_h, cfg, edges)
+    except spinewinglayout.InfeasibleSpineWing:
+        return None
+    nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+    routes = router.route_all()
+    for i, (a, b) in enumerate(edges):
+        cr = constructed.get((a, b))
+        if cr is not None:
+            routes[i] = dict(cr)
+    if not _constructed_gates(nodes_px, edges, routes, cfg, constructed):
+        return None
+    return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
+
+
 def _column_trial(plan, nodes, widths, card_h, cfg):
     """纵列排布 + 布线试验闸门：过门才采纳；否则 None（回退分层，逐字节不变）。"""
     from . import columnlayout
@@ -811,6 +837,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         #  每个新模式都带试验闸门：不过门静默回退，回退路径逐字节不变。
         sym_plan = None
         bw_plan = None
+        sw_plan = None
         column_plan = None
         ring_plan = None
         if len(nodes) <= 12:
@@ -827,6 +854,12 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             if _bw is not None:
                 bw_plan = _bowtie_trial(_bw, nodes, widths, card_h, cfg)
         if bw_plan is None and sym_plan is None and len(nodes) <= 12:
+            from . import spinewinglayout as _spinewinglayout
+            _sw = _spinewinglayout.detect_spine_wing(graph)
+            if _sw is not None:
+                sw_plan = _spine_trial(_sw, nodes, widths, card_h, cfg)
+        if (bw_plan is None and sym_plan is None and sw_plan is None
+                and len(nodes) <= 12):
             from . import ringlayout as _ringlayout
             from . import columnlayout as _columnlayout
             _ring_detect = _ringlayout.detect_ring(graph)
@@ -857,6 +890,15 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             engine = "bowtie-construct"
             pos_meta = bmeta
             constructed = bconstructed
+        elif sw_plan is not None:
+            wpos, wy, wmeta, wconstructed = sw_plan["placed"]
+            pos, y = wpos, wy
+            deg0 = list(sw_plan["deg0"])
+            rows = [[v for v in nodes if y[v] == yy]
+                    for yy in sorted({y[v] for v in nodes})]
+            engine = "spine-construct"
+            pos_meta = wmeta
+            constructed = wconstructed
         elif column_plan is not None:
             cpos, cy, cmeta, cconstructed = column_plan["placed"]
             pos, y = cpos, cy
@@ -1133,6 +1175,12 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             if isinstance(pos_meta.get("column"), dict):
                 pos_meta["column"]["axis_x"] = \
                     pos_meta["column"].get("axis_x", 0) + dx
+            # ref-scrubbed 纵柱+翼位：竖直轴/中线轴随平移同步
+            if isinstance(pos_meta.get("spine_wing"), dict):
+                pos_meta["spine_wing"]["axis_x"] = \
+                    pos_meta["spine_wing"].get("axis_x", 0) + dx
+                pos_meta["spine_wing"]["axis_y"] = \
+                    pos_meta["spine_wing"].get("axis_y", 0) + dy
 
     # W/H 必须在平移后的最终坐标上取。bugfix（CI 暴露的 v0.2.0 遗留）：
     # 原实现用平移前 xs_all 算 W，dx>0 时右移后内容溢出 viewBox
