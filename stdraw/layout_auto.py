@@ -714,6 +714,36 @@ def _sym_trial(plan, nodes, widths, card_h, cfg):
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
+def _bowtie_trial(plan, nodes, widths, card_h, cfg):
+    """领结共点对称排布 + 布线试验闸门：过门才采纳；否则 None（回退，逐字节不变）。
+
+    ref-scrubbed（美学 v3）：恰 2 个简单环恰共享 1 节点的图（wage-price-spiral
+    类，jacky 手拉样本为基准）→ bowtie-vertex 对称排布；全直线构造，
+    线型一致性硬规则同 symmetric（禁 vg/poly/wrap 折线）。
+    """
+    from . import bowtielayout
+    edges = EDGES_REF[0]
+    try:
+        pos, y, meta, constructed = bowtielayout.place_bowtie_vertex(
+            plan, widths, card_h, cfg, edges)
+    except bowtielayout.InfeasibleBowtieVertex:
+        return None
+    nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+    routes = router.route_all()
+    for i, (a, b) in enumerate(edges):
+        cr = constructed.get((a, b))
+        if cr is not None:
+            routes[i] = dict(cr)
+    # 线型一致性硬规则：对称结构内不得出现 vg/poly 折线（弧线>直线>折线）
+    for i, info in routes.items():
+        if info["kind"] in ("vg", "poly", "wrap"):
+            return None
+    if not _constructed_gates(nodes_px, edges, routes, cfg, constructed):
+        return None
+    return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
+
+
 def _column_trial(plan, nodes, widths, card_h, cfg):
     """纵列排布 + 布线试验闸门：过门才采纳；否则 None（回退分层，逐字节不变）。"""
     from . import columnlayout
@@ -780,6 +810,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         #  → 环形（回路主导小图，ref-scrubbed）→ 既有分层路径。
         #  每个新模式都带试验闸门：不过门静默回退，回退路径逐字节不变。
         sym_plan = None
+        bw_plan = None
         column_plan = None
         ring_plan = None
         if len(nodes) <= 12:
@@ -787,7 +818,15 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             _sym = _symlayout.detect_bowtie(graph)
             if _sym is not None:
                 sym_plan = _sym_trial(_sym, nodes, widths, card_h, cfg)
+        # ref-scrubbed（美学 v3）领结共点（双环共享单节点）：与共边领结
+        # （symmetric）拓扑互斥、并列最高档；判定用枚举简单环（声明表
+        # 混 2 节点伪环、漏派生环，不可用）。
         if sym_plan is None and len(nodes) <= 12:
+            from . import bowtielayout as _bowtielayout
+            _bw = _bowtielayout.detect_bowtie_vertex(graph)
+            if _bw is not None:
+                bw_plan = _bowtie_trial(_bw, nodes, widths, card_h, cfg)
+        if bw_plan is None and sym_plan is None and len(nodes) <= 12:
             from . import ringlayout as _ringlayout
             from . import columnlayout as _columnlayout
             _ring_detect = _ringlayout.detect_ring(graph)
@@ -809,6 +848,15 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             engine = "sym-construct"
             pos_meta = smeta
             constructed = sconstructed
+        elif bw_plan is not None:
+            bpos, by, bmeta, bconstructed = bw_plan["placed"]
+            pos, y = bpos, by
+            deg0 = list(bw_plan["deg0"])
+            rows = [[v for v in nodes if y[v] == yy]
+                    for yy in sorted({y[v] for v in nodes})]
+            engine = "bowtie-construct"
+            pos_meta = bmeta
+            constructed = bconstructed
         elif column_plan is not None:
             cpos, cy, cmeta, cconstructed = column_plan["placed"]
             pos, y = cpos, cy
@@ -982,6 +1030,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         if constructed.get((a, b)) is not None or manual_wps.get((a, b)):
             _frozen.add(i)
     routes = router.coincide_reroute(routes, frozen=_frozen)
+    # ref-scrubbed 连接点口径：交付层锚点钳制到边中点 ±1/4 带（转角排除，
+    # 逐边硬门复核）；同节点同侧多锚点再按入射角均匀展开（不堆叠）。
+    routes = router.midband_reanchor(routes, frozen=_frozen)
+    routes = router.fan_spread(routes, frozen=_frozen)
     router_pairs = router.final_crossing_pairs(routes)
 
     # ref-scrubbed R/B 回路着色：边 → 所属声明回路 kind 集合（确定性规则见
@@ -1076,6 +1128,8 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             if isinstance(pos_meta.get("symmetry"), dict):
                 pos_meta["symmetry"]["axis_x"] = \
                     pos_meta["symmetry"].get("axis_x", 0) + dx
+                pos_meta["symmetry"]["axis_y"] = \
+                    pos_meta["symmetry"].get("axis_y", 0) + dy
             if isinstance(pos_meta.get("column"), dict):
                 pos_meta["column"]["axis_x"] = \
                     pos_meta["column"].get("axis_x", 0) + dx

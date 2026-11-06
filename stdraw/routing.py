@@ -19,7 +19,26 @@ CLEARANCE = 16          # 边-框最小净距（v0.2 硬门口径）
 PRESS_MARGIN = 1        # 框压线判定余量 px
 ANCHOR_MIN_DEG = 20     # 出发方向与框边切线最小夹角
 SAMPLE_STEP = 4         # 候选验证采样步长 px
-ARC_KS = (0.14, 0.24, 0.36, 0.55, 0.75)   # 弧线弯曲系数 × 距离
+ARC_KS = (0.14, 0.24, 0.36, 0.55, 0.75)   # 弧线弯曲系数 × 距离（枚举梯）
+ARC_BULGE_BASE = 6.0    # ref-scrubbed 弧度参数化：最小鼓出 px（短边小弯）
+ARC_BULGE_SLOPE = 0.06  # 鼓出随弦长线性增长（典型弦 130px → k≈0.21 ≈ 旧观感档）
+ARC_BULGE_MAX = 40.0    # 长边鼓出封顶
+ARC_K_MIN = 0.12
+ARC_K_MAX = 0.50
+
+
+def adaptive_arc_k(dist):
+    """按弦长自适应的弧线弯曲系数（ref-scrubbed 美学 v3）。
+
+    鼓出（t=0.5 处 ctrl 偏移的一半）= min(8 + 0.12·弦长, 40) px：短边小弯、
+    长边大弯封顶；k = 2·鼓出/弦长，钳制 [0.12, 0.50]。候选弧首档即用本档
+    （梯保留作可行性兜底）；同环弧度一致性由构造弧统一取 median 弦长档。
+    """
+    bulge = min(ARC_BULGE_BASE + ARC_BULGE_SLOPE * dist, ARC_BULGE_MAX)
+    k = 2.0 * bulge / max(dist, 1e-6)
+    return max(ARC_K_MIN, min(ARC_K_MAX, k))
+
+
 SIDE_MARGIN = 18.5                        # 侧通道与遮挡框的净距（16 + 1px 余量 + 建设余量）
 VG_PAD = 1.5                              # WS3 可见性建图膨胀余量（弧线切角下探的兜底）
 
@@ -34,6 +53,7 @@ ROUND_GUARD = 0.15     # 交付舍入（0.1px）保守余量：贴边 <0.15px �
 # span_one_way_segs，证书侧 metrics._coincidence_span 两方向委托同源。
 COINCIDE_THR = 1.0          # 距离 <1px 视为贴合（与证书口径同源）
 COINCIDE_SPAN = 8.0         # 贴合累计 >8px 才计「视觉重合」（端点会合豁免）
+FAN_STEP = 18.0             # 同节点同侧多锚点均匀展开步距（ref-scrubbed 规则 3）
 
 EPS = 1e-9
 
@@ -45,7 +65,12 @@ def norm(vx, vy):
 
 
 def border_point(cx, cy, hw, hh, dx, dy):
-    """从框心沿方向 (dx,dy) 与框边的交点（规划锚点）。"""
+    """从框心沿方向 (dx,dy) 与框边的交点（规划锚点）。
+
+    ref-scrubbed 分层口径：路由决策层保持旧出口几何（候选覆盖不变，WS3 硬例
+    稳定）；**交付层**由 Router.midband_reanchor 把锚点钳制到边中点 ±1/4
+    边长带（转角排除，逐边硬门复核）——见 docs/layout-modes.md 连接点口径。
+    """
     if abs(dx) < EPS and abs(dy) < EPS:
         return [cx, cy]
     if abs(dx) < EPS:
@@ -240,7 +265,10 @@ class Router:
             vx, vy = pb[0] - pa[0], pb[1] - pa[1]
             dist = math.hypot(vx, vy)
             ux, uy = norm(-vy, vx)
-            for k in ARC_KS:
+            # ref-scrubbed 弧度参数化：首档 = 按弦长自适应 k（短边小弯、长边
+            # 封顶），梯保留作可行性兜底；dedupe 保序，确定性不变
+            ks = tuple(dict.fromkeys((adaptive_arc_k(dist),) + ARC_KS))
+            for k in ks:
                 sides = (mutual_side,) if mutual_side else (1, -1)
                 for s in sides:
                     ctrl = [(pa[0] + pb[0]) / 2 + ux * k * dist * s,
@@ -841,6 +869,159 @@ class Router:
             if hit:
                 n += 1
         return n
+
+    # -- 同节点同侧多锚点均匀展开（ref-scrubbed 连接点口径规则 3）--
+    def _side_of(self, v, p):
+        """锚点 p 在节点 v 框的哪条边（r/l/b/t）。"""
+        cx, cy, hw, hh = self.N[v]
+        on_x = abs(abs(p[0] - cx) - hw) <= abs(abs(p[1] - cy) - hh)
+        if on_x:
+            return "r" if p[0] > cx else "l"
+        return "b" if p[1] > cy else "t"
+
+    def _edge_stats(self, i, routes):
+        """边 i 当前路线的硬门摘要：(press, min_clear, ang_min, cross, mutual_sep)。"""
+        a, b = self.edges[i]
+        pts = routes[i]["points"]
+        samples = sample_polyline(pts)
+        press, min_clr = 0, None
+        for v, (cx, cy, hw, hh) in self.N.items():
+            if v in (a, b):
+                continue
+            for (px, py) in samples:
+                d = dist_point_rect(px, py, cx, cy, hw + PRESS_MARGIN,
+                                    hh + PRESS_MARGIN)
+                if d <= ROUND_GUARD:
+                    press += 1
+                    break
+                min_clr = d if min_clr is None else min(min_clr, d)
+        ang_min = min(self._anchor_angle(a, pts[0], pts[0], pts[1]),
+                      self._anchor_angle(b, pts[-1], pts[-1], pts[-2]))
+        cross = 0
+        for j, o in routes.items():
+            if j == i or self.edges[j][0] in self.edges[i] or \
+                    self.edges[j][1] in self.edges[i]:
+                continue
+            if self._poly_cross(pts, o["points"]):
+                cross += 1
+        msep = None
+        j = self.eidx.get((b, a))
+        if j is not None and j in routes and j != i:
+            msep = min_pair_dist(sample_polyline(pts, step=4),
+                                 sample_polyline(routes[j]["points"], step=4))
+        return (press, min_clr, ang_min, cross, msep)
+
+    def fan_spread(self, routes, frozen=()):
+        """同节点同侧 ≥2 个锚点：按入射角排序、沿框边切向在中点两侧对称展开。
+
+        2026-11-06 连接点口径硬规则 3（jacky）：同一节点多条出线不许堆叠在
+        同一边中点——步距 FAN_STEP 均匀分布、钳制在边内 ±(half−3)。展开后
+        逐边复核硬门（压线/净距/锚角/交叉数不增/互环分离 ≥4px），任一违例
+        该节点整体回退到边中点锚（确定性：固定遍历序 + 固定步距，无 RNG）。
+        frozen 边（构造路线 / 用户 waypoints）不动。
+        """
+        groups = {}
+        for i in sorted(routes.keys()):
+            if i in frozen:
+                continue
+            pts = routes[i]["points"]
+            a, b = self.edges[i]
+            for end, p in (("a", pts[0]), ("b", pts[-1])):
+                v = a if end == "a" else b
+                groups.setdefault((v, self._side_of(v, p)), []).append(
+                    (i, end, tuple(p)))
+        for (v, side), entries in sorted(groups.items()):
+            if len(entries) < 2:
+                continue
+            cx, cy, hw, hh = self.N[v]
+            vertical = side in ("r", "l")
+            half_len = (hh if vertical else hw) - 3
+
+            def _in_angle(ent):
+                i2, end, _p = ent
+                pts2 = routes[i2]["points"]
+                k0, k1 = (0, 1) if end == "a" else (len(pts2) - 1, len(pts2) - 2)
+                return math.atan2(pts2[k1][1] - pts2[k0][1],
+                                  pts2[k1][0] - pts2[k0][0])
+            ents = sorted(entries, key=_in_angle)
+            k = len(ents)
+            offs = [(t2 - (k - 1) / 2.0) * FAN_STEP for t2 in range(k)]
+            before = {i2: [list(p) for p in routes[i2]["points"]]
+                      for i2, _e, _p in ents}
+            stats_before = {i2: self._edge_stats(i2, routes)
+                            for i2, _e, _p in ents}
+            for (i2, end, _p), off in zip(ents, offs):
+                pts2 = routes[i2]["points"]
+                idx = 0 if end == "a" else len(pts2) - 1
+                if vertical:
+                    pts2[idx] = [pts2[idx][0],
+                                 max(cy - half_len, min(cy + half_len,
+                                                        cy + off))]
+                else:
+                    pts2[idx] = [max(cx - half_len, min(cx + half_len,
+                                                        cx + off)),
+                                 pts2[idx][1]]
+            ok = True
+            for i2, _e, _p in ents:
+                pr, clr, ang, cross, msep = self._edge_stats(i2, routes)
+                pr0, clr0, ang0, cross0, msep0 = stats_before[i2]
+                if pr > pr0 or cross > cross0:
+                    ok = False
+                if clr is not None and clr < self.cl - 1e-6:
+                    ok = False
+                if ang < ANCHOR_MIN_DEG:
+                    ok = False
+                if msep is not None and msep < 4.0:
+                    ok = False
+                if not ok:
+                    break
+            if not ok:
+                for i2, pts_b in before.items():
+                    routes[i2]["points"] = pts_b
+        return routes
+
+    def midband_reanchor(self, routes, frozen=()):
+        """交付层连接点口径（ref-scrubbed）：锚点钳制到边中点 ±1/4 边长带。
+
+        jacky：「线连在方框上的点也优先选每条边的中点，尽量不要选转角的
+        地方。」路由决策层保持旧出口几何（候选覆盖不变）；本通道在交付前
+        把带外锚点沿所属框边切向钳到 ±1/4 带内——转角整体排除（带内不可能
+        贴角）。逐边硬门复核（压线/净距/锚角/交叉数不增/互环分离 ≥4px），
+        任一违例该边回退原锚（比例如实计入带内统计）。确定性：固定边序，
+        无 RNG。frozen 边（构造路线 / waypoints）不动——对称模式构造弧已
+        自带弦坐标映射口径。
+        """
+        for i in sorted(routes.keys()):
+            if i in frozen:
+                continue
+            pts = routes[i]["points"]
+            before_pts = [list(p) for p in pts]
+            before = self._edge_stats(i, routes)
+            changed = False
+            for idx in (0, len(pts) - 1):
+                v = self.edges[i][0] if idx == 0 else self.edges[i][1]
+                cx, cy, hw, hh = self.N[v]
+                p = pts[idx]
+                dxo, dyo = p[0] - cx, p[1] - cy
+                on_x = abs(abs(dxo) - hw) <= abs(abs(dyo) - hh)
+                if on_x:
+                    lim = hh / 2.0
+                    np_ = [p[0], cy + max(-lim, min(lim, dyo))]
+                else:
+                    lim = hw / 2.0
+                    np_ = [cx + max(-lim, min(lim, dxo)), p[1]]
+                if abs(np_[0] - p[0]) > 1e-9 or abs(np_[1] - p[1]) > 1e-9:
+                    pts[idx] = np_
+                    changed = True
+            if changed:
+                after = self._edge_stats(i, routes)
+                ok = (after[0] <= before[0] and after[3] <= before[3] and
+                      (after[1] is None or after[1] >= self.cl - 1e-6) and
+                      after[2] >= ANCHOR_MIN_DEG and
+                      (after[4] is None or after[4] >= 4.0))
+                if not ok:
+                    routes[i]["points"] = before_pts
+        return routes
 
     # -- 主入口 --
     def route_all(self):

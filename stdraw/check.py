@@ -278,10 +278,13 @@ def auto_geometry_report(layout: dict) -> dict:
     # ref-scrubbed 环形排布：行距恒等/列吸附同属行结构检查，对环排布不适用
     # （证书改用环上等间距 CV + 正多边形模板拟合误差，见 metrics）。
     ring_mode = meta.get("placement") == "ring-cycle"
+
     # ref-scrubbed 纵列/对称排布：行口径按模式切换（纵列=主链行距恒等+列轴
     # 对齐；对称=镜像轴误差）；24px 列吸附对两模式不适用。
     column_mode = meta.get("placement") == "column-chain"
     sym_mode = meta.get("placement") == "symmetric"
+    # ref-scrubbed（美学 v3）领结共点：镜像轴 = 竖直轴 x + 水平轴 y（上下环镜像）
+    bowtie_mode = meta.get("placement") == "bowtie-vertex"
     W, H = layout["viewBox"][2], layout["viewBox"][3]
     CARD_H = meta.get("cardH", 44)
     CW = {v: p.get("w", 140) for v, p in nodes.items()}
@@ -466,6 +469,22 @@ def auto_geometry_report(layout: dict) -> dict:
         sym_ok = bool(errs) and max(errs) <= 2.0
         chk("9. 对称排布规律性（镜像轴误差 ≤2px）", sym_ok,
             f"镜像轴误差 {max(errs):.2f}px" if errs else "meta.symmetry.mirror_pairs 缺失")
+    elif bowtie_mode:
+        sym = meta.get("symmetry") or {}
+        axis_x = sym.get("axis_x") or 0.0
+        axis_y = sym.get("axis_y") or 0.0
+        errs = []
+        for l, r in sym.get("mirror_pairs") or []:
+            if l in nodes and r in nodes:
+                errs.append(abs(nodes[l]["x"] - nodes[r]["x"]))
+                errs.append(abs((nodes[l]["y"] + nodes[r]["y"]) / 2 - axis_y))
+        sh = sym.get("shared_node")
+        if sh in nodes:
+            errs.append(abs(nodes[sh]["x"] - axis_x))
+            errs.append(abs(nodes[sh]["y"] - axis_y))
+        bowtie_ok = bool(errs) and max(errs) <= 2.0
+        chk("9. 领结共点排布规律性（镜像轴误差 ≤2px）", bowtie_ok,
+            f"镜像轴误差 {max(errs):.2f}px" if errs else "meta.symmetry 缺失")
     else:
         chk("9. 简单图排布规律性" + ("（manual: N/A）" if manual_mode else ""),
             True if manual_mode else ((not simple) or (pitch_ok and snap >= 0.6)),
@@ -477,7 +496,8 @@ def auto_geometry_report(layout: dict) -> dict:
             meta.get("line_style") in ("straight", "arc") and
             (meta.get("position_engine") in ("cp-sat", "construct", "manual",
                                              "ring-construct",
-                                             "column-construct", "sym-construct")))
+                                             "column-construct", "sym-construct",
+                                             "bowtie-construct")))
     chk("10. auto-v2 元数据完备", ok10,
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "
         f"engine={meta.get('position_engine')}")
