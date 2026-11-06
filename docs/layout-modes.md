@@ -1,4 +1,4 @@
-# 布局模式与美学口径（v0.6.0，ref-scrubbed）
+# 布局模式与美学口径（v0.7.1，ref-scrubbed）
 
 > jacky 2026-11-05 全图审查定调（最高优先设计原则）：
 > 「如果方框排布能有规律，那么就尽量形成规律，比如纵向对齐一列，比如圆形回路。
@@ -12,9 +12,10 @@
 |---|---|---|---|
 | 1 | 领结对对称（共边） | 核心图恰为两个三角形共享一条边（4 节点 5 边，度序列 {3,3,2,2}，度-3 节点相邻） | `symmetric` |
 | 1 | 领结共点对称（ref-scrubbed，美学 v3） | 枚举简单环（长度 ≥3，规范形去重）恰 2 个、两环恰共享 1 个节点、两环并集=全部非孤立节点（与共边领结拓扑互斥：5 节点 6 边） | `bowtie-vertex` |
-| 2 | 纵列（长链/少环） | 3≤n≤12 ∧ 最长简单回路 3≤k≤4 ∧ k<n（主环小 → 主链感强；k=n 的大环归环形；环形 pure-cycle/ratio 触发者不进纵列） | `column-chain` |
-| 3 | 环形（ref-scrubbed） | 纯环 / 主环覆盖 ≥n-2 / 环边占比 ≥0.9 ∧ k≥5 或覆盖全图 | `ring-cycle` |
-| 4 | 分层（既有路径） | 其余（链/树/大图等） | `layered` |
+| 2 | 纵柱+翼位（ref-scrubbed，v0.7.1） | 中枢对（公共邻居 3≤W≤4 的有向边，平局：声明环共现多→规范形小）+ rest 次级簇非空可配对 + 主链长度占比 ≤0.5（详见下节） | `spine-wing` |
+| 3 | 纵列（长链/少环） | 3≤n≤12 ∧ 最长简单回路 3≤k≤4 ∧ k<n（主环小 → 主链感强；k=n 的大环归环形；环形 pure-cycle/ratio 触发者不进纵列） | `column-chain` |
+| 4 | 环形（ref-scrubbed） | 纯环 / 主环覆盖 ≥n-2 / 环边占比 ≥0.9 ∧ k≥5 或覆盖全图 | `ring-cycle` |
+| 5 | 分层（既有路径） | 其余（链/树/大图等） | `layered` |
 
 每个新模式带**试验闸门**：构造排布后跑同一布线器复核硬门代理（交叉≤2、
 压线=0、净距≥16、锚点平滑、互环分离、卡距≥16），任一不过**静默回退**
@@ -36,6 +37,57 @@
   不可行（多弦互撞等）回退 Router 候选池。
 - 证书规律性门：主链列轴偏差 ≤2px + 主链行距恒等（支路半行/整行偏移
   不计入行距门）；行对齐率/列吸附对纵列不适用（如实 null）。
+
+### 纵柱+翼位（spine-wing，ref-scrubbed v0.7.1）
+
+> jacky 亲手拉了 classic-cld-growth-and-burden（增长极限×转嫁负担）手动布局：
+> 中央纵柱 adopters(顶)/rate(底) 严格垂直压画布中心线（x 差 1px）；左翼
+> word/potential 与右簇 crowding 压同一水平中线（y 完全相等）；右上
+> quickfix / 右下 sideeffect 近镜像（x 差 6px）；fundamental 右下内侧与
+> rate 同行。本模式把该「纵柱+中线翼位」审美基准写死为确定性规则
+> （正本 `stdraw/spinewinglayout.py`）。
+
+- **触发判定**（确定性拓扑度量，全部满足才触发）：
+  1. **中枢对（spine）**：公共邻居数 W 满足 3≤W≤4 的有向边（平局：声明环
+     共现数多者 → 规范形 (u,v) 小者）。经典 CLD 的「rate→adopters」型扩散
+     中枢对天然胜出（classic-cld W=3，其余语料最高 2）；
+  2. **翼位（wings）**=中枢对公共邻居（各与中枢对构成一条 3-环），**rest
+     次级簇**（除 spine∪wings 外的核心节点）非空且 ≤6、全部邻接 ⊆
+     spine∪wings∪rest（无外挂——双轴可构性；limits-to-growth 同构 spine
+     但 rest=0，属纯增长核不触发）；
+  3. **主链长度占比** = |spine 节点| / |核心节点| ≤ 0.5（紧凑中枢对；
+     长链形态归 column-chain）；
+  4. **rest 可配对**（镜像可构性）：优先配「共享声明环」的 rest 对
+     （样本 quickfix/sideeffect 同属 R2），其余按限制邻域键配对，落单 ≤1。
+  - 优先级链位次：bowtie-vertex → **spine-wing** → column → ring-cycle
+    （本节表格）；**纯简单环仍走 ring-cycle 零漂移**（纯环族 W≤1 天然
+    不命中）。
+  - 19 图语料 sweep 实测（v0.7.1）：仅 classic-cld-growth-and-burden 命中；
+    bowtie 三张 W=1、共边领结两张与纵列族 W≤2、纯环族 W≤1 全部不命中；
+    其余 18 张 layout.json 相对 base 7378016 逐字节零漂移。
+- **排布**（构造约束——对拍样本相对几何，**非全局目标函数项**）：
+  - 纵柱：中枢对沿布局轴 x=0 严格垂直，head 上 y=−Hs、tail 下 y=+Hs，
+    Hs=2·(card_h+GAP)=160（样本纵柱半距 160）；head/target 在上是
+    「原因向上生长」的样本方向；
+  - 中线翼位：翼位全压 y=0 水平带。**rest 簇锚翼**（对 rest 邻接最多者，
+    样本=crowding）放右侧最近位；其余翼按（回路 kind R<B<其他 → 规范形）
+    排序放左侧、由内到外（样本：word 内 / potential 外）；
+  - rest 镜像对：共享声明环对同列上下镜像 ±(card_h+GAP)=±80（样本 ±82 的
+    理想化，误差 0px）；落单者右下内侧 y=+160（与 tail 同带，样本
+    fundamental y=532 vs rate 534）；全部坐标取偶（2px 网格）。
+- **布线**：纵柱边构造竖直直线（顶卡底边中点 → 底卡顶边中点，构造式注入
+  不走候选池）；其余边走同一 Router 候选池（直线/弧线一等；互环对
+  crowding↔quickfix / crowding↔fundamental 走 Router 互环走廊 ≥4px 分离）。
+- **试验闸门**：复用 `_constructed_gates`（压线/净距/锚点/卡距/互环分离/
+  交叉≤2），不过静默回退，负例逐字节不变。
+- **证书规律门（等价门）**：对纵柱+翼位形态，ring 的「CV≤0.05 / 模板拟合
+  ≤0.05」等价口径为——**纵柱 x 对齐 ≤2px + 翼位中线贴靠 ≤2px + 镜像对
+  误差 ≤2px**（classic-cld 实测三者全 0px；交叉为软目标报告项；确定性由
+  CLI 双跑逐字节一致承载）。本步只对 classic-cld 一张切口径，其余 ring 图
+  零漂移可回归验证。
+- 同构一致性：与 limits-to-growth 共享 {rate, adopters, word, potential,
+  crowding} 子骨架但 rest=0 不触发——「增长核 vs 增长+负担全图」由 rest
+  判据天然区分。
 
 ### 领结共点对称（bowtie-vertex，ref-scrubbed 美学 v3）
 
@@ -161,6 +213,7 @@ id 顺序）驱动；同构图的对应节点同色 → 对应槽位。已验证
 | 模式 | 规律性门 |
 |---|---|
 | ring-cycle | 环上等间距 CV ≤0.05 + 正多边形模板拟合 ≤0.05 |
+| spine-wing | 纵柱 x 对齐 ≤2px + 翼位中线贴靠 ≤2px + 镜像对误差 ≤2px（ref-scrubbed） |
 | column-chain | 主链列轴偏差 ≤2px + 主链行距恒等 |
 | symmetric | 镜像轴误差 ≤2px |
 | bowtie-vertex | 镜像轴误差 ≤2px（共享节点居轴心 + 上下环镜像） |

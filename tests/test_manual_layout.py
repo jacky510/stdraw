@@ -210,7 +210,11 @@ def main():
 
         # ── G. ref-scrubbed：waypoints 全链（折点把手 → 导出 → --from-layout 复算）──
         # 夹具：第三节点压直线边中点 → from-layout 产出 vg 折线（jacky 场景）
+        # ref-scrubbed：夹具搜索加「复算干净」条件——压线中点对某些 auto 布局
+        # 坐标构成脏手动布局（如实评分 rc=1，属 B1 场景而非本链缺陷）；
+        # 取首个「产出 vg 且 waypoint 复算 geo fail=0」的组合（确定性序不变）。
         vg_edge = None
+        wp_ready = None            # (man_try_json_path, wps, lay_try)
         for e in lay_a["edges"]:
             if e["route"]["kind"] not in ("line", "arc"):
                 continue
@@ -230,9 +234,13 @@ def main():
                 run(["layout", EX, "--outdir", out_try, "--skip-3d",
                      "--from-layout", pth])
                 lay_try = load(os.path.join(out_try, "layout.json"))
+                geo_try = load(os.path.join(out_try, "geometry_report.json"))
+                if geo_try.get("fail", 0) != 0:
+                    continue       # 脏手动布局：如实评分失败，换下一组合
                 vgs = [x for x in lay_try["edges"] if x["route"]["kind"] == "vg"]
                 if vgs:
                     vg_edge = vgs[0]
+                    wp_ready = (pth, lay_try)
                     break
             if vg_edge:
                 break

@@ -54,9 +54,9 @@ class TestModeTriggers(unittest.TestCase):
 
     def test_ring_graphs_unchanged_mode(self):
         # 回路主导图（k≥5 大环 / ratio 触发 / 纯环）保持环形，不误伤
+        # （classic-cld 自 v0.7.1 ref-scrubbed 起切 spine-wing，移出本组）
         for name in ("debt-spiral", "induced-demand", "arms-race",
-                     "brand-flywheel", "classic-cld-growth-and-burden",
-                     "fishing-collapse", "soil-erosion"):
+                     "brand-flywheel", "fishing-collapse", "soil-erosion"):
             v4 = layout(load(name))
             self.assertEqual(v4["meta"]["placement"], "ring-cycle", name)
 
@@ -219,6 +219,62 @@ class TestCrossingsSoftTarget(unittest.TestCase):
         # 回路聚拢：环上节点跨度显著小于全图对角线
         self.assertLess(spread["R1"], 0.6)
         self.assertLess(spread["B1"], 0.6)
+
+
+class TestSpineWing(unittest.TestCase):
+    """ref-scrubbed（v0.7.1）纵柱+翼位：触发判定 + 对拍样本几何 + 证书门。"""
+
+    def _layout(self, name="classic-cld-growth-and-burden"):
+        from stdraw.metrics import certificate_auto, scene_from_auto
+        g = load(name)
+        v4 = layout(g)
+        cert = certificate_auto(scene_from_auto(v4), graph_name=name, graph=g)
+        return g, v4, cert
+
+    def test_trigger_hits_only_classic_cld(self):
+        # 19 图 sweep：仅 classic-cld 命中（中枢对公共邻居 ≥3 + rest 次级簇）；
+        # 同构 spine 的 limits-to-growth（rest=0）与纯环族不触发
+        for name in ("limits-to-growth", "arms-race", "bullwhip",
+                     "tragedy-of-the-commons", "learning-flywheel"):
+            v4 = layout(load(name))
+            self.assertNotEqual(v4["meta"]["placement"], "spine-wing", name)
+        g, v4, _ = self._layout()
+        self.assertEqual(v4["meta"]["placement"], "spine-wing")
+        self.assertEqual(v4["meta"]["position_engine"], "spine-construct")
+
+    def test_sample_relative_geometry(self):
+        # 对拍 jacky 手拉样本：纵柱垂直居轴、翼位压中线、镜像对上下对称、
+        # 落单者与纵柱底同带
+        g, v4, _ = self._layout()
+        nodes = v4["nodes"]
+        sw = v4["meta"]["spine_wing"]
+        top, bot = sw["spine"]
+        self.assertEqual(nodes[top]["x"], nodes[bot]["x"], "纵柱 x 相等（样本 x 差 1px 的理想化）")
+        self.assertLess(nodes[top]["y"], nodes[bot]["y"], "head 顶 / tail 底")
+        for w in sw["wings"]:
+            self.assertEqual(nodes[w]["y"], sw["axis_y"], "翼位压中线（样本 y 完全相等）")
+        for up, down in sw["mirror_pairs"]:
+            self.assertEqual(nodes[up]["x"], nodes[down]["x"], "镜像对 x 相等（样本 x 差 6px 的理想化）")
+            self.assertEqual((nodes[up]["y"] + nodes[down]["y"]) / 2, sw["axis_y"])
+        # 样本左右位：word/potential 左、crowding 右、quickfix 上 / sideeffect 下
+        axis_x = sw["axis_x"]
+        self.assertLess(nodes["word"]["x"], axis_x)
+        self.assertLess(nodes["potential"]["x"], axis_x)
+        self.assertGreater(nodes["crowding"]["x"], axis_x)
+        self.assertLess(nodes["quickfix"]["y"], sw["axis_y"])
+        self.assertGreater(nodes["sideeffect"]["y"], sw["axis_y"])
+
+    def test_cert_optimal_and_equivalent_gates(self):
+        # 证书最优 + 纵柱+翼位等价门（纵柱 x 对齐 / 中线贴靠 / 镜像 ≤2px）
+        g, v4, cert = self._layout()
+        self.assertEqual(cert["grade"], "最优")
+        self.assertEqual(cert["metrics"]["crossings"], 0)
+        for k in ("spine_axis_le_2px", "midline_adherence_le_2px",
+                  "symmetry_mirror_le_2px"):
+            self.assertTrue(cert["gates"][k], k)
+        self.assertEqual(cert["metrics"]["spine_axis_deviation"], 0)
+        self.assertEqual(cert["metrics"]["midline_deviation"], 0)
+        self.assertEqual(cert["metrics"]["symmetry_mirror_err"], 0)
 
 
 class TestDeterminism(unittest.TestCase):

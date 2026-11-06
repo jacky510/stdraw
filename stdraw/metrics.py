@@ -269,6 +269,8 @@ def scene_from_auto(v4: dict) -> dict:
             # ref-scrubbed 纵列/对称排布口径
             "column_spine": (v4["meta"].get("column") or {}).get("spine"),
             "symmetry": v4["meta"].get("symmetry"),
+            # ref-scrubbed 纵柱+翼位模式证书口径
+            "spine_wing": v4["meta"].get("spine_wing"),
             # 线型统计（弧线>直线>折线层级报告）
             "line_kinds": [e["route"].get("kind") for e in v4["edges"]],
             }
@@ -336,6 +338,10 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     sym_mode = scene.get("placement") == "symmetric"
     # ref-scrubbed（美学 v3）领结共点模式证书口径：镜像轴误差（上下环镜像）
     bowtie_mode = scene.get("placement") == "bowtie-vertex"
+    # ref-scrubbed（v0.7.1）纵柱+翼位模式证书口径：纵柱 x 对齐 + 中线贴靠
+    # + 镜像对称误差（翼外镜像对）
+    spine_mode = scene.get("placement") == "spine-wing"
+    spine_wing = scene.get("spine_wing") or {}
     column_spine = scene.get("column_spine") or []
     symmetry = scene.get("symmetry") or {}
 
@@ -482,6 +488,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     ring_template_dev = None
     col_axis_dev = None
     sym_mirror_err = None
+    sw_spine_axis_dev = None
+    sw_midline_dev = None
     if ring_mode and len(ring_nodes) >= 3:
         rpts = [(nodes[v]["x"], nodes[v]["y"]) for v in ring_nodes
                 if v in nodes]
@@ -519,6 +527,37 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             if l in nodes and r in nodes:
                 errs.append(abs((nodes[l]["x"] + nodes[r]["x"]) / 2 - axis_x))
                 errs.append(abs(nodes[l]["y"] - nodes[r]["y"]))
+        sym_mirror_err = max(errs) if errs else None
+        ys = sorted({p["y"] for v, p in nodes.items() if v not in deg0})
+        pitch_uniform = (len(set(b - a for a, b in zip(ys, ys[1:]))) <= 1
+                         if len(ys) > 1 else True)
+        snap_rate, simple = None, len(ids) <= 10
+        regularity_ok = (sym_mirror_err is not None and sym_mirror_err <= 2.0
+                         and pitch_uniform)
+    elif spine_mode and spine_wing.get("spine"):
+        # 纵柱+翼位（ref-scrubbed）：纵柱 x 对轴（≤2px）+ 翼位贴中线（≤2px）
+        # + 镜像对误差（x 相等 + y 对水平轴对称，≤2px）；行距恒等按
+        # 翼位行距判（构造行距 row_pitch，全节点 y 差集恒等）
+        axis_x = (spine_wing.get("axis_x") if spine_wing.get("axis_x") is not None
+                  else 0.0)
+        axis_y = (spine_wing.get("axis_y") if spine_wing.get("axis_y") is not None
+                  else 0.0)
+        spine_ids = [s for s in spine_wing.get("spine") or [] if s in nodes]
+        wing_ids = [w for w in spine_wing.get("wings") or [] if w in nodes]
+        errs = []
+        if spine_ids:
+            sw_spine_axis_dev = max(abs(nodes[s]["x"] - axis_x)
+                                    for s in spine_ids)
+            errs.append(sw_spine_axis_dev)
+        if wing_ids:
+            sw_midline_dev = max(abs(nodes[w]["y"] - axis_y)
+                                 for w in wing_ids)
+            errs.append(sw_midline_dev)
+        for up, down in spine_wing.get("mirror_pairs") or []:
+            if up in nodes and down in nodes:
+                errs.append(abs(nodes[up]["x"] - nodes[down]["x"]))
+                errs.append(abs((nodes[up]["y"] + nodes[down]["y"]) / 2
+                                - axis_y))
         sym_mirror_err = max(errs) if errs else None
         ys = sorted({p["y"] for v, p in nodes.items() if v not in deg0})
         pitch_uniform = (len(set(b - a for a, b in zip(ys, ys[1:]))) <= 1
@@ -630,9 +669,14 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     if column_mode:
         metrics["column_axis_deviation"] = (round(col_axis_dev, 2)
                                             if col_axis_dev is not None else None)
-    if sym_mode or bowtie_mode:
+    if sym_mode or bowtie_mode or spine_mode:
         metrics["symmetry_mirror_err"] = (round(sym_mirror_err, 2)
                                           if sym_mirror_err is not None else None)
+    if spine_mode:
+        metrics["spine_axis_deviation"] = (round(sw_spine_axis_dev, 2)
+                                           if sw_spine_axis_dev is not None else None)
+        metrics["midline_deviation"] = (round(sw_midline_dev, 2)
+                                        if sw_midline_dev is not None else None)
 
     # ref-scrubbed 交叉口径调整：crossings_zero 从硬门降为报告项（排布规律
     # 达标时允许 ≤2 交叉——「部分线相交可以接受，秩序与优美优先」）；分级
@@ -671,6 +715,25 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "anchors_smooth": metrics["anchor_violations"] == 0,
             "min_gap_ge_16": metrics["min_card_gap"] >= 16,
             "cv_le_035": metrics["spacing_cv"] <= 0.35,
+            "symmetry_mirror_le_2px": (metrics["symmetry_mirror_err"] is not None
+                                       and metrics["symmetry_mirror_err"] <= 2.0),
+            "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
+        }
+    elif spine_mode:
+        # 纵柱+翼位等价门（ref-scrubbed）：ring CV/模板拟合对纵柱+翼位形态的
+        # 等价口径 = 纵柱 x 对齐 ≤2px + 中线贴靠 ≤2px + 镜像对误差 ≤2px
+        # （crossings 为软目标报告项、确定性由 CLI 双跑逐字节一致门承载）
+        g = {
+            "box_press_zero": metrics["box_press_1px"] == 0,
+            "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
+            "anchors_smooth": metrics["anchor_violations"] == 0,
+            "min_gap_ge_16": metrics["min_card_gap"] >= 16,
+            "cv_le_035": metrics["spacing_cv"] <= 0.35,
+            "spine_axis_le_2px": (metrics["spine_axis_deviation"] is not None
+                                  and metrics["spine_axis_deviation"] <= 2.0),
+            "midline_adherence_le_2px": (metrics["midline_deviation"] is not None
+                                         and metrics["midline_deviation"] <= 2.0),
             "symmetry_mirror_le_2px": (metrics["symmetry_mirror_err"] is not None
                                        and metrics["symmetry_mirror_err"] <= 2.0),
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
@@ -721,6 +784,12 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
                    g["cv_le_035"] and g["symmetry_mirror_le_2px"])
+    elif spine_mode:
+        hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
+                   g["anchors_smooth"] and g["min_gap_ge_16"] and
+                   g["cv_le_035"] and g["spine_axis_le_2px"] and
+                   g["midline_adherence_le_2px"] and
+                   g["symmetry_mirror_le_2px"])
     else:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"] and
@@ -743,7 +812,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                       "放宽预算换的证书不冒充成品")
 
     out = {
-        "tool": "stdraw", "version": "0.7.0", "layer": layer,
+        "tool": "stdraw", "version": "0.7.1", "layer": layer,
         "graph": graph_name,
         "n": len(ids), "m": len(edges),
         "coords": "delivered/rounded",
@@ -752,7 +821,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "placement": ("ring-cycle" if ring_mode else
                       "column-chain" if column_mode else
                       "symmetric" if sym_mode else
-                      "bowtie-vertex" if bowtie_mode else "layered"),
+                      "bowtie-vertex" if bowtie_mode else
+                      "spine-wing" if spine_mode else "layered"),
         "metrics": metrics,
         "gates": g,
         "gates_passed": f"{g_pass}/{len(g)}",
@@ -822,6 +892,24 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         out["symmetry"] = {
             "shared_node": symmetry.get("shared_node"),
             "mirror_pairs": symmetry.get("mirror_pairs"),
+            "mirror_err": metrics.get("symmetry_mirror_err"),
+        }
+    if spine_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "纵柱+翼位口径（ref-scrubbed v0.7.1）：中枢对纵柱严格垂直居轴"
+            "（x 对齐 ≤2px 门）、翼位压中线水平带（贴靠 ≤2px 门）、"
+            "翼外镜像对上下对称（镜像误差 ≤2px 门）——对拍 jacky 手拉样本"
+            " classic-cld-growth-and-burden；判定=确定性拓扑度量"
+            "（中枢对公共邻居 ≥3 + rest 次级簇可配对 + 主链长度占比 ≤0.5），"
+            "详见 docs/layout-modes.md；纵柱边构造竖直直线，其余走 Router；"
+            "行对齐率/列吸附报告不适用（如实 None）"]
+        out["spine_wing"] = {
+            "spine": spine_wing.get("spine"),
+            "wings": spine_wing.get("wings"),
+            "mirror_pairs": spine_wing.get("mirror_pairs"),
+            "rest_single": spine_wing.get("rest_single"),
+            "spine_axis_deviation": metrics.get("spine_axis_deviation"),
+            "midline_deviation": metrics.get("midline_deviation"),
             "mirror_err": metrics.get("symmetry_mirror_err"),
         }
     return out

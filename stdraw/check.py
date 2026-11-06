@@ -285,6 +285,8 @@ def auto_geometry_report(layout: dict) -> dict:
     sym_mode = meta.get("placement") == "symmetric"
     # ref-scrubbed（美学 v3）领结共点：镜像轴 = 竖直轴 x + 水平轴 y（上下环镜像）
     bowtie_mode = meta.get("placement") == "bowtie-vertex"
+    # ref-scrubbed（v0.7.1）纵柱+翼位：纵柱 x 对轴 + 翼位贴中线 + 镜像对误差
+    spine_wing_mode = meta.get("placement") == "spine-wing"
     W, H = layout["viewBox"][2], layout["viewBox"][3]
     CARD_H = meta.get("cardH", 44)
     CW = {v: p.get("w", 140) for v, p in nodes.items()}
@@ -485,6 +487,27 @@ def auto_geometry_report(layout: dict) -> dict:
         bowtie_ok = bool(errs) and max(errs) <= 2.0
         chk("9. 领结共点排布规律性（镜像轴误差 ≤2px）", bowtie_ok,
             f"镜像轴误差 {max(errs):.2f}px" if errs else "meta.symmetry 缺失")
+    elif spine_wing_mode:
+        # 纵柱+翼位（ref-scrubbed）：纵柱 x 对轴 ≤2px + 翼位贴中线 ≤2px +
+        # 镜像对误差 ≤2px（与证书 metrics 同口径三处一致）
+        sw = meta.get("spine_wing") or {}
+        axis_x = sw.get("axis_x") if sw.get("axis_x") is not None else 0.0
+        axis_y = sw.get("axis_y") if sw.get("axis_y") is not None else 0.0
+        errs = []
+        for sv in sw.get("spine") or []:
+            if sv in nodes:
+                errs.append(abs(nodes[sv]["x"] - axis_x))
+        for w in sw.get("wings") or []:
+            if w in nodes:
+                errs.append(abs(nodes[w]["y"] - axis_y))
+        for up, down in sw.get("mirror_pairs") or []:
+            if up in nodes and down in nodes:
+                errs.append(abs(nodes[up]["x"] - nodes[down]["x"]))
+                errs.append(abs((nodes[up]["y"] + nodes[down]["y"]) / 2 - axis_y))
+        sw_ok = bool(errs) and max(errs) <= 2.0
+        chk("9. 纵柱+翼位排布规律性（纵柱对轴 + 中线贴靠 + 镜像 ≤2px）",
+            sw_ok,
+            f"最大偏差 {max(errs):.2f}px" if errs else "meta.spine_wing 缺失")
     else:
         chk("9. 简单图排布规律性" + ("（manual: N/A）" if manual_mode else ""),
             True if manual_mode else ((not simple) or (pitch_ok and snap >= 0.6)),
@@ -497,7 +520,8 @@ def auto_geometry_report(layout: dict) -> dict:
             (meta.get("position_engine") in ("cp-sat", "construct", "manual",
                                              "ring-construct",
                                              "column-construct", "sym-construct",
-                                             "bowtie-construct")))
+                                             "bowtie-construct",
+                                             "spine-construct")))
     chk("10. auto-v2 元数据完备", ok10,
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "
         f"engine={meta.get('position_engine')}")
