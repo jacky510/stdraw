@@ -304,8 +304,14 @@ class Triangulation:
         self.tri_sides = defaultdict(list)
         edge_side, chord_sides = {}, {}
         simple_faces = []
+        leaf_pairs = []                 # 2-圈（叶口袋）：[u, v]，叶挂邻居
         for face in faces:
-            simple_faces.extend(_split_face(face))
+            for w in _split_face(face):
+                if len(w) < 3:
+                    if len(w) == 2:
+                        leaf_pairs.append(w)
+                    continue
+                simple_faces.append(w)
 
         def real_side(x, y):
             key = tuple(sorted((x, y)))
@@ -357,6 +363,20 @@ class Triangulation:
             if len(ts) != 2:
                 raise AssertionError(f"侧 {sid} 相邻三角形数 {len(ts)} != 2")
             self.sides[sid]["t1"], self.sides[sid]["t2"] = ts
+        # 叶顶点（度 1：2-圈口袋被跳过，无三角形）→ 继承邻居的三角形集合。
+        # 语义 = cr 保持定理的「叶子放进邻居关联面 0 交叉重连」：叶位置可重选，
+        # 弧从叶出发等价于从其邻居关联的任意面出发（0 交叉接入）。
+        for pair in leaf_pairs:
+            u, v = pair
+            tu, tv = self.node_tris.get(u), self.node_tris.get(v)
+            if tu and not tv:
+                self.node_tris[v] = list(tu)
+            elif tv and not tu:
+                self.node_tris[u] = list(tv)
+            elif not tu and not tv:
+                merged = sorted(set(tu or []) | set(tv or []))
+                self.node_tris[u] = list(merged)
+                self.node_tris[v] = list(merged)
 
 
 # ────────────────────────── OIL 路由 ILP + oracle 裁决 ──────────────────────────
@@ -744,9 +764,121 @@ def _has_solver():
         return False
 
 
+def _greedy_insert_ub(nodes, edges, U_idx, F_idx, rotation):
+    """oil 插入失败时的诚实 UB：F 逐条增量插入当前平面化画法。
+
+    每步：当前平面图 P（初始 = U 嵌入，含此前 F 边的细分交叉点）→ 三角化
+    （含桥/割点口袋拆分）→ 对偶图 0/1-Dijkstra 找含两端点三角形间的最少
+    交叉路径 → 单边面路径插入可实现（经典定理）→ 细分更新 P 重嵌。
+    全部插完后用平面化 oracle（定理 C 同款 H 构造）终验一次；任何一步
+    失败返回 (None, None) 交上层兜底。非最优，如实 proven=False。"""
+    import heapq
+    import networkx as nx
+
+    def _route_and_insert(P, edge_of, a, b, xc_base):
+        """P 的三角化对偶上插 (a,b)：返回 (交叉的原始边 id 列表, 新 P, 新 edge_of)"""
+        planar, emb = nx.check_planarity(P)
+        if not planar:
+            return None, None, None, xc_base
+        rot = {v: list(emb.neighbors_cw_order(v)) for v in P.nodes}
+        P_edges = list(P.edges())
+        key = {tuple(sorted(e)): i for i, e in enumerate(P_edges)}
+        faces, ok = _faces_from_rotation(rot, list(P.nodes), P_edges)
+        if not ok:
+            return None, None, None, xc_base
+        tri = Triangulation(faces, key)
+        all_tris = list(range(len(tri.triangles)))
+        starts = tri.node_tris.get(a, all_tris) or all_tris
+        ends = tri.node_tris.get(b, all_tris) or all_tris
+        dist, parent = {}, {}
+        pq = []
+        for t in starts:
+            dist[t] = 0
+            parent[t] = None
+            heapq.heappush(pq, (0, t))
+        end_t = None
+        while pq:
+            d, t = heapq.heappop(pq)
+            if d > dist.get(t, 1 << 30):
+                continue
+            if t in ends:
+                end_t = t
+                break
+            for sid in tri.tri_sides[t]:
+                t1, t2 = tri.sides[sid]["t1"], tri.sides[sid]["t2"]
+                nt = t2 if t1 == t else t1
+                w = d + (1 if tri.sides[sid]["kind"] == "edge" else 0)
+                if w < dist.get(nt, 1 << 30):
+                    dist[nt] = w
+                    parent[nt] = (t, sid)
+                    heapq.heappush(pq, (w, nt))
+        if end_t is None:
+            return None, None, None, xc_base     # 对偶不连通（P 分离）——交上层兜底
+        crossed = []                    # 本路径穿过的 P 边（按路径序）
+        t = end_t
+        while parent[t] is not None and not (t in starts and dist[t] == 0):
+            pt, sid = parent[t]
+            if tri.sides[sid]["kind"] == "edge":
+                crossed.append(tri.sides[sid]["payload"])
+            t = pt
+        crossed.reverse()
+        # 细分更新 P：交叉点按路径序插入被穿边（同 _planarized_graph 语义）。
+        # 被穿边的两个细分段仍属原边（映射继承）；F 路径段标记 ("F", k)。
+        split = {}
+        xc_tag = [xc_base]
+        prev = a
+        for pe in crossed:
+            x = f"X#{xc_tag[0]}"
+            xc_tag[0] += 1
+            ga, gb = split.get(pe, P_edges[pe])
+            oid = edge_of.get(tuple(sorted((ga, gb))))
+            P.remove_edge(ga, gb)
+            P.add_edge(ga, x)
+            P.add_edge(x, gb)
+            edge_of[(ga, x)] = oid
+            edge_of[(x, gb)] = oid
+            split[pe] = (ga, x)
+            P.add_edge(prev, x)
+            edge_of[tuple(sorted((prev, x)))] = ("F", k)
+            prev = x
+        P.add_edge(prev, b)
+        edge_of[tuple(sorted((prev, b)))] = ("F", k)
+        orig = [edge_of.get(tuple(sorted(P_edges[pe]))) for pe in crossed]
+        return orig, P, edge_of, xc_tag[0]
+
+    U_key = {}
+    for i in U_idx:
+        U_key[tuple(sorted(edges[i]))] = i
+    U_edges = [edges[i] for i in U_idx]
+    faces, ok = _faces_from_rotation(rotation, nodes, U_edges)
+    if not ok:
+        return None, None
+    try:
+        Triangulation(faces, U_key)     # 初始嵌入结构自检
+    except AssertionError:
+        return None, None
+    P = nx.Graph()
+    P.add_nodes_from(nodes)
+    for i in U_idx:
+        P.add_edge(*edges[i])
+    edge_of = {tuple(sorted(edges[i])): i for i in U_idx}
+    routes, total = {}, 0
+    xc = 0
+    for k, (a, b) in enumerate([edges[i] for i in F_idx]):
+        orig, P, edge_of, xc = _route_and_insert(P, edge_of, a, b, xc)
+        if orig is None:
+            return None, None
+        routes[F_idx[k]] = {"a": a, "b": b, "crossings": orig}
+        total += len(orig)
+    if not nx.is_planar(P):             # 终验：P 即平面化图 H（定理 C 语义）
+        return None, None
+    witness = {"F": list(F_idx), "routes": routes, "mutual": []}
+    return total, witness
+
+
 def _core_heuristic(nodes, edges):
     U, F = _heuristic_planarization(nodes, edges)
-    ub, witness = None, None
+    ub, witness, rot = None, None, None
     if _has_solver():
         rot = _embed_U(nodes, edges, U)
         if rot is not None:
@@ -754,8 +886,10 @@ def _core_heuristic(nodes, edges):
             if r.get("ok") and r.get("cost") is not None:
                 ub = r["cost"]
                 witness = {"F": F, "routes": r["routes"], "mutual": r["mutual"]}
+    if ub is None and rot is not None:
+        ub, witness = _greedy_insert_ub(nodes, edges, U, F, rot)
     if ub is None:
-        ub = len(F)
+        ub = len(F)             # 嵌入也无效的最后兜底（如实 partial 未证）
     lb, _ = _kuratowski_lb(nodes, edges)
     return {"ub": ub, "lb": lb, "proven": False, "coverage": "partial",
             "method": "heuristic planarization (optimality not proven)",
@@ -788,8 +922,12 @@ def _core_exact(nodes, edges, subset_cap, rotation_cap, max_nogood):
         if r.get("ok") and r.get("cost") is not None:
             best_ub = r["cost"]
             witness = {"F": F, "routes": r["routes"], "mutual": r["mutual"]}
+    if best_ub is None and rot is not None:
+        # oil 未收敛（nogood-cap 等）：贪心逐边插入的诚实 UB（带 witness）。
+        # 注意 len(F) 不是恒真上界（K7：F=6 < cr=9），不可作参考值。
+        best_ub, witness = _greedy_insert_ub(nodes, edges, U, F, rot)
     if best_ub is None:
-        best_ub = len(F)
+        best_ub = len(F)        # 嵌入也无效的最后兜底（如实 partial 未证）
     lb, _ks = _kuratowski_lb(nodes, edges)
     if lb >= best_ub:
         return {"ub": best_ub, "lb": lb, "proven": True, "coverage": "full",
