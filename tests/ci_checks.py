@@ -101,8 +101,8 @@ def main():
                 if a.read() != b.read():
                     failures.append(f"ortho {ex}: layout.json 漂移 vs tests/baselines/"
                                     f"（生产行为 pin 被破坏——planar.py 必须冻结）")
-            # 确定性
-            for fn in ("layout.json", "demo-2d.html"):
+            # 确定性（ref-scrubbed：loops_audit.json 纳入逐字节确定性清单）
+            for fn in ("layout.json", "demo-2d.html", "loops_audit.json"):
                 with open(os.path.join(out1, fn), "rb") as a, \
                      open(os.path.join(out2, fn), "rb") as b:
                     if a.read() != b.read():
@@ -152,8 +152,9 @@ def main():
             audit = load(out1, "loops_audit.json")
             if audit["summary"]["problems"] != 0:
                 failures.append(f"auto {ex}: loops problems={audit['summary']['problems']}")
-            # 确定性
-            for fn in ("layout.json", "certificate.json", "demo-2d.html"):
+            # 确定性（ref-scrubbed：loops_audit.json 纳入逐字节确定性清单）
+            for fn in ("layout.json", "certificate.json", "demo-2d.html",
+                       "loops_audit.json"):
                 with open(os.path.join(out1, fn), "rb") as a, \
                      open(os.path.join(out2, fn), "rb") as b:
                     if a.read() != b.read():
@@ -182,7 +183,8 @@ def main():
             if (m.get("edge_box_min_clear") or 0) < 16:
                 failures.append(f"random {ex}: edge_box_min_clear="
                                 f"{m.get('edge_box_min_clear')} < 16")
-            for fn in ("layout.json", "demo-2d.html"):
+            # 确定性（ref-scrubbed：loops_audit.json 纳入逐字节确定性清单）
+            for fn in ("layout.json", "demo-2d.html", "loops_audit.json"):
                 with open(os.path.join(out1, fn), "rb") as a, \
                      open(os.path.join(out2, fn), "rb") as b:
                     if a.read() != b.read():

@@ -85,7 +85,13 @@ def loops_audit(graph: Graph) -> dict:
             report["problems"].append(f"环 {lid}（{lp.label}）没有任何边打该标签")
 
     # ── 3. 独立枚举全部简单回路 ──
+    # 回路以规范化有向元组存储（最小节点旋到首位的路径序）：frozenset 会把
+    # 「同节点集的不同有向回路」折叠成一条，且迭代序随 PYTHONHASHSEED 漂移，
+    # 曾导致 loops_audit.json 两轮渲染 neg_edges/kind 互换（ref-scrubbed）。
     cycles = set()
+
+    def canon_cycle(path):
+        return min(tuple(path[i:] + path[:i]) for i in range(len(path)))
 
     def walk(cur, start, path, seen_e):
         if len(path) > MAX_ENUM_DEPTH:
@@ -94,7 +100,7 @@ def loops_audit(graph: Graph) -> dict:
             if (cur, nxt) in seen_e:
                 continue
             if nxt == start and len(path) >= 2:
-                cycles.add(frozenset(path))
+                cycles.add(canon_cycle(path))
                 continue
             if nxt in path:
                 continue
@@ -105,27 +111,26 @@ def loops_audit(graph: Graph) -> dict:
 
     def cycle_kind(cyc):
         negs = 0
-        members = list(cyc)
-        for i in range(len(members)):
-            a, b = members[i], members[(i + 1) % len(members)]
-            if (a, b) in edge_loops or (b, a) in edge_loops:
-                pols = [e.polarity for e in graph.edges
-                        if (e.a, e.b) in ((a, b), (b, a))]
-                if "-" in pols:
-                    negs += 1
+        for i in range(len(cyc)):
+            a, b = cyc[i], cyc[(i + 1) % len(cyc)]
+            pols = [e.polarity for e in graph.edges
+                    if (e.a, e.b) in ((a, b), (b, a))]
+            if pols and "-" in pols:
+                negs += 1
         return "B" if negs % 2 else "R", negs
 
     declared_node_sets = [frozenset(lp.nodes) for lp in graph.loops]
-    for cyc in sorted(cycles, key=lambda c: sorted(c)):
+    for cyc in sorted(cycles):          # 元组序 = 确定性全序，无平局歧义
         kind, negs = cycle_kind(cyc)
+        cset = frozenset(cyc)
         match = next((lp.id for lp, s in zip(graph.loops, declared_node_sets)
-                      if s == cyc), None)
+                      if s == cset), None)
         report["extra_cycles"].append({
             "nodes": sorted(cyc), "kind": kind, "neg_edges": negs,
             "matches_declared": match})
         if match is None:
             report["problems"].append(
-                f"存在未声明回路 {'->'.join(sorted(cyc))}（{kind}，负边 {negs} 条）")
+                f"存在未声明回路 {'->'.join(cyc)}（{kind}，负边 {negs} 条）")
 
     report["summary"] = {
         "declared": len(declared),
