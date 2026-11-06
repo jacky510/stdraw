@@ -43,12 +43,15 @@ def load_manual_layout(path: str) -> dict:
 
     接受完整 layout.json 或 demo-2d.html「导出布局」子集
     （{nodes: {id: {x,y}|[x,y]}, viewBox}）。source 记文件名供 meta 溯源。
+    ref-scrubbed：可选 edges: [{a, b, waypoints: [[x,y],...]}]——用户在
+    demo-2d 折点把手上手动锚定的 waypoints，--from-layout 按同口径复算。
     """
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
     if "nodes" not in raw:
         raise ValueError(f"{path}: 手动布局缺 nodes（节点 id→x,y）")
     return {"nodes": raw["nodes"], "viewBox": raw.get("viewBox"),
+            "edges": raw.get("edges"),
             "source": os.path.basename(path)}
 
 
