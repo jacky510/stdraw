@@ -29,6 +29,12 @@ PAIR_SEP_W = 600.0     # 重合惩罚权重（对缺口线性；全重合 ≈600
 PAIR_VG_OFF = 12       # 互环对 vg/绕行候选的锚点切向偏移（两方向反号 → 平行走廊）
 ROUND_GUARD = 0.15     # 交付舍入（0.1px）保守余量：贴边 <0.15px 判违例
 
+# 线-线视觉重合定向重定线口径（ref-scrubbed）：random n10 扇出边经同一行间
+# 走廊候选（stair/lane，y=行心±pitch/2）逐段 <1px 贴合。口径正本 = 本模块
+# span_one_way_segs，证书侧 metrics._coincidence_span 两方向委托同源。
+COINCIDE_THR = 1.0          # 距离 <1px 视为贴合（与证书口径同源）
+COINCIDE_SPAN = 8.0         # 贴合累计 >8px 才计「视觉重合」（端点会合豁免）
+
 EPS = 1e-9
 
 
@@ -69,6 +75,37 @@ def sample_polyline(points, step=SAMPLE_STEP):
             out.append((x1 + (x2 - x1) * t, y1 + (y2 - y1) * t))
     out.append(tuple(points[-1]))
     return out
+
+
+def _pt_seg_dist(p, a, b):
+    """点到线段距离（线-线贴合判定用）。"""
+    vx, vy = b[0] - a[0], b[1] - a[1]
+    l2 = vx * vx + vy * vy
+    if l2 < EPS:
+        return math.hypot(p[0] - a[0], p[1] - a[1])
+    t = max(0.0, min(1.0, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / l2))
+    return math.hypot(p[0] - a[0] - t * vx, p[1] - a[1] - t * vy)
+
+
+def span_one_way_segs(samples, segs, step=SAMPLE_STEP, thr=COINCIDE_THR):
+    """采样点列对线段集合的单向贴合跨度（px）——线-线视觉重合口径正本。
+
+    metrics._coincidence_span（证书侧，两方向取大）委托本函数；
+    路由侧候选对已定线只需 src→已定线单向（长跨度并行贴合必双向 <thr，
+    端点会合瞬时接触两个方向都只给 1-2 个采样步，不越 8px 豁免门）。
+    """
+    total = 0.0
+    for p in samples:
+        dmin = float("inf")
+        for s in segs:
+            d = _pt_seg_dist(p, s[0], s[1])
+            if d < dmin:
+                dmin = d
+                if dmin < thr:
+                    break
+        if dmin < thr:
+            total += step
+    return total
 
 
 def quad_points(p0, ctrl, p1, n=24):
@@ -653,6 +690,141 @@ class Router:
                    else 0.0)
         return (4000 * info.get("press", 0) + 40 * info.get("cross", 0) +
                 clr_pen + ang_pen + 0.01 * length)
+
+    # -- 线-线视觉重合定向重定线（ref-scrubbed）--
+    def _pair_coincide_span(self, pts_a, pts_b):
+        """两条折线的贴合跨度（px，双向取大）——与证书 _coincidence_span 同源。"""
+        sa = sample_polyline(pts_a)
+        sb = sample_polyline(pts_b)
+        return max(span_one_way_segs(sa, list(zip(sb[:-1], sb[1:]))),
+                   span_one_way_segs(sb, list(zip(sa[:-1], sa[1:]))))
+
+    def _route_coincide_pairs(self, routes):
+        """最终路线两两贴合跨度 > COINCIDE_SPAN 的边对（确定性升序）。"""
+        idx = sorted(routes.keys())
+        out = []
+        for a in range(len(idx)):
+            for b in range(a + 1, len(idx)):
+                ia, ib = idx[a], idx[b]
+                span = self._pair_coincide_span(routes[ia]["points"],
+                                                routes[ib]["points"])
+                if span > COINCIDE_SPAN:
+                    out.append((ia, ib, span))
+        return out
+
+    def _reroute_candidates(self, a, b, i):
+        """重定线候选池：历史候选池 + 锚点变体 vg 分离变体（ref-scrubbed）。
+
+        通用化 F1 互环对分离机制：fan-in/out 兄弟边同膨胀同锚的最短路贴同
+        一障碍角逐点重合——枚举 `_anchor_variants` 框边锚点位 × 切向偏移
+        ±PAIR_VG_OFF 规划 vg（锚点仍在框边上，check13 渲染/核验契约不变，
+        ownbox 切入由 _evaluate 的端点/框内检查天然拒收），走廊走不同障碍角
+        天然分离且净距门依旧成立。只在本通道（重合定向重定线）启用，基线
+        候选池零扰动。确定性枚举。
+        """
+        cands = list(self._candidates(a, b, i))
+        rects = [n for v, n in self.N.items() if v not in (a, b)]
+        if rects:
+            c_vg = self.cl + VG_PAD
+            for pa, pb in self._anchor_variants(a, b):
+                for off in (0, PAIR_VG_OFF, -PAIR_VG_OFF):
+                    sa, sb = ((pa, pb) if not off
+                              else self._offset_anchors(a, b, pa, pb, off))
+                    route = _vis.plan_route(sa, sb, rects, c_vg)
+                    if route:
+                        cands.append(("vg", route["dense"], sa, sb, route))
+        return cands
+
+    def coincide_reroute(self, routes, frozen=(), max_sweeps=3):
+        """对计入线-线视觉重合的边做定向重定线（硬门不回退前提下降贴合跨度）。
+
+        只动重合对涉及的边（frozen：构造路线/用户 waypoints 锚定的边不动；
+        互环对走专用机制，本通道也不动）。替换须同时满足：压线=0、净距
+        ≥clearance、锚点平滑、与其余已定线交叉边数不增、对任意其余边的
+        贴合跨度严格下降（不留新贴合对）。固定遍历序 + 固定候选序，无 RNG。
+        基线零重合的图（classic 全域）无受影响边——输出逐字节不变。
+        """
+        for _ in range(max_sweeps):
+            pairs = self._route_coincide_pairs(routes)
+            if not pairs:
+                break
+            affected = sorted({k for i, j, _s in pairs for k in (i, j)
+                               if k not in frozen})
+            changed = False
+            for i in affected:
+                a, b = self.edges[i]
+                cur = routes[i]
+                cands = self._reroute_candidates(a, b, i)
+                base = {}       # j -> (segs, per-seg bb)（交叉判定复用）
+                base_pts = {}   # j -> 折线点列
+                base_pbox = {}  # j -> 全折线包围盒（贴合预过滤）
+                for j, info in routes.items():
+                    if j == i:
+                        continue
+                    pts_j = info["points"]
+                    segs = list(zip(pts_j[:-1], pts_j[1:]))
+                    bb = [(min(p[0], q[0]), min(p[1], q[1]),
+                           max(p[0], q[0]), max(p[1], q[1])) for p, q in segs]
+                    base[j] = (segs, bb)
+                    base_pts[j] = pts_j
+                    base_pbox[j] = (min(x[0] for x in bb), min(x[1] for x in bb),
+                                    max(x[2] for x in bb), max(x[3] for x in bb))
+
+                def span_vs_routes(samples):
+                    total = 0.0
+                    for j, (jl, jt, jh, jb) in base_pbox.items():
+                        if (jl - samples["_h"][0] > COINCIDE_THR or
+                                samples["_l"][0] - jh > COINCIDE_THR or
+                                jt - samples["_h"][1] > COINCIDE_THR or
+                                samples["_l"][1] - jb > COINCIDE_THR):
+                            continue
+                        total = max(total, span_one_way_segs(
+                            samples["pts"], base[j][0]))
+                    return total
+
+                cur_samples = sample_polyline(cur["points"])
+                cur_s = {"pts": cur_samples,
+                         "_l": (min(p[0] for p in cur_samples),
+                                min(p[1] for p in cur_samples)),
+                         "_h": (max(p[0] for p in cur_samples),
+                                max(p[1] for p in cur_samples))}
+                cur_span = span_vs_routes(cur_s)
+                cur_cross = sum(1 for pts_j in base_pts.values()
+                                if self._poly_cross(cur["points"], pts_j))
+                best = None
+                for cand in cands:
+                    sc, info = self._evaluate(cand, a, b, base, None)
+                    if info is None or info.get("press", 0):
+                        continue
+                    mc = info.get("min_clear")
+                    if mc is not None and mc < self.cl - 1e-6:
+                        continue          # 硬门：边-框净距
+                    if min(info.get("ang_a", 0.0), info.get("ang_b", 0.0)) \
+                            < ANCHOR_MIN_DEG:
+                        continue          # 硬门：锚点平滑
+                    if (min(a, b), max(a, b)) in self.mutual:
+                        continue          # 互环对走专用机制
+                    pts_n = info["points"]
+                    s_n = sample_polyline(pts_n)
+                    s_ns = {"pts": s_n,
+                            "_l": (min(p[0] for p in s_n),
+                                   min(p[1] for p in s_n)),
+                            "_h": (max(p[0] for p in s_n),
+                                   max(p[1] for p in s_n))}
+                    span = span_vs_routes(s_ns)
+                    cross = sum(1 for pts_j in base_pts.values()
+                                if self._poly_cross(pts_n, pts_j))
+                    if cross > cur_cross:
+                        continue          # 交叉数不增
+                    key = (span, cross, sc)
+                    if best is None or key < best[0]:
+                        best = (key, info)
+                if best is not None and best[0][0] < cur_span - 1e-9:
+                    routes[i] = best[1]
+                    changed = True
+            if not changed:
+                break
+        return routes
 
     def _pair_cross_vs_base(self, pts, base):
         """（诊断保留）单边对其余已定线快照的交叉边数。"""
