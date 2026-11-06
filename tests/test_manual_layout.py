@@ -211,7 +211,6 @@ def main():
         # ── G. ref-scrubbed：waypoints 全链（折点把手 → 导出 → --from-layout 复算）──
         # 夹具：第三节点压直线边中点 → from-layout 产出 vg 折线（jacky 场景）
         vg_edge = None
-        blocker_manual = None
         for e in lay_a["edges"]:
             if e["route"]["kind"] not in ("line", "arc"):
                 continue
@@ -234,7 +233,6 @@ def main():
                 vgs = [x for x in lay_try["edges"] if x["route"]["kind"] == "vg"]
                 if vgs:
                     vg_edge = vgs[0]
-                    blocker_manual = man_try
                     break
             if vg_edge:
                 break
@@ -243,11 +241,19 @@ def main():
         if vg_edge:
             wps = [[int(round(p[0])), int(round(p[1]))]
                    for p in vg_edge["route"]["via"][1:-1]]
-            blocker_manual["edges"] = [{"a": vg_edge["a"], "b": vg_edge["b"],
-                                        "waypoints": wps}]
+            # ref-scrubbed：wps 取自 fixture 的交付坐标——--from-layout 交付前
+            # 有 dx/dy 归一平移（v0.6.x 夹具实测 +16px），复算底座必须同帧，
+            # 否则 waypoints 相对节点整体错位 16px → 净距门假破（G1 15.8px）。
+            # 故底座取交付后的 fixture 节点坐标（identity 复算零平移，实测）。
+            lay_try = load(os.path.join(out_try, "layout.json"))
+            wp_base = {"viewBox": lay_try["viewBox"],
+                       "nodes": {v: {"x": q["x"], "y": q["y"]}
+                                 for v, q in lay_try["nodes"].items()}}
+            wp_base["edges"] = [{"a": vg_edge["a"], "b": vg_edge["b"],
+                                 "waypoints": wps}]
             wpth = os.path.join(tmp, "wp-manual.json")
             with open(wpth, "w", encoding="utf-8") as f:
-                json.dump(blocker_manual, f, ensure_ascii=False)
+                json.dump(wp_base, f, ensure_ascii=False)
             out_w1 = os.path.join(tmp, "wp1")
             out_w2 = os.path.join(tmp, "wp2")
             r_w1 = run(["layout", EX, "--outdir", out_w1, "--skip-3d",

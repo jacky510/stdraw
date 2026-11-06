@@ -242,7 +242,17 @@ def main():
                     vg = [(i, x) for i, x in enumerate(lay_m["edges"])
                           if x["route"]["kind"] == "vg"]
                     if vg:
-                        found = (vg[0][0], fa, fb, c, out_m, manual, mpth)
+                        # ref-scrubbed：对拍配对必须用 vg 边自身的端点——v0.6.x
+                        # 布线下被阻塞的目标边可能改走 poly（折角类型代价
+                        # vg+120 > poly+40，路由择优），首个 vg 辗转落到别的
+                        # 边上（实测 (rate,adopters)）；且 c 不得是 vg 边端点
+                        # （blocker 腿要拖的是障碍，不是端点）。
+                        for i_vg, x_vg in vg:
+                            va, vb = x_vg["a"], x_vg["b"]
+                            if c not in (va, vb):
+                                found = (i_vg, va, vb, c, out_m, manual, mpth)
+                                break
+                    if found:
                         break
                 if found:
                     break
