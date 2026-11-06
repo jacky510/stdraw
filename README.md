@@ -134,6 +134,28 @@ stdraw layout input.cld --outdir out-manual --skip-3d \
 stdraw layout-diff out/layout.json out-manual/layout.json --cld input.cld --diff-out diff.json
 ```
 
+### Waypoint handles (detour fold points are draggable, not fixed)
+
+Since v0.5.3 the touch-up layer re-routes **all line styles live** while you drag
+(straight / arc / visibility-graph fold lines alike — fold vertices are
+recomputed every frame against current obstacles; nothing is pinned). Edges that
+detour around obstacles render each fold point as a small **drag handle**
+(hover shows a move cursor):
+
+- drag a handle → that edge becomes *user-pinned*; node drags afterwards only
+  re-anchor its endpoints, your waypoints stay;
+- 「导出布局」 writes `edges: [{a, b, waypoints: [[x,y],...]}]` for pinned
+  edges; `--from-layout` replays the exact same polyline (anchors recomputed on
+  the box borders toward the first/last waypoint) and the certificate re-checks
+  the delivered geometry honestly — including your waypoints;
+- 「重置」 clears all pins and restores the engine layout.
+
+```bash
+# after dragging handles + export:
+stdraw layout input.cld --outdir out-manual --skip-3d --from-layout graph-manual-layout.json
+# layout.json now carries route kind "waypoints" with via = your fold points
+```
+
 ## DSL in One Minute
 
 Line-oriented text, `#` starts a comment:

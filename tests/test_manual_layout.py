@@ -208,6 +208,125 @@ def main():
                cohesion(lay_dm, ["debt", "credit", "rate", "interest", "deficit"])) < 0.002,
            d["semantic"]["loops"])
 
+        # ── G. ref-scrubbed：waypoints 全链（折点把手 → 导出 → --from-layout 复算）──
+        # 夹具：第三节点压直线边中点 → from-layout 产出 vg 折线（jacky 场景）
+        vg_edge = None
+        blocker_manual = None
+        for e in lay_a["edges"]:
+            if e["route"]["kind"] not in ("line", "arc"):
+                continue
+            fa, fb = e["a"], e["b"]
+            for fc in lay_a["nodes"]:
+                if fc in (fa, fb):
+                    continue
+                man_try = json.loads(json.dumps(ident))
+                mxx = (lay_a["nodes"][fa]["x"] + lay_a["nodes"][fb]["x"]) / 2
+                myy = (lay_a["nodes"][fa]["y"] + lay_a["nodes"][fb]["y"]) / 2
+                man_try["nodes"][fc] = {"x": int(mxx) - int(mxx) % 2,
+                                        "y": int(myy) - int(myy) % 2}
+                pth = os.path.join(tmp, "wp-fixture.json")
+                with open(pth, "w", encoding="utf-8") as f:
+                    json.dump(man_try, f, ensure_ascii=False)
+                out_try = os.path.join(tmp, "wp-fixture")
+                run(["layout", EX, "--outdir", out_try, "--skip-3d",
+                     "--from-layout", pth])
+                lay_try = load(os.path.join(out_try, "layout.json"))
+                vgs = [x for x in lay_try["edges"] if x["route"]["kind"] == "vg"]
+                if vgs:
+                    vg_edge = vgs[0]
+                    blocker_manual = man_try
+                    break
+            if vg_edge:
+                break
+        ok("G0 vg fixture built", vg_edge is not None,
+           f"{vg_edge['a']}->{vg_edge['b']}" if vg_edge else "no vg")
+        if vg_edge:
+            wps = [[int(round(p[0])), int(round(p[1]))]
+                   for p in vg_edge["route"]["via"][1:-1]]
+            blocker_manual["edges"] = [{"a": vg_edge["a"], "b": vg_edge["b"],
+                                        "waypoints": wps}]
+            wpth = os.path.join(tmp, "wp-manual.json")
+            with open(wpth, "w", encoding="utf-8") as f:
+                json.dump(blocker_manual, f, ensure_ascii=False)
+            out_w1 = os.path.join(tmp, "wp1")
+            out_w2 = os.path.join(tmp, "wp2")
+            r_w1 = run(["layout", EX, "--outdir", out_w1, "--skip-3d",
+                        "--from-layout", wpth])
+            run(["layout", EX, "--outdir", out_w2, "--skip-3d",
+                 "--from-layout", wpth])
+            geo_w = load(os.path.join(out_w1, "geometry_report.json"))
+            lay_w = load(os.path.join(out_w1, "layout.json"))
+            e_w = next(x for x in lay_w["edges"]
+                       if (x["a"], x["b"]) == (vg_edge["a"], vg_edge["b"]))
+            ok("G1 waypoints honored (kind/via/geometry)",
+               r_w1.returncode == 0 and geo_w["fail"] == 0 and
+               e_w["route"]["kind"] == "waypoints" and
+               e_w["route"]["via"] == [[float(q[0]), float(q[1])]
+                                       for q in wps] and
+               lay_w["meta"]["from_layout"].get("waypoint_edges") == 1,
+               f"rc={r_w1.returncode} fail={geo_w['fail']} "
+               f"kind={e_w['route']['kind']} via={e_w['route'].get('via')}")
+            # 证书几何复检口径含 waypoints：route.points = 锚 + waypoints + 锚
+            pts_w = e_w["route"]["points"]
+            ok("G2 route.points embed waypoints (certificate caliber)",
+               len(pts_w) == len(wps) + 2 and
+               all(math.hypot(pts_w[k + 1][0] - wps[k][0],
+                              pts_w[k + 1][1] - wps[k][1]) < 0.6
+                   for k in range(len(wps))),
+               f"n_pts={len(pts_w)} n_wps={len(wps)}")
+            det_w = all(open(os.path.join(out_w1, fn), "rb").read() ==
+                        open(os.path.join(out_w2, fn), "rb").read()
+                        for fn in ("layout.json", "certificate.json",
+                                   "demo-2d.html"))
+            ok("G3 waypoints layout deterministic (byte-identical x2)", det_w)
+            # 锚点口径：首/末点贴自家框边（borderPoint 朝向首/末 waypoint）
+            ea = lay_w["nodes"][vg_edge["a"]]
+            p0 = pts_w[0]
+            ok("G4 anchor on a-side box border",
+               abs(math.hypot(abs(abs(p0[0] - ea["x"]) - ea["w"] / 2),
+                              abs(abs(p0[1] - ea["y"]) - lay_w["meta"]["cardH"] / 2))) < 0.9
+               or (abs(p0[0] - ea["x"]) <= ea["w"] / 2 + 0.6 and
+                   abs(abs(p0[1] - ea["y"]) - lay_w["meta"]["cardH"] / 2) < 0.6) or
+               (abs(p0[1] - ea["y"]) <= lay_w["meta"]["cardH"] / 2 + 0.6 and
+                abs(abs(p0[0] - ea["x"]) - ea["w"] / 2) < 0.6),
+               f"p0={p0} a={ea}")
+            # layout-diff 对 waypoints 布局可用（全链第三层）
+            dpath_w = os.path.join(tmp, "wp-diff.json")
+            r_dw = run(["layout-diff", os.path.join(out_auto, "layout.json"),
+                        os.path.join(out_w1, "layout.json"),
+                        "--cld", EX, "--diff-out", dpath_w])
+            ok("G5 layout-diff accepts waypoints layout", r_dw.returncode == 0,
+               r_dw.stderr[-120:])
+
+        # H. ref-scrubbed：waypoints 诚实报错（未知边/坏格式 → exit 2）
+        bad1 = json.loads(json.dumps(ident))
+        bad1["edges"] = [{"a": "nope", "b": "nada", "waypoints": [[1, 2]]}]
+        bp1 = os.path.join(tmp, "wp-bad1.json")
+        with open(bp1, "w", encoding="utf-8") as f:
+            json.dump(bad1, f, ensure_ascii=False)
+        rc_b1 = run(["layout", EX, "--outdir", os.path.join(tmp, "wpbad1"),
+                     "--skip-3d", "--from-layout", bp1])
+        ok("H1 unknown edge in waypoints → exit 2",
+           rc_b1.returncode == 2 and "不存在" in (rc_b1.stderr + rc_b1.stdout),
+           rc_b1.stderr[-120:])
+        bad2 = json.loads(json.dumps(ident))
+        bad2["edges"] = [{"a": lay_a["edges"][0]["a"],
+                          "b": lay_a["edges"][0]["b"],
+                          "waypoints": [["x", "y"]]}]
+        bp2 = os.path.join(tmp, "wp-bad2.json")
+        with open(bp2, "w", encoding="utf-8") as f:
+            json.dump(bad2, f, ensure_ascii=False)
+        rc_b2 = run(["layout", EX, "--outdir", os.path.join(tmp, "wpbad2"),
+                     "--skip-3d", "--from-layout", bp2])
+        ok("H2 non-numeric waypoint → exit 2",
+           rc_b2.returncode == 2 and "非数值" in (rc_b2.stderr + rc_b2.stdout),
+           rc_b2.stderr[-120:])
+        # 无 edges 字段 = 原行为（A1 已覆盖恒等；此处验证缺省不受影响）
+        rc_ne = run(["layout", EX, "--outdir", os.path.join(tmp, "wp-noedge"),
+                     "--skip-3d", "--from-layout", ip])
+        ok("H3 manual without edges key unchanged (rc=0)", rc_ne.returncode == 0,
+           rc_ne.stderr[-100:])
+
         print()
         if failures:
             print("FAILURES:", failures)

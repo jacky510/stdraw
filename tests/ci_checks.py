@@ -277,6 +277,77 @@ def main():
                     print("OK  manual-loop: --from-layout 恒等复现 fail=0 + "
                           "layout-diff 三层齐备")
 
+        # ── F2. ref-scrubbed：--from-layout waypoints 恒等复算（折点把手全链）──
+        # 夹具：第三节点压直线边中点 → vg 折线；其 via 角点原样锚定喂回，
+        # 必须得到 kind=waypoints 的同一折线（锚点重算贴框边）且确定性成立。
+        lay_g = load(out_f, "layout.json")
+        vg_e = next((x for x in lay_g["edges"] if x["route"]["kind"] == "vg"), None)
+        if vg_e is None:
+            # classic 现行布局无 vg 边：构造压线夹具（挪第三节点到边中点）
+            for e_c in lay_g["edges"]:
+                if e_c["route"]["kind"] not in ("line", "arc"):
+                    continue
+                fa2, fb2 = e_c["a"], e_c["b"]
+                for fc2 in lay_g["nodes"]:
+                    if fc2 in (fa2, fb2):
+                        continue
+                    man2 = {"viewBox": lay_g["viewBox"],
+                            "nodes": {v: {"x": p["x"], "y": p["y"]}
+                                      for v, p in lay_g["nodes"].items()}}
+                    mx2 = (lay_g["nodes"][fa2]["x"] + lay_g["nodes"][fb2]["x"]) / 2
+                    my2 = (lay_g["nodes"][fa2]["y"] + lay_g["nodes"][fb2]["y"]) / 2
+                    man2["nodes"][fc2] = {"x": int(mx2) - int(mx2) % 2,
+                                          "y": int(my2) - int(my2) % 2}
+                    p2 = os.path.join(tmp, "ci-wp-fixture.json")
+                    with open(p2, "w", encoding="utf-8") as f:
+                        json.dump(man2, f, ensure_ascii=False)
+                    o2 = os.path.join(tmp, name + "-wp-fixture")
+                    run_cli(ex, o2, ("--from-layout", p2), pitch=None)
+                    lay2 = load(o2, "layout.json")
+                    vg_e = next((x for x in lay2["edges"]
+                                 if x["route"]["kind"] == "vg"), None)
+                    if vg_e:
+                        ident.update({"nodes": man2["nodes"],
+                                      "viewBox": man2["viewBox"]})
+                        break
+                if vg_e:
+                    break
+        if vg_e is None:
+            failures.append("manual-waypoints: 无法构造 vg 夹具（corpus 布局变更？）")
+        else:
+            ident["edges"] = [{"a": vg_e["a"], "b": vg_e["b"],
+                               "waypoints": [[int(round(p[0])), int(round(p[1]))]
+                                             for p in vg_e["route"]["via"][1:-1]]}]
+            ipath2 = os.path.join(tmp, "ci-wp-manual.json")
+            with open(ipath2, "w", encoding="utf-8") as f:
+                json.dump(ident, f, ensure_ascii=False)
+            out_w1 = os.path.join(tmp, name + "-wp-1")
+            out_w2 = os.path.join(tmp, name + "-wp-2")
+            r_w1 = run_cli(ex, out_w1, ("--from-layout", ipath2), pitch=None)
+            run_cli(ex, out_w2, ("--from-layout", ipath2), pitch=None)
+            geo_w = load(out_w1, "geometry_report.json")
+            lay_w = load(out_w1, "layout.json")
+            e_w = next((x for x in lay_w["edges"]
+                        if (x["a"], x["b"]) == (vg_e["a"], vg_e["b"])), None)
+            want_via = [[float(q[0]), float(q[1])]
+                        for q in ident["edges"][0]["waypoints"]]
+            if (r_w1.returncode != 0 or geo_w.get("fail", 0) != 0 or
+                    not e_w or e_w["route"]["kind"] != "waypoints" or
+                    e_w["route"].get("via") != want_via or
+                    len(e_w["route"]["points"]) != len(want_via) + 2):
+                failures.append(f"manual-waypoints: 复算不一致 rc={r_w1.returncode} "
+                                f"fail={geo_w.get('fail')} kind="
+                                f"{e_w['route']['kind'] if e_w else '?'}")
+            else:
+                for fn in ("layout.json", "demo-2d.html"):
+                    with open(os.path.join(out_w1, fn), "rb") as a, \
+                         open(os.path.join(out_w2, fn), "rb") as b:
+                        if a.read() != b.read():
+                            failures.append(f"manual-waypoints: {fn} 不确定")
+                if not any("manual-waypoints" in x for x in failures):
+                    print("OK  manual-waypoints: --from-layout waypoints 恒等复算 "
+                          "fail=0 + 确定性")
+
         # ── G. 回路主导环形排布（ref-scrubbed）：触发/口径/负例/回退 ──
         r = subprocess.run([sys.executable, os.path.join(root, "tests",
                                                           "test_ring_layout.py")],

@@ -135,6 +135,24 @@ stdraw layout input.cld --outdir out-manual --skip-3d \
 stdraw layout-diff out/layout.json out-manual/layout.json --cld input.cld --diff-out diff.json
 ```
 
+### 折点把手（绕障折点可拖，不再固定死）
+
+v0.5.3 起拖拽期间对**全部线型实时重布线**（直线/弧线/可见性图折线一视同
+仁——折点逐帧按当前障碍重算，不再有钉死的中间点）。绕障折线的每个折点渲
+染为小圆把手（hover 显示 move 光标）：
+
+- 拖动把手 → 该边转为「用户锚定」；此后拖节点只重锚端点，你的折点保真；
+- 「导出布局」对锚定边写出 `edges: [{a, b, waypoints: [[x,y],...]}]`；
+  `--from-layout` 按同口径复算（锚点=框边朝向首/末 waypoint 重算），证书
+  几何复检如实包含你的 waypoints，不放水；
+- 「重置」清除全部锚定并还原引擎布局。
+
+```bash
+# 拖完把手并导出后：
+stdraw layout input.cld --outdir out-manual --skip-3d --from-layout graph-manual-layout.json
+# layout.json 中该边 route.kind = "waypoints"，via = 你的折点
+```
+
 ## DSL 一分钟
 
 行导向文本，`#` 起注释：

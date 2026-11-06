@@ -270,6 +270,8 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         "edges": [{"a": e["a"], "b": e["b"], "pol": e.get("polarity", "+"),
                    "arc": bool(e["route"].get("arc")),
                    "ctrl": e["route"].get("ctrl"),
+                   # ref-scrubbed：vg 折线角点（把手位置与拖拽重布线的折点语义源）
+                   "via": e["route"].get("via"),
                    "pts": e["route"]["points"]}
                   for e in edges],
     }

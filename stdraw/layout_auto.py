@@ -15,7 +15,7 @@ from collections import defaultdict
 
 from . import textmetrics
 from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
-                      ANCHOR_MIN_DEG)
+                      ANCHOR_MIN_DEG, border_point)
 
 
 class AutoConfig:
@@ -461,6 +461,49 @@ def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2,
     return best_pos, best_score, best_routes
 
 
+def _manual_waypoints(manual, edges):
+    """--from-layout 边级 waypoints（ref-scrubbed）：{(a,b): [[x,y],...]}。
+
+    demo-2d 折点把手「用户锚定」的导出产物。校验：(a,b) 必须是图的边、
+    每个点为二元数值；坐标取整（与节点口径一致）；相邻 <0.5px 的重复点
+    去重；去重后为空则视为未锚定。确定性：同输入同输出。
+    """
+    out = {}
+    raw = manual.get("edges")
+    if raw is None:
+        return out
+    if not isinstance(raw, list):
+        raise ValueError("手动布局 edges 须为 [{a,b,waypoints}] 列表")
+    eset = set(edges)
+    for it in raw:
+        if not isinstance(it, dict):
+            raise ValueError(f"手动布局 edge 项格式不识别：{it!r}")
+        a, b = it.get("a"), it.get("b")
+        if (a, b) not in eset:
+            raise ValueError(f"手动布局 waypoints 引用了图中不存在的边：{a}->{b}")
+        wps = it.get("waypoints")
+        if wps is None:
+            continue
+        if not isinstance(wps, list):
+            raise ValueError(f"边 {a}->{b} 的 waypoints 须为 [[x,y],...] 列表")
+        pts = []
+        for p in wps:
+            if not isinstance(p, (list, tuple)) or len(p) < 2:
+                raise ValueError(f"边 {a}->{b} 的 waypoint 格式不识别：{p!r}")
+            try:
+                x, y = float(p[0]), float(p[1])
+            except (TypeError, ValueError):
+                raise ValueError(f"边 {a}->{b} 的 waypoint 坐标非数值：{p!r}")
+            if not (math.isfinite(x) and math.isfinite(y)):
+                raise ValueError(f"边 {a}->{b} 的 waypoint 坐标非有限值：{p!r}")
+            q = (int(round(x)), int(round(y)))
+            if not pts or math.dist(pts[-1], q) > 0.5:
+                pts.append(q)
+        if pts:
+            out[(a, b)] = pts
+    return out
+
+
 def _manual_positions(nodes, widths, manual):
     """--from-layout：吃手动布局（layout.json 兼容子集），返回 (pos, y, rows, meta)。
 
@@ -723,6 +766,32 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     routes = router.route_all()
     if _routes_final is not None:
         routes = _routes_final
+    # ref-scrubbed：用户锚定 waypoints 覆盖（demo-2d 折点把手导出）——该边不走
+    # 候选池，按「锚点=框边朝向首/末 waypoint + waypoints 原样」构造交付路线，
+    # 几何/证书复检按同一 points 如实评分（不放水）。覆盖须在
+    # final_crossing_pairs 之前，保证交叉双口径（check11）含 waypoints。
+    manual_wps = {}
+    if manual is not None:
+        manual_wps = _manual_waypoints(manual, EDGES_REF[0])
+    for i, (a, b) in enumerate(EDGES_REF[0]):
+        wps = manual_wps.get((a, b))
+        if not wps:
+            continue
+        A, B = nodes_px[a], nodes_px[b]
+        pa = border_point(A[0], A[1], A[2] / 2.0, A[3] / 2.0,
+                          wps[0][0] - A[0], wps[0][1] - A[1])
+        pb = border_point(B[0], B[1], B[2] / 2.0, B[3] / 2.0,
+                          wps[-1][0] - B[0], wps[-1][1] - B[1])
+        pts = [list(pa)] + [[float(px), float(py)] for px, py in wps] + [list(pb)]
+        dedup = [pts[0]]
+        for q in pts[1:]:
+            if math.dist(dedup[-1], q) > 0.5:
+                dedup.append(q)
+        routes[i] = {"kind": "waypoints", "points": dedup, "press": 0,
+                     "min_clear": None, "cross": 0, "cross_edges": 0,
+                     "ang_a": 0.0, "ang_b": 0.0}
+    if manual_wps and from_meta is not None:
+        from_meta["waypoint_edges"] = len(manual_wps)
     router_pairs = router.final_crossing_pairs(routes)
 
     edges_out = []
@@ -742,6 +811,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             # 暂存原始角点/弧参数，dx 平移后生成 SVG path（见下方 finalize）
             e["_vg"] = ([list(p) for p in info["vg_corners"]],
                         [dict(f) for f in info["vg_fillets"]])
+        if info["kind"] == "waypoints":
+            # ref-scrubbed：用户锚定折点（via 在 dx/dy 平移后的交付坐标上生成，
+            # 见下方 finalize——与 vg 的 _vg 处理同构）
+            e["_wp"] = [[float(px), float(py)] for px, py in info["points"]]
         edges_out.append(e)
 
     xs_all = [pos[v] - widths[v] / 2 for v in nodes] + [pos[v] + widths[v] / 2 for v in nodes]
@@ -811,6 +884,11 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                        for f in fillets]
             e["route"]["path_d"] = _route_svg_d(corners, fillets)
             e["route"]["via"] = [[round(px, 1), round(py, 1)] for px, py in corners]
+        wp = e.pop("_wp", None)
+        if wp:
+            # ref-scrubbed：用户锚定折点入交付（平移后坐标；渲染走折线）
+            e["route"]["via"] = [[round(p[0] + dx, 1), round(p[1] + dy, 1)]
+                                 for p in wp[1:-1]]
 
     if manual is not None:
         row_y_out = [yy + dy for yy in sorted({y[v] for v in nodes})]
