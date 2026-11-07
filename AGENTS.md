@@ -1,4 +1,79 @@
-# AGENTS.md — 给 agent 的 stdraw 使用说明（v0.6.0）
+# AGENTS.md — stdraw（进仓 worker 口径 + 使用说明）
+
+> 本文件分两部分：**第一部分**给进仓干活的 AI 卡 worker（进仓即带口径）；
+> **第二部分**给使用 stdraw 引擎的 agent（原《给 agent 的 stdraw 使用说明》）。
+> 卡文与本文件冲突时：安全/验收/发布口径以本文件为准，需求内容以卡文为准。
+> 本文件由 default 维护口径；worker 发现口径过时 → 卡上评论上报，不直接改本节。
+>
+> 技能指针（作用域指针，不放副本）：`systems-thinking-diagram` 技能正本在
+> default 侧 `<user-home>/AppData/Local/hermes/skills/autonomous-ai-agents/systems-thinking-diagram/`；
+> 本仓 `skills/stdraw/SKILL.md` 是对外发布的开源 Agent Skill（`npx skills add jacky510/stdraw`
+> 安装入口），两者各自独立——正本不抄进仓，仓内发布面也不回写正本，副本必漂移。
+
+## 仓结构
+
+| 路径 | 用途 |
+|---|---|
+| `stdraw/` | 引擎包：DSL 解析 / 排布（auto-v2 模式化）/ 数学布线（WS3）/ 精确交叉（WS2）/ 证书 / CLI（`python -m stdraw` 入口） |
+| `tests/` | pytest 用例 + `ci_checks.py`（CI 铁门脚本）+ `baselines/`（ortho-v1 冻结基线，逐字节 pin） |
+| `examples/` | `.cld` 样例（limits-to-growth / classic-cld-growth-and-burden） |
+| `demos/` | 交付 demo HTML + 证书 JSON——**发布面**，必须与当前引擎重渲染逐字节一致 |
+| `docs/` | 口径正本：`dsl-spec-v0.1.md` / `layout-modes.md` / `crossing-exact.md` / `gallery/`（截图） |
+| `benchmarks/` | 语料 `corpus/` + 原始留证 `raw/` + `REPORT.md`（基准摘要表正本）+ `tools/` |
+| `skills/stdraw/` | 对外发布的 Agent Skill（开源安装入口，见上方指针节） |
+| `viewer/` | 零依赖 3D 交互查看器 |
+| `assets/` | viewer/3D 页第三方 JS（three.min.js 等，不擅自改版本） |
+
+## 常用命令
+
+本机开发解释器：`<user-home>/AppData/Local/Programs/Python/Python312/python.exe`（仓路径 `<user-home>/Projects/stdraw`）。
+
+| 命令 | 用途 |
+|---|---|
+| `python -m pytest tests/ -q` | 单测 |
+| `python tests/ci_checks.py` | CI 铁门：ortho 冻结回归逐字节 pin + auto-v2 硬门 + 确定性双跑（+ 可选 DOM 层） |
+| `python -m stdraw layout examples/classic-cld-growth-and-burden.cld --name classic-cld --skip-3d` | 跑主样例，出证书/demo |
+| 同一命令连跑两次 + `sha256sum` 对比 | 确定性验证（产出可安全入库，diff 必须干净） |
+| demo 重渲染后与 `demos/classic-cld-2d.html` 逐字节比对 | demo 新鲜度门（交付件过期检测） |
+
+## 允许（worker 可直接做）
+
+- 修 bug、加测试、改卡面指定范围内的文件；`docs/` 新增文档；`tests/` 新增用例
+- `examples/` / `benchmarks/corpus/` 追加样例（不动已有语料与 REPORT.md 已发布数字）
+- 重渲染更新 `demos/`（须过新鲜度门 + 门面级验收，见「验证与提交」）
+
+## 禁止（必须挂卡或 kanban_block 等答复，不许自作主张）
+
+- 改 `tests/baselines/` 冻结基线与 ortho-v1 冻结行为——除非卡面明确要求「重新定基」并写明依据（同文件先例才可做）
+- 碰发布面（`README*` / `demos/` / `docs/gallery/` / `skills/stdraw/SKILL.md`）而不做门面级验收
+- 放宽证书硬门阈值或改动 grade 分级语义（最优/其次/最次/未获证书）——不许为让图过门而调门
+- 把 default 侧 `systems-thinking-diagram` 技能正本抄进仓（只留指针，见文件头）
+- 版本号（`pyproject.toml` / README 徽章 / 本文件「版本」节）顺带 bump——**ref-scrubbed 之后版本收尾统一走专项「版本收尾卡」**，不散改
+- 共享主树纪律：`<user-home>/Projects/stdraw` 主树常有多卡并发在途改动——**绝不提交不是自己卡清单里的文件**；提交一律走临时 clone（参照先例 ref-scrubbed）
+- 凭据、网络配置、删数据、强推 main / 改写历史
+
+## 验证与提交
+
+- 提交前必须跑：`python -m pytest tests/ -q` + `python tests/ci_checks.py`；跑不了就如实写「未验证 + 原因」，不许虚称
+- **确定性快照验收**（改引擎行为的卡）：同输入双跑逐字节一致；多图 sweep 相对 base 逐字节零漂移（参照 ref-scrubbed 先例：19 图仅目标图命中，其余 18 张零漂移）
+- **净化检查**（碰发布面的卡）：入库前核查发布面无本机绝对路径、内部卡号/代号、凭据与机器特定信息（开源门面卫生）
+- **验收分级**：卡级 = 本卡验收（测试 + 对拍）；门面 = 发布面 + CI 证书门。碰发布面的改动**两级都要过**；门面级验收先写逐格对拍脚本再改文档（证书 gates 逐键、REPORT.md 摘要表逐格、CLI 参数表 vs `--help` 实测）
+- 卡面写的门槛数字是拟稿时快照，终态以实测 JSON 为准
+- push 后必须回读：`gh api repos/jacky510/stdraw/commits?per_page=1 --jq '.[0].commit.committer.date'`
+- 提交信息写明对应卡 id
+
+## 分支与发布
+
+- 主干 = `main`，卡级验收过可直接 push（轻量文档/修复类）；大功能卡先完成 sweep 零漂移验证再 push
+- push 后盯远端 CI 双 job 必须 success；红了先修再交卡
+- 版本发布走「版本收尾卡」：统一 bump 版本号 / 徽章 / 本文件「版本」节 + 证书摘要对拍
+- 发布面改动必须附门面级验收证据（对拍输出 / 截图 / 证书 gates 清单）
+
+---
+
+以下为原《给 agent 的 stdraw 使用说明》（除标题行外逐字保留）：
+
+## 给 agent 的 stdraw 使用说明（详版）
 
 stdraw 是 planarity-aware 的系统思维图（CLD / 因果回路图）引擎：
 **文本 DSL 进，带质量证书的图出**。它专为 agent 设计——零交互、确定性输出、
