@@ -12,7 +12,7 @@
 
 [![CI](https://github.com/jacky510/stdraw/actions/workflows/ci.yml/badge.svg)](https://github.com/jacky510/stdraw/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.7.4-blue.svg)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.7.5-blue.svg)](pyproject.toml)
 [![Stars](https://img.shields.io/github/stars/jacky510/stdraw.svg?style=flat)](https://github.com/jacky510/stdraw/stargazers)
 
 [安装](#安装) · [Gallery](#gallery) · [Quickstart](#get-started--quickstart) · [DSL](#dsl-一分钟) · [证书与硬门](#certificates--质量证书) · [Agent 集成](#agent-integration)
@@ -44,7 +44,7 @@ pip install stdraw
 
 ## Gallery
 
-全部为当前引擎（v0.7.4）对仓内语料的真实渲染截图——非手改、非旧版残留（点击跳转对应 demo）。
+全部为当前引擎（v0.7.5）对仓内语料的真实渲染截图——非手改、非旧版残留（点击跳转对应 demo）。
 
 | | |
 |---|---|
