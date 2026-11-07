@@ -377,10 +377,34 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.7.6** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.7.7** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
 
+- **v0.7.7 version closure** (implementation card ref-scrubbed, closure
+  card ref-scrubbed): **comb-bilateral placement mode** — K_{m,2}-type
+  supply-chain graphs (two non-adjacent hubs whose neighborhoods are
+  identical = a shared source set with m>=3, all remaining core nodes
+  pendant trees on the sources) get the bilateral comb layout per jacky's
+  hand-pulled HDD baseline: sources in one vertical column (axis deviation
+  0), the two hubs in mirrored slots (symmetry error 0), all hub edges a
+  straight fan; comb outranks column only when the source column is longer
+  than the best spine, and the ring-ratio branch refuses entry when best
+  k<=4 and comb detection hits (classic-cld ratio+k=4 legitimately kept) —
+  structured fix for the ring false-trigger on the HDD supply-chain figure;
+  line-style auto rules tightened (auto default = straight, baseline 11/11
+  line, arcs only when structurally justified); per-edge line-style control
+  (double-click cycles auto -> straight -> arc -> free; free = user
+  waypoints capped at 3 per edge, tooltip "max 3 points per edge") with
+  export `edges[].style`/`waypoints` and deterministic `--from-layout`
+  replay (arc = deterministic adaptive-k max-clearance side, JS/Python one
+  caliber; forced edges frozen out of re-layout; certificates grade manual
+  layouts honestly); interactive persistence API —
+  `window.__stdrawApplyLayout` (nodes + edge_styles + waypoints, cap-clamped)
+  and the `stdraw:layoutchanged` event (drag-release + applyLayout paths)
+  plus the `--value-pad` CLI option; 19-graph corpus sweep byte-identical
+  vs f337273 (demos changed only in toolbar hints + script = the
+  interactive-layer upgrade);
 - **v0.7.6 version closure** (implementation card ref-scrubbed, closure
   card ref-scrubbed): repo-wide bilingual governance — README / AGENTS.md
   fully English as canonical, dsl-spec English canonical + new zh-CN

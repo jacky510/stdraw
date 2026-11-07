@@ -12,7 +12,7 @@ English | [Chinese](README_zh-CN.md)
 
 [![CI](https://github.com/jacky510/stdraw/actions/workflows/ci.yml/badge.svg)](https://github.com/jacky510/stdraw/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.7.6-blue.svg)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.7.7-blue.svg)](pyproject.toml)
 [![Stars](https://img.shields.io/github/stars/jacky510/stdraw.svg?style=flat)](https://github.com/jacky510/stdraw/stargazers)
 
 [Install](#install) · [Gallery](#gallery) · [Quickstart](#quickstart) · [DSL](#dsl-in-one-minute) · [Certificates](#certificates--quality-gates) · [Agent Integration](#agent-integration)
@@ -42,7 +42,7 @@ Mainstream diagram tools stop at "crossing minimization" heuristics, and **none 
 
 ## Gallery
 
-All images are real renderings produced by the current engine (v0.7.6) from the in-repo corpus — no mock-ups, no stale artifacts (click through to each demo).
+All images are real renderings produced by the current engine (v0.7.7) from the in-repo corpus — no mock-ups, no stale artifacts (click through to each demo).
 
 <table>
   <tr>
