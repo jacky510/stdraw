@@ -55,8 +55,8 @@ pip install "stdraw[solver]"
   `layout.json`, `positions3d.json`.
 - Default recipe `auto-v2` enforces hard gates: box-over-line = 0 (any angle,
   1px margin), edge-to-box clearance >= 16px, smooth border anchors, and
-  mode-aware arrangement regularity (ring / vertical-column / mirror-symmetric /
-  layered auto-selected by structure with trial gates; crossings and row
+  mode-aware arrangement regularity (bowtie-vertex / spine-wing / vertical-column /
+  ring / mirror-symmetric / layered auto-selected by structure with trial gates; crossings and row
   alignment are reported soft targets since v0.6.0).
 
 ## Certificate Reading Rules (honest grading — pass through verbatim)

@@ -1,6 +1,6 @@
 {
  "tool": "stdraw",
- "version": "0.6.0",
+ "version": "0.7.1",
  "layer": "2D",
  "graph": "classic-cld",
  "n": 8,
@@ -8,71 +8,73 @@
  "coords": "delivered/rounded",
  "recipe": "auto-v2",
  "line_style": "straight",
- "placement": "ring-cycle",
+ "placement": "spine-wing",
  "metrics": {
   "crossings": 0,
   "crossing_details": [],
   "box_press_1px": 0,
   "routing_router_pairs": 0,
   "press_details": [],
-  "edge_box_min_clear": 18.0,
+  "edge_box_min_clear": 25.6,
   "anchor_violations": 0,
   "anchor_details": [],
-  "avg_edge_length": 263.3,
-  "row_align_rate": null,
-  "min_card_gap": 40.0,
-  "spacing_cv": 0.405,
+  "avg_edge_length": 163.3,
+  "row_align_rate": 0.625,
+  "min_card_gap": 35.0,
+  "spacing_cv": 0.128,
   "column_snap24_rate": null,
-  "mutual_pair_min_sep": 15.8,
+  "mutual_pair_min_sep": 12.0,
   "mutual_pair_details": [
    {
     "pair": [
      "crowding<->quickfix",
-     27.1
+     13.8
     ]
    },
    {
     "pair": [
      "crowding<->fundamental",
-     15.8
+     12.0
     ]
    }
   ],
   "line_line_coincident_pairs": 0,
   "line_line_coincident_details": [],
   "loop_cohesion_spread": {
-   "R1": 0.6321,
-   "B1": 0.6321,
-   "B2": 0.6321,
-   "B3": 0.2306,
-   "B4": 0.1835,
-   "R2": 0.2306
+   "R1": 0.4093,
+   "B1": 0.4093,
+   "B2": 0.4093,
+   "B3": 0.2242,
+   "B4": 0.2069,
+   "R2": 0.2242
   },
-  "center_offset_x": 47.2,
+  "center_offset_x": 0.5,
   "line_kind_counts": {
-   "line": 9,
-   "poly": 1,
-   "arc": 3
+   "line": 11,
+   "arc": 2
   },
   "bbox": [
-   722,
-   664
+   692,
+   364
   ],
-  "ring_spacing_cv": 0.0,
-  "ring_template_deviation": 0.0
+  "symmetry_mirror_err": 0,
+  "spine_axis_deviation": 0,
+  "midline_deviation": 0
  },
  "gates": {
   "box_press_zero": true,
   "edge_box_clear_ge_16": true,
   "anchors_smooth": true,
   "min_gap_ge_16": true,
-  "ring_spacing_cv_le_005": true,
-  "ring_template_fit_le_005": true,
+  "cv_le_035": true,
+  "spine_axis_le_2px": true,
+  "midline_adherence_le_2px": true,
+  "symmetry_mirror_le_2px": true,
   "mutual_pairs_separated": true,
   "lines_no_coincidence": true,
   "routing_consistent": true
  },
- "gates_passed": "9/9",
+ "gates_passed": "11/11",
  "reports": {
   "crossings_zero": true,
   "crossings_note": "软目标：排布规律达标时允许 ≤2 交叉（jacky 2026-11-05：部分线相交可以接受，秩序与优美优先）；分级口径不变（最优=硬门全过+0 交叉）",
@@ -106,17 +108,30 @@
   "线-线视觉重合对数=0（ref-scrubbed：任意两线 <1px 并行同走 >8px 判重合；端点锚点处的瞬时会合不计；机器可查指标）",
   "交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，不一致拒发证书",
   "布线数学：绕障 = 净距膨胀障碍可见性图 Dijkstra 最短路（图上精确最优；相对圆角障碍连续空间真最短路每贴角至多多 (2−π/2)·膨胀余量 px）；平滑 = 折角相切圆弧（G1 切线连续、曲率有界），凸角相切弧向障碍侧下探 r·(1/cos(θ/2)−1)，受膨胀余量约束",
-  "环形排布口径（ref-scrubbed）：行对齐率/24px 列吸附对环形排布不适用，规律性门切换为环上等间距 CV ≤0.05 + 正多边形模板拟合误差 ≤0.05；主环按环序正多边形槽位、弦走环内，环路极性（R/B）徽标沿环可读"
+  "纵柱+翼位口径（ref-scrubbed v0.7.1）：中枢对纵柱严格垂直居轴（x 对齐 ≤2px 门）、翼位压中线水平带（贴靠 ≤2px 门）、翼外镜像对上下对称（镜像误差 ≤2px 门）——对拍 jacky 手拉样本 classic-cld-growth-and-burden；判定=确定性拓扑度量（中枢对公共邻居 ≥3 + rest 次级簇可配对 + 主链长度占比 ≤0.5），详见 docs/layout-modes.md；纵柱边构造竖直直线，其余走 Router；行对齐率/列吸附报告不适用（如实 None）"
  ],
  "no_zero_crossing_claim_for_all_graphs": "CLD 环多常不可平面，交叉数是目标函数最小化项而非定理保证；本证书只对本图本布局成立",
- "ring": {
-  "nodes": [
+ "spine_wing": {
+  "spine": [
    "adopters",
-   "crowding",
-   "rate",
-   "potential"
+   "rate"
   ],
-  "spacing_cv": 0.0,
-  "template_deviation": 0.0
+  "wings": [
+   "word",
+   "potential",
+   "crowding"
+  ],
+  "mirror_pairs": [
+   [
+    "quickfix",
+    "sideeffect"
+   ]
+  ],
+  "rest_single": [
+   "fundamental"
+  ],
+  "spine_axis_deviation": 0,
+  "midline_deviation": 0,
+  "mirror_err": 0
  }
 }
