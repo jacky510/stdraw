@@ -1,0 +1,23 @@
+# HDD-style bilateral supply chain: 5 sources all feeding two non-adjacent
+# hub makers (K_{5,2}) plus a pendant wafer supplier hanging off the memory
+# makers. Regression fixture for the comb-bilateral placement mode.
+graph "hdd-supply-chain"
+var wafer "Wafer supply"
+var xval "Memory makers"
+var cloud "Cloud demand"
+var resonac "Substrates"
+var hoya "Disk blanks"
+var head "Head makers"
+var stx "Drive maker A"
+var wdc "Drive maker B"
+wafer -> + xval
+xval -> + stx
+xval -> + wdc
+cloud -> + stx
+cloud -> + wdc
+resonac -> + stx
+resonac -> + wdc
+hoya -> + stx
+hoya -> + wdc
+head -> + stx
+head -> + wdc

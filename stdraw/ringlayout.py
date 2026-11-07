@@ -275,6 +275,19 @@ def detect_ring(graph):
 
     eligible = [(s, lid, pol) for s, lid, pol in cands
                 if len(s) >= n - COVER_SLACK] or cands
+    if not cover_ok:
+        # v0.7.7 ratio-branch guard (K_{m,2} misfire): a high non-bridge
+        # ratio whose best ring is only k=4 is the bilateral-comb signature
+        # (two hubs + two sources forming a 4-cycle, everything else hanging
+        # off it) — that family belongs to comb-bilateral placement, not
+        # ring. Non-comb graphs keep the historical ratio behavior (e.g.
+        # classic-cld: ratio trigger with k=4 is legitimate). Probe with the
+        # comb detector to draw the line structurally, not by k alone.
+        kmax = max(len(s) for s, _, _ in eligible)
+        if kmax <= 4:
+            from .comblayout import detect_comb
+            if detect_comb(graph) is not None:
+                return None
     best = None
     for seq, lid, pol in eligible:
         cross = _crossing_count(_chord_segments(seq, edges))

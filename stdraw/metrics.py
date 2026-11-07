@@ -292,6 +292,8 @@ def scene_from_auto(v4: dict) -> dict:
             "symmetry": v4["meta"].get("symmetry"),
             # spine-wing mode certificate caliber
             "spine_wing": v4["meta"].get("spine_wing"),
+            # comb-bilateral mode certificate caliber (v0.7.7)
+            "comb": v4["meta"].get("comb"),
             # line-kind statistics (arc > straight > polyline hierarchy report)
             "line_kinds": [e["route"].get("kind") for e in v4["edges"]],
             }
@@ -377,6 +379,10 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     spine_wing = scene.get("spine_wing") or {}
     column_spine = scene.get("column_spine") or []
     symmetry = scene.get("symmetry") or {}
+    # comb-bilateral mode certificate caliber (v0.7.7): column axis alignment
+    # + constant column pitch + hub-pair mirror symmetry + all-straight fan
+    comb_mode = scene.get("placement") == "comb-bilateral"
+    comb = scene.get("comb") or {}
 
     # 1. Crossings (pairwise polyline intersection)
     crossings = []
@@ -560,6 +566,26 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                            for v in column_spine if v in nodes) if column_spine else None
         snap_rate, simple = None, len(ids) <= 10
         regularity_ok = pitch_uniform and (col_axis_dev or 0.0) <= 2.0
+    elif comb_mode and comb.get("column"):
+        # comb-bilateral: sources in one vertical column (x on-axis <=2px,
+        # constant column pitch), hubs in mirrored left/right slots at the
+        # column middle row (pair symmetric about the column axis)
+        col_ids = [v for v in comb["column"] if v in nodes]
+        axis_x = comb.get("axis_x", 0.0)
+        ys = [nodes[v]["y"] for v in col_ids]
+        pitch_uniform = (len(set(b - a for a, b in zip(ys, ys[1:]))) <= 1
+                         if len(ys) > 1 else True)
+        col_axis_dev = max(abs(nodes[v]["x"] - axis_x)
+                           for v in col_ids) if col_ids else None
+        hub_sym_err = None
+        hl, hr = comb.get("hubs") or (None, None)
+        if hl in nodes and hr in nodes:
+            hub_sym_err = max(abs((nodes[hl]["x"] + nodes[hr]["x"]) / 2 - axis_x),
+                              abs(nodes[hl]["y"] - nodes[hr]["y"]))
+        snap_rate, simple = None, len(ids) <= 10
+        regularity_ok = (col_axis_dev is not None and col_axis_dev <= 2.0
+                         and hub_sym_err is not None and hub_sym_err <= 2.0
+                         and pitch_uniform)
     elif sym_mode and symmetry.get("mirror_pairs"):
         axis_x = (symmetry.get("axis_x") if symmetry.get("axis_x") is not None
                   else 0.0)
@@ -717,6 +743,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     if column_mode:
         metrics["column_axis_deviation"] = (round(col_axis_dev, 2)
                                             if col_axis_dev is not None else None)
+    if comb_mode:
+        metrics["column_axis_deviation"] = (round(col_axis_dev, 2)
+                                            if col_axis_dev is not None else None)
+        metrics["hub_symmetry_err"] = (round(hub_sym_err, 2)
+                                       if hub_sym_err is not None else None)
     if sym_mode or bowtie_mode or spine_mode:
         metrics["symmetry_mirror_err"] = (round(sym_mirror_err, 2)
                                           if sym_mirror_err is not None else None)
@@ -756,6 +787,32 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "column_axis_aligned": (metrics["column_axis_deviation"] is not None
                                     and metrics["column_axis_deviation"] <= 2.0),
             "spine_pitch_uniform": pitch_uniform,
+            "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
+        }
+    elif comb_mode:
+        # comb-bilateral caliber gates: column axis alignment + constant
+        # column pitch + hub-pair mirror symmetry + all hub edges straight
+        # (the comb contract); spacing CV is not applicable as a gate (the
+        # hub wings are structurally far from the column, reported only)
+        _hl, _hr = comb.get("hubs") or (None, None)
+        _hub_bad = 0
+        if _hl and _hr:
+            for _e, _k in zip(edges, scene.get("line_kinds") or []):
+                if (_e["a"] in (_hl, _hr) or _e["b"] in (_hl, _hr)) \
+                        and _k != "line":
+                    _hub_bad += 1
+        g = {
+            "box_press_zero": metrics["box_press_1px"] == 0,
+            "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
+            "anchors_smooth": metrics["anchor_violations"] == 0,
+            "min_gap_ge_16": metrics["min_card_gap"] >= 16,
+            "column_axis_aligned": (metrics["column_axis_deviation"] is not None
+                                    and metrics["column_axis_deviation"] <= 2.0),
+            "column_pitch_uniform": pitch_uniform,
+            "hub_symmetry_le_2px": (metrics["hub_symmetry_err"] is not None
+                                    and metrics["hub_symmetry_err"] <= 2.0),
+            "hub_edges_straight": _hub_bad == 0,
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
@@ -833,6 +890,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
                    g["ring_spacing_cv_le_005"] and g["ring_template_fit_le_005"])
+    elif comb_mode:
+        hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
+                   g["anchors_smooth"] and g["min_gap_ge_16"] and
+                   g["column_axis_aligned"] and g["column_pitch_uniform"] and
+                   g["hub_symmetry_le_2px"] and g["hub_edges_straight"])
     elif column_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
@@ -885,7 +947,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                       "column-chain" if column_mode else
                       "symmetric" if sym_mode else
                       "bowtie-vertex" if bowtie_mode else
-                      "spine-wing" if spine_mode else "layered"),
+                      "spine-wing" if spine_mode else
+                      "comb-bilateral" if comb_mode else "layered"),
         "metrics": metrics,
         "gates": g,
         "gates_passed": f"{g_pass}/{len(g)}",

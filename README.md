@@ -172,6 +172,53 @@ stdraw layout input.cld --outdir out-manual --skip-3d --from-layout graph-manual
 # layout.json now carries route kind "waypoints" with via = your fold points
 ```
 
+### Line style control & manual fine-tuning (v0.7.7)
+
+Automatic line-style rule: **straight is the default**; an arc is used only
+when it is structurally justified — mutual-pair lens corridors, a straight
+line that cannot keep the >=16px clearance but a shallow arc can, or
+mode-specific aesthetics (e.g. the spine-wing midline arcs). Bilateral
+supply-chain graphs (K_{m,2}: every source feeding two non-adjacent hubs)
+get the new **comb-bilateral** placement — sources in one vertical column,
+the two hubs in mirrored left/right slots, all hub edges a straight fan.
+
+Per-edge manual control on the demo page:
+
+- **double-click a line** to cycle its style `auto → straight → arc → free →
+  auto` (a >=10px hover hit zone, pointer cursor + highlight; node drags
+  are never disturbed). Forced styles re-route live and the top-bar metrics
+  recompute honestly — red when a hard gate fails, no leniency;
+- **free style**: click anywhere on the line to insert a fold handle and
+  drag it — the user segment is an **exact polyline** (WYSIWYG, no
+  smoothing), anchors recomputed on the box borders toward the first/last
+  fold point. At most **3 fold points per edge**; at the cap a click
+  selects the nearest handle with the tooltip "max 3 points per edge";
+- **Export layout** now also writes `edges[].style` (free fold points ride
+  along as `waypoints`); `--from-layout` replays forced straight/arc/free
+  styles under the same deterministic rules and the certificate re-checks
+  them honestly;
+- **Reset** clears pins, styles and fold points back to the engine default.
+
+Two integration hooks for embedding pages:
+
+```js
+// apply a layout programmatically (the inverse of "Export layout")
+window.__stdrawApplyLayout({
+  nodes: {id: {x: 100, y: 200}},
+  edge_styles: {"a->b": "arc"},          // auto | straight | arc | free
+  waypoints: {"a->b": [[300, 240]]}      // free fold points (max 3)
+});
+// be notified instead of polling pointerup
+window.addEventListener("stdraw:layoutchanged", e => {
+  // e.detail = the current layout (nodes + styled edges + waypoints)
+});
+```
+
+For long second-line values (ticker / price strings) that overflow the
+planned card width, `--value-pad PX` reserves extra per-side padding for
+the value line (`AutoConfig.value_pad_extra` in-process; the default keeps
+the historical sizing byte-for-byte).
+
 ## DSL in One Minute
 
 Line-oriented text, `#` starts a comment:

@@ -169,6 +169,47 @@ stdraw layout input.cld --outdir out-manual --skip-3d --from-layout graph-manual
 # layout.json 中该边 route.kind = "waypoints"，via = 你的折点
 ```
 
+### 线型控制与手动微调（v0.7.7）
+
+自动线型规则：**默认直线**；只有结构性必要时才用弧线——互环对的
+双弧走廊、直线保不住 ≥16px 净距而浅弧可以、以及模式特化美学（如
+spine-wing 中线弧）。双侧供应链图（K_{m,2}：每个源点都连向两个不相
+邻 hub）进入新的 **comb-bilateral（双侧梳状）**排布——源点单竖列、
+双 hub 左右镜像槽位、hub 边全直线扇形。
+
+demo 页上的逐边手动控制：
+
+- **双击线**循环切换线型 `auto → straight → arc → free → auto`
+  （≥10px hover 命中区、pointer 光标 + 高亮；与节点拖拽互不干扰）。
+  forced 状态下实时重布线，顶栏指标如实复算——硬门失败显红，不放水；
+- **free（自由）态**：单击线上任意点插入折点把手并拖拽——用户段为
+  **精确折线**（WYSIWYG 不平滑），锚点按框边朝首/末折点重算。每边
+  **最多 3 个折点**；到顶后单击改为选最近把手，tooltip 提示
+  "max 3 points per edge"；
+- **Export layout（导出布局）** 同时写出 `edges[].style`（free 折点以
+  `waypoints` 随行）；`--from-layout` 按同一确定性规则回放
+  straight/arc/free，证书几何复检如实；
+- **Reset（重置）** 清 pins + styles + 折点，回到引擎默认态。
+
+给嵌入页的两个集成钩子：
+
+```js
+// 程序化套用一个布局（「Export layout」的逆操作）
+window.__stdrawApplyLayout({
+  nodes: {id: {x: 100, y: 200}},
+  edge_styles: {"a->b": "arc"},          // auto | straight | arc | free
+  waypoints: {"a->b": [[300, 240]]}      // free 折点（上限 3）
+});
+// 用事件代替 pointerup 轮询
+window.addEventListener("stdraw:layoutchanged", e => {
+  // e.detail = 当前布局（nodes + 带样式的 edges + waypoints）
+});
+```
+
+第二行长文本（股票代码 / 价格串）超出计划卡宽时，`--value-pad PX`
+为值行保留额外单侧余量（进程内对应 `AutoConfig.value_pad_extra`；
+默认保持历史尺寸，逐字节不变）。
+
 ## DSL 一分钟
 
 行导向文本，`#` 起注释：

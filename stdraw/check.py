@@ -289,7 +289,9 @@ def auto_geometry_report(layout: dict) -> dict:
     # on-ring equal spacing CV + regular-polygon template fit error; see
     # metrics).
     ring_mode = meta.get("placement") == "ring-cycle"
-
+    # comb-bilateral placement (v0.7.7): row caliber = column pitch + column
+    # axis + hub-pair mirror symmetry (same caliber as the certificate)
+    comb_mode = meta.get("placement") == "comb-bilateral"
     # column-chain / symmetric placement: row caliber switches per mode
     # (column = uniform main-chain pitch + column-axis alignment;
     # symmetric = mirror-axis error); 24px column snap inapplicable to both.
@@ -414,12 +416,17 @@ def auto_geometry_report(layout: dict) -> dict:
     odd = [v for v, p in nodes.items() if p["x"] % 2 or p["y"] % 2]
     _6a_na = (" (manual: N/A)" if manual_mode else
               " (ring: N/A)" if ring_mode else
+              " (comb: column rows)" if comb_mode else
               " (column: main-chain rows)" if column_mode else
               " (sym: all rows)" if sym_mode else "")
     if column_mode:
         spine = (meta.get("column") or {}).get("spine") or []
         sys_ = [nodes[v]["y"] for v in spine if v in nodes]
         pitch_ok = len({b - a for a, b in zip(sys_, sys_[1:])}) <= 1 if len(sys_) > 1 else True
+    if comb_mode:
+        col = (meta.get("comb") or {}).get("column") or []
+        cys = [nodes[v]["y"] for v in col if v in nodes]
+        pitch_ok = len({b - a for a, b in zip(cys, cys[1:])}) <= 1 if len(cys) > 1 else True
     chk("6a. uniform row pitch (parking-lane nodes excluded)" + _6a_na,
         True if (manual_mode or ring_mode) else pitch_ok, f"pitch={meta['pitch']}")
     chk("6b. all coordinates on the 2px grid (even)", not odd, str(odd))
@@ -476,6 +483,24 @@ def auto_geometry_report(layout: dict) -> dict:
         else:
             col_ok, col_detail = False, "meta.column.spine missing / fewer than 2 nodes"
         chk("9. column placement regularity (main-chain axis alignment + uniform pitch)", col_ok, col_detail)
+    elif comb_mode:
+        # comb-bilateral: column x on-axis <=2px + constant column pitch +
+        # hub-pair mirror symmetry about the column axis (<=2px)
+        comb = meta.get("comb") or {}
+        axis_x = comb.get("axis_x") or 0.0
+        errs = []
+        for cv in comb.get("column") or []:
+            if cv in nodes:
+                errs.append(abs(nodes[cv]["x"] - axis_x))
+        hl, hr = comb.get("hubs") or (None, None)
+        if hl in nodes and hr in nodes:
+            errs.append(abs((nodes[hl]["x"] + nodes[hr]["x"]) / 2 - axis_x))
+            errs.append(abs(nodes[hl]["y"] - nodes[hr]["y"]))
+        comb_ok = bool(errs) and max(errs) <= 2.0 and pitch_ok
+        chk("9. comb-bilateral placement regularity (column axis + pitch + hub mirror <=2px)",
+            comb_ok,
+            f"maximum deviation {max(errs):.2f}px, column pitch uniform {pitch_ok}"
+            if errs else "meta.comb missing")
     elif sym_mode:
         sym = meta.get("symmetry") or {}
         axis_x = sym.get("axis_x") or 0.0
@@ -539,6 +564,7 @@ def auto_geometry_report(layout: dict) -> dict:
                                              "ring-construct",
                                              "column-construct", "sym-construct",
                                              "bowtie-construct",
+                                             "comb-construct",
                                              "spine-construct")))
     chk("10. auto-v2 metadata complete", ok10,
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "

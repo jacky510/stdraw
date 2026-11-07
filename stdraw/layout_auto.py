@@ -38,6 +38,10 @@ class AutoConfig:
     clearance: int = 16        # edge-box clearance hard gate (fed into router scoring)
     grid: int = 8
     snap_regular: int = 24     # regular snap for simple graphs (<=10 nodes)
+    # v0.7.7: extra per-side padding for the value (second) text line.
+    # Default None = historical behavior (pad-4 baseline) byte-for-byte;
+    # opt in for long ticker/price value strings via CLI --value-pad.
+    value_pad_extra: float = None
     target_w: int = 1280
     target_h: int = 680
     aspect_min: float = 1.5
@@ -579,6 +583,73 @@ def _manual_positions(nodes, widths, manual):
     return pos, y, rows, meta
 
 
+def _manual_edge_styles(manual, edges):
+    """--from-layout per-edge forced line styles (v0.7.7): {(a,b): style}.
+
+    The export artifact of the demo-2d per-edge style cycle
+    (auto/straight/arc/free). Validation mirrors _manual_waypoints: (a,b)
+    must be a graph edge; style must be one of the four tokens; "auto"
+    entries are dropped (engine default). "free" is carried by waypoints
+    (kind=waypoints path), not by this dict.
+    """
+    out = {}
+    raw = manual.get("edges")
+    if raw is None:
+        return out
+    if not isinstance(raw, list):
+        raise ValueError("manual layout edges must be a [{a,b,style}] list")
+    eset = set(edges)
+    for it in raw:
+        if not isinstance(it, dict):
+            raise ValueError(f"unrecognized manual layout edge entry: {it!r}")
+        a, b = it.get("a"), it.get("b")
+        if (a, b) not in eset:
+            raise ValueError(f"manual layout styles reference an edge not in the graph: {a}->{b}")
+        st = it.get("style")
+        if st is None:
+            continue
+        if st not in ("auto", "straight", "arc", "free"):
+            raise ValueError(f"unrecognized line style for edge {a}->{b}: {st!r}")
+        if st in ("straight", "arc"):
+            out[(a, b)] = st
+    return out
+
+
+def _forced_arc_route(nodes_px, a, b, clearance):
+    """Deterministic forced-arc geometry (v0.7.7 style replay, Python side).
+
+    Same rule as the demo-2d drag layer: anchors = box borders facing each
+    other; curvature = chord-adaptive k (routing.adaptive_arc_k); side = the
+    sign whose sampled arc keeps more distance from unrelated boxes (tie ->
+    +1). Returns (points, ctrl)."""
+    from .routing import border_point, quad_points, adaptive_arc_k, dist_point_rect
+    A, B = nodes_px[a], nodes_px[b]
+    pa = border_point(A[0], A[1], A[2] / 2.0, A[3] / 2.0, B[0] - A[0], B[1] - A[1])
+    pb = border_point(B[0], B[1], B[2] / 2.0, B[3] / 2.0, A[0] - B[0], A[1] - B[1])
+    vx, vy = pb[0] - pa[0], pb[1] - pa[1]
+    dist = math.hypot(vx, vy)
+    k = adaptive_arc_k(dist)
+    n = max(dist, 1e-6)
+    ux, uy = -vy / n, vx / n
+    best = None
+    for s in (1, -1):
+        ctrl = [(pa[0] + pb[0]) / 2 + ux * k * dist * s,
+                (pa[1] + pb[1]) / 2 + uy * k * dist * s]
+        pts = quad_points(pa, ctrl, pb)
+        mclr = None
+        for v, rect in nodes_px.items():
+            if v in (a, b):
+                continue
+            for (px, py) in pts:
+                d = dist_point_rect(px, py, rect[0], rect[1],
+                                    rect[2] / 2.0, rect[3] / 2.0)
+                mclr = d if mclr is None else min(mclr, d)
+        key = (-(mclr if mclr is not None else 1e9), s)
+        if best is None or key < best[0]:
+            best = (key, pts, ctrl)
+    return best[1], best[2]
+
+
 def _ring_trial(plan, nodes, widths, card_h, cfg):
     """Ring placement + routing trial: adopted only if every hard-gate proxy passes; otherwise None (fall back to layered, byte-for-byte unchanged).
 
@@ -805,6 +876,35 @@ def _spine_trial(plan, nodes, widths, card_h, cfg):
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
+def _comb_trial(plan, nodes, widths, card_h, cfg):
+    """Comb-bilateral placement + routing trial gate: adopted only if every
+    route is a straight line (the comb contract: column spine vertical +
+    hub fan straight) AND the unified hard-gate proxy passes; otherwise None
+    (fall back to the next tier, byte-for-byte unchanged).
+
+    v0.7.7 (ref-scrubbed): K_{m,2} bilateral family — two non-adjacent hubs,
+    every source connected to both, pendant trees on the source side.
+    Geometric ground truth = jacky's hand-pulled HDD supply-chain layout.
+    """
+    from . import comblayout
+    edges = EDGES_REF[0]
+    try:
+        pos, y, meta = comblayout.place_comb(plan, widths, card_h, cfg)
+    except comblayout.InfeasibleComb:
+        return None
+    nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+    routes = router.route_all()
+    for i, info in routes.items():
+        if info["kind"] != "line":
+            return None                      # comb contract: all-straight fan
+    if not _constructed_gates(nodes_px, edges, routes, cfg, {}):
+        return None
+    plan = dict(plan)
+    plan["placed"] = (pos, y, meta)
+    return plan
+
+
 def _column_trial(plan, nodes, widths, card_h, cfg):
     """Column placement + routing trial gate: adopted only if the gate passes; otherwise None (fall back to layered, byte-for-byte unchanged)."""
     from . import columnlayout
@@ -858,7 +958,8 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     for v in nodes:
         nd = graph.id2node()[v]
         w, h = textmetrics.card_size(nd.label, nd.value, cfg.fs_title, cfg.fs_value,
-                                     min_w=cfg.card_min_w)
+                                     min_w=cfg.card_min_w,
+                                     value_pad=cfg.value_pad_extra)
         widths[v], heights[v] = w, h
     card_h = max(heights.values()) if heights else cfg.card_h
 
@@ -878,6 +979,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         sym_plan = None
         bw_plan = None
         sw_plan = None
+        comb_plan = None
         column_plan = None
         ring_plan = None
         if len(nodes) <= 12:
@@ -902,14 +1004,30 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                 and len(nodes) <= 12):
             from . import ringlayout as _ringlayout
             from . import columnlayout as _columnlayout
+            from . import comblayout as _comblayout
             _ring_detect = _ringlayout.detect_ring(graph)
+            _col_plan = None
             # column is detected only when ring would not take the pure-cycle/ratio branch (cover-triggered graphs with a main ring <=4 go
             # to column; large rings with k>=5 still go to ring)
             if _ring_detect is None or _ring_detect["trigger"] == "cover":
-                _col = _columnlayout.detect_column(graph)
-                if _col is not None:
-                    column_plan = _column_trial(_col, nodes, widths, card_h, cfg)
-            if column_plan is None and _ring_detect is not None:
+                _col_plan = _columnlayout.detect_column(graph)
+                if _col_plan is not None:
+                    column_plan = _column_trial(_col_plan, nodes, widths, card_h, cfg)
+            # v0.7.7 comb-bilateral (K_{m,2} bilateral hubs) sits between
+            # column and ring (preempts ring: these graphs score a high
+            # non-bridge ratio with a 4-cycle "main ring" and historically
+            # misfired the ring ratio branch). Against column it applies a
+            # salience rule: the bilateral reading wins only when the source
+            # column is strictly longer than the best column spine (in the
+            # established column-chain families the spine weaves
+            # hub-source-hub-source and is at least as salient — zero drift).
+            _comb = _comblayout.detect_comb(graph)
+            if _comb is not None and _col_plan is not None \
+                    and len(_comb["column"]) <= len(_col_plan.get("spine") or ()):
+                _comb = None
+            if _comb is not None:
+                comb_plan = _comb_trial(_comb, nodes, widths, card_h, cfg)
+            if column_plan is None and comb_plan is None and _ring_detect is not None:
                 ring_plan = _ring_trial(_ring_detect, nodes, widths, card_h, cfg)
         constructed = {}
         if sym_plan is not None:
@@ -939,6 +1057,15 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             engine = "spine-construct"
             pos_meta = wmeta
             constructed = wconstructed
+        elif comb_plan is not None:
+            cpos, cy, cmeta = comb_plan["placed"]
+            pos, y = cpos, cy
+            deg0 = list(comb_plan["deg0"]) if "deg0" in comb_plan else \
+                [v for v in nodes if not adj[v]]
+            rows = [[v for v in nodes if y[v] == yy]
+                    for yy in sorted({y[v] for v in nodes})]
+            engine = "comb-construct"
+            pos_meta = cmeta
         elif column_plan is not None:
             cpos, cy, cmeta, cconstructed = column_plan["placed"]
             pos, y = cpos, cy
@@ -1104,12 +1231,42 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                      "ang_a": 0.0, "ang_b": 0.0}
     if manual_wps and from_meta is not None:
         from_meta["waypoint_edges"] = len(manual_wps)
+    # v0.7.7 per-edge forced styles (demo-2d style cycle export): "straight"
+    # = direct line between box-border anchors facing each other; "arc" =
+    # the deterministic forced-arc rule (_forced_arc_route). "free" is
+    # carried by waypoints above. These edges skip the candidate pool; the
+    # geometry/certificate recheck scores them honestly (no leniency).
+    manual_styles = {}
+    if manual is not None:
+        manual_styles = _manual_edge_styles(manual, EDGES_REF[0])
+    for i, (a, b) in enumerate(EDGES_REF[0]):
+        if manual_wps.get((a, b)):
+            continue
+        st = manual_styles.get((a, b))
+        if st == "straight":
+            A, B = nodes_px[a], nodes_px[b]
+            pa = border_point(A[0], A[1], A[2] / 2.0, A[3] / 2.0,
+                              B[0] - A[0], B[1] - A[1])
+            pb = border_point(B[0], B[1], B[2] / 2.0, B[3] / 2.0,
+                              A[0] - B[0], A[1] - B[1])
+            routes[i] = {"kind": "line", "points": [list(pa), list(pb)],
+                         "press": 0, "min_clear": None, "cross": 0,
+                         "cross_edges": 0, "ang_a": 0.0, "ang_b": 0.0}
+        elif st == "arc":
+            pts, ctrl = _forced_arc_route(nodes_px, a, b, cfg.clearance)
+            routes[i] = {"kind": "arc", "points": [list(p) for p in pts],
+                         "press": 0, "min_clear": None, "cross": 0,
+                         "cross_edges": 0, "ang_a": 0.0, "ang_b": 0.0,
+                         "ctrl": list(ctrl)}
+    if manual_styles and from_meta is not None:
+        from_meta["styled_edges"] = len(manual_styles)
     # ref-scrubbed: directed rerouting for line-line visual coincidence - a backstop fix for fan-out edges hugging the same corridor (stair/lane
     # shared lanes). Constructed routes and user-anchored waypoint edges are untouched; only edges involved in coincident pairs are rerouted,
     # on the condition that the hard gates do not regress (press/clearance/anchor/crossing count).
     _frozen = set()
     for i, (a, b) in enumerate(EDGES_REF[0]):
-        if constructed.get((a, b)) is not None or manual_wps.get((a, b)):
+        if constructed.get((a, b)) is not None or manual_wps.get((a, b)) \
+                or manual_styles.get((a, b)):
             _frozen.add(i)
     routes = router.coincide_reroute(routes, frozen=_frozen)
     # ref-scrubbed connection-point caliber: delivery-layer anchors are clamped to the edge-midpoint +/-1/4 band (corners excluded, per-edge
@@ -1235,6 +1392,12 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     pos_meta["spine_wing"].get("axis_x", 0) + dx
                 pos_meta["spine_wing"]["axis_y"] = \
                     pos_meta["spine_wing"].get("axis_y", 0) + dy
+            # v0.7.7 comb-bilateral: the column axis / hub row shift in sync
+            if isinstance(pos_meta.get("comb"), dict):
+                pos_meta["comb"]["axis_x"] = \
+                    pos_meta["comb"].get("axis_x", 0) + dx
+                pos_meta["comb"]["hub_y"] = \
+                    pos_meta["comb"].get("hub_y", 0) + dy
 
     # W/H must be taken on the final post-shift coordinates. bugfix (a v0.2.0 leftover exposed by CI): the original implementation computed
     # W from the pre-shift xs_all; with dx>0 the content overflowed the viewBox after the right shift (analytic box widths are narrower
@@ -1270,8 +1433,9 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     if manual is not None:
         row_y_out = [yy + dy for yy in sorted({y[v] for v in nodes})]
         pitch_out = None
-    elif engine == "ring-construct":
-        # ring placement has no row-structure semantics: rowY records the deduplicated order of actual y values; pitch does not apply
+    elif engine in ("ring-construct", "comb-construct"):
+        # ring/comb placement have no uniform-row semantics: rowY records the
+        # deduplicated order of actual y values; pitch does not apply
         row_y_out = [yy + dy for yy in sorted({y[v] for v in nodes})]
         pitch_out = None
     else:
