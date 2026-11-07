@@ -1,0 +1,45 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "classic-cld",
+ "viewBox": [
+  0,
+  0,
+  856,
+  760
+ ],
+ "nodes": {
+  "rate": {
+   "x": 412,
+   "y": 535
+  },
+  "adopters": {
+   "x": 413,
+   "y": 214
+  },
+  "word": {
+   "x": 308,
+   "y": 368
+  },
+  "potential": {
+   "x": 112,
+   "y": 368
+  },
+  "crowding": {
+   "x": 547,
+   "y": 369
+  },
+  "quickfix": {
+   "x": 741,
+   "y": 289
+  },
+  "fundamental": {
+   "x": 594,
+   "y": 533
+  },
+  "sideeffect": {
+   "x": 747,
+   "y": 453
+  }
+ }
+}
