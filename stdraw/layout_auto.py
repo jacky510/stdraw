@@ -1082,6 +1082,14 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     routes = router.midband_reanchor(routes, frozen=_frozen,
                                      enhanced=(engine == "spine-construct"))
     routes = router.fan_spread(routes, frozen=_frozen)
+    # ref-scrubbed 返修①：互环对「直线可行」候选纳入代价分配（§WS3 折线=
+    # 最后手段——直线可行时折线不抢分）。带内兜底（_reroute_pair_band）
+    # 产出的 poly 侧车道在此复检：两框 4 边中点锚 × 直线候选可行且总评
+    # 更优则替换（quickfix→crowding 实测 298px 折线→101px 自然直线）。
+    # 仅 spine-construct 域启用（classic-cld 唯一命中）：其余引擎不进新
+    # 代码路径，输出逐字节不变（结构性零漂移）。
+    if engine == "spine-construct":
+        routes = router.mutual_straight_reroute(routes, frozen=_frozen)
     router_pairs = router.final_crossing_pairs(routes)
 
     # ref-scrubbed R/B 回路着色：边 → 所属声明回路 kind 集合（确定性规则见
