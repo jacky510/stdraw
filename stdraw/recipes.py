@@ -20,6 +20,16 @@ Usage (import form):
     import stdraw
     v4 = stdraw.recipes.run("ortho-v1", graph, config)      # production behavior pin
     v4 = stdraw.recipes.run("auto-v2", graph, linestyle="arc")
+
+Delivery contract (stdraw/delivery.py): coordinate dicts returned by
+both recipes carry "delivery": "coordinates-only", "interactive":
+false, "engine_version" and a one-line "delivery_warning" (coordinates
+are not the stdraw deliverable; the deliverable is demo-2d.html). Pass
+suppress_delivery_warning=True only when you truly consume raw
+coordinates. The CLI re-stamps interactive=true (no warning) when the
+full deliverable was produced; the ortho CLI layout.json stays
+byte-frozen (production pin) and carries its contract on
+certificate.json ("interactive" / "drag_layer") instead.
 """
 from . import __version__
 
@@ -31,20 +41,28 @@ RECIPE_VERSIONS = {
 }
 
 
-def ortho_v1(graph, config=None) -> dict:
+def ortho_v1(graph, config=None, suppress_delivery_warning: bool = False) -> dict:
     from .planar import PlanarLayout
-    return PlanarLayout(graph, config).run()
+    v4 = PlanarLayout(graph, config).run()
+    if suppress_delivery_warning:
+        v4.pop("delivery_warning", None)
+    return v4
 
 
-def auto_v2(graph, config=None, linestyle: str = "straight") -> dict:
+def auto_v2(graph, config=None, linestyle: str = "straight",
+            suppress_delivery_warning: bool = False) -> dict:
     from .layout_auto import layout as _layout, AutoConfig
     cfg = config or AutoConfig()
-    return _layout(graph, cfg, linestyle)
+    v4 = _layout(graph, cfg, linestyle)
+    if suppress_delivery_warning:
+        v4.pop("delivery_warning", None)
+    return v4
 
 
-def run(recipe: str, graph, config=None, linestyle: str = "straight") -> dict:
+def run(recipe: str, graph, config=None, linestyle: str = "straight",
+        suppress_delivery_warning: bool = False) -> dict:
     if recipe == "ortho-v1":
-        return ortho_v1(graph, config)
+        return ortho_v1(graph, config, suppress_delivery_warning)
     if recipe == "auto-v2":
-        return auto_v2(graph, config, linestyle)
+        return auto_v2(graph, config, linestyle, suppress_delivery_warning)
     raise ValueError(f"unknown recipe {recipe!r}; available {sorted(RECIPE_VERSIONS)}")

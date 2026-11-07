@@ -247,9 +247,9 @@ models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
 | File | Content | How agents use it |
 |---|---|---|
 | `graph.json` / `graph.cld` | normalized graph model + DSL round-trip text | downstream programmatic consumption |
-| `layout.json` | 2D delivered coordinates (all integers, 2px grid); edges carry `loop_kinds`/`loop_color` and route `kind` (line/arc/vg/poly/waypoints) plus `via` fold points | rendering / recomputation |
+| `layout.json` | 2D delivered coordinates (all integers, 2px grid); edges carry `loop_kinds`/`loop_color` and route `kind` (line/arc/vg/poly/waypoints) plus `via` fold points; delivery-contract stamped (stdraw/delivery.py): library outputs self-declare `"delivery": "coordinates-only"` + warning, the CLI marks full deliverables `"delivery": "stdraw-cli"` / `"interactive": true`, and the ortho CLI layout.json stays byte-frozen (production pin — its contract travels on certificate.json) | rendering / recomputation |
 | `geometry_report.json` | geometry self-checks (CI gate form), CLI exits 1 when `fail>0` | **CI gate** (assert fail==0) |
-| `certificate.json` | metrics + gates + report items + honest grade + `placement` mode | **quality assertion** (below) |
+| `certificate.json` | metrics + gates + report items + honest grade + `placement` mode + delivery-face confession (`"interactive"` / `"drag_layer"`: yes only when the CLI shipped demo-2d.html with its drag layer — usable as a host CI gate) | **quality assertion** (below) |
 | `loops_audit.json` | loop audit: declared / closed / enumerated / problems | assert `summary.problems == 0` |
 | `demo-2d.html` | 2D deliverable page (embedded certificate + drag touch-up layer) | directly human-viewable / printable |
 | `positions3d.json` / `demo-3d.html` | 3D per-solid coordinates + interactive page | demo-3d needs the in-repo `assets/` relative path |

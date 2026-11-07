@@ -27,6 +27,7 @@ from .loops import loops_audit
 from .render import render_html
 from .layout3d import SOLIDS, layout3d
 from .render3d import render_3d_html
+from .delivery import strip_delivery_metadata, stamp_cli_deliverable
 
 
 def load_graph(path: str) -> Graph:
@@ -160,6 +161,12 @@ def main(argv=None):
             print("      honest degradation: skipping the 2D certificate (a replaceable layout-layer implementation is M1+)")
             v4 = None
         else:
+            # ortho-v1 freeze-compat: the pipeline stamps delivery-contract
+            # metadata (stdraw/delivery.py), but the CLI ortho layout.json is a
+            # byte-frozen production pin (tests/baselines/, ci_checks gate A),
+            # so the metadata is stripped here; the ortho delivery contract
+            # travels on certificate.json (interactive / drag_layer) instead.
+            v4 = strip_delivery_metadata(v4)
             labels = {n.id: n.label for n in g.nodes}
             values = {n.id: n.value for n in g.nodes if n.value}
             p = w("layout.json", v4)
@@ -171,7 +178,8 @@ def main(argv=None):
             # Five-metric certificate (legacy caliber, byte-compatible)
             cert = certificate(scene_from_planar(v4), graph_name=name,
                                layer="2D",
-                               notes=["unrelated lines piercing cards occlusion-style is allowed by design (cards are opaque)"])
+                               notes=["unrelated lines piercing cards occlusion-style is allowed by design (cards are opaque)"],
+                               interactive="yes", drag_layer="yes")
             p = w("certificate.json", cert)
             m = cert["metrics"]
             print(f"[4/6] certificate: crossings {m['crossings']} / true card piercings {m['occlusions_true_0px']} / "
@@ -203,6 +211,10 @@ def main(argv=None):
             v4 = recipes_run("auto-v2", g, cfg, a.linestyle)
         labels = {n.id: n.label for n in g.nodes}
         values = {n.id: n.value for n in g.nodes if n.value}
+        # Full CLI deliverable (demo-2d.html + certificate.json) is produced
+        # below: the layout.json that ships with it is re-stamped interactive
+        # (delivery="stdraw-cli", no warning) per the delivery contract.
+        v4 = stamp_cli_deliverable(v4)
         p = w("layout.json", v4)
         meta = v4["meta"]
         print(f"[3/6] 2D layout (auto-v2, engine={meta['position_engine']}, "
@@ -219,7 +231,8 @@ def main(argv=None):
                   f"lb={exactness['lb']} gap={exactness['gap']} "
                   f"coverage={exactness['coverage']}")
         cert = certificate_auto(scene_from_auto(v4), graph_name=name, layer="2D",
-                                graph=g, exactness=exactness)
+                                graph=g, exactness=exactness,
+                                interactive="yes", drag_layer="yes")
         p = w("certificate.json", cert)
         m = cert["metrics"]
         print(f"[4/6] certificate: crossings {m['crossings']} / box press {m['box_press_1px']} / "

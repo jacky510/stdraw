@@ -105,7 +105,8 @@ def scene_from_grid(nodes: dict, edges: list, card_h: int) -> dict:
 
 def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
                 gates: Optional[dict] = None,
-                notes: Optional[List[str]] = None) -> dict:
+                notes: Optional[List[str]] = None,
+                interactive: str = "no", drag_layer: str = "no") -> dict:
     nodes: Dict[str, dict] = scene["nodes"]
     edges: List[dict] = scene["edges"]
     segs: dict = scene["segments"]
@@ -221,7 +222,7 @@ def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
                       "ungraded; a certificate bought with a relaxed budget "
                       "never poses as a finished product")
 
-    return {
+    cert = {
         "tool": "stdraw", "version": "0.1.0", "layer": layer,
         "graph": graph_name,
         "n": len(ids), "m": len(edges),
@@ -236,6 +237,12 @@ def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
             "CLDs are often non-planar; 0 crossings has a mathematical "
             "boundary. This certificate holds only for this graph and this layout"),
     }
+    # Delivery-face confession: did this certificate ship with the
+    # interactive deliverable (demo-2d.html + its drag touch-up layer)?
+    # CLI passes yes/yes; library callers grading bare coordinates get no/no.
+    cert["interactive"] = interactive
+    cert["drag_layer"] = drag_layer
+    return cert
 
 
 def _interpolate(si, sj):
@@ -331,7 +338,8 @@ def _bbox_gap(pa, pb):
 def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                      gates: Optional[dict] = None,
                      notes: Optional[List[str]] = None,
-                     graph=None, exactness: Optional[dict] = None) -> dict:
+                     graph=None, exactness: Optional[dict] = None,
+                     interactive: str = "no", drag_layer: str = "no") -> dict:
     """v2 quality certificate: five metrics + new hard gates + honest grading.
     All verification runs on delivered coordinates.
 
@@ -992,6 +1000,9 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "midline_deviation": metrics.get("midline_deviation"),
             "mirror_err": metrics.get("symmetry_mirror_err"),
         }
+    # Delivery-face confession (same caliber as certificate()):
+    out["interactive"] = interactive
+    out["drag_layer"] = drag_layer
     return out
 
 

@@ -70,6 +70,29 @@ pip install "stdraw[solver]"
 
 Iron rule: stdraw never claims arbitrary graphs are 0-crossing. Relay grades as-is.
 
+## Integrating Into an Existing Web App
+
+**Do**
+
+- Deliver `demo-2d.html` — it *is* the deliverable (drag touch-up layer +
+  embedded certificate). Embed it, e.g. `<iframe src="demo-2d.html">`.
+- Persist manual touch-ups: "Export layout" in `demo-2d.html` writes a
+  layout JSON; re-run `stdraw layout model.cld --from-layout <that.json>`
+  to re-route and re-grade on the same coordinates.
+- Gate embedded deliverables on the certificate's delivery face:
+  `certificate.json` must carry `"interactive": "yes"` and
+  `"drag_layer": "yes"`.
+
+**Don't**
+
+- Don't bake a static SVG from `layout.json` coordinates: you lose live
+  drag re-routing, waypoint handles, the export->recompute loop and the
+  certificate. `layout.json` self-declares `"delivery":
+  "coordinates-only"`, `"interactive": false` plus a warning — treat
+  that as a stop sign, not noise to strip.
+- Don't pass `suppress_delivery_warning=True` merely to silence the
+  warning; use it only when you truly consume raw coordinates.
+
 ## Pitfalls
 
 - Small graphs: pass `--pitch 62` to clear the min-gap gate.
