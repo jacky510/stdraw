@@ -764,7 +764,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     reports = {
         "crossings_zero": metrics["crossings"] == 0,
         "crossings_note": ("软目标：排布规律达标时允许 ≤2 交叉"
-                           "（jacky 2026-11-05：部分线相交可以接受，秩序与优美优先）；"
+                           "（产品定调：部分线相交可以接受，秩序与优美优先）；"
                            "分级口径不变（最优=硬门全过+0 交叉）"),
         "row_align_ge_060": (metrics["row_align_rate"] is None
                              or metrics["row_align_rate"] >= 0.60),
@@ -837,7 +837,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性",
             "互环对（a↔b 双向边）两线最小间距 ≥4px（透镜双弧/平行偏移/外围绕行，"
             "禁止重合成双箭头线；穿卡计数按边×卡去重）",
-            "线-线视觉重合对数=0（ref-scrubbed：任意两线 <1px 并行同走 >8px 判重合；"
+            "线-线视觉重合对数=0（任意两线 <1px 并行同走 >8px 判重合；"
             "端点锚点处的瞬时会合不计；机器可查指标）",
             "交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，"
             "不一致拒发证书",
@@ -851,7 +851,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     }
     if ring_mode:
         out["honest_notes"] = out["honest_notes"] + [
-            "环形排布口径（ref-scrubbed）：行对齐率/24px 列吸附对环形排布不适用，"
+            "环形排布口径：行对齐率/24px 列吸附对环形排布不适用，"
             "规律性门切换为环上等间距 CV ≤0.05 + 正多边形模板拟合误差 ≤0.05；"
             "主环按环序正多边形槽位、弦走环内，环路极性（R/B）徽标沿环可读"]
         out["ring"] = {
@@ -861,7 +861,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         }
     if column_mode:
         out["honest_notes"] = out["honest_notes"] + [
-            "纵列排布口径（ref-scrubbed）：主链纵向对齐一列（列轴偏差 ≤2px 门）、"
+            "纵列排布口径：主链纵向对齐一列（列轴偏差 ≤2px 门）、"
             "主链行距恒等门；支路挂主链近邻侧（半行偏移不计入主链行距门）；"
             "主链闭合边构造为左侧大弧（回路聚拢/圆环感）；"
             "行对齐率/列吸附报告不适用（如实 None）"]
@@ -872,7 +872,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         }
     if sym_mode:
         out["honest_notes"] = out["honest_notes"] + [
-            "对称排布口径（ref-scrubbed）：领结（双三角共边）结构显式对称——"
+            "对称排布口径：领结（双三角共边）结构显式对称——"
             "共享边端点居纵轴、左右顶点镜像（镜像轴误差 ≤2px 门）；"
             "线型一致性硬规则：轴边直线 + 侧边全弧（不直弧折混杂）；"
             "行对齐率/列吸附报告不适用（如实 None）"]
@@ -882,9 +882,9 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         }
     if bowtie_mode:
         out["honest_notes"] = out["honest_notes"] + [
-            "领结共点口径（ref-scrubbed 美学 v3）：双环共享单节点结构显式对称——"
+            "领结共点口径（美学 v3）：双环共享单节点结构显式对称——"
             "共享节点居中、两环分占上下半平面镜像（镜像轴误差 ≤2px 门，"
-            "对拍 jacky 手拉样本 wage-price-spiral）；判定=枚举简单环"
+            "对拍手拉基准样本 wage-price-spiral）；判定=枚举简单环"
             "（恰 2 环恰共享 1 节点），声明 loops 不作判据；"
             "线型一致性硬规则：全直线（外边水平 + 辐条直连，"
             "共享侧锚点边中点 ±14px 对称展开）；"
@@ -896,9 +896,9 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         }
     if spine_mode:
         out["honest_notes"] = out["honest_notes"] + [
-            "纵柱+翼位口径（ref-scrubbed v0.7.1）：中枢对纵柱严格垂直居轴"
+            "纵柱+翼位口径（v0.7.1）：中枢对纵柱严格垂直居轴"
             "（x 对齐 ≤2px 门）、翼位压中线水平带（贴靠 ≤2px 门）、"
-            "翼外镜像对上下对称（镜像误差 ≤2px 门）——对拍 jacky 手拉样本"
+            "翼外镜像对上下对称（镜像误差 ≤2px 门）——对拍手拉基准样本"
             " classic-cld-growth-and-burden；判定=确定性拓扑度量"
             "（中枢对公共邻居 ≥3 + rest 次级簇可配对 + 主链长度占比 ≤0.5），"
             "详见 docs/layout-modes.md；纵柱边构造竖直直线，其余走 Router；"

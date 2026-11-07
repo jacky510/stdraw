@@ -59,7 +59,7 @@ edges.forEach(function (e, i) {
   }
 });
 var polGroups = {};
-// ref-scrubbed：R/B 文字徽标已移除（回路极性由边着色表达，静态 stroke 属性
+// R/B 文字徽标已移除（回路极性由边着色表达，静态 stroke 属性
 // 拖拽时保留）；polGroups/refreshMarkers 保留为空实现以兼容旧页面结构。
 var incidentMap = {};
 Object.keys(nodes).forEach(function (v) {
@@ -81,7 +81,7 @@ function updateEdge(i) {
   }
 }
 function borderPoint(c, hw, hh, toward) {
-  // ref-scrubbed 连接点交付口径：射线定边出口 → 锚点沿该边切向钳制到边中点
+  // 连接点交付口径：射线定边出口 → 锚点沿该边切向钳制到边中点
   // ±1/4 边长带内（正交出边即边中点，斜线出口拉回带内，转角排除）。
   // 与 Python routing.border_point + Router.midband_reanchor 同口径。
   var dx = toward[0] - c[0], dy = toward[1] - c[1];
@@ -107,7 +107,7 @@ function reanchor(i) {
   e.pts = pts;
 }
 
-// ── ref-scrubbed：JS 侧预览布线器（可见性图最短路，与 visibility.py 同数学口径）──
+// ── JS 侧预览布线器（可见性图最短路，与 visibility.py 同数学口径）──
 function ptSegDist(px, py, a, b) {
   var vx = b[0] - a[0], vy = b[1] - a[1], L2 = vx * vx + vy * vy;
   if (L2 < VEPS) return Math.hypot(px - a[0], py - a[1]);
@@ -256,7 +256,7 @@ function reroute(i) {
   previewRoute(i);
 }
 
-// ── ref-scrubbed：折点把手（vg 折线/用户锚定边）──
+// ── 折点把手（vg 折线/用户锚定边）──
 var pinned = {};          // edgeIdx -> true（用户拖过把手 = waypoints 锚定）
 var NS = 'http://www.w3.org/2000/svg';
 var styleEl = document.createElement('style');
@@ -424,7 +424,7 @@ function ptPolyDist(px, py, pts) {
   return best;
 }
 function refreshMarkers() {
-  // ref-scrubbed：徽标已移除（边着色承载 R/B 极性）——空实现保留接口。
+  // 徽标已移除（边着色承载 R/B 极性）——空实现保留接口。
 }
 var drag = null, rafPending = false;
 function svgPoint(ev) {
@@ -536,7 +536,7 @@ function exportLayout() {
   Object.keys(nodes).forEach(function (v) {
     out.nodes[v] = {x: Math.round(nodes[v].x), y: Math.round(nodes[v].y)};
   });
-  // ref-scrubbed：用户锚定边的 waypoints（确定性：按边原序，坐标取整）
+  // 用户锚定边的 waypoints（确定性：按边原序，坐标取整）
   var wps = [];
   edges.forEach(function (e, i) {
     if (!pinned[i]) return;
@@ -594,7 +594,7 @@ window.__stdrawNodePos = function (v) {
   return v ? [nodes[v].x, nodes[v].y]
            : Object.keys(nodes).map(function (k) { return [k, nodes[k].x, nodes[k].y]; });
 };
-// ref-scrubbed 探针钩子：当前折线顶点 / 锚定态 / vg 边清单 / 把手清单
+// 探针钩子：当前折线顶点 / 锚定态 / vg 边清单 / 把手清单
 window.__stdrawEdgePts = function (i) {
   return (i === undefined || i === null)
     ? edges.map(function (e) { return e.pts; })
@@ -633,7 +633,7 @@ refreshMetrics();
 <h4>报告项（不一票否决）</h4><table><tr><td>0 交叉</td><td class="ok">✓</td></tr><tr><td>行对齐 ≥0.60</td><td class="ok">✓</td></tr></table>
 <p class="grade">分级：<b>最优</b> — 硬门全过（框压线0/净距≥16/锚点平滑/规律）+ 线 0 交叉</p>
 <p class="note">边着色：琥珀=增强回路(R) · 天蓝=平衡回路(B) · 灰=非回路边/多环异色；虚线=负极性（−）</p>
-<p class="note">硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性 / 互环对（a↔b 双向边）两线最小间距 ≥4px（透镜双弧/平行偏移/外围绕行，禁止重合成双箭头线；穿卡计数按边×卡去重） / 线-线视觉重合对数=0（ref-scrubbed：任意两线 &lt;1px 并行同走 &gt;8px 判重合；端点锚点处的瞬时会合不计；机器可查指标） / 交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，不一致拒发证书 / 布线数学：绕障 = 净距膨胀障碍可见性图 Dijkstra 最短路（图上精确最优；相对圆角障碍连续空间真最短路每贴角至多多 (2−π/2)·膨胀余量 px）；平滑 = 折角相切圆弧（G1 切线连续、曲率有界），凸角相切弧向障碍侧下探 r·(1/cos(θ/2)−1)，受膨胀余量约束 / 纵柱+翼位口径（ref-scrubbed v0.7.1）：中枢对纵柱严格垂直居轴（x 对齐 ≤2px 门）、翼位压中线水平带（贴靠 ≤2px 门）、翼外镜像对上下对称（镜像误差 ≤2px 门）——对拍 jacky 手拉样本 classic-cld-growth-and-burden；判定=确定性拓扑度量（中枢对公共邻居 ≥3 + rest 次级簇可配对 + 主链长度占比 ≤0.5），详见 docs/layout-modes.md；纵柱边构造竖直直线，其余走 Router；行对齐率/列吸附报告不适用（如实 None）</p>
+<p class="note">硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性 / 互环对（a↔b 双向边）两线最小间距 ≥4px（透镜双弧/平行偏移/外围绕行，禁止重合成双箭头线；穿卡计数按边×卡去重） / 线-线视觉重合对数=0（任意两线 &lt;1px 并行同走 &gt;8px 判重合；端点锚点处的瞬时会合不计；机器可查指标） / 交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，不一致拒发证书 / 布线数学：绕障 = 净距膨胀障碍可见性图 Dijkstra 最短路（图上精确最优；相对圆角障碍连续空间真最短路每贴角至多多 (2−π/2)·膨胀余量 px）；平滑 = 折角相切圆弧（G1 切线连续、曲率有界），凸角相切弧向障碍侧下探 r·(1/cos(θ/2)−1)，受膨胀余量约束 / 纵柱+翼位口径（v0.7.1）：中枢对纵柱严格垂直居轴（x 对齐 ≤2px 门）、翼位压中线水平带（贴靠 ≤2px 门）、翼外镜像对上下对称（镜像误差 ≤2px 门）——对拍手拉基准样本 classic-cld-growth-and-burden；判定=确定性拓扑度量（中枢对公共邻居 ≥3 + rest 次级簇可配对 + 主链长度占比 ≤0.5），详见 docs/layout-modes.md；纵柱边构造竖直直线，其余走 Router；行对齐率/列吸附报告不适用（如实 None）</p>
 </div>
 <div class="cert"><h3>环路语义审计</h3><ul><li>[R R1] 采纳扩散 — 闭合✓，负边 0 条 → 增强R</li><li>[B B1] 市场饱和 — 闭合✓，负边 1 条 → 平衡B</li><li>[B B2] 拥挤制约 — 闭合✓，负边 1 条 → 平衡B</li><li>[B B3] 症状缓解 — 闭合✓，负边 1 条 → 平衡B</li><li>[B B4] 根本治理 — 闭合✓，负边 1 条 → 平衡B</li><li>[R R2] 饮鸩止渴 — 闭合✓，负边 0 条 → 增强R</li></ul><p>无问题</p></div>
 <p class="note">stdraw auto-v2 · 诚实分级：交叉数是目标函数最小化项而非定理保证，本证书只对本图本布局成立。</p>

@@ -62,7 +62,7 @@ edges.forEach(function (e, i) {
   }
 });
 var polGroups = {};
-// ref-scrubbed：R/B 文字徽标已移除（回路极性由边着色表达，静态 stroke 属性
+// R/B 文字徽标已移除（回路极性由边着色表达，静态 stroke 属性
 // 拖拽时保留）；polGroups/refreshMarkers 保留为空实现以兼容旧页面结构。
 var incidentMap = {};
 Object.keys(nodes).forEach(function (v) {
@@ -84,7 +84,7 @@ function updateEdge(i) {
   }
 }
 function borderPoint(c, hw, hh, toward) {
-  // ref-scrubbed 连接点交付口径：射线定边出口 → 锚点沿该边切向钳制到边中点
+  // 连接点交付口径：射线定边出口 → 锚点沿该边切向钳制到边中点
   // ±1/4 边长带内（正交出边即边中点，斜线出口拉回带内，转角排除）。
   // 与 Python routing.border_point + Router.midband_reanchor 同口径。
   var dx = toward[0] - c[0], dy = toward[1] - c[1];
@@ -110,7 +110,7 @@ function reanchor(i) {
   e.pts = pts;
 }
 
-// ── ref-scrubbed：JS 侧预览布线器（可见性图最短路，与 visibility.py 同数学口径）──
+// ── JS 侧预览布线器（可见性图最短路，与 visibility.py 同数学口径）──
 function ptSegDist(px, py, a, b) {
   var vx = b[0] - a[0], vy = b[1] - a[1], L2 = vx * vx + vy * vy;
   if (L2 < VEPS) return Math.hypot(px - a[0], py - a[1]);
@@ -259,7 +259,7 @@ function reroute(i) {
   previewRoute(i);
 }
 
-// ── ref-scrubbed：折点把手（vg 折线/用户锚定边）──
+// ── 折点把手（vg 折线/用户锚定边）──
 var pinned = {};          // edgeIdx -> true（用户拖过把手 = waypoints 锚定）
 var NS = 'http://www.w3.org/2000/svg';
 var styleEl = document.createElement('style');
@@ -427,7 +427,7 @@ function ptPolyDist(px, py, pts) {
   return best;
 }
 function refreshMarkers() {
-  // ref-scrubbed：徽标已移除（边着色承载 R/B 极性）——空实现保留接口。
+  // 徽标已移除（边着色承载 R/B 极性）——空实现保留接口。
 }
 var drag = null, rafPending = false;
 function svgPoint(ev) {
@@ -539,7 +539,7 @@ function exportLayout() {
   Object.keys(nodes).forEach(function (v) {
     out.nodes[v] = {x: Math.round(nodes[v].x), y: Math.round(nodes[v].y)};
   });
-  // ref-scrubbed：用户锚定边的 waypoints（确定性：按边原序，坐标取整）
+  // 用户锚定边的 waypoints（确定性：按边原序，坐标取整）
   var wps = [];
   edges.forEach(function (e, i) {
     if (!pinned[i]) return;
@@ -597,7 +597,7 @@ window.__stdrawNodePos = function (v) {
   return v ? [nodes[v].x, nodes[v].y]
            : Object.keys(nodes).map(function (k) { return [k, nodes[k].x, nodes[k].y]; });
 };
-// ref-scrubbed 探针钩子：当前折线顶点 / 锚定态 / vg 边清单 / 把手清单
+// 探针钩子：当前折线顶点 / 锚定态 / vg 边清单 / 把手清单
 window.__stdrawEdgePts = function (i) {
   return (i === undefined || i === null)
     ? edges.map(function (e) { return e.pts; })
