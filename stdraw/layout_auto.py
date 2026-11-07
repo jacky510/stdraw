@@ -889,12 +889,29 @@ def _comb_trial(plan, nodes, widths, card_h, cfg):
     from . import comblayout
     edges = EDGES_REF[0]
     try:
-        pos, y, meta = comblayout.place_comb(plan, widths, card_h, cfg)
+        pos, y, meta, constructed = comblayout.place_comb(plan, widths,
+                                                          card_h, cfg)
     except comblayout.InfeasibleComb:
         return None
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
     routes = router.route_all()
+    # v0.7.8 tier-1 wide-card fan: hub edges constructed between
+    # facing-vertical-border anchors replace the routed candidates here (the
+    # same injection channel the delivery layer uses); the contract check
+    # and the unified hard gates below then review the injected geometry
+    # like any other route.
+    if constructed:
+        idx = {e: i for i, e in enumerate(edges)}
+        for key, cr in constructed.items():
+            i = idx.get(key)
+            if i is None:
+                continue        # mirrored direction key absent from the
+                                # declared edge list — nothing to replace
+            routes[i] = {"kind": cr["kind"],
+                         "points": [list(p) for p in cr["points"]],
+                         "press": 0, "min_clear": None, "cross": 0,
+                         "cross_edges": 0, "ang_a": 90.0, "ang_b": 90.0}
     for i, info in routes.items():
         if info["kind"] != "line":
             return None                      # comb contract: all-straight fan
@@ -902,6 +919,7 @@ def _comb_trial(plan, nodes, widths, card_h, cfg):
         return None
     plan = dict(plan)
     plan["placed"] = (pos, y, meta)
+    plan["constructed"] = {k: dict(v) for k, v in constructed.items()}
     return plan
 
 
@@ -1066,6 +1084,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     for yy in sorted({y[v] for v in nodes})]
             engine = "comb-construct"
             pos_meta = cmeta
+            # v0.7.8: tier-1 fan lines ride the generic constructed-route
+            # injection channel (frozen out of coincide/midband/fan_spread,
+            # hard gates already rechecked by the trial)
+            constructed = comb_plan.get("constructed") or {}
         elif column_plan is not None:
             cpos, cy, cmeta, cconstructed = column_plan["placed"]
             pos, y = cpos, cy
