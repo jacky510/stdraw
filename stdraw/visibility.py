@@ -1,36 +1,36 @@
 # -*- coding: utf-8 -*-
-"""WS3 布线数学层：可见性图最短直线路径 + 净距约束最小曲率弧线。
+"""WS3 routing math layer: visibility-graph shortest straight-line paths + clearance-constrained minimum-curvature arcs.
 
-数学口径（诚实声明，与证书措辞一致）：
-1. 直线绕障 = **膨胀障碍角点可见性图上的 Dijkstra 最短路**（图上精确最优，
-   经典计算几何定理）。障碍按净距 c 做 box growing：膨胀矩形 ⊇ 圆角
-   Minkowski 区域（|p−rect| < c），故「线段不进膨胀矩形 ⇒ 与原矩形欧氏
-   净距 ≥ c」。相对圆角障碍连续空间的真最短路，每个贴角至多多
-   (2−π/2)·c ≈ 0.43c px——由弧线平滑的切角效应回收。
-2. 每条可见边用**线段-矩形精确距离**独立复核（Liang-Barsky 相交判定 +
-   四边线段-线段距离），净距是解析保证，不靠离散采样巧合。
-3. 弧线平滑 = 折角处圆弧相切内接：G1 切线连续（无拐点），全程曲率有界
-   （≤ 1/r_min）。半径按确定性序列收缩，每条弧逐采样点复核净距；
-   本模块按「目标净距 c」建图与复核，调用方以 c = CLEARANCE + 1.5 传入，
-   交付坐标复核时留 ≥ +1.4px 余量，硬门 ≥16px 不踩线。
-4. 确定性：无 RNG。节点序、候选序、半径序列全部固定；同输入逐字节同输出。
+Mathematical accounting (honest statement, consistent with the certificate wording):
+1. Straight-line obstacle avoidance = **Dijkstra shortest path on the visibility graph over inflated obstacle corners**
+      (exactly optimal on the graph, a classic computational-geometry theorem). Obstacles are box-grown by clearance c: the inflated
+      rectangle >= the rounded-corner Minkowski region (|p-rect| < c), hence "segment misses the inflated rectangle => Euclidean
+      clearance to the original rectangle >= c". Versus the true shortest path in the continuous space of rounded obstacles, each
+      hugged corner adds at most (2-pi/2)*c ~= 0.43c px -- recovered by the corner-cutting effect of arc smoothing.
+2. Every visibility edge is independently rechecked with the **exact segment-rectangle distance** (Liang-Barsky intersection
+      test + four-border segment-segment distances); clearance is an analytic guarantee, not a coincidence of discrete sampling.
+3. Arc smoothing = tangent-inscribed circular arcs at bends: G1 tangent continuity (no inflection), curvature bounded
+      throughout (<= 1/r_min). Radii shrink along a deterministic sequence; each arc rechecks clearance at every sampled point;
+      this module builds the graph and rechecks at the "target clearance c"; the caller passes c = CLEARANCE + 1.5, leaving
+      a >= +1.4px margin at delivery-coordinate recheck, so the >=16px hard gate is never grazed.
+4. Deterministic: no RNG. Node order, candidate order, radius sequence all fixed; same input gives byte-for-byte the same output.
 
-本模块 stdlib-only，不依赖 networkx/ortools。
+This module is stdlib-only, with no networkx/ortools dependency.
 """
 import math
 from heapq import heappush, heappop
 
-VIS_EPS = 1e-6        # 可见性判定的浮点容差
-ARC_SAMPLES = 16      # 每条圆弧的采样段数（几何复核/交叉复检用）
-FILLET_R_MAX = 36.0   # 平滑弧最大半径 px
-FILLET_R_SHRINK = (1.0, 0.75, 0.55, 0.40, 0.28, 0.18, 0.10)  # 确定性收缩序列
-FILLET_TAU_MAX = 0.45  # 切段长不超过相邻线段长的比例上限
-DEFLECT_SKIP = 0.03    # 折角偏转 < ~1.7° 视为直线，不打弧
+VIS_EPS = 1e-6        # float tolerance for visibility tests
+ARC_SAMPLES = 16      # sampled segments per circular arc (for geometry/crossing rechecks)
+FILLET_R_MAX = 36.0   # smoothing-arc maximum radius px
+FILLET_R_SHRINK = (1.0, 0.75, 0.55, 0.40, 0.28, 0.18, 0.10)  # deterministic shrink sequence
+FILLET_TAU_MAX = 0.45  # upper bound on tangent-segment length as a fraction of the adjacent segment length
+DEFLECT_SKIP = 0.03    # bend deflection < ~1.7 degrees is treated as straight, no arc
 
 
-# ── 精确距离基元 ─────────────────────────────────────────
+# -- exact distance primitives -----------------------------------------
 def _pt_seg_dist(px, py, a, b):
-    """点到线段的最小距离。"""
+    """Minimum distance from a point to a segment."""
     vx, vy = b[0] - a[0], b[1] - a[1]
     L2 = vx * vx + vy * vy
     if L2 < VIS_EPS:
@@ -40,7 +40,7 @@ def _pt_seg_dist(px, py, a, b):
 
 
 def seg_seg_dist(p1, p2, p3, p4):
-    """两线段距离：相交为 0；不相交时 = 四端点对彼段距离的最小值。"""
+    """Distance between two segments: 0 if intersecting; otherwise the minimum of the four endpoint-to-other-segment distances."""
     def orient(a, b, c):
         v = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
         return 0 if abs(v) < VIS_EPS else (1 if v > 0 else -1)
@@ -55,9 +55,9 @@ def seg_seg_dist(p1, p2, p3, p4):
 
 
 def _seg_hits_rect(x1, y1, x2, y2, cx, cy, hw, hh):
-    """Liang-Barsky：线段是否正长度穿入矩形（贴边不算）。与 metrics 同口径。
+    """Liang-Barsky: whether a segment enters the rectangle with positive length (border-touching does not count). Same accounting as metrics.
 
-    自带实现（metrics → routing → 本模块会循环导入，不回引）。
+        Self-contained implementation (metrics -> routing -> this module would be a circular import, so no back-reference).
     """
     dx, dy = x2 - x1, y2 - y1
     t0, t1 = 0.0, 1.0
@@ -82,10 +82,10 @@ def _seg_hits_rect(x1, y1, x2, y2, cx, cy, hw, hh):
 
 
 def seg_rect_distance(p1, p2, rect):
-    """线段到矩形（中心+半宽半高）的精确最小距离：相交为 0。
+    """Exact minimum distance from a segment to a rectangle (center + half-width/half-height): 0 if intersecting.
 
-    相交判定用 Liang-Barsky（正长度进入才算，贴边不算）；不相交时取
-    矩形四边线段-线段距离的最小值。
+        Intersection uses Liang-Barsky (positive-length entry counts, border-touching does not); when disjoint, take the minimum
+        segment-segment distance over the rectangle's four borders.
     """
     cx, cy, hw, hh = rect
     if _seg_hits_rect(p1[0], p1[1], p2[0], p2[1], cx, cy, hw, hh):
@@ -97,16 +97,16 @@ def seg_rect_distance(p1, p2, rect):
 
 
 def pt_rect_distance(px, py, rect):
-    """点到矩形的欧氏距离（框内为 0）。"""
+    """Euclidean distance from a point to a rectangle (0 when inside)."""
     cx, cy, hw, hh = rect
     dx = max(abs(px - cx) - hw, 0.0)
     dy = max(abs(py - cy) - hh, 0.0)
     return math.hypot(dx, dy)
 
 
-# ── 可见性图 + Dijkstra ──────────────────────────────────
+# -- visibility graph + Dijkstra ----------------------------------------
 def _graph_nodes(src, dst, rects, c):
-    """节点 = 源/汇 + 每个膨胀矩形的 4 角（膨胀角距原矩形恰为 c）。"""
+    """Nodes = source/sink + the 4 corners of every inflated rectangle (inflated corners sit exactly c from the original rectangle)."""
     nodes = [tuple(src), tuple(dst)]
     for (cx, cy, hw, hh) in rects:
         gx, gy = hw + c, hh + c
@@ -116,11 +116,11 @@ def _graph_nodes(src, dst, rects, c):
 
 
 def _visible(p1, p2, rects, c):
-    """线段对全部障碍净距 ≥ c − ε（解析复核，不采样）。
+    """Segment keeps clearance >= c - epsilon against all obstacles (analytic recheck, no sampling).
 
-    性能（WS5）：先用「线段包围盒 × 矩形包围盒」距离做下界快筛——线段上
-    任意点到矩形的距离 ≥ 两包围盒距离，故包围盒距离 ≥ c−ε 时精确距离必
-    ≥ c−ε，可跳过精确计算（精确等价，不改变任何判定结果）。
+        Performance (WS5): first a lower-bound quick filter via the "segment bbox x rectangle bbox" distance -- any point on the
+        segment is at a distance from the rectangle >= the bbox distance, so when the bbox distance >= c - epsilon the exact distance
+        is necessarily >= c - epsilon and the exact computation can be skipped (exactly equivalent, changes no test outcome).
     """
     t = c - VIS_EPS
     t2 = t * t
@@ -141,7 +141,7 @@ def _visible(p1, p2, rects, c):
                 gy = g
             if gy < 0.0:
                 gy = 0.0
-            # gx/gy 已钳 0：hypot(gx,gy) = 两包围盒距离；< t 才可能挡线
+            # gx/gy already clamped to 0: hypot(gx,gy) = the bbox distance; only < t can possibly block the line
             if gy < t and (gx == 0.0 or gy == 0.0 or gx * gx + gy * gy < t2):
                 if seg_rect_distance(p1, p2, rect) < t:
                     return False
@@ -149,7 +149,7 @@ def _visible(p1, p2, rects, c):
 
 
 def _dijkstra(nodes, adj, src_idx, dst_idx):
-    """确定性 Dijkstra：堆键 (dist, node_idx)，node_idx 唯一 → 弹出序固定。"""
+    """Deterministic Dijkstra: heap key (dist, node_idx); node_idx is unique -> fixed pop order."""
     INF = float("inf")
     dist = [INF] * len(nodes)
     prev = [-1] * len(nodes)
@@ -161,7 +161,7 @@ def _dijkstra(nodes, adj, src_idx, dst_idx):
             continue
         if u == dst_idx:
             break
-        # adj[u] 按 node_idx 升序生成 → 松弛序固定；等距不替换（先到先得）
+        # adj[u] generated in ascending node_idx order -> fixed relaxation order; ties not replaced (first come, first kept)
         for v, w in adj[u]:
             nd = d + w
             if nd < dist[v] - VIS_EPS:
@@ -179,15 +179,15 @@ def _dijkstra(nodes, adj, src_idx, dst_idx):
 
 
 def shortest_path(src, dst, rects, c):
-    """膨胀障碍角点可见性图最短路。不可达返回 None。
+    """Shortest path on the visibility graph over inflated obstacle corners. Returns None when unreachable.
 
-    返回折线 [src, corner*, …, dst]（图上精确最优；最优性边界见模块 docstring）。
+        Returns the polyline [src, corner*, ..., dst] (exactly optimal on the graph; optimality bounds in the module docstring).
     """
     if not rects:
         return [tuple(src), tuple(dst)]
     nodes = _graph_nodes(src, dst, rects, c)
     n = len(nodes)
-    # 邻接表：O(n²) 可见性复核，按 (i,j) 升序生成 → 确定性
+    # Adjacency list: O(n^2) visibility rechecks, generated in ascending (i,j) order -> deterministic
     adj = [[] for _ in range(n)]
     for i in range(n):
         for j in range(i + 1, n):
@@ -199,7 +199,7 @@ def shortest_path(src, dst, rects, c):
 
 
 def _shortcut(path, rects, c, rounds=3):
-    """可视弦捷径（string pulling）：依序尝试跳过中间点，收敛即止。确定性。"""
+    """Visible-chord shortcuts (string pulling): try skipping intermediate points in order, stop on convergence. Deterministic."""
     pts = list(path)
     for _ in range(rounds):
         changed = False
@@ -215,15 +215,15 @@ def _shortcut(path, rects, c, rounds=3):
     return pts
 
 
-# ── 弧线平滑（净距约束最小曲率）─────────────────────────
+# -- arc smoothing (clearance-constrained minimum curvature) -------------
 def _fillet(a, q, b, rects, c):
-    """折角 q 处的相切圆弧。返回 None（不打弧/打不了弧）或弧参数 dict。
+    """Tangent arc at bend q. Returns None (no arc wanted / no arc possible) or an arc-parameter dict.
 
-    G1：弧与前后段在 ta/tb 处切线连续；曲率 = 1/r 有界。
-    半径确定性收缩，逐采样点复核净距 ≥ c − 0.005（弦高 ≤0.05px 量级，
-    交付坐标 16px 硬门留有 c−16=1.5px 膨胀余量兜底）。
-    几何边界（诚实）：凸角相切弧向障碍侧下探 r·(1/cos(θ/2)−1)，
-    浅角可打大弧，直角受 1.5px 余量约束只能微圆角（r ≤ ~3.6）。
+        G1: the arc is tangent-continuous with the adjacent segments at ta/tb; curvature = 1/r is bounded.
+        Radii shrink deterministically; clearance is rechecked at every sampled point as >= c - 0.005 (chord height on the
+        <=0.05px scale; the delivery-coordinate 16px hard gate keeps the c-16=1.5px inflation margin as a fallback).
+        Geometric bound (honest): the tangent arc at a convex corner dips r*(1/cos(theta/2)-1) toward the obstacle side;
+        shallow corners admit large arcs while right angles, constrained by the 1.5px margin, admit only a tiny fillet (r <= ~3.6).
     """
     ux, uy = q[0] - a[0], q[1] - a[1]
     wx, wy = b[0] - q[0], b[1] - q[1]
@@ -231,14 +231,14 @@ def _fillet(a, q, b, rects, c):
     if lu < VIS_EPS or lw < VIS_EPS:
         return None
     ux, uy, wx, wy = ux / lu, uy / lu, wx / lw, wy / lw
-    # 偏转角 θ = u 与 w 的夹角（θ=0 直线延续；θ=π 掉头）
+    # Deflection angle theta = angle between u and w (theta=0 straight continuation; theta=pi U-turn)
     theta = math.acos(max(-1.0, min(1.0, ux * wx + uy * wy)))
     if theta < DEFLECT_SKIP or theta > math.pi - DEFLECT_SKIP:
         return None
     cos_half = math.cos(theta / 2)
     tan_half = math.tan(theta / 2)
-    # 切段长 t = r·tan(θ/2)、圆心距 d = r/cos(θ/2)（圆心在折角楔形内，
-    # 与前后段线相切）。半径上界 = 切段钳制与绝对上限的较小者。
+    # Tangent-segment length t = r*tan(theta/2), center distance d = r/cos(theta/2) (the center sits inside the bend wedge,
+    # tangent to both adjacent segment lines). Radius upper bound = the smaller of the tangent-segment clamp and the absolute cap.
     tau_max = FILLET_TAU_MAX * min(lu, lw)
     r0 = min(FILLET_R_MAX, tau_max / tan_half)
     for f in FILLET_R_SHRINK:
@@ -249,7 +249,7 @@ def _fillet(a, q, b, rects, c):
         r = t / tan_half
         if r < 1.5:
             continue
-        # 内角平分线方向（−u 与 w 的单位和）
+        # Interior angle-bisector direction (the sum of the unit vectors -u and w)
         bx, by = -ux + wx, -uy + wy
         lb = math.hypot(bx, by)
         if lb < VIS_EPS:
@@ -260,7 +260,7 @@ def _fillet(a, q, b, rects, c):
         ta = (q[0] - ux * t, q[1] - uy * t)
         tb = (q[0] + wx * t, q[1] + wy * t)
         samples = _arc_samples(center, r, ta, tb)
-        # 纵深防御：切向垂直度自检（ta 半径 ⊥ 入段、tb 半径 ⊥ 出段，G1 的解析条件）
+        # Defense in depth: tangent-perpendicularity self-check (the ta radius perpendicular to the incoming segment, the tb radius to the outgoing segment -- the analytic G1 condition)
         rada = (ta[0] - center[0], ta[1] - center[1])
         radb = (tb[0] - center[0], tb[1] - center[1])
         if (abs(rada[0] * ux + rada[1] * uy) > 1e-6 * r or
@@ -276,7 +276,7 @@ def _fillet(a, q, b, rects, c):
 
 
 def _arc_samples(center, r, ta, tb, n=ARC_SAMPLES):
-    """圆弧 ta→tb 的 n+1 个采样点（沿短弧，角度插值）。"""
+    """n+1 sampled points of the arc ta->tb (along the short arc, angular interpolation)."""
     a0 = math.atan2(ta[1] - center[1], ta[0] - center[0])
     a1 = math.atan2(tb[1] - center[1], tb[0] - center[0])
     da = a1 - a0
@@ -289,10 +289,10 @@ def _arc_samples(center, r, ta, tb, n=ARC_SAMPLES):
 
 
 def smooth_corners(pts, rects, c):
-    """折角圆弧平滑。返回 (fillets, corner_pts)。
+    """Arc smoothing of bends. Returns (fillets, corner_pts).
 
-    fillets[i] = {"i": 角在 corner_pts 中的下标, ta/tb/center/r/sweep}。
-    打不了弧的角保持尖角（净距仍由建图保证 ≥ c）。
+        fillets[i] = {"i": index of the corner in corner_pts, ta/tb/center/r/sweep}.
+        Corners that cannot take an arc stay sharp (clearance is still >= c by construction of the graph).
     """
     fillets = []
     for i in range(1, len(pts) - 1):
@@ -304,7 +304,7 @@ def smooth_corners(pts, rects, c):
 
 
 def dense_geometry(corner_pts, fillets, arc_n=ARC_SAMPLES):
-    """折线 + 弧 → 密集采样点列（净距/交叉等几何复核的几何真值）。"""
+    """Polyline + arcs -> densely sampled point sequence (the geometric ground truth for clearance/crossing rechecks)."""
     fmap = {f["i"]: f for f in fillets}
     out = [tuple(corner_pts[0])]
     for i in range(1, len(corner_pts)):
@@ -319,7 +319,7 @@ def dense_geometry(corner_pts, fillets, arc_n=ARC_SAMPLES):
 
 
 def route_svg_d(corner_pts, fillets, nd=1):
-    """交付坐标 → SVG path d 串：直线段 L + 圆弧段 A（精确渲染，非折线逼近）。"""
+    """Delivery coordinates -> SVG path d string: straight segments L + arc segments A (exact rendering, not a polyline approximation)."""
     fmap = {f["i"]: f for f in fillets}
     r6 = lambda v: round(float(v), nd)
     parts = [f"M {r6(corner_pts[0][0])} {r6(corner_pts[0][1])}"]
@@ -327,8 +327,8 @@ def route_svg_d(corner_pts, fillets, nd=1):
         q = corner_pts[i]
         f = fmap.get(i)
         if f:
-            # ref-scrubbed #15：带 fillet 的角点由 ta→弧→tb 替代，不得再画回
-            # 角点本体（曾因 L q 无条件追加，出现 tb→q→ta_next 折返毛刺）。
+            # ref-scrubbed #15: a corner with a fillet is replaced by ta->arc->tb and must not be drawn back to
+            # the corner itself (an unconditional L q once caused tb->q->ta_next zigzag glitches).
             parts.append(f"L {r6(f['ta'][0])} {r6(f['ta'][1])}")
             parts.append(f"A {r6(f['r'])} {r6(f['r'])} 0 0 {f['sweep']} "
                          f"{r6(f['tb'][0])} {r6(f['tb'][1])}")
@@ -338,11 +338,11 @@ def route_svg_d(corner_pts, fillets, nd=1):
 
 
 def plan_route(src, dst, rects, c):
-    """高层入口：src→dst 的绕障路线（带确定性缓存——纯函数，同输入同输出）。
+    """High-level entry: the obstacle-avoiding route from src to dst (with a deterministic cache -- a pure function, same input same output).
 
-    ref-scrubbed 缓存命中返回**深拷贝**：调用方会把 dense 列表就地当交付
-    points（midband_reanchor/fan_spread 原位改锚点），若直接返回缓存对象
-    会把变异毒化进全局缓存，破坏跨 run 确定性（n20 实测 vg 路线漂移）。
+    ref-scrubbed cache hits return a **deep copy**: callers reuse the dense list in place as delivery
+        points (midband_reanchor/fan_spread mutate anchors in place); returning the cached object directly
+        would poison the global cache with those mutations and break cross-run determinism (measured: vg route drift on n20).
     """
     key = ((round(float(src[0]), 3), round(float(src[1]), 3)),
            (round(float(dst[0]), 3), round(float(dst[1]), 3)),
@@ -370,7 +370,7 @@ _ROUTE_CACHE = {}
 
 
 def _plan_route(src, dst, rects, c):
-    """plan_route 实现（无缓存）。返回 dict 或 None（不可达）。"""
+    """plan_route implementation (no cache). Returns a dict, or None when unreachable."""
     src, dst = tuple(src), tuple(dst)
     path = shortest_path(src, dst, rects, c)
     if path is None:

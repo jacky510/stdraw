@@ -1,47 +1,66 @@
 # -*- coding: utf-8 -*-
-"""长链/少环图的纵列排布（2026-11-06 jacky 布局美学定调 v2，ref-scrubbed）。
+"""Column placement for long-chain / few-ring graphs (2026-11-06 jacky
+layout aesthetics v2, ref-scrubbed).
 
-> 「如果方框排布能有规律，那么就尽量形成规律，比如纵向对齐一列……
-> 线尽量配合方框的排布来画。规律让图形更好看，也更好理解。」
+> "If the box placement can follow a pattern, make it so — e.g. align
+> into a vertical column... Draw the lines to follow the box
+> arrangement. Regularity makes the figure nicer and easier to
+> understand."
 
-触发判定（图论度量，全确定性；在 ringlayout.detect_ring 的 pure-cycle 与
-ratio 分支之后、cover 分支之前判定）：
-  1. 小图：3 ≤ n ≤ MAX_COLUMN_N（n 含孤立节点）；
-  2. 少环：最长简单回路 k 满足 3 ≤ k ≤ MAX_RING_K（主环小 → 「环」不主导，
-     主链感强；k = n 的大环归环形排布）；
-  3. 长链：主环外的节点以「支路」挂在主链近邻侧（残节点 ≤ n - k）。
+Trigger detection (graph-theoretic metrics, fully deterministic;
+decided after ringlayout.detect_ring's pure-cycle and ratio branches,
+before the cover branch):
+  1. Small graph: 3 <= n <= MAX_COLUMN_N (n includes isolated nodes);
+  2. Few rings: the longest simple loop k satisfies 3 <= k <=
+     MAX_RING_K (a small main ring -> "ring" does not dominate, strong
+     chain feel; a big ring with k = n belongs to ring placement);
+  3. Long chain: nodes outside the main ring hang as "branches" beside
+     their spine neighbors (residuals <= n - k).
 
-主链（spine）选择（同构一致性：结构性签名驱动，不依赖声明环 id 顺序）：
-  候选 = 声明环（构成简单回路者，保留方向）∪ 图论枚举简单回路；
-  按「环长最大 → 负边数最少（全正增长回路优先当主链）→ WL 结构色签名
-  字典序」确定性选优。
+Spine selection (isomorphism consistency: structural-signature driven,
+not dependent on declared loop id order):
+  candidates = declared loops (those forming simple loops, direction
+  kept) ∪ graph-theoretically enumerated simple loops;
+  chosen deterministically by "longest ring -> fewest negative edges
+  (all-positive growth loops preferred as spine) -> WL structural
+  color signature lexicographic order".
 
-排布（place_column）：
-  - 主链节点沿中央纵列对齐一列（x = 列轴，y = top + i·pitch）；
-  - 主链闭合边（last→first）构造为左侧大弧（quadratic bezier，控制点在
-    列轴左侧按确定性阶梯外推，解析验证与全部框净距 ≥ clearance）——
-    「回路聚拢/圆环感」在纵列形态下的实现；
-  - 支路（残节点）挂主链近邻侧：右列优先（与闭合弧异侧），按锚点行
-    对齐或跨行中点对齐；多支路结构右列 → 左列（左列在闭合弧外再外推）；
-  - 孤立节点停顶部停车带（与既有模式一致）。
+Placement (place_column):
+  - Spine nodes align into one central column (x = column axis,
+    y = top + i·pitch);
+  - The spine closing edge (last->first) is constructed as a large
+    left arc (quadratic bezier, control point extrapolated left of
+    the column axis on a deterministic ladder, analytically verified
+    to keep clearance >= `clearance` from every box) — the
+    column-form realization of "loop cohesion / ring feel";
+  - Branches (residuals) hang beside their spine neighbors: right
+    column first (opposite the closing arc), aligned to the anchor
+    row or to the cross-row midpoint; multi-branch structures go
+    right column -> left column (the left column is extrapolated
+    further out beyond the closing arc);
+  - Isolated nodes park in the top parking strip (same as existing
+    patterns).
 
-布线/证书：交给既有 Router 与 certificate_auto；纵列模式指标口径
-（主链列对齐 + 等行距 + 回路聚拢度）在 metrics/check 内按
-meta.placement == "column-chain" 切换。闭合弧以构造路线注入
-（同 --from-layout waypoints 的覆盖机制，坐标交付前随 dx/dy 平移）。
+Routing/certificate: delegated to the existing Router and
+certificate_auto; the column-mode metric criteria (spine column
+alignment + uniform row pitch + loop cohesion) switch inside
+metrics/check on meta.placement == "column-chain". The closing arc
+is injected as a constructed route (same override mechanism as
+--from-layout waypoints; translated by dx/dy before coordinate
+delivery).
 """
 import math
 from collections import defaultdict
 
-MAX_COLUMN_N = 12          # 触发上限：小图
-MAX_RING_K = 4             # 主环 ≤4 视为「少环」（5+ 归环形）
-SIDE_GAP = 36              # 支路列与主链的水平净距（呼吸感目标档）
-ARC_MARGIN = 20            # 闭合弧相对最左障碍的额外余量
-ARC_LADDER = (0, 24, 48, 72, 96, 128, 160)   # 弧控制点外推阶梯（px）
+MAX_COLUMN_N = 12          # trigger upper bound: small graphs
+MAX_RING_K = 4             # main ring <= 4 counts as "few rings" (5+ goes to ring placement)
+SIDE_GAP = 36              # horizontal clearance between branch columns and the spine (breathing-room tier)
+ARC_MARGIN = 20            # extra margin of the closing arc beyond the leftmost obstacle
+ARC_LADDER = (0, 24, 48, 72, 96, 128, 160)   # arc control-point extrapolation ladder (px)
 
 
 class InfeasibleColumn(Exception):
-    """纵列槽位不可行（闭合弧/支路位无解）——调用方回退既有路径。"""
+    """Column slot infeasible (no solution for the closing arc / branch slot) — the caller falls back to the existing path."""
 
 
 def _adjacency(edges):
@@ -53,22 +72,23 @@ def _adjacency(edges):
 
 
 def _wl_colors(nodes, adj):
-    """WL 式结构色（2 轮 refine）：{v: tuple}。同构图的对应节点同色
-    （结构性签名，不依赖 id）——同构骨架 → 同布局模板的机制基础。"""
+    """WL-style structural colors (2 refine rounds): {v: tuple}. Corresponding
+    nodes of isomorphic graphs share a color (structural signature, id
+    independent) — the mechanism behind "isomorphic skeleton -> same layout template"."""
     color = {v: (len(adj[v]),) for v in nodes}
     for _ in range(2):
         nxt = {}
         for v in nodes:
             nxt[v] = (color[v],
                       tuple(sorted(color[w] for w in sorted(adj[v]))))
-        # 压缩为秩（确定性：按签名排序取序号）
+        # compress to ranks (deterministic: index by sorted signature order)
         order = {sig: i for i, sig in enumerate(sorted(set(nxt.values())))}
         color = {v: (order[nxt[v]],) for v in nodes}
     return color
 
 
 def _edge_signs(edges):
-    """无向键 → 极性集合（一 对多 当双向边存在）。"""
+    """Undirected key -> set of polarities (one-to-many when bidirectional edges exist)."""
     signs = defaultdict(set)
     for a, b, pol in edges:
         signs[(a, b) if a < b else (b, a)].add(pol)
@@ -76,7 +96,7 @@ def _edge_signs(edges):
 
 
 def _neg_count(seq, edges, adj):
-    """环序上有向边的负边数（无向邻接但对不存在的段记 0）。"""
+    """Number of negative directed edges along the ring order (segments adjacent only undirected count 0)."""
     esign = {}
     for a, b, pol in edges:
         esign[(a, b)] = pol
@@ -102,7 +122,7 @@ def _declared_loop_cycles(graph, adj):
 
 
 def _enumerate_cycles(nodes, adj, cap=2_000_000):
-    """与 ringlayout 同口径的简单回路枚举（规范形去重、步数上限）。"""
+    """Simple-loop enumeration with the same criteria as ringlayout (canonical-form dedup, step cap)."""
     steps = [0]
     found = {}
 
@@ -140,12 +160,12 @@ def _enumerate_cycles(nodes, adj, cap=2_000_000):
 
 
 def detect_column(graph):
-    """触发判定 + 主链选择。返回 column plan dict 或 None。
+    """Trigger detection + spine selection. Returns a column plan dict or None.
 
-    plan = {"spine": [主链序（有向，起点=结构最显著节点）],
-            "k": int, "declared_loop": id|None,
-            "residuals": [非主链非孤立节点], "deg0": [孤立节点],
-            "closing": (last, first) 主链闭合边}
+    plan = {"spine": [spine order (directed, start = structurally most
+            salient node)], "k": int, "declared_loop": id|None,
+            "residuals": [non-spine non-isolated nodes], "deg0": [isolated
+            nodes], "closing": (last, first) spine closing edge}
     """
     nodes = list(graph.node_ids())
     n = len(nodes)
@@ -158,7 +178,7 @@ def detect_column(graph):
     if not core:
         return None
 
-    cands = []                                   # [(环序, loop_id, 负边数)]
+    cands = []                                   # [(ring order, loop_id, negative-edge count)]
     for lid, seq in _declared_loop_cycles(graph, adj):
         cands.append((seq, lid, _neg_count(seq, edges, adj)))
     for seq in _enumerate_cycles(core, adj):
@@ -169,16 +189,16 @@ def detect_column(graph):
     kmax = max(len(s) for s, _, _ in cands)
     if kmax < 3 or kmax > MAX_RING_K:
         return None
-    # 纯环（单连通分量全度 2 且 k=n）归环形排布
+    # Pure ring (single component, all degree 2, k=n) goes to ring placement
     if kmax == n and all(len(adj[v]) == 2 for v in core):
         return None
-    # 主环覆盖全图（k=n）→ 环形主导，不进纵列
+    # Main ring covers the whole graph (k=n) -> ring-dominated, not column
     if kmax >= n:
         return None
 
     colors = _wl_colors(core, adj)
     eligible = [(s, lid, neg) for s, lid, neg in cands if len(s) == kmax]
-    # 选优：负边最少（全正增长回路当主链）→ 结构色签名 → 声明优先 → 规范形
+    # Selection: fewest negative edges (all-positive loop as spine) -> structural-color signature -> declared first -> canonical form
     best = None
     for seq, lid, neg in eligible:
         key = (neg, tuple(sorted(tuple(colors[v]) for v in seq)),
@@ -204,16 +224,17 @@ def _canon(seq):
 
 
 def _orient_spine(seq, adj, colors, edges):
-    """环序 → 有向主链序：起点 = 结构最显著节点（WL 色 → 度 → id），
-    方向 = 沿有向边（邻接表上有向边 a→b 的环邻接方向）。"""
+    """Ring order -> directed spine order: start = structurally most salient node
+    (WL color -> degree -> id); direction = along directed edges (the ring
+    adjacency direction that directed edge a->b follows)."""
     esign = set()
     for a, b, _ in edges:
         esign.add((a, b))
     n = len(seq)
-    # 候选起点：按（结构色字典序最大=最显著，度，-id 序）取首
+    # Candidate start: take the first by (structural color max lexicographically = most salient, degree, -id order)
     start = max(seq, key=lambda v: (tuple(colors[v]), len(adj[v]),
                                     tuple(-ord(c) for c in str(v))))
-    # 两个环向，取「有向边跟随数」多者；平局取canonical 序小者
+    # Of the two ring orientations take the one with more "directed-edge follows"; tie -> smaller canonical order
     def directed_follows(order):
         c = 0
         for i in range(len(order)):
@@ -229,7 +250,7 @@ def _orient_spine(seq, adj, colors, edges):
 
 
 def _quad_points(p0, ctrl, p1, seg=24):
-    """二次贝塞尔采样（与 routing.quad_points 同口径）。"""
+    """Quadratic bezier sampling (same criteria as routing.quad_points)."""
     return [[(1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * ctrl[0] + t ** 2 * p1[0],
              (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * ctrl[1] + t ** 2 * p1[1]]
             for t in (i / seg for i in range(seg + 1))]
@@ -242,8 +263,9 @@ def _pt_rect_dist(px, py, cx, cy, hw, hh):
 
 
 def _arc_clear(pts, nodes_px, a, b, clearance):
-    """弧线净距验证（与 check3 同口径）：sample_polyline step=4 加密采样——
-    贝塞尔弦切效应在端部高曲率处可达 ~4px，稀疏采样会漏检。"""
+    """Arc clearance verification (same criteria as check3): dense sampling via
+    sample_polyline step=4 — the bezier chord-tangent effect reaches ~4px at
+    the high-curvature ends; sparse sampling would miss it."""
     from .routing import sample_polyline
     dense = sample_polyline([tuple(p) for p in pts], step=4.0)
     for v, (nx, ny, nw, nh) in nodes_px.items():
@@ -256,25 +278,29 @@ def _arc_clear(pts, nodes_px, a, b, clearance):
 
 
 def _closing_arc(nodes_px, spine, widths, card_h, clearance, side_cols):
-    """主链闭合边 (last→first)：左侧大弧。
+    """Spine closing edge (last->first): a large left-side arc.
 
-    二次贝塞尔在 t=0.5 处的鼓出 = |ctrl − 弦中点| / 2——控制点直接按
-    「目标鼓出线 = 最左障碍左缘 − (clearance + 余量)」解算，再逐框解析
-    验证；验证不过按 48px 阶梯外推（上限 6 档），仍不可行 → Infeasible。
+    The bulge of a quadratic bezier at t=0.5 = |ctrl - chord midpoint| /
+    2 — the control point is solved directly from "target bulge line =
+    left edge of the leftmost obstacle - (clearance + margin)", then
+    verified analytically against every box; on failure it is
+    extrapolated on a 48px ladder (up to 6 rungs); still infeasible ->
+    Infeasible.
 
-    side_cols: {side(-1左/+1右): [(cx, hw), ...]} 该侧已放支路框（弧须避开）。
-    返回 {"kind": "arc", "points": [...], "ctrl": [x, y],
-          "anchors": {...}, "min_clear": float}
+    side_cols: {side(-1 left/+1 right): [(cx, hw), ...]} branch boxes
+    already placed on that side (the arc must avoid them).
+    Returns {"kind": "arc", "points": [...], "ctrl": [x, y],
+             "anchors": {...}, "min_clear": float}
     """
     a_last, a_first = spine[-1], spine[0]
     xa, ya = nodes_px[a_last][0], nodes_px[a_last][1]
     xb, yb = nodes_px[a_first][0], nodes_px[a_first][1]
     ha = widths[a_last] / 2
     hb = widths[a_first] / 2
-    pa = [xa - ha, ya]                      # 下方卡左边中点
-    pb = [xb - hb, yb]                      # 上方卡左边中点
+    pa = [xa - ha, ya]                      # midpoint of the lower card's left edge
+    pb = [xb - hb, yb]                      # midpoint of the upper card's left edge
     ymid = (ya + yb) / 2
-    # 目标鼓出线：所有需避开框的左缘 − (clearance + 4px 保守余量)
+    # Target bulge line: left edge of every box to avoid - (clearance + 4px conservative margin)
     target = None
     for v, (nx, ny, nw, nh) in nodes_px.items():
         if v in (a_last, a_first):
@@ -284,7 +310,7 @@ def _closing_arc(nodes_px, spine, widths, card_h, clearance, side_cols):
     if target is None:
         target = (pa[0] + pb[0]) / 2 - clearance - ARC_MARGIN
     chord_mid = (pa[0] + pb[0]) / 2
-    base_ctrl = 2.0 * target - chord_mid    # t=0.5 鼓出恰达 target
+    base_ctrl = 2.0 * target - chord_mid    # the t=0.5 bulge exactly reaches target
     for step in (0, 48, 96, 144, 192, 240):
         ctrl = [base_ctrl - step, ymid]
         pts = _quad_points(pa, ctrl, pb)
@@ -292,15 +318,18 @@ def _closing_arc(nodes_px, spine, widths, card_h, clearance, side_cols):
         if ok:
             return {"kind": "arc", "points": pts, "ctrl": ctrl,
                     "min_clear": None}
-    raise InfeasibleColumn("闭合弧无可行外推档")
+    raise InfeasibleColumn("no feasible extrapolation tier for the closing arc")
 
 
 def _side_arc(nodes_px, a, b, side, widths, card_h, clearance):
-    """主链跨行弦边（|行差| ≥ 2 的主链节点对）构造为 side 侧大弧。
+    """A spine cross-row chord edge (spine node pair with |row diff| >= 2) is
+    constructed as a large arc on `side`.
 
-    与 _closing_arc 同数学：t=0.5 鼓出 = |ctrl − 弦中点| / 2，控制点按
-    目标鼓出线解算 + 逐框验证 + 48px 阶梯外推（6 档），不可行返回 None
-    （调用方回退 Router 候选池）。side=+1 右 / -1 左。"""
+    Same math as _closing_arc: t=0.5 bulge = |ctrl - chord midpoint| / 2;
+    the control point is solved from the target bulge line + verified per
+    box + extrapolated on a 48px ladder (6 rungs); returns None if
+    infeasible (the caller falls back to the Router candidate pool).
+    side=+1 right / -1 left."""
     xa, ya = nodes_px[a][0], nodes_px[a][1]
     xb, yb = nodes_px[b][0], nodes_px[b][1]
     pa = [xa + side * widths[a] / 2, ya]
@@ -328,14 +357,18 @@ def _side_arc(nodes_px, a, b, side, widths, card_h, clearance):
 
 
 def place_column(plan, widths, card_h, cfg, adj, edges):
-    """纵列排布 → ({v: x}, {v: y}, meta, closing_routes)。全 2px 网格、确定性。
+    """Column placement -> ({v: x}, {v: y}, meta, closing_routes). All on the
+    2px grid, deterministic.
 
-    支路列：右列优先（+1），多支路溢出到左列（-1，闭合弧让位外推）。
-    单锚支路挂锚点行；跨两锚支路挂两锚行中点（半 pitch 偏移）。
+    Branch columns: right column first (+1); extra branches overflow to
+    the left column (-1, the closing arc yields by extrapolating further
+    out). A single-anchor branch sits on the anchor's row; a two-anchor
+    branch sits at the midpoint of the two anchor rows (half-pitch
+    offset).
     """
     spine = plan["spine"]
     k = len(spine)
-    x0 = 0                                     # 列轴（交付层统一平移）
+    x0 = 0                                     # column axis (uniformly translated at the delivery layer)
     pitch = cfg.pitch
     pos, y = {}, {}
     for i, v in enumerate(spine):
@@ -343,10 +376,10 @@ def place_column(plan, widths, card_h, cfg, adj, edges):
         y[v] = cfg.top + i * pitch
     spine_w_max = max(widths[v] for v in spine)
 
-    # 残节点成组（互相邻接的残节点 = 同一支路结构），锚点 = 组内节点的主链邻居
+    # Group residuals (mutually adjacent residuals = one branch structure); anchors = the group's spine neighbors
     spine_set = set(spine)
     res_set = set(plan["residuals"])
-    groups = []                                # [(锚点元组, [残节点]（id 序）)]
+    groups = []                                # [(anchor tuple, [residual nodes] (id order))]
     seen = set()
     for v in sorted(plan["residuals"]):
         if v in seen:
@@ -362,29 +395,30 @@ def place_column(plan, widths, card_h, cfg, adj, edges):
                     stack.append(w)
         anch = tuple(sorted(set().union(*[adj[u] & spine_set for u in comp])))
         groups.append((anch, sorted(comp)))
-    # 组序确定性：锚点在主链上的行位 → 锚点元组 → 成员 id
+    # Deterministic group order: anchor row positions on the spine -> anchor tuple -> member ids
     def _group_key(g):
         anch, comp = g
         rows = tuple(sorted(spine.index(a) for a in anch))
         return (rows, anch, tuple(comp))
     groups.sort(key=_group_key)
 
-    # 列几何：右列（+1）优先；闭合弧占左侧，溢出组放左列（弧再外推让位）
+    # Column geometry: right column (+1) first; the closing arc occupies the left, overflow groups go left (arc yields)
     closing_side = -1
     wmax_side = max([widths[v] for _, comp in groups for v in comp] or [10])
     side_x = int((spine_w_max / 2 + SIDE_GAP + wmax_side / 2) / 2) * 2
-    col_slots = {1: [], -1: []}                # 已占行位 [y]
-    side_cols = {1: [], -1: []}                # (cx, hw) 供闭合弧避让
+    col_slots = {1: [], -1: []}                # occupied row positions [y]
+    side_cols = {1: [], -1: []}                # (cx, hw) for the closing arc to avoid
 
     def _base_y(anch):
-        """组行位：单锚 = 锚点行；多锚 = 首末锚行中点。"""
+        """Group row position: single anchor = the anchor's row; multiple anchors = midpoint of the first/last anchor rows."""
         if len(anch) == 1:
             return y[anch[0]]
         return (y[anch[0]] + y[anch[-1]]) / 2
 
     def _try_place(anch, comp, side):
-        """组整体放入 side 列：组内自 base 起按整 pitch 向下/上展开
-        （pitch ≥ card_h+SIDE_GAP，保证组内净距）；槽位冲突 → None。"""
+        """Place the whole group into the `side` column: members expand from base
+        by whole pitches downward/upward (pitch >= card_h+SIDE_GAP,
+        guaranteeing in-group clearance); slot conflict -> None."""
         base = _base_y(anch)
         offsets = []
         for i in range(len(comp)):
@@ -406,7 +440,7 @@ def place_column(plan, widths, card_h, cfg, adj, edges):
                 placed = cand
                 break
         if placed is None:
-            # 兜底：同组换行梯子（右列向下/上逐档试探，整 pitch 步进）
+            # Fallback: same-group row-shifting ladder (probe rungs downward/upward in the right column, whole-pitch steps)
             base = _base_y(anch)
             for dy in (pitch, -pitch, pitch * 2, -pitch * 2,
                        pitch * 3 / 2, -pitch * 3 / 2):
@@ -419,13 +453,13 @@ def place_column(plan, widths, card_h, cfg, adj, edges):
                               for v, yy in zip(comp, ys)}
                     break
         if placed is None:
-            raise InfeasibleColumn(f"支路组 {comp} 无可行列位")
+            raise InfeasibleColumn(f"branch group {comp} has no feasible column slots")
         for v, (px, py) in placed.items():
             pos[v], y[v] = px, py
             col_slots[1 if px > x0 else -1].append(py)
             side_cols[1 if px > x0 else -1].append((px, widths[v]))
 
-    # 孤立节点停车带
+    # Isolated-node parking strip
     if plan["deg0"]:
         total = sum(widths[v] for v in plan["deg0"]) + 18 * (len(plan["deg0"]) + 1)
         cur = x0 - total / 2
@@ -438,8 +472,8 @@ def place_column(plan, widths, card_h, cfg, adj, edges):
     closing = _closing_arc(nodes_px, spine, widths, card_h,
                            cfg.clearance, side_cols)
 
-    # 主链跨行弦边（非相邻主链节点对）：构造右侧大弧（与左侧闭合弧对侧，
-    # 回路聚拢的弦内布线）；不可行（多弦互撞等）回退 Router 候选池。
+    # Spine cross-row chord edges (non-adjacent spine pairs): constructed as right-side
+    # arcs for loop-cohesion in-chord routing (opposite the closing arc); infeasible -> Router pool
     constructed = {plan["closing"]: closing}
     row_of = {v: i for i, v in enumerate(spine)}
     eset = set(edges)

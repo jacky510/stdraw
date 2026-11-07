@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""WS5 可扩展性回归：n20 随机图 auto-v2 在确定性时间预算内出布局。
+"""WS5 scalability regression: the n20 random graph produces a layout within
+a deterministic time budget under auto-v2.
 
-背景（REPORT §5 修正口径）：旧版 n≥20 全 DNF 的根因是 CP-SAT 证最优耗时随 n
-爆炸（交叉对 O(m²) 布尔化），不是 _polish（polish 有 core≤10 门，n≥20 不跑）。
-修复 = n>10 的 CP-SAT 定位加 max_deterministic_time=8det（操作计数口径，输出
-逐字节可复现）+ 布线层精确等价提速（包围盒剪枝）。
+Background (REPORT S5 corrected caliber): the old version's DNF for n>=20 was
+root-caused to CP-SAT proof-optimality time exploding with n (crossing-pair
+O(m^2) Booleanization), not to _polish (polish has a core<=10 gate, skipped
+for n>=20). Fix = CP-SAT placement for n>10 gets
+max_deterministic_time=8det (operation-count caliber, byte-for-byte
+reproducible output) + an exact-equivalence speedup in the routing layer
+(bounding-box pruning).
 
-断言：
-  1. n20 语料图 layout() 正常完成（历史上在 100s 预算内 DNF）；
-  2. meta 如实带 solver_det_budget / solver_status（不冒充最优）；
-  3. 同输入两次运行 layout.json 逐字节一致（确定性铁律）；
-  4. 框压线 0（布线硬门不受提速影响）。
+Assertions:
+  1. the n20 corpus graph layout() completes normally (historically DNF
+     within a 100s budget);
+  2. meta honestly carries solver_det_budget / solver_status (no fake
+     optimal);
+  3. two runs of the same input produce byte-identical layout.json
+     (determinism iron law);
+  4. box press 0 (the routing hard gate is unaffected by the speedup).
 
-ortools 不可用时如实 SKIP（与 ci_checks E 层口径一致）。
+Honest SKIP when ortools is unavailable (same caliber as ci_checks layer E).
 """
 import json
 import os
@@ -32,13 +39,13 @@ def main():
     try:
         import ortools  # noqa: F401
     except Exception:
-        print("SKIP  test_scalability: ortools 不可用（预算路径需要 CP-SAT）")
+        print("SKIP  test_scalability: ortools unavailable (budget path needs CP-SAT)")
         return 0
     from stdraw.recipes import run as recipes_run
     from stdraw.layout_auto import AutoConfig
 
     g = parse(open(GRAPH, encoding="utf-8").read())
-    assert len(g.nodes) == 20, f"语料漂移：n={len(g.nodes)}"
+    assert len(g.nodes) == 20, f"corpus drift: n={len(g.nodes)}"
     outs = []
     for _ in range(2):
         t0 = time.perf_counter()
@@ -47,14 +54,14 @@ def main():
         outs.append(json.dumps(v4, sort_keys=True))
         print(f"  run: {dt:.1f}s engine={v4['meta']['position_engine']} "
               f"status={v4['meta'].get('solver_status')}")
-    assert outs[0] == outs[1], "两次运行不一致（确定性被破坏）"
+    assert outs[0] == outs[1], "two runs differ (determinism broken)"
     meta = json.loads(outs[0])["meta"]
     assert meta["position_engine"] == "cp-sat", meta["position_engine"]
     assert meta["solver_det_budget"] == 8.0, meta
     assert meta["solver_status"] in ("optimal", "feasible"), meta
-    # 框压线（如实计数，不作硬断言）：随机稀疏图不保证 0 压线——布线目标是
-    # 最小化（4000·press）而非定理保证，全部候选都压线时取最不坏解；classic
-    # 小图的框压线=0 硬门由 ci_checks B 层对两案例断言，此处只打印实测值供追踪。
+    # Box press (honestly counted, no hard assertion): random sparse graphs do not guarantee 0 press --
+    # routing minimizes (4000*press) rather than proving a bound, taking the least-bad solution when all
+    # candidates press; the classic small-graph box-press=0 hard gate is asserted by ci_checks layer B on two cases; here we only print the measured value for tracking.
     from stdraw.routing import dist_point_rect, sample_polyline
     nodes = {v: (p["x"], p["y"], p["w"] / 2.0, v4["meta"]["cardH"] / 2.0)
              for v, p in json.loads(outs[0])["nodes"].items()}
@@ -68,8 +75,8 @@ def main():
                 if dist_point_rect(px, py, cx, cy, hw + 1, hh + 1) <= 0.15:
                     press_edges += 1
                     break
-    print(f"  box_press_edges={press_edges}（如实计数，随机图非硬门）")
-    print("OK  test_scalability: n20 出布局 + 确定性 + 预算 meta 如实")
+    print(f"  box_press_edges={press_edges} (honestly counted, not a hard gate on random graphs)")
+    print("OK  test_scalability: n20 layout produced + determinism + budget meta honest")
     return 0
 
 

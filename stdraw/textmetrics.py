@@ -1,37 +1,37 @@
 # -*- coding: utf-8 -*-
-"""框界真值层（① 布局侧）：按真实字体度量卡片文字宽度，保守 padding。
+"""Bounding-box ground-truth layer (1, layout side): measure card text width with the real font; conservative padding.
 
-背景（v0.2 质量返修根因）：旧 text_px 用字符数 × 字号估算，
-与浏览器实际渲染必有偏差——框界量小 → 线贴框/压线，证书却达标（同源失真）。
+Background (root cause of the v0.2 quality rework): the old text_px estimated width as character count x font size,
+which inevitably deviates from actual browser rendering -- bounds measured too small -> wires hug/press the box while the certificate still passes (same-source distortion).
 
-本层原则：
-  - 度量字体 = 渲染字体（render.py 的 font-family 首选 Microsoft YaHei）；
-  - 最坏情况：标题按 bold 度量上限、取「实测与解析式」的较大者；
-  - 保守 padding：左右各 ≥ 12px，外加 6% 伸缩余量；
-  - PIL 不可用时退到保守解析式（CJK 1.10×fs / 其他 0.62×fs，再乘 1.08 安全系数）。
+Principles of this layer:
+    - Measuring font = rendering font (render.py font-family prefers Microsoft YaHei);
+    - Worst case: titles measured at the bold upper bound; take the larger of "measured" vs "analytic";
+    - Conservative padding: >= 12px on each side, plus a 6% stretch margin;
+    - When PIL is unavailable, fall back to a conservative analytic formula (CJK 1.10x fs / others 0.62x fs, times a 1.08 safety factor).
 
-CI 侧（第二层）由 rendercheck.py 在真实渲染后量 DOM 实际框界比对——两层缺一不可。
+The CI side (the second layer) is rendercheck.py comparing actual DOM bounds after real rendering -- both layers are indispensable.
 """
 import os
 
-# 与 render.py 渲染字体一致（最坏情况用 bold 度量）
+# same rendering font as render.py (worst case measured with bold)
 _FONT_CANDIDATES = [
-    "C:/Windows/Fonts/msyhbd.ttc",   # Microsoft YaHei Bold（最宽）
+    "C:/Windows/Fonts/msyhbd.ttc",   # Microsoft YaHei Bold (widest)
     "C:/Windows/Fonts/msyh.ttc",     # Microsoft YaHei
-    "C:/Windows/Fonts/simhei.ttf",   # SimHei 备选
+    "C:/Windows/Fonts/simhei.ttf",   # SimHei fallback
 ]
 _FALLBACK_PATHS = [
-    "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",   # Linux CI 兜底
+    "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",   # Linux CI fallback
 ]
 
-PAD_SIDE_MIN = 12      # 单侧最小留白 px
-SAFETY = 1.06          # 度量伸缩安全系数
+PAD_SIDE_MIN = 12      # minimum per-side padding px
+SAFETY = 1.06          # measurement stretch safety factor
 
 _cache = {}
 
 
 def _load_font(px: int):
-    """按像素字号加载字体（带缓存）；失败返回 None。"""
+    """Load a font by pixel size (cached); returns None on failure."""
     key = px
     if key in _cache:
         return _cache[key]
@@ -52,7 +52,7 @@ def _load_font(px: int):
 
 
 def _analytic(s: str, fs: float) -> float:
-    """无字体文件时的保守解析式（较旧 text_px 已收紧安全系数）。"""
+    """Conservative analytic formula when no font file is available (safety factor tightened vs the old text_px)."""
     w = 0.0
     for ch in s:
         w += fs * 1.10 if ord(ch) > 0x2E7F else fs * 0.62
@@ -60,7 +60,7 @@ def _analytic(s: str, fs: float) -> float:
 
 
 def text_width(s: str, fs: float, bold: bool = False) -> float:
-    """单行文字渲染宽度（px，保守上界）。空串返回 0。"""
+    """Rendered width of a single line of text (px, conservative upper bound). Empty string returns 0."""
     if not s:
         return 0.0
     est = _analytic(s, fs)
@@ -76,9 +76,9 @@ def text_width(s: str, fs: float, bold: bool = False) -> float:
 
 def card_size(label: str, value: str, fs_title: float, fs_value: float,
               pad: float = None, min_w: int = 96, min_h: int = 44):
-    """卡片规划框界：按两行文字最坏宽度 + 保守 padding，2px 网格。
+    """Planned card bounds: worst-case width of the two text lines + conservative padding, on a 2px grid.
 
-    返回 (w, h)。高度按行数给足（标题行 + 数值行），单行也保持视觉高度。
+    Returns (w, h). Height is generous per line count (title line + value line); a single line still keeps the visual height.
     """
     pad_side = pad if pad is not None else PAD_SIDE_MIN + 6
     w = max(text_width(label, fs_title, bold=True) + 2 * pad_side,

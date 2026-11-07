@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
-"""环路语义审计（lint 层）—— 独有能力：抓「声明环不闭合」「极性标错」。
+"""Loop semantic audit (lint layer) -- unique capability: catches "declared ring not closed" and "polarity mislabeled".
 
-只吃 Graph 模型（不解析 HTML 或其他宿主格式）。
+Consumes only the Graph model (does not parse HTML or any other host format).
 
-验证三件事：
-  1. 声明环闭合性：只用该环 tagged 边，能否从首节点经全部环节点走回自身；
-  2. R/B 极性数边：tagged 边负极性奇偶 ↔ 声明类型（R=偶/增强，B=奇/平衡）一致；
-  3. 独立枚举：全图实际存在的全部简单回路（DFS 上限深度），与声明集对照——
-     声明了但不存在 / 存在但未声明的都如实报。
+Verifies three things:
+    1. Closure of declared rings: using only that ring's tagged edges, can the walk start at the first node, pass through all ring nodes, and return to it;
+    2. R/B polarity edge count: parity of negative-polarity tagged edges <-> declared kind (R = even / reinforcing, B = odd / balancing) consistency;
+    3. Independent enumeration: all simple loops actually present in the graph (DFS depth cap), compared against the declared set --
+          declared-but-nonexistent and existing-but-undeclared are both reported honestly.
 
-输出 report dict（可入证书 JSON），lint 结论不影响布局，只进质量层。
+Outputs a report dict (can go into the certificate JSON); the lint verdict does not affect layout, only the quality layer.
 """
 from collections import defaultdict
 from typing import Dict, List
 
 from .model import Graph
 
-MAX_DFS_DEPTH = 12     # 声明环闭合性 DFS 深度上限
-MAX_ENUM_DEPTH = 10    # 独立枚举回路长度上限
+MAX_DFS_DEPTH = 12     # DFS depth cap for declared-ring closure
+MAX_ENUM_DEPTH = 10    # length cap for independently enumerated loops
 
 
 def loops_audit(graph: Graph) -> dict:
@@ -31,7 +31,7 @@ def loops_audit(graph: Graph) -> dict:
     declared = {lp.id: lp for lp in graph.loops}
     report = {"loops": [], "problems": [], "extra_cycles": []}
 
-    # ── 1+2. 逐声明环审计 ──
+    # ── 1+2. Audit each declared ring ──
     for lid, lp in declared.items():
         sub = defaultdict(list)
         neg = 0
@@ -71,23 +71,23 @@ def loops_audit(graph: Graph) -> dict:
         }
         if not closed:
             report["problems"].append(
-                f"环 {lid}（{lp.label}）不闭合：tagged 边无法从 {start} 走回自身")
+                f"loop {lid} ({lp.label}) not closed: tagged edges cannot walk from {start} back to itself")
         if not kind_ok:
             report["problems"].append(
-                f"环 {lid}（{lp.label}）声明 {lp.kind} 但极性奇偶实为 {parity_kind}"
-                f"（负边 {neg} 条）")
+                f"loop {lid} ({lp.label}) declares {lp.kind} but polarity parity is actually {parity_kind}"
+                f" (negative edges {neg})")
         report["loops"].append(item)
 
-    # 声明环的边未打 tag 的情况
+    # case where a declared ring has no tagged edges
     for lid, lp in declared.items():
         tagged = sum(1 for e in graph.edges if lid in e.loops)
         if tagged == 0:
-            report["problems"].append(f"环 {lid}（{lp.label}）没有任何边打该标签")
+            report["problems"].append(f"loop {lid} ({lp.label}) has no edges tagged with it")
 
-    # ── 3. 独立枚举全部简单回路 ──
-    # 回路以规范化有向元组存储（最小节点旋到首位的路径序）：frozenset 会把
-    # 「同节点集的不同有向回路」折叠成一条，且迭代序随 PYTHONHASHSEED 漂移，
-    # 曾导致 loops_audit.json 两轮渲染 neg_edges/kind 互换（ref-scrubbed）。
+    # ── 3. Independently enumerate all simple loops ──
+    # loops are stored as canonical directed tuples (path order with the smallest node rotated to the front): a frozenset would fold
+    # "different directed loops with the same node set" into one, and its iteration order drifts with PYTHONHASHSEED,
+    # which once caused neg_edges/kind to swap between two renders of loops_audit.json (ref-scrubbed).
     cycles = set()
 
     def canon_cycle(path):
@@ -120,7 +120,7 @@ def loops_audit(graph: Graph) -> dict:
         return "B" if negs % 2 else "R", negs
 
     declared_node_sets = [frozenset(lp.nodes) for lp in graph.loops]
-    for cyc in sorted(cycles):          # 元组序 = 确定性全序，无平局歧义
+    for cyc in sorted(cycles):          # tuple order = deterministic total order, no tie ambiguity
         kind, negs = cycle_kind(cyc)
         cset = frozenset(cyc)
         match = next((lp.id for lp, s in zip(graph.loops, declared_node_sets)
@@ -130,7 +130,7 @@ def loops_audit(graph: Graph) -> dict:
             "matches_declared": match})
         if match is None:
             report["problems"].append(
-                f"存在未声明回路 {'->'.join(cyc)}（{kind}，负边 {negs} 条）")
+                f"undeclared cycle {'->'.join(cyc)} ({kind}, negative edges {negs})")
 
     report["summary"] = {
         "declared": len(declared),

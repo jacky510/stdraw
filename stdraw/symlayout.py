@@ -1,27 +1,36 @@
 # -*- coding: utf-8 -*-
-"""领结（双三角共边）对称排布（2026-11-06 jacky 布局美学定调 v2，ref-scrubbed）。
+"""Bowtie-pair (two triangles sharing an edge) symmetric placement
+(2026-11-06 jacky layout aesthetics v2, ref-scrubbed).
 
-> #11 learning-flywheel「可对称却偏左」——对称结构应显式对称。
+> #11 learning-flywheel "could be symmetric yet leans left" — symmetric
+> structures should be explicitly symmetric.
 
-触发判定（确定性局部结构，先于环形判定）：
-  核心图恰为「两个三角形共享一条边」（领结/bowtie）：4 节点、5 边、
-  度序列 {3,3,2,2}，且两个度-3 节点相邻（共享边端点）、两个度-2 节点
-  不相邻（左右顶点）。语料命中：learning-flywheel / fixes-that-fail
-  （有向同构对 → 同一布局模板）。
+Trigger detection (deterministic local structure, checked before ring
+detection):
+  The core graph is exactly "two triangles sharing one edge" (bowtie):
+  4 nodes, 5 edges, degree sequence {3,3,2,2}, with the two degree-3
+  nodes adjacent (shared-edge endpoints) and the two degree-2 nodes
+  non-adjacent (left/right apexes). Corpus hits: learning-flywheel /
+  fixes-that-fail (a directed-isomorphic pair -> the same layout
+  template).
 
-排布（place_bowtie）：
-  - 共享边端点 A（上行）/ B（下行）居纵轴；两顶点左（-D）/右（+D）
-    中行镜像 —— 显式几何对称；
-  - 线型一致性硬规则：轴边 A→B 直线；4 条侧边全部构造为镜像弧
-    （ctrl 向外侧对称偏移）——「同一对称结构内线型一致（不直弧折混杂）」。
+Placement (place_bowtie):
+  - Shared-edge endpoints A (upper row) / B (lower row) sit on the
+    vertical axis; the two apexes mirror left (-D) / right (+D) on the
+    middle row — explicit geometric symmetry;
+  - Line-style consistency hard rule: the axis edge A->B is a straight
+    line; all 4 side edges are constructed as mirrored arcs (ctrl offset
+    symmetrically outward) — "line styles stay consistent within one
+    symmetric structure (no straight/arc/bend mixing)".
 
-居中规范化：A/B/apex 的包围盒中心即画布中心（布局层轴 x=0，交付层
-统一平移居中，见 layout_auto 的居中后处理）。
+Centering normalization: the bounding-box center of A/B/apex is the
+canvas center (layout-layer axis x=0; the delivery layer translates
+uniformly to center — see layout_auto's centering post-process).
 """
 import math
 
-SYM_GAP = 36              # 呼吸感目标净距
-ARC_K_FALLBACK = 0.22     # 侧弧 k 兜底档（side_geom 为空时不可达，防御用）
+SYM_GAP = 36              # breathing-room target clearance
+ARC_K_FALLBACK = 0.22     # side-arc k fallback tier (unreachable when side_geom is empty; defensive)
 
 
 class InfeasibleBowtie(Exception):
@@ -37,7 +46,7 @@ def _adjacency(edges):
 
 
 def detect_bowtie(graph):
-    """领结判定。返回 {"A","B","L","R","deg0"} 或 None。"""
+    """Bowtie detection. Returns {"A","B","L","R","deg0"} or None."""
     nodes = list(graph.node_ids())
     edges = [(e.a, e.b) for e in graph.edges]
     adj = _adjacency(edges)
@@ -53,10 +62,10 @@ def detect_bowtie(graph):
     l, r = d2
     if b not in adj[a] or r in adj[l]:
         return None
-    # 结构自检：恰两个三角形 = {a,b,l} 与 {a,b,r}，共享边 a-b
+    # Structural self-check: exactly two triangles = {a,b,l} and {a,b,r}, sharing edge a-b
     if not (l in adj[a] and l in adj[b] and r in adj[a] and r in adj[b]):
         return None
-    # A = 上行节点：确定性（id 序；a/b 为自反对换对称位，几何不变）
+    # A = upper-row node: deterministic (id order; a/b sit at swap-symmetric positions, geometry invariant)
     return {"A": a, "B": b, "L": l, "R": r, "deg0": deg0}
 
 
@@ -70,9 +79,11 @@ def _quad_points(p0, ctrl, p1, seg=24):
 
 
 def _own_press(pts, na, nb):
-    """弧线中间采样点是否进入两端自家框（含 1px 余量；与 check2 同口径）。
+    """Whether the arc's intermediate sample points enter either end's own box
+    (with 1px margin; same criteria as check2).
 
-    诊断辅助（ctrl 平移口径下正常不触发，保留供调试复算）。
+    Diagnostic aid (normally not triggered under the ctrl-translation
+    convention; kept for debugging recomputation).
     """
     from .routing import dist_point_rect
     for p in pts[1:-1]:
@@ -83,7 +94,7 @@ def _own_press(pts, na, nb):
 
 
 def _natural_border(cx, cy, hw, hh, dx, dy):
-    """射线与框边的自然交点（不带带钳制；用于计算锚点钳制增量）。"""
+    """The ray's natural intersection with the box edge (no band clamping; used to compute the anchor clamping delta)."""
     if abs(dx) < 1e-9 and abs(dy) < 1e-9:
         return [cx, cy]
     if abs(dx) < 1e-9:
@@ -95,7 +106,7 @@ def _natural_border(cx, cy, hw, hh, dx, dy):
 
 
 def _clamp_band(p, nx, ny, nw, nh):
-    """锚点钳制到所属边中点 ±1/4 边长带（转角排除；连接点交付口径）。"""
+    """Anchor clamped to the owning edge's midpoint ± 1/4 edge-length band (corners excluded; connection-point delivery convention)."""
     hw, hh = nw / 2.0, nh / 2.0
     dxo, dyo = p[0] - nx, p[1] - ny
     on_x = abs(abs(dxo) - hw) <= abs(abs(dyo) - hh)
@@ -105,10 +116,12 @@ def _clamp_band(p, nx, ny, nw, nh):
 
 
 def place_bowtie(plan, widths, card_h, cfg, edges):
-    """领结对称排布 → ({v: x}, {v: y}, meta, constructed_routes)。
+    """Bowtie symmetric placement -> ({v: x}, {v: y}, meta, constructed_routes).
 
-    constructed_routes: {(a,b): route dict}——轴边直线 + 4 侧边镜像弧，
-    构造式注入（不走候选池），保证镜像对称与线型一致。
+    constructed_routes: {(a,b): route dict} — axis edge as a straight line
+    + 4 side edges as mirrored arcs, constructively injected (not via the
+    candidate pool), guaranteeing mirror symmetry and line-style
+    consistency.
     """
     A, B, L, R = plan["A"], plan["B"], plan["L"], plan["R"]
     pitch = cfg.pitch
@@ -116,7 +129,7 @@ def place_bowtie(plan, widths, card_h, cfg, edges):
     yB = cfg.top + pitch
     yMid = cfg.top + pitch / 2
     wmax = max(widths.values())
-    # D：顶点距轴——轴卡半宽 + 净距 + 顶点半宽；且左右顶点互距 ≥ SYM_GAP
+    # D: apex distance from the axis — axis card half-width + clearance + apex half-width; also L/R apex mutual distance >= SYM_GAP
     D = max(widths[A] / 2 + SYM_GAP + max(widths[L], widths[R]) / 2,
             (SYM_GAP + (widths[L] + widths[R]) / 2) / 2,
             wmax / 2 + SYM_GAP / 2)
@@ -139,7 +152,7 @@ def place_bowtie(plan, widths, card_h, cfg, edges):
 
     constructed = {}
     eset = {(a, b) for a, b in edges}
-    # 轴边：直线（A→B / B→A 按图中有向边；锚点朝向对端框边）
+    # Axis edge: straight line (A->B / B->A per the graph's directed edges; anchors face the peer's box edge)
     for u, v in ((A, B), (B, A)):
         if (u, v) not in eset:
             continue
@@ -148,12 +161,12 @@ def place_bowtie(plan, widths, card_h, cfg, edges):
         pa = _border_point(pos[u], y[u], widths[u] / 2, card_h / 2, 0, dy_u)
         pb = _border_point(pos[v], y[v], widths[v] / 2, card_h / 2, 0, dy_v)
         constructed[(u, v)] = {"kind": "line", "points": [pa, pb]}
-    # 侧边：镜像弧（顶点↔轴点；ctrl 向外侧偏移，左右镜像同 |ctrl 偏移|）。
-    # ref-scrubbed 弧度参数化：k 统一取 4 条侧弦长的 median 档（adaptive）——
-    # 同一对称结构弧度一致、视觉均匀（「同环弧度一致」硬规则）。
-    # 连接点口径：弧先按**自然锚点**（旧射线口径）定型，再映射到钳制后
-    # 锚点——ctrl 取弦坐标变换（α 弦比例不变 + β 垂偏向量不变），弧相对
-    # 形状/出发切向保持，不翻进自家框。
+    # Side edges: mirrored arcs (apex <-> axis node; ctrl offset outward, mirrors share |ctrl|).
+    # ref-scrubbed arc parameterization: k takes the adaptive median tier of the 4 side chord lengths —
+    # consistent curvature within one symmetric structure ("same-ring arc consistency" hard rule).
+    # Connection-point convention: the arc is shaped on **natural anchors** (the old ray convention)
+    # first, then mapped to clamped anchors — ctrl via chord coordinate transform (alpha ratio +
+    # beta perpendicular kept): shape and departure tangent preserved, never flipping into its own box.
     side_geom = []
     for apex, s in ((L, -1), (R, 1)):
         for axis_v in (A, B):
@@ -181,14 +194,14 @@ def place_bowtie(plan, widths, card_h, cfg, edges):
     for e, pa, pb, pa_c, pb_c, dist, s in side_geom:
         vx, vy = pb[0] - pa[0], pb[1] - pa[1]
         ux, uy = -vy / dist, vx / dist
-        # 外侧法向：与「顶点→轴」方向的选择使 ctrl 远离纵轴
+        # Outward normal: chosen vs. the "apex -> axis" direction so ctrl moves away from the vertical axis
         mx, my = (pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2
         cx = mx + ux * k_uni * dist * s
         cy = my + uy * k_uni * dist * s
-        if (cx - 0) * s < (mx - 0) * s:      # ctrl 必须比中点更靠外
+        if (cx - 0) * s < (mx - 0) * s:      # ctrl must sit further out than the midpoint
             cx = mx - ux * k_uni * dist * s
             cy = my - uy * k_uni * dist * s
-        # 弦坐标映射到钳制锚点：ctrl = pa_c + α·(pb_c−pa_c) + β_vec
+        # Map chord coordinates onto the clamped anchors: ctrl = pa_c + alpha*(pb_c-pa_c) + beta_vec
         wx, wy = cx - pa[0], cy - pa[1]
         alpha = (wx * vx + wy * vy) / (dist * dist)
         betax = wx - alpha * vx

@@ -6,7 +6,7 @@
 
 *Text DSL in → diagram with a quality certificate out. Honest grades, never fake "zero crossings" claims.*
 
-English | [简体中文](README_zh-CN.md)
+English | [Chinese](README_zh-CN.md)
 
 </div>
 
@@ -27,12 +27,12 @@ pip install stdraw
 
 Mainstream diagram tools stop at "crossing minimization" heuristics, and **none of them make a verifiable promise about their own output**. stdraw is built the other way around:
 
-- **auto-v2 (default recipe)**: **structure-aware mode layout** — a deterministic priority chain (bowtie-vertex → spine-wing → column-chain → ring-cycle → layered) picks one arrangement template per graph structure, each with a trial gate (non-triggering graphs stay byte-identical); plus straight/arc-first routing (optional CP-SAT refinement), enforced by **hard quality gates**: box-over-line = 0 (any angle), edge-to-box clearance ≥ 16px, smooth border anchors, and mode-specific regularity gates — see [docs/layout-modes.md](docs/layout-modes.md);
+- **auto-v2 (default recipe)**: **structure-aware mode layout** — a deterministic priority chain (bowtie-vertex → spine-wing → column-chain → ring-cycle → layered) picks one arrangement template per graph structure, each with a trial gate (non-triggering graphs stay byte-identical); plus straight/arc-first routing (optional CP-SAT refinement), enforced by **hard quality gates**: box-over-line = 0 (any angle), edge-to-box clearance ≥ 16px, smooth border anchors, and mode-specific regularity gates — see [docs/layout-modes.md](docs/layout-modes.md) (Chinese);
 - **Ring layout for loop-dominated small graphs (v0.5.0)**: when a small graph (≤ 12 nodes) has a dominant simple cycle covering ≥ n−2 nodes (or ≥ 90% of its edges lie on cycles), the main loop is placed on **regular-polygon ring slots** in cycle order (declared loop order preferred, so R/B polarity colors read along the ring), chords route inside the ring, and residual nodes get deterministic inner/outer slots; the certificate switches to **ring-appropriate metrics** (ring-spacing CV + polygon template-fit error) instead of row alignment — layout mode is stated honestly, never judged by row-gate yardsticks; non-triggering graphs keep the layered path byte-identical;
-- **Anchor-band hard gate (v0.7.3)**: delivered edge anchors clamped to the mid-band (edge midpoint ± 1/4 edge length, corner hits = 0) are now enforced per-figure in CI — spine-wing figures require 100% in-band; mutual-pair edges whose band-clamped anchors cannot pass the hard gates get a deterministic band-anchored local re-route (anchor-band candidates + nested-arc escape hatch + own-box interior check); other engines are locked to their v0.7.2 baseline ratios (ring mutual corridors / bowtie ±12px spoke corridors are registered legacy) — see [docs/layout-modes.md](docs/layout-modes.md);
-- **Layout aesthetics v3.1 (v0.7.1)**: **spine-wing mode** — graphs with a dominant hub pair (an edge whose endpoints share ≥3 common neighbors = a midline "wing band") plus a constructible secondary cluster get the vertical-spine + midline-wing layout (jacky's hand-drawn classic-cld reference): spine strictly vertical on the axis, wings pressed to the horizontal midline, outer mirror pair symmetric about it; deterministic trigger (hub-pair common-neighbor count + rest-cluster pairing + spine length ratio ≤0.5), equivalent certificate gates (spine-axis ≤2px, midline ≤2px, mirror ≤2px); corpus sweep: only classic-cld-growth-and-burden switches, all other 18 byte-identical — see [docs/layout-modes.md](docs/layout-modes.md);
-- **Layout aesthetics v3 (v0.7.0)**: **bowtie-vertex mode** — graphs whose topology is exactly two simple cycles sharing one node (e.g. wage-price-spiral, per jacky's hand-drawn reference) get an explicit double-mirror layout (shared node dead-center, one loop per half-plane, symmetric rows, all-straight lines with mutual-pair parallel corridors); **connection-point caliber** — line anchors clamp to each edge's mid-point ±1/4 band (corners excluded entirely, hit count always 0), multiple lines on the same side fan out symmetrically around the mid-point; **adaptive arc curvature** — bulge = min(6 + 0.06·chord, 40) px (short edges bend less, long edges capped), arcs within one symmetric structure share a single unified k for visual evenness — see [docs/layout-modes.md](docs/layout-modes.md);
-- **Layout aesthetics v2 (v0.6.0)**: regularity first — long-chain / few-loop graphs (main cycle ≤ 4) get a **vertical column layout** (spine aligned on one axis, branches on neighbor side columns, the spine's closing edge drawn as a big side arc for the loop-closure feel); bowtie graphs (two triangles sharing an edge, e.g. learning-flywheel) get an **explicit mirror-symmetric layout** with a strict line-type rule (axis edge straight + mirrored side arcs); loop edges are **colored by polarity** (R = amber `#d97706`, B = sky `#0284c7`, mixed/acyclic = neutral, negative edges dashed) replacing the old R/B letter badges; isomorphic skeletons map to the same layout template (WL structural colors drive slot assignment, not declared-loop ids); crossings and row alignment are demoted from hard gates to **reported soft targets** (order & beauty first) while arrangement regularity stays hard-gated — see [docs/layout-modes.md](docs/layout-modes.md);
+- **Anchor-band hard gate (v0.7.3)**: delivered edge anchors clamped to the mid-band (edge midpoint ± 1/4 edge length, corner hits = 0) are now enforced per-figure in CI — spine-wing figures require 100% in-band; mutual-pair edges whose band-clamped anchors cannot pass the hard gates get a deterministic band-anchored local re-route (anchor-band candidates + nested-arc escape hatch + own-box interior check); other engines are locked to their v0.7.2 baseline ratios (ring mutual corridors / bowtie ±12px spoke corridors are registered legacy) — see [docs/layout-modes.md](docs/layout-modes.md) (Chinese);
+- **Layout aesthetics v3.1 (v0.7.1)**: **spine-wing mode** — graphs with a dominant hub pair (an edge whose endpoints share ≥3 common neighbors = a midline "wing band") plus a constructible secondary cluster get the vertical-spine + midline-wing layout (jacky's hand-drawn classic-cld reference): spine strictly vertical on the axis, wings pressed to the horizontal midline, outer mirror pair symmetric about it; deterministic trigger (hub-pair common-neighbor count + rest-cluster pairing + spine length ratio ≤0.5), equivalent certificate gates (spine-axis ≤2px, midline ≤2px, mirror ≤2px); corpus sweep: only classic-cld-growth-and-burden switches, all other 18 byte-identical — see [docs/layout-modes.md](docs/layout-modes.md) (Chinese);
+- **Layout aesthetics v3 (v0.7.0)**: **bowtie-vertex mode** — graphs whose topology is exactly two simple cycles sharing one node (e.g. wage-price-spiral, per jacky's hand-drawn reference) get an explicit double-mirror layout (shared node dead-center, one loop per half-plane, symmetric rows, all-straight lines with mutual-pair parallel corridors); **connection-point caliber** — line anchors clamp to each edge's mid-point ±1/4 band (corners excluded entirely, hit count always 0), multiple lines on the same side fan out symmetrically around the mid-point; **adaptive arc curvature** — bulge = min(6 + 0.06·chord, 40) px (short edges bend less, long edges capped), arcs within one symmetric structure share a single unified k for visual evenness — see [docs/layout-modes.md](docs/layout-modes.md) (Chinese);
+- **Layout aesthetics v2 (v0.6.0)**: regularity first — long-chain / few-loop graphs (main cycle ≤ 4) get a **vertical column layout** (spine aligned on one axis, branches on neighbor side columns, the spine's closing edge drawn as a big side arc for the loop-closure feel); bowtie graphs (two triangles sharing an edge, e.g. learning-flywheel) get an **explicit mirror-symmetric layout** with a strict line-type rule (axis edge straight + mirrored side arcs); loop edges are **colored by polarity** (R = amber `#d97706`, B = sky `#0284c7`, mixed/acyclic = neutral, negative edges dashed) replacing the old R/B letter badges; isomorphic skeletons map to the same layout template (WL structural colors drive slot assignment, not declared-loop ids); crossings and row alignment are demoted from hard gates to **reported soft targets** (order & beauty first) while arrangement regularity stays hard-gated — see [docs/layout-modes.md](docs/layout-modes.md) (Chinese);
 - **WS3 routing math**: detours are **provably shortest** — obstacles inflated by the clearance, then an exact Dijkstra shortest path over the corner visibility graph (graph-optimal); polyline corners are smoothed with tangent circular arcs (G1-continuous, bounded curvature, per-arc clearance re-verified); crossings are re-checked in **dual calibers** — the router's theoretical count on final geometry must equal the geometric recount on delivered coordinates, or no certificate is issued; loop polarity is expressed by **edge color** (amber = reinforcing R, sky = balancing B, dashed = negative edge) with no letter badges cluttering complex graphs; polyline detours carry a fixed type cost (arc > straight > polyline — folded corners are a last resort);
 - **ortho-v1 (classic recipe, optional)**: planar embedding + st-numbering + visibility representation — all wires strictly vertical with a **theorem-level 0-crossing guarantee** on planar graphs (behavior frozen, byte-regression protected, safe for production callers to pin);
 - **Honest grading**: if it can't earn a certificate it says so — **never claims 0 crossings for arbitrary graphs** (in auto-v2, crossings are minimized, not guaranteed);
@@ -48,8 +48,8 @@ All images are real renderings produced by the current engine (v0.7.5) from the 
 |---|---|
 | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a> | <a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a> |
 | **2D · auto-v2 spine-wing layout** (classic-cld-growth-and-burden, 8n/13e, vertical spine + midline wing band + mirrored right wing, 0 crossings) | **3D · sphere arrangement** (rotate freely; projection crossings solved by the camera) |
-| <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a> | <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/before-after.png" alt="before/after comparison" width="420"/></a> |
-| **Quality certificate panel** (hard gates + gate tally + honest grade, exactly as shipped in the demo; spine-wing caliber: spine-axis / midline-adherence / mirror deviation) | **Before/after** (same input, both rendered by the current engine: frozen ortho-v1 recipe with wires occluded under cards → auto-v2 spine-wing layout, gates 11/11, 0 crossings, R/B polarity colors with mutual-pair straight-line allocation) |
+| <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a> | |
+| **Quality certificate panel** (hard gates + gate tally + honest grade, exactly as shipped in the demo; spine-wing caliber: spine-axis / midline-adherence / mirror deviation) | |
 
 ## Ask your agent in plain words
 
@@ -72,13 +72,13 @@ stdraw/
 │   ├── routing.py       #   straight/arc/detour routing (box-over-line=0, clearance>=16px hard gates)
 │   ├── textmetrics.py   #   ground-truth box bounds (layout side: worst-case real-font metrics)
 │   ├── rendercheck.py   #   ground-truth box bounds (CI side: headless-browser DOM measurement, optional layer)
-│   ├── visibility.py    # WS3: 布线数学（膨胀障碍可见性图最短路 + 弧平滑）
-│   ├── crossing_exact.py  # WS2: 精确交叉数层（OIL 插入 ILP + 平面化 oracle + B&B 夹逼，可选 ortools）
-│   ├── regularity.py    # WS2: 结构检测 + 规律性可计算定义（正多边形偏差/直线度/对称轴）
-│   ├── placement.py     # WS2: 槽位离散化放置（结构驱动槽型；general 分支 CP-SAT）
-│   ├── ringlayout.py    # v0.5.0: 回路主导环形排布（触发判定 + 主环正多边形槽位 + 残节点指派）
-│   ├── columnlayout.py  # v0.6.0: 纵列排布（长链/少环：主链一列 + 支路侧挂 + 闭合侧弧）
-│   ├── symlayout.py     # v0.6.0: 领结对对称排布（双三角共边：纵轴镜像 + 线型一致）
+│   ├── visibility.py    # WS3: routing math (inflated-obstacle visibility-graph shortest path + arc smoothing)
+│   ├── crossing_exact.py  # WS2: exact crossing-number layer (ordering insertion ILP + planarization oracle + B&B squeeze, optional ortools)
+│   ├── regularity.py    # WS2: structure detection + computable regularity definitions (polygon deviation / straightness / symmetry axis)
+│   ├── placement.py     # WS2: slot-discretized placement (structure-driven slot types; CP-SAT on the general branch)
+│   ├── ringlayout.py    # v0.5.0: loop-dominated ring layout (trigger detection + main-ring polygon slots + residual assignment)
+│   ├── columnlayout.py  # v0.6.0: column layout (long-chain/few-loop: spine in one column + side branches + closing side arc)
+│   ├── symlayout.py     # v0.6.0: bowtie-pair symmetric layout (two triangles sharing an edge: vertical-axis mirror + consistent line kinds)
 │   ├── planar.py        #   ortho-v1: 2D planar layout (theorem-level 0 crossings, frozen behavior)
 │   ├── layout3d.py      #   3D five-solid arrangements (sphere/cube/tetrahedron/cone)
 │   ├── metrics.py       #   quality certificates v1/v2 + honest grading
@@ -89,12 +89,12 @@ stdraw/
 │   ├── render.py        #   2D HTML rendering (inline SVG, v1/v2 forms)
 │   ├── render3d.py      #   3D HTML rendering (three.js)
 │   └── __main__.py      #   CLI: stdraw layout ... [--recipe auto|ortho] [--linestyle straight|arc]
-├── examples/            # .cld cases (limits-to-growth / limits-to-growth × shifting-the-burden)
+├── examples/            # .cld cases (limits-to-growth / classic-cld-growth-and-burden)
 ├── demos/               # deliverable form: 2D/3D demos + certificate JSON
 ├── viewer/              # zero-dependency interactive viewer (four forms + live certificate)
 ├── skills/stdraw/       # Agent Skill (installable via skills add)
 ├── tests/baselines/     # ortho-v1 byte-regression baselines (frozen-behavior iron gate)
-├── docs/                # DSL spec + gallery + OR-Tools comparison + crossing-exact math (WS2)
+├── docs/                # DSL spec (EN + zh-CN) + gallery + OR-Tools comparison + crossing-exact math (WS2)
 └── .github/workflows/   # CI: recipe regression + hard gates + DOM measurement + determinism
 ```
 
@@ -123,7 +123,7 @@ Every `demo-2d.html` (auto recipe) ships with a built-in touch-up layer — drag
 nodes (mouse or touch), live metrics recompute in the toolbar, then:
 
 ```bash
-# 1. Open out/demo-2d.html, drag cards, click 「导出布局」 (Export layout)
+# 1. Open out/demo-2d.html, drag cards, click "Export layout"
 #    -> downloads graph-manual-layout.json (layout.json-compatible subset)
 
 # 2. Re-run routing + certificate on YOUR coordinates — same hard gates,
@@ -150,11 +150,11 @@ detour around obstacles render each fold point as a small **drag handle**
 
 - drag a handle → that edge becomes *user-pinned*; node drags afterwards only
   re-anchor its endpoints, your waypoints stay;
-- 「导出布局」 writes `edges: [{a, b, waypoints: [[x,y],...]}]` for pinned
+- "Export layout" writes `edges: [{a, b, waypoints: [[x,y],...]}]` for pinned
   edges; `--from-layout` replays the exact same polyline (anchors recomputed on
   the box borders toward the first/last waypoint) and the certificate re-checks
   the delivered geometry honestly — including your waypoints;
-- 「重置」 clears all pins and restores the engine layout.
+- "Reset" clears all pins and restores the engine layout.
 
 ```bash
 # after dragging handles + export:
@@ -177,7 +177,7 @@ A minimal closed loop = variables / polarity edges / loop tags / groups (optiona
 layer does not consume groups — layout is determined by relations alone). Loop tags are not
 comments — the lint layer verifies closure and R/B polarity parity against an independent
 enumeration of all loops. Full spec: [docs/dsl-spec-v0.1.md](docs/dsl-spec-v0.1.md)
-(a Chinese translation is planned; no date promised).
+(Chinese: [docs/dsl-spec-v0.1.zh-CN.md](docs/dsl-spec-v0.1.zh-CN.md)).
 
 ## Certificates · Quality Gates
 
@@ -200,24 +200,24 @@ Every deliverable directory contains `certificate.json`:
                "crossings_note": "soft target: <=2 crossings allowed when arrangement regularity passes (order & beauty first)",
                "row_align_ge_060": true },
   "placement": "column-chain",
-  "grade": "最优"
+  "grade": "best"
 }
 ```
 
 (Ring-layout certificate: row alignment / column snap are honestly `null` — the
 regularity gates switch to ring spacing CV + polygon template fit, per placement;
 v0.6.0 adds column/symmetric calibers and demotes crossings_zero and row alignment
-to **reported soft targets** — see docs/layout-modes.md
+to **reported soft targets** — see docs/layout-modes.md (Chinese)
 mode. Layered layouts keep the row-alignment caliber.)
 
 Honest grading semantics (iron rule: **never pass off a non-certificate as one**):
 
 | Grade | Definition (auto-v2) |
 |---|---|
-| **最优** (best) | all hard gates pass (box-over-line 0 / clearance ≥ 16 / smooth anchors / regular arrangement) + 0 crossings |
-| **其次** (second) | all hard gates pass + ≤ 2 crossings (coords in the certificate for review; when gates and crossings conflict, gates win) |
-| **最次** (3D) | dimension-lift to 3D: rotate freely, no spatial crossings, projection crossings solved by the camera |
-| **未获证书** (uncertified) | everything else — honestly ungraded |
+| **`best`** | all hard gates pass (box-over-line 0 / clearance ≥ 16 / smooth anchors / regular arrangement) + 0 crossings |
+| **`second`** | all hard gates pass + ≤ 2 crossings (coords in the certificate for review; when gates and crossings conflict, gates win) |
+| **`3d`** | dimension-lift to 3D: rotate freely, no spatial crossings, projection crossings solved by the camera |
+| **`uncertified`** | everything else — honestly ungraded |
 
 `geometry_report.json` (geometry self-checks in CI-gate form; the CLI exits 1 on fail) can be used directly as a regression gate.
 
@@ -226,12 +226,12 @@ number cr(G) (ordering-style insertion ILP + planarization oracle + exhaustive
 B&B over planar subgraphs × embeddings). The certificate then carries
 `proven_optimal` / `gap` / `lb` / `crossing_number` in an `exactness` block —
 with a rigorous scope note: optimality is claimed only relative to the model
-class defined in [docs/crossing-exact.md](docs/crossing-exact.md) §0–5, never
+class defined in [docs/crossing-exact.md](docs/crossing-exact.md) (Chinese) §0–5, never
 over all conceivable metric sets. Requires the optional solver extra
 (`pip install "stdraw[solver]"`); without it the fields honestly stay
 `computed: false`. Layouts also carry a computable **regularity** block
 (structure-driven: cycle → regular-polygon deviation, chain → straightness,
-symmetry-axis alignment; definitions in docs/crossing-exact.md §7).
+symmetry-axis alignment; definitions in docs/crossing-exact.md (Chinese) §7).
 
 ### Recipes
 

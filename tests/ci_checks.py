@@ -1,23 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""CI checks（2026-11-05 六点返修版）。
+"""CI checks (2026-11-05 six-point rework revision).
 
-三层断言：
-  A. ortho-v1 冻结配方回归（生产行为 pin 保护）：
-     - 两案例 exit 0，11 项几何自检 fail==0；
-     - layout.json 与 tests/baselines/ 逐字节一致（planar.py 行为冻结铁门）；
-     - legacy 证书 crossings==0 / grade==最优；loops problems==0；
-     - 同输入两次运行逐字节一致（确定性）。
-  B. auto-v2 默认配方（产品主路径）新硬门：
-     - 框压线=0、边-框净距≥16px、锚点平滑、卡净距≥16、CV≤0.35、简单图规律性
-       全部 pass；
-     - crossings ≤ 2 且 grade ∈ {最优, 其次}（诚实分级，不冒充 0 交叉）；
-     - loops problems==0；确定性两次运行逐字节一致。
-  C. DOM 实测框界（① CI 侧第二层，可选）：
-     - playwright 可用时逐卡量 demo-2d.html 文字实际宽度 vs 规划框界；
-     - 不可用时如实 SKIP（不算通过也不算失败，由 workflow 安装可选层兜底）。
+Three assertion layers:
+  A. ortho-v1 frozen recipe regression (production behavior pin):
+     - both examples exit 0, 11 geometric self-checks fail==0;
+     - layout.json byte-identical to tests/baselines/ (planar.py behavior-freeze iron gate);
+     - legacy certificate crossings==0 / grade==best; loops problems==0;
+     - two runs of the same input byte-identical (determinism).
+  B. auto-v2 default recipe (product main path) new hard gates:
+     - box press=0, edge-box clearance >=16px, smooth anchors, card
+       clearance >=16, CV<=0.35, simple-graph regularity all pass;
+     - crossings <= 2 and grade in {best, second} (honest grading, never
+       masquerading as 0 crossings);
+     - loops problems==0; two runs byte-identical (determinism).
+  C. DOM-measured box bounds (CI-side second layer, optional):
+     - with playwright available, measure per-card actual text width in
+       demo-2d.html against the planned box bounds;
+     - without it, honestly SKIP (neither pass nor fail; the workflow
+       installs the optional layer as backstop).
 
-Stdlib only（C 层可选依赖 playwright）。
+Stdlib only (layer C optionally depends on playwright).
 """
 import json
 import os
@@ -30,16 +33,22 @@ EXAMPLES = [
     "examples/limits-to-growth.cld",
     "examples/classic-cld-growth-and-burden.cld",
 ]
-# B 层（auto-v2）补盲（F3 返修 ref-scrubbed）：原 B 层只跑 EXAMPLES 两例，
-# bullwhip 的弧线鼓出 viewBox（check7 fail）漏检。独立列表，不与 A 层
-# ortho 冻结 pin（逐字节基线）共用，避免 ortho 基线连锁。
+# Layer B (auto-v2) blind-spot coverage (F3 rework ref-scrubbed): the original
+# B layer ran only the two EXAMPLES and missed bullwhip's arc bulging past
+# the viewBox (check7 fail). Kept as a separate list, not shared with the
+# layer-A
+# ortho frozen pin (byte-identical baselines), to avoid cascading ortho
+# baseline breakage.
 AUTO_EXAMPLES = EXAMPLES + [
     "benchmarks/corpus/classic/bullwhip.cld",
 ]
-# B2 层（WS3-Q 布线质量返修 ref-scrubbed）：随机稠密图抽样——random n10 固定
-# 种子语料中曾 4/10 例 check1 交叉>2 / check3 净距不足（d483639 存量）。门控
-# (行,序) 重排 + 联合重定线 + stair 候选池修复后，这 4 例必须保持 exit 0。
-# 运行较慢（门控重排+hard-gate polish，每例 ~2min），与 B 层分开成层。
+# Layer B2 (WS3-Q routing-quality rework ref-scrubbed): random dense-graph
+# sampling -- in the random n10 fixed-seed corpus, 4/10 cases previously
+# had check1 crossings>2 / check3 insufficient clearance (d483639 legacy).
+# After the gated (row,order) permutation + joint rerouting + stair
+# candidate-pool fixes, these 4 cases must stay exit 0.
+# Slow to run (gated permutation + hard-gate polish, ~2min per case),
+# kept as its own layer.
 RANDOM_SAMPLES = [
     "benchmarks/corpus/random/random-n10-i00.cld",
     "benchmarks/corpus/random/random-n10-i01.cld",
@@ -50,15 +59,18 @@ HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
               "min_gap_ge_16", "cv_le_035", "pitch_uniform",
               "column_snap24_ge_060",
               "mutual_pairs_separated", "lines_no_coincidence")
-# ref-scrubbed 环形排布（placement=ring-cycle）：规律性门切换为环口径
-# （行对齐/列吸附对环形不适用，不得拿行口径误判环形不合格）
+# ref-scrubbed ring placement (placement=ring-cycle): regularity gates switch
+# to ring criteria (row alignment / column snap don't apply to rings; never
+# misjudge a ring under row criteria)
 RING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "min_gap_ge_16", "ring_spacing_cv_le_005",
                    "ring_template_fit_le_005", "mutual_pairs_separated",
                    "lines_no_coincidence")
-# ref-scrubbed 纵列/对称排布：规律性门按模式切换（主链列轴对齐 + 行距恒等 /
-# 镜像轴误差）。交叉（crossings_zero）与行对齐（row_align_ge_060）已降为
-# 报告项（jacky 2026-11-05 定调：部分线相交可接受，秩序与优美优先）。
+# ref-scrubbed column/symmetric placement: regularity gate switches by mode
+# (main-chain column axis alignment + uniform row pitch / mirror-axis
+# error). Crossings (crossings_zero) and row alignment (row_align_ge_060)
+# were demoted to report-only items (jacky's 2026-11-05 ruling: partial
+# line crossings are acceptable; order and elegance come first).
 COLUMN_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                      "min_gap_ge_16", "cv_le_035", "column_axis_aligned",
                      "spine_pitch_uniform", "mutual_pairs_separated",
@@ -66,9 +78,9 @@ COLUMN_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
 SYM_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                   "min_gap_ge_16", "cv_le_035", "symmetry_mirror_le_2px",
                   "mutual_pairs_separated", "lines_no_coincidence")
-# ref-scrubbed（美学 v3）领结共点：规律性门 = 镜像轴误差（同 symmetric 口径）
+# ref-scrubbed (aesthetics v3) bowtie shared vertex: regularity gate = mirror-axis error (same criteria as symmetric)
 BOWTIE_HARD_GATES = SYM_HARD_GATES
-# ref-scrubbed（v0.7.1）纵柱+翼位：纵柱 x 对齐 + 中线贴靠 + 镜像（等价门）
+# ref-scrubbed (v0.7.1) column + wing slots: column x alignment + midline adherence + mirror (equivalent gates)
 SPINE_WING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16",
                          "anchors_smooth", "min_gap_ge_16", "cv_le_035",
                          "spine_axis_le_2px", "midline_adherence_le_2px",
@@ -90,7 +102,7 @@ def _hard_gates_for(cert):
 
 
 def run_cli(path, outdir, extra=(), pitch="62"):
-    # ortho 用 --pitch 62 过净距门禁（legacy 调参）；auto 有自调 pitch=80，不传（pitch=None）
+    # ortho uses --pitch 62 to pass the clearance gate (legacy tuning); auto self-tunes pitch=80, so it is not passed (pitch=None)
     cmd = [sys.executable, "-m", "stdraw", "layout", path, "--outdir", outdir]
     if pitch:
         cmd += ["--pitch", pitch]
@@ -109,7 +121,7 @@ def main():
     failures = []
     tmp = tempfile.mkdtemp(prefix="stdraw-ci-")
     try:
-        # ── A. ortho-v1 冻结回归（生产行为 pin）──
+        # ── A. ortho-v1 frozen regression (production behavior pin) ──
         for ex in EXAMPLES:
             name = os.path.splitext(os.path.basename(ex))[0]
             out1 = os.path.join(tmp, name + "-ortho-1")
@@ -123,34 +135,34 @@ def main():
             if geo.get("fail", 0) != 0:
                 failures.append(f"ortho {ex}: geometry fail={geo['fail']}")
             cert = load(out1, "certificate.json")
-            if cert["metrics"]["crossings"] != 0 or cert["grade"] != "最优":
+            if cert["metrics"]["crossings"] != 0 or cert["grade"] != "best":
                 failures.append(f"ortho {ex}: legacy cert crossings="
                                 f"{cert['metrics']['crossings']} grade={cert['grade']}")
-            # 生产 pin 铁门：与提交基线逐字节一致
+            # Production pin iron gate: byte-identical to the committed baseline
             base = os.path.join(root, "tests", "baselines", name + ".layout.json")
             with open(base, "rb") as a, \
                  open(os.path.join(out1, "layout.json"), "rb") as b:
                 if a.read() != b.read():
-                    failures.append(f"ortho {ex}: layout.json 漂移 vs tests/baselines/"
-                                    f"（生产行为 pin 被破坏——planar.py 必须冻结）")
-            # 确定性（ref-scrubbed：loops_audit.json 纳入逐字节确定性清单）
+                    failures.append(f"ortho {ex}: layout.json drift vs tests/baselines/"
+                                    f"(production behavior pin broken -- planar.py must stay frozen)")
+            # Determinism (ref-scrubbed: loops_audit.json added to the byte-identical determinism list)
             for fn in ("layout.json", "demo-2d.html", "loops_audit.json"):
                 with open(os.path.join(out1, fn), "rb") as a, \
                      open(os.path.join(out2, fn), "rb") as b:
                     if a.read() != b.read():
-                        failures.append(f"ortho {ex}: {fn} 不确定（两次运行不一致）")
+                        failures.append(f"ortho {ex}: {fn} non-deterministic (two runs differ)")
             audit = load(out1, "loops_audit.json")
             if audit["summary"]["problems"] != 0:
                 failures.append(f"ortho {ex}: loops problems={audit['summary']['problems']}")
             print(f"OK  ortho {ex}: 11 checks fail=0, baseline byte-identical, deterministic")
 
-        # ── B. auto-v2 新硬门 ──
+        # ── B. auto-v2 new hard gates ──
         for ex in AUTO_EXAMPLES:
             name = os.path.splitext(os.path.basename(ex))[0]
             out1 = os.path.join(tmp, name + "-auto-1")
             out2 = os.path.join(tmp, name + "-auto-2")
             r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
-            # auto 配方不传 pitch（自调 80）
+            # auto recipe takes no pitch (self-tuned to 80)
             if r1.returncode != 0:
                 tail = "\n".join(r1.stdout.strip().splitlines()[-25:])
                 try:
@@ -174,26 +186,26 @@ def main():
             gates = _hard_gates_for(cert)
             for k in gates:
                 if not cert["gates"].get(k, False):
-                    failures.append(f"auto {ex}: 硬门 {k} FAIL "
+                    failures.append(f"auto {ex}: hard gate {k} FAIL "
                                     f"(metrics={json.dumps(m, ensure_ascii=False)[:300]})")
             if m["crossings"] > 2:
                 failures.append(f"auto {ex}: crossings={m['crossings']} > 2")
-            if cert["grade"] not in ("最优", "其次"):
+            if cert["grade"] not in ("best", "second"):
                 failures.append(f"auto {ex}: grade={cert['grade']}")
             audit = load(out1, "loops_audit.json")
             if audit["summary"]["problems"] != 0:
                 failures.append(f"auto {ex}: loops problems={audit['summary']['problems']}")
-            # 确定性（ref-scrubbed：loops_audit.json 纳入逐字节确定性清单）
+            # Determinism (ref-scrubbed: loops_audit.json added to the byte-identical determinism list)
             for fn in ("layout.json", "certificate.json", "demo-2d.html",
                        "loops_audit.json"):
                 with open(os.path.join(out1, fn), "rb") as a, \
                      open(os.path.join(out2, fn), "rb") as b:
                     if a.read() != b.read():
-                        failures.append(f"auto {ex}: {fn} 不确定（两次运行不一致）")
+                        failures.append(f"auto {ex}: {fn} non-deterministic (two runs differ)")
             print(f"OK  auto {ex}: hard gates pass, crossings={m['crossings']}, "
                   f"grade={cert['grade']}, deterministic")
 
-        # ── B2. 随机稠密图抽样（WS3-Q 布线质量门控回归）──
+        # ── B2. Random dense-graph sampling (WS3-Q routing-quality gated regression) ──
         for ex in RANDOM_SAMPLES:
             name = os.path.splitext(os.path.basename(ex))[0]
             out1 = os.path.join(tmp, name + "-auto-1")
@@ -214,37 +226,37 @@ def main():
             if (m.get("edge_box_min_clear") or 0) < 16:
                 failures.append(f"random {ex}: edge_box_min_clear="
                                 f"{m.get('edge_box_min_clear')} < 16")
-            # 确定性（ref-scrubbed：loops_audit.json 纳入逐字节确定性清单）
+            # Determinism (ref-scrubbed: loops_audit.json added to the byte-identical determinism list)
             for fn in ("layout.json", "demo-2d.html", "loops_audit.json"):
                 with open(os.path.join(out1, fn), "rb") as a, \
                      open(os.path.join(out2, fn), "rb") as b:
                     if a.read() != b.read():
-                        failures.append(f"random {ex}: {fn} 不确定（两次运行不一致）")
+                        failures.append(f"random {ex}: {fn} non-deterministic (two runs differ)")
             print(f"OK  random {ex}: crossings={m['crossings']}, "
                   f"min_clear={m.get('edge_box_min_clear')}px, deterministic")
 
-        # ── C. DOM 实测框界（可选层）──
+        # ── C. DOM-measured box bounds (optional layer) ──
         r = subprocess.run(
             [sys.executable, "-m", "stdraw.rendercheck",
              os.path.join(tmp, os.path.basename(EXAMPLES[0]).split(".")[0] + "-auto-1")],
             capture_output=True, text=True)
         if r.returncode == 2:
-            print("SKIP  rendercheck: playwright 不可用（CI workflow 安装可选层兜底）")
+            print("SKIP  rendercheck: playwright unavailable (CI workflow installs the optional layer as backstop)")
         elif r.returncode != 0:
             failures.append(f"rendercheck: exit {r.returncode}\n{r.stdout}\n{r.stderr}")
         else:
-            print("OK  rendercheck: DOM 实测框界无溢出")
+            print("OK  rendercheck: DOM-measured box bounds, no overflow")
 
-        # ── D. WS3 布线数学层单元（可见性图最短路/净距/双口径）──
+        # ── D. WS3 routing math units (visibility-graph shortest path / clearance / dual criteria) ──
         r = subprocess.run([sys.executable, os.path.join(root, "tests",
                                                           "test_visibility.py")],
                            capture_output=True, text=True)
         if r.returncode != 0:
             failures.append(f"test_visibility: exit {r.returncode}\n{r.stdout}\n{r.stderr}")
         else:
-            print("OK  test_visibility: 可见性图最短路/弧平滑/双口径 单元全过")
+            print("OK  test_visibility: visibility-graph shortest path / arc smoothness / dual criteria units all pass")
 
-        # ── E. WS2 精确交叉数层（可选层：需 ortools；不可用如实 SKIP）──
+        # ── E. WS2 exact crossing-count layer (optional: needs ortools; honestly SKIP when unavailable) ──
         try:
             import ortools  # noqa: F401
             has_ortools = True
@@ -259,18 +271,18 @@ def main():
                     failures.append(f"{t}: exit {r.returncode}\n"
                                     f"{r.stdout}\n{r.stderr}")
                 else:
-                    print(f"OK  {t}: 全过")
+                    print(f"OK  {t}: all pass")
         else:
             print("SKIP test_crossing_exact/test_placement: "
-                  "ortools 不可用（CI workflow 安装 [solver] 可选层兜底）")
+                  "ortools unavailable (CI workflow installs the [solver] optional layer as backstop)")
 
-        # ── F. 手动布局闭环（ref-scrubbed）：--from-layout 恒等复现 + layout-diff ──
+        # ── F. Manual-layout round-trip (ref-scrubbed): --from-layout identical replay + layout-diff ──
         ex = EXAMPLES[0]
         name = os.path.splitext(os.path.basename(ex))[0]
         out_f = os.path.join(tmp, name + "-manual-f")
-        r_f = run_cli(ex, out_f, (), pitch=None)          # auto 基线（F 层自持）
+        r_f = run_cli(ex, out_f, (), pitch=None)          # auto baseline (layer F self-contained)
         if r_f.returncode != 0:
-            failures.append(f"manual-loop {ex}: auto 基线 exit {r_f.returncode}")
+            failures.append(f"manual-loop {ex}: auto baseline exit {r_f.returncode}")
         else:
             lay = load(out_f, "layout.json")
             ident = {"viewBox": lay["viewBox"],
@@ -284,11 +296,11 @@ def main():
             geo_f = load(out_f2, "geometry_report.json")
             lay_f = load(out_f2, "layout.json")
             if r_f2.returncode != 0 or geo_f.get("fail", 0) != 0:
-                failures.append(f"manual-loop {ex}: 恒等手动布局 exit "
+                failures.append(f"manual-loop {ex}: identical manual layout exit "
                                 f"{r_f2.returncode} fail={geo_f.get('fail')}")
             elif lay_f["nodes"] != lay["nodes"] or \
                     lay_f["meta"].get("position_engine") != "manual":
-                failures.append(f"manual-loop {ex}: 恒等手动布局漂移/engine 非 manual")
+                failures.append(f"manual-loop {ex}: identical manual layout drift / engine not manual")
             else:
                 dpath = os.path.join(tmp, "ci-layout-diff.json")
                 r_d = subprocess.run(
@@ -305,14 +317,17 @@ def main():
                 except Exception as e:
                     failures.append(f"manual-loop layout-diff: {e}\n{r_d.stdout[-300:]}")
                 if not failures or all("manual-loop" not in x for x in failures):
-                    print("OK  manual-loop: --from-layout 恒等复现 fail=0 + "
-                          "layout-diff 三层齐备")
+                    print("OK  manual-loop: --from-layout identical replay fail=0 + "
+                          "layout-diff all three layers present")
 
-        # ── F2. ref-scrubbed：--from-layout waypoints 恒等复算（折点把手全链）──
-        # 夹具：ref-scrubbed 起折线带固定类型代价（弧线>直线>折线），路由器
-        # 很少再自发产出 vg 边——夹具改为**手工锚定 waypoints**（与 demo 折点
-        # 把手导出同构），验证同一全链：waypoints 原样锚定喂回 → kind=
-        # waypoints 的同一折线（锚点重算贴框边）+ 确定性成立。
+        # ── F2. ref-scrubbed: --from-layout waypoints identical recompute (polyline-handle full chain) ──
+        # Fixture: since ref-scrubbed, polylines carry fixed type costs
+        # (arc > line > polyline), so the router rarely emits vg edges on
+        # its own -- the fixture instead uses **manually anchored waypoints**
+        # (isomorphic to the demo polyline-handle export), verifying the
+        # same full chain: waypoints anchored as-is fed back -> the same
+        # polyline with kind=waypoints (anchors recomputed onto box edges)
+        # + determinism holds.
         lay_g = load(out_f, "layout.json")
         man_base = {"viewBox": lay_g["viewBox"],
                     "nodes": {v: {"x": p["x"], "y": p["y"]}
@@ -323,7 +338,7 @@ def main():
         p1 = lay_g["nodes"][b0n]
         mx = (p0["x"] + p1["x"]) / 2
         my = (p0["y"] + p1["y"]) / 2
-        # 垂直于边方向的确定性绕行折点（两侧各一，整 2px 网格）
+        # Deterministic detour waypoints perpendicular to the edge (one per side, on the 2px grid)
         dx, dy = p1["x"] - p0["x"], p1["y"] - p0["y"]
         n = (dx * dx + dy * dy) ** 0.5 or 1.0
         ux, uy = -dy / n, dx / n
@@ -344,19 +359,19 @@ def main():
         if (not e_w or e_w["route"]["kind"] != "waypoints" or
                 e_w["route"].get("via") != want_via or
                 len(e_w["route"]["points"]) != len(want_via) + 2):
-            failures.append(f"manual-waypoints: 复算不一致 rc={r_w1.returncode} "
+            failures.append(f"manual-waypoints: recompute mismatch rc={r_w1.returncode} "
                             f"kind={e_w['route']['kind'] if e_w else '?'}")
         else:
             for fn in ("layout.json", "demo-2d.html"):
                 with open(os.path.join(out_w1, fn), "rb") as a, \
                      open(os.path.join(out_w2, fn), "rb") as b:
                     if a.read() != b.read():
-                        failures.append(f"manual-waypoints: {fn} 不确定")
+                        failures.append(f"manual-waypoints: {fn} non-deterministic")
             if not any("manual-waypoints" in x for x in failures):
-                print("OK  manual-waypoints: --from-layout waypoints 恒等复算 "
-                      "fail=0 + 确定性")
+                print("OK  manual-waypoints: --from-layout waypoints identical recompute "
+                      "fail=0 + deterministic")
 
-        # ── G. 回路主导环形排布（ref-scrubbed）：触发/口径/负例/回退 ──
+        # ── G. Loop-dominant ring placement (ref-scrubbed): trigger / criteria / negatives / fallback ──
         r = subprocess.run([sys.executable, os.path.join(root, "tests",
                                                           "test_ring_layout.py")],
                            capture_output=True, text=True)
@@ -364,9 +379,9 @@ def main():
             failures.append(f"test_ring_layout: exit {r.returncode}\n"
                             f"{r.stdout}\n{r.stderr}")
         else:
-            print("OK  test_ring_layout: 环形触发/口径/负例不误伤/确定性 全过")
+            print("OK  test_ring_layout: ring trigger / criteria / negatives not misfired / determinism all pass")
 
-        # G2. debt-spiral 实测：主环成圆、0 交叉、环形口径门全过
+        # G2. debt-spiral real run: main loop forms a circle, 0 crossings, all ring-criteria gates pass
         ds = os.path.join(root, "benchmarks/corpus/classic/debt-spiral.cld")
         out_g = os.path.join(tmp, "debt-spiral-ring")
         r_g = run_cli(ds, out_g, (), pitch=None)
@@ -377,7 +392,7 @@ def main():
             cert_g = load(out_g, "certificate.json")
             if lay_g["meta"].get("placement") != "ring-cycle" or \
                     lay_g["meta"].get("position_engine") != "ring-construct":
-                failures.append("ring debt-spiral: 未走环形排布 "
+                failures.append("ring debt-spiral: ring placement not taken "
                                 f"(engine={lay_g['meta'].get('position_engine')})")
             if cert_g["metrics"]["crossings"] != 0 or \
                     cert_g.get("placement") != "ring-cycle":
@@ -386,15 +401,16 @@ def main():
                                 f"{cert_g.get('placement')}")
             for k in RING_HARD_GATES:
                 if not cert_g["gates"].get(k, False):
-                    failures.append(f"ring debt-spiral: 环形口径门 {k} FAIL")
-            if cert_g["grade"] != "最优":
+                    failures.append(f"ring debt-spiral: ring-criteria gate {k} FAIL")
+            if cert_g["grade"] != "best":
                 failures.append(f"ring debt-spiral: grade={cert_g['grade']}")
             if not failures or all("debt-spiral" not in x for x in failures):
-                print("OK  ring debt-spiral: 主环成圆(5节点) 交叉0 最优 "
-                      "环形口径门全过")
+                print("OK  ring debt-spiral: main loop circular (5 nodes), 0 crossings, best grade, "
+                      "all ring-criteria gates pass")
 
-        # G3. 负例不误伤：链/树/13节点环/双三角+桥 → 不触发环形
-        # （ref-scrubbed：双三角+桥可进纵列——少环+主链结构；断言只禁 ring）
+        # G3. Negatives must not misfire: chain / tree / 13-node ring / two triangles + bridge -> ring must NOT trigger
+        # (ref-scrubbed: two triangles + bridge may enter column placement -- few loops + main-chain
+        # structure; the assertion only forbids ring)
         neg_fixtures = {
             "ci-neg-chain.cld": 'graph "链"\nvar a "A"\nvar b "B"\nvar c "C"\n'
                                 'var d "D"\na -> + b\nb -> + c\nc -> + d\n',
@@ -415,17 +431,17 @@ def main():
                 f.write(text)
             out_n = os.path.join(tmp, fn + "-out")
             r_n = run_cli(p, out_n, (), pitch=None)
-            if r_n.returncode not in (0, 1):     # 几何 fail=存量语义，exit 1 合法
-                failures.append(f"ring 负例 {fn}: CLI exit {r_n.returncode}")
+            if r_n.returncode not in (0, 1):     # geometry fail is legacy semantics; exit 1 is legal
+                failures.append(f"ring negative {fn}: CLI exit {r_n.returncode}")
                 continue
             lay_n = load(out_n, "layout.json")
             if lay_n["meta"].get("position_engine") == "ring-construct":
-                failures.append(f"ring 负例 {fn}: 误触发环形排布")
-        if not failures or all("负例" not in x for x in failures):
-            print("OK  ring 负例 4 张（链/树/13节点环/双三角+桥）：不触发环形"
-                  "（双三角+桥 ref-scrubbed 起可进纵列，只禁 ring）")
+                failures.append(f"ring negative {fn}: ring placement misfired")
+        if not failures or all("ring negative" not in x for x in failures):
+            print("OK  ring negatives x4 (chain/tree/13-node ring/two triangles + bridge): ring not triggered "
+                  "(two triangles + bridge may enter column placement since ref-scrubbed; only ring is forbidden)")
 
-        # ── H. 布局美学 v2（ref-scrubbed）：纵列/对称触发 + R/B 颜色化 + 全语料 ──
+        # ── H. Layout aesthetics v2 (ref-scrubbed): column/symmetric trigger + R/B coloring + full corpus ──
         r = subprocess.run([sys.executable, os.path.join(root, "tests",
                                                           "test_layout_modes.py")],
                            capture_output=True, text=True)
@@ -433,10 +449,10 @@ def main():
             failures.append(f"test_layout_modes: exit {r.returncode}\n"
                             f"{r.stdout}\n{r.stderr}")
         else:
-            print("OK  test_layout_modes: 纵列/对称触发·几何·R/B 颜色化·"
-                  "交叉软目标·确定性 全过")
+            print("OK  test_layout_modes: column/symmetric trigger, geometry, R/B coloring,"
+                  "crossings soft goal, determinism all pass")
 
-        # H2. 全 classic 语料 19 张：exit 0 + 全部最优 + 硬门全过（新口径）
+        # H2. Full classic corpus, 19 graphs: exit 0 + all best grade + all hard gates pass (new criteria)
         corpus_dir = os.path.join(root, "benchmarks", "corpus", "classic")
         n_ok = 0
         for fn in sorted(os.listdir(corpus_dir)):
@@ -450,29 +466,33 @@ def main():
                                 f"{r_h.stdout[-500:]}")
                 continue
             cert_h = load(out_h, "certificate.json")
-            if cert_h["grade"] != "最优":
+            if cert_h["grade"] != "best":
                 failures.append(f"corpus {name}: grade={cert_h['grade']}")
             for k in _hard_gates_for(cert_h):
                 if not cert_h["gates"].get(k, False):
-                    failures.append(f"corpus {name}: 硬门 {k} FAIL")
+                    failures.append(f"corpus {name}: hard gate {k} FAIL")
             if cert_h["metrics"]["crossings"] > 2:
                 failures.append(f"corpus {name}: crossings="
                                 f"{cert_h['metrics']['crossings']}")
             n_ok += 1
-        print(f"OK  corpus 全语料 {n_ok}/19：exit 0 · 最优 · 新口径硬门全过")
+        print(f"OK  corpus full set {n_ok}/19: exit 0, best grade, all new-criteria hard gates pass")
 
-        # J. 锚点口径硬门（ref-scrubbed 二验返修）：jacky「线连在方框上的点
-        #    优先选每条边的中点，不要选转角」——docs/layout-modes.md §锚点
-        #    口径。逐图实测：①转角命中数 = 0（全引擎硬门）；②锚点带内比例
-        #    （边中点 ±1/4 边长）：spine-wing（本卡域）= 100%；其余引擎锁
-        #    v0.7.2 基线比例（下表）防回退——ring-cycle 互环对 / bowtie-vertex
-        #    ±12px 辐条走廊为在册遗留带外（修复牵动交付平移与 18 图零漂移
-        #    硬门，归后续卡）。
+        # J. Anchor-criteria hard gate (ref-scrubbed second-review rework):
+        #    jacky: "the point where a line meets a box should prefer the
+        #    midpoint of each edge, never a corner" -- docs/layout-modes.md
+        #    §anchor criteria. Measured per graph: (1) corner hits = 0 (hard
+        #    gate for all engines); (2) in-band anchor ratio (edge midpoint
+        #    +/- 1/4 edge length): spine-wing (this card's domain) = 100%;
+        #    other engines locked to v0.7.2 baseline ratios (table below) to
+        #    prevent regressions -- ring-cycle inter-ring pairs / bowtie-vertex
+        #    +/-12px spoke corridors are registered legacy out-of-band cases
+        #    (a fix would shift deliverables and break the 18-graph
+        #    zero-drift hard gate; deferred to a later card).
         BASELINE_BAND = {
-            # v0.7.2 基线带内比例（band/total 精确分数，防舍入误判）
+            # v0.7.2 baseline in-band ratios (band/total exact fractions, avoiding rounding misjudgment)
             "arms-race": 8 / 8, "brand-flywheel": 14 / 16,
             "bullwhip": 12 / 12, "burnout-attrition": 12 / 12,
-            "classic-cld-growth-and-burden": 26 / 26,   # spine-wing 提门到 100%
+            "classic-cld-growth-and-burden": 26 / 26,   # spine-wing gate raised to 100%
             "debt-spiral": 12 / 12, "eroding-goals": 8 / 12,
             "fishing-collapse": 15 / 18, "fixes-that-fail": 10 / 10,
             "induced-demand": 14 / 14, "learning-flywheel": 10 / 10,
@@ -519,21 +539,21 @@ def main():
             ratio = band_in / total if total else 1.0
             floor = BASELINE_BAND.get(name, 1.0)
             if corner > 0:
-                failures.append(f"corpus {name}: 锚点转角命中 {corner} "
-                                f"（口径 =0）")
+                failures.append(f"corpus {name}: anchor corner hits {corner} "
+                                f"(criteria: must be 0)")
             elif ratio < floor - 1e-9:
-                failures.append(f"corpus {name}: 锚点带内 {band_in}/{total} "
-                                f"({ratio:.0%}) < v0.7.2 基线 {floor:.0%} "
+                failures.append(f"corpus {name}: anchor in-band {band_in}/{total} "
+                                f"({ratio:.0%}) < v0.7.2 baseline {floor:.0%} "
                                 f"{worst}")
             else:
                 n_anchor_ok += 1
-                print(f"OK  锚点口径 {name}: engine={eng} 带内 {band_in}/{total}"
-                      f" ({ratio:.0%}) 转角 {corner}")
+                print(f"OK  anchor criteria {name}: engine={eng} in-band {band_in}/{total}"
+                      f" ({ratio:.0%}) corners {corner}")
         if n_anchor_ok == 19:
-            print("OK  锚点口径硬门: 19/19 转角=0 · 带内比例达标"
-                  "（spine-wing=100%，其余锁基线）")
+            print("OK  anchor criteria hard gate: 19/19 corners=0, in-band ratios meet the bar "
+                  "(spine-wing=100%, others locked to baseline)")
 
-        # H3. R/B 颜色化口径：wage R1 琥珀/B1 天蓝/多环异色中性 + 极性数据保留
+        # H3. R/B coloring criteria: wage R1 amber / B1 sky blue / multi-loop mixed-color neutral + polarity data retained
         out_w = os.path.join(tmp, "H-wage")
         run_cli(os.path.join(corpus_dir, "wage-price-spiral.cld"), out_w,
                 (), pitch=None)
@@ -546,28 +566,31 @@ def main():
                 (("demand", "prices"), ["B"], "#0284c7")):
             e = by_pair[pr]
             if e["loop_kinds"] != kinds or e["loop_color"] != color:
-                failures.append(f"R/B 颜色化 {pr}: kinds={e['loop_kinds']} "
+                failures.append(f"R/B coloring {pr}: kinds={e['loop_kinds']} "
                                 f"color={e['loop_color']}")
             if "polarity" not in e:
-                failures.append(f"R/B 颜色化 {pr}: 极性数据丢失")
+                failures.append(f"R/B coloring {pr}: polarity data lost")
         demo_w = open(os.path.join(out_w, "demo-2d.html"), encoding="utf-8").read()
         if "data-pol" in demo_w:
-            failures.append("R/B 颜色化: demo 仍含文字徽标 data-pol")
+            failures.append("R/B coloring: demo still contains text badge data-pol")
         if 'stroke="#d97706"' not in demo_w or 'stroke="#0284c7"' not in demo_w:
-            failures.append("R/B 颜色化: demo 未含 R 琥珀/B 天蓝着色")
-        print("OK  R/B 颜色化: 回路边按极性着色（R=琥珀/B=天蓝），"
-              "文字徽标已移除，极性数据保留")
+            failures.append("R/B coloring: demo missing R amber / B sky-blue coloring")
+        print("OK  R/B coloring: loop edges colored by polarity (R=amber / B=sky blue), "
+              "text badges removed, polarity data retained")
 
-        # I. demo 交付件新鲜度（ref-scrubbed 返修，v0.7.1 教训）：引擎切
-        #    spine-wing 后 demos/classic-cld-2d.html 没重渲染，jacky 眼验
-        #    看到的仍是 ring-construct 旧图被误判「结构不一致」。铁门：
-        #    交付 demo 必须与当前引擎重渲染逐字节一致（引擎确定性已由
-        #    双跑验证，可逐字节 pin）。
+        # I. Demo deliverable freshness (ref-scrubbed rework, v0.7.1 lesson):
+        #    after the engine switched to spine-wing, demos/classic-cld-2d.html
+        #    was not re-rendered, so jacky's eyeball review still saw the old
+        #    ring-construct image and wrongly flagged "structural
+        #    inconsistency". Iron gate: the delivered demo must be
+        #    byte-identical to a fresh re-render by the current engine
+        #    (engine determinism is already proven by double runs, so a
+        #    byte-exact pin is valid).
         fresh_out = os.path.join(tmp, "I-fresh-demo")
         r_f = run_cli("examples/classic-cld-growth-and-burden.cld", fresh_out,
                       ("--name", "classic-cld", "--skip-3d"), pitch=None)
         if r_f.returncode != 0:
-            failures.append(f"demo 新鲜度: CLI exit {r_f.returncode}\n"
+            failures.append(f"demo freshness: CLI exit {r_f.returncode}\n"
                             f"{r_f.stderr[-500:]}")
         else:
             committed = os.path.join(root, "demos", "classic-cld-2d.html")
@@ -575,17 +598,17 @@ def main():
                     open(os.path.join(fresh_out, "demo-2d.html"), "rb") as b:
                 if a.read() != b.read():
                     failures.append(
-                        "demo 新鲜度: demos/classic-cld-2d.html 与当前引擎"
-                        "重渲染不一致（交付件过期——重跑 "
+                        "demo freshness: demos/classic-cld-2d.html does not match a "
+                        "re-render by the current engine (deliverable stale -- rerun "
                         "python -m stdraw layout examples/"
                         "classic-cld-growth-and-burden.cld --name classic-cld"
-                        " --skip-3d 并更新 demo + docs/gallery 截图）")
+                        " --skip-3d and update the demo + docs/gallery screenshots)")
                 else:
-                    print("OK  demo 新鲜度: demos/classic-cld-2d.html 与当前"
-                          "引擎重渲染逐字节一致（ref-scrubbed 防过期门）")
-                # 证书交付件同口径（ref-scrubbed 收尾抓出：
-                # demos/classic-certificate.json 停在 ring-cycle 9 门
-                # 旧证书，demo html 已新鲜而证书 JSON 过期）——逐字节 pin。
+                    print("OK  demo freshness: demos/classic-cld-2d.html byte-identical "
+                          "to the current engine's re-render (ref-scrubbed anti-staleness gate)")
+                # Certificate deliverable under the same criteria (caught in
+                # ref-scrubbed closeout: demos/classic-certificate.json was stuck
+                # at the old ring-cycle 9-gate certificate) -- byte-exact pin.
                 committed_cert = os.path.join(root, "demos",
                                               "classic-certificate.json")
                 with open(committed_cert, "rb") as a, \
@@ -593,14 +616,26 @@ def main():
                              "rb") as b:
                     if a.read() != b.read():
                         failures.append(
-                            "证书新鲜度: demos/classic-certificate.json 与当前"
-                            "引擎重渲染不一致（交付件过期——重跑 "
+                            "certificate freshness: demos/classic-certificate.json does "
+                            "not match a re-render by the current engine (deliverable "
                             "python -m stdraw layout examples/"
                             "classic-cld-growth-and-burden.cld --name classic-cld"
-                            " --skip-3d 并更新 demos/classic-certificate.json）")
+                            " --skip-3d and update demos/classic-certificate.json)")
                     else:
-                        print("OK  证书新鲜度: demos/classic-certificate.json 与"
-                              "当前引擎重渲染逐字节一致（ref-scrubbed 防过期门）")
+                        print("OK  certificate freshness: demos/classic-certificate.json "
+                              "byte-identical to the current engine's re-render (ref-scrubbed anti-staleness gate)")
+
+        # K. Language policy gate: repo-wide bilingual partition
+        #    (EN face CJK-free incl. code files, zh face prose-free).
+        r_lang = subprocess.run(
+            [sys.executable, os.path.join(root, "tests", "check_language_policy.py")],
+            capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if r_lang.returncode != 0:
+            failures.append("language policy gate FAILED (see output above)")
+            print(r_lang.stdout)
+            print(r_lang.stderr)
+        else:
+            print("OK  " + r_lang.stdout.strip().splitlines()[-1])
 
         if failures:
             print("\nFAILURES:")

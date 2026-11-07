@@ -6,7 +6,7 @@
 
 - **交叉数（classic 均值）**：stdraw-auto=0.16；stdraw-ortho=0.00；graphviz-neato=0.05；elk-layered=0.05；stdraw-auto-exact=0.16；graphviz-dot=0.16；graphviz-sfdp=0.26。交叉数全场最低的主张**不成立**（neato/ELK 均值更低，代价是排布质量：neato 框压线 1.2 + 净距违规 3.1 + 行对齐 0.05；ELK 框压线 0 但净距违规 3.0——数字见 §7）
 - **排布硬门（框压线=0 且 净距违规=0，classic 均值口径）**：达成的工具 = stdraw-auto、stdraw-auto-exact、graphviz-sfdp。stdraw-auto 在该组内交叉数最低/持平，但耗时最贵
-- **运行时间（classic 均值）**：stdraw-auto=10.0s vs 基线 graphviz-dot=0.03s、graphviz-neato=0.06s、graphviz-sfdp=0.03s、elk-layered=0.07s——基线快 2~3 个数量级，任何主张必须承认这一代价
+- **运行时间（classic 均值）**：stdraw-auto=10.0s，对比基线 graphviz-dot=0.03s、graphviz-neato=0.06s、graphviz-sfdp=0.03s、elk-layered=0.07s——基线快 2~3 个数量级，任何主张必须承认这一代价
 - **随机族（WS5 修复后口径）**：stdraw auto-v2 的 n≥20 全 DNF 已修复（根因是 CP-SAT 证最优耗时随 n 爆炸，非 _polish——见 §5 修正记录）；修复后 n≥20 出图率/耗时以 §4 实测为准，「全规模最好」主张仍不成立（运行时间仍慢基线 2~3 个数量级）
 - **综合可辩护措辞（草案，§8 展开）**：stdraw 的比较优势限定在「经典 CLD 小图、卡片式画法、硬门语义（框不压线+净距+行对齐+CV）全维度同时达标」这一域；交叉数单项与 Graphviz dot 打平、不敌 neato/ELK 裸交叉值；运行时间为其主要代价
 
@@ -293,7 +293,7 @@
 | Graphviz sfdp | 0.3 | 0.0 | 0.0 | 0.131 | 0.37 | 0.03 | 19/19 |
 | ELK layered | 0.1 | 0.0 | 3.0 | 0.208 | 0.41 | 0.07 | 19/19 |
 
-### classic 交叉数逐工具对比（vs stdraw-auto 基准行）
+### classic 交叉数逐工具对比（以 stdraw-auto 为基准行）
 
 - stdraw·ortho(构造法)：交叉均值 0.00 低于 stdraw-auto 0.16（**stdraw-auto 落后**）
 - stdraw·auto+WS2(精确层)：与 stdraw-auto 打平（0.16）

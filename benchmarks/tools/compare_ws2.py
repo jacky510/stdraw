@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# WS2 验收比对：重跑随机族 exact，逐图与既有 raw 参考值对拍（cr 不漂移）。
-# 用法: python compare_ws2.py <rawdir_new>
-# 输出: 比对结果 JSON 到 stdout；退出码 0=全对拍通过/如实降级。
+# WS2 acceptance comparison: re-run the random-family exact layer, cross-check each graph against existing raw references (cr must not drift).
+# Usage: python compare_ws2.py <rawdir_new>
+# Output: comparison result JSON to stdout; exit code 0 = all cross-checks pass / honest downgrade.
 import glob
 import json
 import os

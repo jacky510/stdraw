@@ -1,20 +1,20 @@
-# 统一评测器：任何工具的布局（节点框 + 边折线）→ 六指标（native 坐标口径）。
+# Unified evaluator: any tool's layout (node boxes + edge polylines) -> six metrics (native-coordinate conventions).
 #
-# 口径（REPORT.md §2 详述）：
-#   所有工具吃同一输入（同标签、同框尺寸 w×h px，框宽由 stdraw textmetrics 统一给出，
-#   Graphviz 以 inch=px/72、ELK/stdraw 直接 px 传入——各工具 native 坐标同为「物理 px」，
-#   同一框在哪个工具里都是同一 px 尺寸）。
-#   阈值型指标（净距违规 16px / 框压线 1px）在 native 坐标按绝对 px 判定，跨工具可比；
-#   尺度不变指标（交叉/CV/行对齐）不受坐标尺度影响；另报 bbox 占用作画布效率参考。
-#   不做强制缩放归一化——缩放会改变阈值的物理语义，谁被缩谁吃亏不是质量差异。
+# Conventions (detailed in REPORT.md §2):
+#   All tools take the same input (same labels, same box size w×h px, box width uniformly provided by stdraw textmetrics;
+#   Graphviz receives inch=px/72, ELK/stdraw take px directly -- each tool's native coordinates are likewise in "physical px",
+#   so the same box has the same px size in every tool).
+#   Threshold metrics (clearance violation 16px / box press 1px) are judged in absolute px on native coordinates, comparable across tools;
+#   scale-invariant metrics (crossings/CV/row alignment) are unaffected by coordinate scale; bbox is also reported as a canvas-efficiency reference.
+#   No forced scaling normalization -- scaling changes the physical semantics of thresholds; whichever tool gets scaled losing out is not a quality difference.
 #
-# 指标口径与 stdraw/metrics.py、stdraw/routing.py 同源（直接复用其函数）：
-#   crossings        相邻边除外，折线严格求交（seg_cross）
-#   box_press        边折线进入非端点框（含 1px 余量，dist_point_rect）
-#   clear_violations 边-非端点框最小距离 < 16px 的 (边,框) 对数
-#   spacing_cv       最近邻中心距 std/mean
-#   row_align_rate   y 差 ≤4px 视觉同行占比
-#   runtime_s        runner 计时传入
+# Metric definitions are same-source with stdraw/metrics.py and stdraw/routing.py (their functions are reused directly):
+#   crossings        adjacent edges excluded, strict polyline intersection (seg_cross)
+#   box_press        edge polyline enters a non-endpoint box (with 1px margin, dist_point_rect)
+#   clear_violations number of (edge, box) pairs where the edge-to-non-endpoint-box minimum distance < 16px
+#   spacing_cv       nearest-neighbor center distance std/mean
+#   row_align_rate   share of nodes on a visual row (y difference <= 4px)
+#   runtime_s        passed in from runner timing
 import math
 import os
 import sys
@@ -26,24 +26,24 @@ from stdraw.metrics import seg_cross                       # noqa: E402
 from stdraw.routing import sample_polyline, dist_point_rect  # noqa: E402
 from stdraw import textmetrics                             # noqa: E402
 
-CLEARANCE = 16.0        # 净距阈值 px（与 stdraw 硬门同值）
-PRESS_MARGIN = 1        # 框压线余量 px
-ROW_EPS = 4.0           # 视觉同行判定 px
-FS_TITLE = 15.0         # 与 stdraw auto 配方一致的字号
+CLEARANCE = 16.0        # clearance threshold px (same value as the stdraw hard gate)
+PRESS_MARGIN = 1        # box press margin px
+ROW_EPS = 4.0           # visual same-row tolerance px
+FS_TITLE = 15.0         # font size matching the stdraw auto recipe
 
 
 def box_size(label: str):
-    """统一样式框宽（布局引擎无关）：stdraw textmetrics 解析宽度 + 保守 padding。"""
+    """Uniform-style box size (layout-engine independent): stdraw textmetrics resolved width + conservative padding."""
     w, h = textmetrics.card_size(label, "", FS_TITLE, FS_TITLE)
     return int(w), int(h)
 
 
 def evaluate(nodes, routes, edges, runtime_s, tool, graph, extra=None):
-    """nodes {id:(x,y,w,h)}, routes {edge_idx:[pts]}, edges [{a,b}]（与 routes 同序）。
-    全部在 native 坐标上判定（见文件头口径说明）。"""
+    """nodes {id:(x,y,w,h)}, routes {edge_idx:[pts]}, edges [{a,b}] (same order as routes).
+    Everything is judged on native coordinates (see the conventions in the file header)."""
     ids = list(nodes)
 
-    # 1. 交叉（相邻边共享端点不计）
+    # 1. Crossings (adjacent edges sharing an endpoint are not counted)
     crossings = 0
     n_e = len(edges)
     for i in range(n_e):
@@ -64,7 +64,7 @@ def evaluate(nodes, routes, edges, runtime_s, tool, graph, extra=None):
                     crossings += 1
                     break
 
-    # 2. 框压线 / 净距违规（采样折线 vs 非端点框）
+    # 2. Box press / clearance violations (sampled polyline vs non-endpoint boxes)
     press = 0
     clear_violations = 0
     min_clear = None
@@ -84,7 +84,7 @@ def evaluate(nodes, routes, edges, runtime_s, tool, graph, extra=None):
                 clear_violations += 1
             min_clear = dmin if min_clear is None else min(min_clear, dmin)
 
-    # 3. CV（最近邻中心距 std/mean）
+    # 3. CV (nearest-neighbor center distance std/mean)
     nn = []
     for a in ids:
         (ax, ay, _, _) = nodes[a]
@@ -95,7 +95,7 @@ def evaluate(nodes, routes, edges, runtime_s, tool, graph, extra=None):
     cv = (math.sqrt(sum((d - mean_nn) ** 2 for d in nn) / len(nn)) / mean_nn) \
         if nn and mean_nn else 0.0
 
-    # 4. 行对齐率（y 差 ≤4px 成组）
+    # 4. Row alignment rate (grouped when the y difference is <= 4px)
     ys = sorted(p[1] for p in nodes.values())
     aligned, i = 0, 0
     while i < len(ys):

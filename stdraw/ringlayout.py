@@ -1,44 +1,59 @@
 # -*- coding: utf-8 -*-
-"""回路主导环形排布（2026-11-05 产品定调，ref-scrubbed）。
+"""Loop-dominated ring placement (2026-11-05 product decision, ref-scrubbed).
 
-> 「有平衡环形成，环形会让人们把这个循环理解得更好，图形也更优美」
+> "When a balancing loop forms, a ring helps people understand the cycle
+> better, and the figure is more beautiful too."
 
-触发判定（图论度量，非感觉；全确定性）：
-  1. 小图：3 ≤ n ≤ 12（n 含孤立节点）；
-  2. 主环：存在覆盖 ≥ n-2 节点的简单回路；或 环边（非桥边）占无向边比例 ≥ 0.9；
-  3. 纯环（单连通分量全度 2）：直接取该环（复用 WS2 cycle 正多边形槽位构造，
-     构造本身不变）。
+Trigger detection (graph-theoretic metrics, not feelings; fully
+deterministic):
+  1. Small graph: 3 <= n <= 12 (n includes isolated nodes);
+  2. Main ring: a simple loop covering >= n-2 nodes exists; or ring
+     edges (non-bridge edges) make up >= 0.9 of undirected edges;
+  3. Pure ring (single connected component, all degree 2): take that
+     ring directly (reusing the WS2 cycle regular-polygon slot
+     construction; the construction itself unchanged).
 
-主环选择：候选 = 声明环（DSL loop，构成简单回路者，保留声明环序——R/B 极性
-徽标沿环可读）∪ 图论枚举简单回路（规范形去重）。在覆盖 ≥ n-2 的候选里按
-「弦交叉 0 优先 → 覆盖最多 → 规范形字典序」确定性选优。
+Main-ring selection: candidates = declared loops (DSL loops that form
+a simple loop, keeping the declared order — R/B polarity badges stay
+readable around the ring) ∪ graph-theoretically enumerated simple
+loops (canonical-form dedup). Among candidates covering >= n-2,
+selection is deterministic by "zero chord crossings first -> most
+coverage -> canonical-form lexicographic order".
 
-排布（place_ring）：
-  - 主环节点按环序放正多边形槽位（placement._place_cycle 同源构造：角度均分
-    i·2π/k − π/2、2px 网格量化；半径按相邻卡宽需求自适应，上界受 check8
-    1280×800 档渲染比例约束）；
-  - 残节点（弦尾巴/外部变量）：邻居角质心方向、环内固定分数候选序，卡距
-    冲突退环外近邻侧；孤立节点停顶部停车带；
-  - 半径需求超上界 → InfeasibleRing（调用方回退既有分层路径，逐字节不变）。
+Placement (place_ring):
+  - Main-ring nodes go into regular-polygon slots in ring order
+    (same-source construction as placement._place_cycle: evenly
+    divided angles i·2π/k − π/2, quantized to the 2px grid; radius
+    adapts to adjacent card-width needs, upper bound constrained by
+    the check8 1280x800 rendering-ratio tier);
+  - Residual nodes (chord tails / external variables): toward the
+    centroid direction of ring neighbors, a fixed fractional in-ring
+    candidate order; on card-gap conflicts fall back to the near side
+    outside the ring; isolated nodes park in the top parking strip;
+  - Radius need above the upper bound -> InfeasibleRing (the caller
+    falls back to the existing layered path, byte-for-byte
+    unchanged).
 
-布线/证书：交给既有 Router 与 certificate_auto；环形模式指标口径（环上等间距
-CV + 正多边形模板拟合误差，替代行对齐/列吸附）在 metrics/check 内按
-meta.placement == "ring-cycle" 切换。
+Routing/certificate: delegated to the existing Router and
+certificate_auto; the ring-mode metric criteria (equal-spacing CV on
+the ring + regular-polygon template fitting error, replacing row
+alignment / column snapping) switch inside metrics/check on
+meta.placement == "ring-cycle".
 """
 import math
 from collections import defaultdict
 
-MAX_RING_N = 12            # 触发上限：小图
-COVER_SLACK = 2            # 主环覆盖 ≥ n - 2
-CYCLE_EDGE_RATIO = 0.90    # 环边（非桥）占比阈值（OR 分支）
-DFS_STEP_CAP = 2_000_000   # 简单回路枚举步数上限（确定性：操作计数口径）
+MAX_RING_N = 12            # trigger upper bound: small graphs
+COVER_SLACK = 2            # main ring covers >= n - 2
+CYCLE_EDGE_RATIO = 0.90    # ring-edge (non-bridge) ratio threshold (OR branch)
+DFS_STEP_CAP = 2_000_000   # simple-loop enumeration step cap (deterministic: operation-count criterion)
 RADIUS_MIN = 150
-RADIUS_MAX = 320           # check8 渲染比例 ≥0.85 的半径上界（2r+card+边几何 ≤ ~780px）
-ADJ_GAP = 60               # 相邻环卡中心距余量（≥16 门 + 布线通道）
+RADIUS_MAX = 320           # radius upper bound for check8 rendering ratio >= 0.85 (2r+card+edge geometry <= ~780px)
+ADJ_GAP = 60               # center-distance margin between adjacent ring cards (>= 16 gate + routing channel)
 
 
 class InfeasibleRing(Exception):
-    """环形槽位不可行（半径需求超上界）——调用方回退既有分层路径。"""
+    """Ring slot infeasible (radius need above the upper bound) — the caller falls back to the existing layered path."""
 
 
 def _adjacency(edges):
@@ -52,7 +67,7 @@ def _adjacency(edges):
 
 
 def _canonical(seq):
-    """环序列规范形：所有旋转 × 两方向中字典序最小（去重/定序用）。"""
+    """Canonical form of a ring sequence: lexicographically smallest over all rotations x both directions (for dedup/ordering)."""
     best = None
     for s in (list(seq), list(seq)[::-1]):
         for i in range(len(s)):
@@ -63,7 +78,7 @@ def _canonical(seq):
 
 
 def _seg_cross(p1, p2, p3, p4):
-    """两线段是否真交叉（端点相触/共线重叠不算；直线代理口径）。"""
+    """Whether two segments properly cross (endpoint touching / collinear overlap excluded; straight-line proxy convention)."""
 
     def orient(a, b, c):
         v = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
@@ -77,7 +92,7 @@ def _seg_cross(p1, p2, p3, p4):
 
 
 def _crossing_count(segments):
-    """线段两两真交叉计数（segments: (p1, p2, endpoint_ids)；共享端点跳过）。"""
+    """Count of proper pairwise crossings (segments: (p1, p2, endpoint_ids); shared endpoints skipped)."""
     n = len(segments)
     c = 0
     for i in range(n):
@@ -96,7 +111,7 @@ class _CapExceeded(Exception):
 
 
 def _enumerate_cycles(nodes, adj):
-    """枚举全部简单回路（规范形去重；步数上限保护，超限即停、用已有结果）。"""
+    """Enumerate all simple loops (canonical-form dedup; step-cap protection — stop at the cap and use what was found)."""
     steps = [0]
     found = {}
 
@@ -123,7 +138,7 @@ def _enumerate_cycles(nodes, adj):
 
 
 def _declared_loop_cycles(graph, adj):
-    """声明环中构成简单回路者。返回 [(loop_id, kind, 声明环序)]。"""
+    """Declared loops that form simple loops. Returns [(loop_id, kind, declared loop order)]."""
     out = []
     for lp in graph.loops:
         seq = list(lp.nodes)
@@ -149,7 +164,7 @@ def _is_pure_cycle(nodes, adj):
 
 
 def _pure_cycle_order(nodes, adj):
-    """纯环环序：最小 id 起点，首步向较小邻居（确定性）。"""
+    """Pure-ring order: smallest id as start, first step toward the smaller neighbor (deterministic)."""
     start = min(nodes)
     order = [start]
     prev, cur = None, start
@@ -168,7 +183,7 @@ def _pure_cycle_order(nodes, adj):
 
 
 def _non_bridge_ratio(nodes, adj, pairs):
-    """环边占比 = 非桥边 / 无向边数（桥 = 删除后连通分量增加）。"""
+    """Ring-edge ratio = non-bridge edges / undirected edge count (a bridge = removing it increases the component count)."""
     def ncomp(adj2):
         seen, c = set(), 0
         for s in nodes:
@@ -200,7 +215,7 @@ def _non_bridge_ratio(nodes, adj, pairs):
 
 
 def _chord_segments(ring, edges):
-    """环内弦边（ring-ring 非环边）单位圆直线段（交叉代理）。"""
+    """Unit-circle straight segments of in-ring chord edges (ring-ring non-ring edges) (crossing proxy)."""
     rset = set(ring)
     rpos = {v: (math.cos(2 * math.pi * i / len(ring) - math.pi / 2),
                 math.sin(2 * math.pi * i / len(ring) - math.pi / 2))
@@ -220,11 +235,12 @@ def _chord_segments(ring, edges):
 
 
 def detect_ring(graph):
-    """触发判定 + 主环选择。返回 ring plan dict 或 None（不触发）。
+    """Trigger detection + main-ring selection. Returns a ring plan dict or
+    None (no trigger).
 
-    plan = {"ring": [环序], "k": int, "declared_loop": id|None,
+    plan = {"ring": [ring order], "k": int, "declared_loop": id|None,
             "polarity": "R"|"B"|None, "trigger": "pure-cycle"|"cover"|"ratio",
-            "residuals": [非环非孤立节点], "deg0": [孤立节点],
+            "residuals": [non-ring non-isolated nodes], "deg0": [isolated nodes],
             "chord_crossings": int}
     """
     nodes = list(graph.node_ids())
@@ -244,7 +260,7 @@ def detect_ring(graph):
                     "residuals": [], "deg0": deg0,
                     "chord_crossings": 0}
 
-    cands = []                                        # [(环序, loop_id, kind)]
+    cands = []                                        # [(ring order, loop_id, kind)]
     for lid, kind, seq in _declared_loop_cycles(graph, adj):
         cands.append((seq, lid, kind))
     for seq in _enumerate_cycles(core, adj):
@@ -262,7 +278,7 @@ def detect_ring(graph):
     best = None
     for seq, lid, pol in eligible:
         cross = _crossing_count(_chord_segments(seq, edges))
-        # 主环 = 覆盖最大的环（真·主导回路）；同覆盖下弦交叉 0 优先 → 字典序
+        # Main ring = max-coverage ring (the truly dominant loop); same coverage: zero chord crossings first -> lexicographic
         key = (-len(seq), cross, _canonical(seq))
         if best is None or key < best[0]:
             best = (key, seq, lid, pol, cross)
@@ -274,9 +290,11 @@ def detect_ring(graph):
 
 
 def _ring_radius(k, ring_widths, n_residuals=0):
-    """正 k 边形半径：相邻卡中心距 ≥ (w_u+w_v)/2 + ADJ_GAP；超上界不可行。
+    """Regular k-gon radius: adjacent card center distance >= (w_u+w_v)/2 +
+    ADJ_GAP; above the upper bound is infeasible.
 
-    n_residuals>0 时抬高半径给环内让位（每残节点 +40px，上界内）。
+    With n_residuals > 0 the radius is raised to make room inside the
+    ring (+40px per residual node, within the upper bound).
     """
     need = 0.0
     for i in range(k):
@@ -286,22 +304,27 @@ def _ring_radius(k, ring_widths, n_residuals=0):
     r = need / (2 * math.sin(math.pi / k))
     r = max(r, RADIUS_MIN + 40 * n_residuals)
     if r > RADIUS_MAX:
-        raise InfeasibleRing(f"半径需求 {r:.0f}px 超上界 {RADIUS_MAX}")
+        raise InfeasibleRing(f"radius requirement {r:.0f}px exceeds the upper bound {RADIUS_MAX}")
     return max(RADIUS_MIN, int(math.ceil(r / 2) * 2))
 
 
-# 残节点确定性候选族：环内分数 × 角度偏移（固定序，先近心后远心、先零偏移）
+# Deterministic residual candidate family: in-ring fractions x angle offsets (fixed order: near-center first, zero offset first)
 _INNER_FS = (0.42, 0.34, 0.50, 0.26, 0.58, 0.18, 0.66)
 _ANGLE_DS = (0.0, 20.0, -20.0, 40.0, -40.0, 60.0, -60.0, 90.0, -90.0, 120.0, -120.0)
 
 
 def place_ring(plan, widths, card_h, cfg, adj, edges):
-    """环形排布 → ({v: x}, {v: y}, meta)。全整数 2px 网格、确定性。
+    """Ring placement -> ({v: x}, {v: y}, meta). All-integer 2px grid,
+    deterministic.
 
-    残节点指派：候选 = 环内分数 × 角度偏移（邻居角质心为 0°），逐残节点
-    （id 序）取「新增直线代理交叉最少 → 角度偏移最小 → 分数最接近 0.42」
-    的无碰撞候选；环内全撞则试环外近邻侧；再无 → InfeasibleRing。
-    edges：直线代理交叉打分用（环边 + 弦 + 已放残节点辐条）。
+    Residual assignment: candidates = in-ring fraction x angle offset
+    (ring-neighbor centroid at 0°); each residual (id order) takes the
+    collision-free candidate with "fewest new straight-proxy crossings
+    -> smallest angle offset -> fraction closest to 0.42"; if all
+    in-ring candidates collide, try the near side outside the ring;
+    still none -> InfeasibleRing. edges: used for straight-proxy
+    crossing scoring (ring edges + chords + spokes of already-placed
+    residuals).
     """
     ring, k = plan["ring"], plan["k"]
     ring_widths = {i: widths.get(v, 96) for i, v in enumerate(ring)}
@@ -328,7 +351,7 @@ def place_ring(plan, widths, card_h, cfg, adj, edges):
                 return False
         return True
 
-    # 直线代理段（交叉打分）：环边 + 环内弦
+    # Straight-proxy segments (for crossing scoring): ring edges + in-ring chords
     segs = []
     rpos = {v: (pos[v], y[v]) for v in ring}
     for i in range(k):
@@ -346,7 +369,7 @@ def place_ring(plan, widths, card_h, cfg, adj, edges):
                 segs.append((rpos[a], rpos[b], frozenset((a, b))))
 
     def _add_cross(px, py, v):
-        """候选 (px,py) 处放 v 的新增直线代理交叉数（对已放邻居）。"""
+        """New straight-proxy crossings added by placing v at candidate (px,py) (against placed neighbors)."""
         c = 0
         for u in sorted(adj[v]):
             if u not in pos:
@@ -381,11 +404,11 @@ def place_ring(plan, widths, card_h, cfg, adj, edges):
                     if best is None or key < best[0]:
                         best = (key, px, py, zone, f)
                 if best is not None and best[0][0] == 0 and zone == "inner":
-                    break       # 环内已零交叉，无需再扫
+                    break       # zero crossings inside the ring already; no need to scan further
             if best is not None:
                 break
         if best is None:
-            raise InfeasibleRing(f"残节点 {v} 无无碰撞候选")
+            raise InfeasibleRing(f"residual node {v} has no collision-free candidate")
         _, px, py, zone, f = best
         pos[v], y[v] = px, py
         placed[v] = _rect(v, px, py)

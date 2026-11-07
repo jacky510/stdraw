@@ -1,25 +1,39 @@
 
 
-# ═══ 交互层脚本（ref-scrubbed 拖拽重排；ref-scrubbed 重布线 + 折点把手）═══
-# 纯 vanilla JS（零依赖零联网）。挂进 render_auto_html 生成的页面：
-#   - 拖动节点（SVG pointer 事件，鼠标/触摸统一；拖动中 clamp 在 viewBox 内）；
-#   - ref-scrubbed 拖动中「全部线型实时重布线」（预览口径）：
-#       · 直线/vg 折线：JS 侧移植的可见性图最短路布线器（与 stdraw/routing+
-#         visibility 同数学口径：直线候选净距 16px，被挡则膨胀角点可见性图
-#         Dijkstra + string-pulling 捷径，膨胀 17.5px）——折点随拖重算，
-#         不再有钉死的中间点（修复 jacky 实测问题 2 的根因：旧 reanchor
-#         只重建端点、waypoints 钉在原地）；
-#       · 弧线：二次贝塞尔端点重锚 + 控制点随两端点位移均值平移，全顶点跟随；
-#       · 非关联边若被移动中的节点压线（1px 余量）同样触发重布线；
-#   - ref-scrubbed 折点可拖把手：vg 折线（route.via 非空）每个折点渲染为
-#     小圆把手（hover move 光标）；拖动即把该边转为「用户锚定」——此后节点
-#     拖拽只重锚端点、保留用户 waypoints；导出布局 JSON 带 edges[].waypoints，
-#     CLI --from-layout 按同口径复算（锚点=框边朝向首/末 waypoint）；
-#   - 顶栏实时指标（预览几何真算：交叉/穿卡1px/卡净距/CV/行对齐）；
-#   - 松手全指标刷新 + R/B 极性标记确定性重放（render._polarity_marker 同口径）；
-#   - 「导出布局」下载 manual-layout JSON（坐标取整，layout.json 兼容子集）；
-#   - 「重置」恢复初始布局（含原始 path_d 渲染与把手清除）。
-# 确定性：生成的 HTML 不含时间戳/随机数；不拖时初始几何与静态渲染逐像素一致。
+# ═══ Interactive layer script (drag rearrange; re-routing + bend handles) ═══
+# Pure vanilla JS (zero dependencies, zero network). Attached to pages generated
+# by render_auto_html:
+#   - drag nodes (SVG pointer events, mouse/touch unified; clamped to the
+#     viewBox while dragging);
+#   - live "all line kinds re-routed while dragging" (preview caliber):
+#       · straight/vg polylines: a JS port of the visibility-graph
+#         shortest-path router (same mathematical caliber as
+#         stdraw/routing+visibility: straight-line candidates need 16px
+#         clearance, otherwise inflated-corner visibility graph Dijkstra +
+#         string-pulling shortcuts, inflation 17.5px) — bends recomputed on
+#         every drag, no more pinned midpoints (fixes the root cause of the
+#         user-reported issue 2: the old reanchor only rebuilt endpoints and
+#         waypoints stayed pinned in place);
+#       · arcs: quadratic Bezier endpoint re-anchoring + control point
+#         translated by the mean endpoint displacement, all vertices follow;
+#       · unrelated edges pressed by the moving node (1px margin) also
+#         trigger re-routing;
+#   - draggable bend handles: each bend of a vg polyline (route.via non-empty)
+#     renders as a small circular handle (move cursor on hover); dragging it
+#     marks the edge "user-anchored" — afterwards node drags only re-anchor
+#     endpoints and keep user waypoints; the exported layout JSON carries
+#     edges[].waypoints, and CLI --from-layout recomputes under the same
+#     caliber (anchors = box border facing the first/last waypoint);
+#   - live metrics in the top bar (truly computed on preview geometry:
+#     crossings / 1px card presses / card gap / CV / row alignment);
+#   - full metric refresh on release + deterministic replay of R/B polarity
+#     markers (same caliber as render._polarity_marker);
+#   - "Export layout" downloads a manual-layout JSON (rounded coordinates, a
+#     layout.json-compatible subset);
+#   - "Reset" restores the initial layout (incl. original path_d rendering and
+#     handle removal).
+# Determinism: the generated HTML contains no timestamps/random numbers;
+# without dragging the initial geometry is pixel-identical to the static render.
 _INTERACTIVE_JS = r"""(function () {
 'use strict';
 var dataEl = document.getElementById('stdraw-data');
@@ -27,7 +41,7 @@ if (!dataEl) return;
 var D = JSON.parse(dataEl.textContent);
 var svg = document.getElementById('stdraw-svg');
 var VB = D.viewBox, cardH = D.cardH;
-var CL = 16, VG_C = 17.5, VEPS = 1e-6;   // 与 routing.CLEARANCE / +VG_PAD 同口径
+var CL = 16, VG_C = 17.5, VEPS = 1e-6;   // same caliber as routing.CLEARANCE / +VG_PAD
 var nodes = {};
 D.nodes.forEach(function (n) { nodes[n.id] = {x: n.x, y: n.y, w: n.w, bx: n.x, by: n.y, g: null}; });
 svg.querySelectorAll('[data-node]').forEach(function (g) {
@@ -62,8 +76,9 @@ edges.forEach(function (e, i) {
   }
 });
 var polGroups = {};
-// R/B 文字徽标已移除（回路极性由边着色表达，静态 stroke 属性
-// 拖拽时保留）；polGroups/refreshMarkers 保留为空实现以兼容旧页面结构。
+// R/B text badges removed (loop polarity is expressed by edge coloring; the
+// static stroke attributes are kept while dragging); polGroups/refreshMarkers
+// remain as empty implementations for old page-structure compatibility.
 var incidentMap = {};
 Object.keys(nodes).forEach(function (v) {
   incidentMap[v] = [];
@@ -84,9 +99,11 @@ function updateEdge(i) {
   }
 }
 function borderPoint(c, hw, hh, toward) {
-  // 连接点交付口径：射线定边出口 → 锚点沿该边切向钳制到边中点
-  // ±1/4 边长带内（正交出边即边中点，斜线出口拉回带内，转角排除）。
-  // 与 Python routing.border_point + Router.midband_reanchor 同口径。
+  // Connector delivery caliber: ray-determined border exit -> the anchor is
+  // clamped along that border's tangent into the edge-midpoint +/-1/4 edge
+  // length band (orthogonal exits land on the midpoint, diagonal exits are
+  // pulled back into the band, corners excluded).
+  // Same caliber as Python routing.border_point + Router.midband_reanchor.
   var dx = toward[0] - c[0], dy = toward[1] - c[1];
   if (!dx && !dy) return [c[0], c[1]];
   if (!dx) return [c[0], c[1] + (dy > 0 ? hh : -hh)];
@@ -110,7 +127,7 @@ function reanchor(i) {
   e.pts = pts;
 }
 
-// ── JS 侧预览布线器（可见性图最短路，与 visibility.py 同数学口径）──
+// ── JS-side preview router (visibility-graph shortest path, same mathematical caliber as visibility.py) ──
 function ptSegDist(px, py, a, b) {
   var vx = b[0] - a[0], vy = b[1] - a[1], L2 = vx * vx + vy * vy;
   if (L2 < VEPS) return Math.hypot(px - a[0], py - a[1]);
@@ -163,7 +180,7 @@ function visible(p1, p2, rects, c) {
     var r = rects[i];
     var gx = Math.max(r[0] - r[2] - x1h, x1l - r[0] - r[2], 0.0);
     var gy = Math.max(r[1] - r[3] - y1h, y1l - r[1] - r[3], 0.0);
-    if (gx >= t || gy >= t) continue;              // 包围盒距离下界 ≥ c：必不挡
+    if (gx >= t || gy >= t) continue;              // bbox distance lower bound >= c: cannot block
     if (gx * gx + gy * gy >= t * t) continue;
     if (segRectDist(p1, p2, r) < t) return false;
   }
@@ -186,7 +203,7 @@ function vgShortest(src, dst, rects, c) {
       }
     }
   }
-  // 确定性 Dijkstra：数组扫最小（等距取小下标），同输入同输出
+  // Deterministic Dijkstra: array scan for the minimum (ties break to the lower index), same input same output
   var INF = Infinity, dist = [], prev = [], done = [];
   for (var k1 = 0; k1 < n; k1++) { dist.push(INF); prev.push(-1); done.push(false); }
   dist[0] = 0;
@@ -229,8 +246,10 @@ function rectsFor(a, b) {
   return out;
 }
 function previewRoute(i) {
-  // 预览口径布线：直线可见即直线；被挡则可见性图绕障（与 Python 路由同数学，
-  // 不含 fillet 平滑与互环对分离——证书仍以 CLI 复算为准）。
+  // Preview-caliber routing: straight line when visible; otherwise
+  // visibility-graph detour (same math as the Python router, without fillet
+  // smoothing and mutual-pair separation — the certificate remains
+  // authoritative via CLI recomputation).
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
   var pa = borderPoint([A.x, A.y], A.w / 2, cardH / 2, [B.x, B.y]);
   var pb = borderPoint([B.x, B.y], B.w / 2, cardH / 2, [A.x, A.y]);
@@ -242,7 +261,7 @@ function previewRoute(i) {
     e.corners = (e.pts.length >= 3) ? e.pts.map(cp) : null;
     return;
   }
-  reanchor(i);   // 兜底（不可达）：保形重锚
+  reanchor(i);   // fallback (unreachable): shape-preserving re-anchor
 }
 function arcFollow(i) {
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
@@ -254,13 +273,13 @@ function arcFollow(i) {
   e.corners = null;
 }
 function reroute(i) {
-  if (pinned[i]) { reanchor(i); return; }      // 用户锚定：只重锚端点，保 waypoints
+  if (pinned[i]) { reanchor(i); return; }      // user-anchored: re-anchor endpoints only, keep waypoints
   if (edges[i].arc) { arcFollow(i); return; }
   previewRoute(i);
 }
 
-// ── 折点把手（vg 折线/用户锚定边）──
-var pinned = {};          // edgeIdx -> true（用户拖过把手 = waypoints 锚定）
+// ── Bend handles (vg polylines / user-anchored edges) ──
+var pinned = {};          // edgeIdx -> true (user dragged a handle = waypoints anchored)
 var NS = 'http://www.w3.org/2000/svg';
 var styleEl = document.createElement('style');
 styleEl.textContent = '#stdraw-handles circle.stdraw-wp{fill:#fff;stroke:#475569;' +
@@ -276,7 +295,7 @@ function edgeHasHandles(i) {
   if (pinned[i]) return e.pts.length >= 3;
   return !!(e.corners && e.corners.length >= 3);
 }
-function handlePts(i) {     // 把手位置：未锚定=当前角点(corners)；已锚定=pts 中间点
+function handlePts(i) {     // handle positions: unanchored = current corners; anchored = midpoints of pts
   return pinned[i] ? edges[i].pts : edges[i].corners;
 }
 function rebuildHandles() {
@@ -300,13 +319,14 @@ function rebuildHandles() {
 function pinEdge(i) {
   if (pinned[i]) return;
   var e = edges[i];
-  // 用户锚定的 waypoints = 当前角点的中间点（端点锚由 CLI/重锚按框边重算，
-  // 不作为 waypoint 导出——避免与锚点重合的冗余折点）
+  // User-anchored waypoints = midpoints of the current corners (endpoint
+  // anchors are recomputed on the box border by CLI/re-anchoring, and are not
+  // exported as waypoints — avoiding redundant bends coinciding with anchors)
   var cs = (e.corners && e.corners.length >= 3) ? e.corners : e.pts;
   var via = cs.slice(1, -1).map(cp);
   if (via.length < 1) return;
   var A = nodes[e.a], B = nodes[e.b];
-  // 与 CLI --from-layout 同口径：锚点=框边朝向首/末 waypoint
+  // Same caliber as CLI --from-layout: anchor = box border facing the first/last waypoint
   var pts = [borderPoint([A.x, A.y], A.w / 2, cardH / 2, via[0])];
   pts = pts.concat(via);
   pts.push(borderPoint([B.x, B.y], B.w / 2, cardH / 2, via[via.length - 1]));
@@ -396,8 +416,8 @@ function refreshMetrics() {
   var el = document.getElementById('stdraw-metrics');
   if (!el) return;
   var m = metrics();
-  el.textContent = '交叉 ' + m.crossings + ' · 穿卡(1px) ' + m.press +
-    ' · 卡净距 ' + m.minGap + 'px · CV ' + m.cv + ' · 行对齐 ' + m.row;
+  el.textContent = 'crossings ' + m.crossings + ' · presses(1px) ' + m.press +
+    ' · card gap ' + m.minGap + 'px · CV ' + m.cv + ' · row align ' + m.row;
 }
 function polyPointAt(pts, t) {
   var segs = [], total = 0, i;
@@ -427,7 +447,7 @@ function ptPolyDist(px, py, pts) {
   return best;
 }
 function refreshMarkers() {
-  // 徽标已移除（边着色承载 R/B 极性）——空实现保留接口。
+  // Badges removed (edge coloring carries R/B polarity) — empty implementation keeps the interface.
 }
 var drag = null, rafPending = false;
 function svgPoint(ev) {
@@ -491,9 +511,11 @@ function onMove(ev) {
   drag.g.setAttribute('transform', 'translate(' + (nx - n.bx).toFixed(1) + ' ' + (ny - n.by).toFixed(1) + ')');
   var touched = {};
   incidentMap[drag.id].forEach(function (i) { touched[i] = 1; reroute(i); updateEdge(i); });
-  // 其余边：①被移动节点压线（1px 余量）→ 重布线；②当前是折线形（绕障/
-  // dense vg 几何）→ 障碍变了必须重算（含障碍被拖走后旧绕行作废）。
-  // 预览口径；用户锚定边除外（waypoints 保真，只重锚端点）。
+  // Other edges: (1) pressed by the moving node (1px margin) -> re-route;
+  // (2) currently polyline-shaped (detour / dense vg geometry) -> obstacles
+  // changed so recompute (incl. stale detours invalidated when an obstacle is
+  // dragged away). Preview caliber; user-anchored edges excepted (waypoints
+  // preserved, endpoints re-anchored only).
   var hw = n.w / 2 + 1, hh = cardH / 2 + 1;
   edges.forEach(function (e2, j) {
     if (touched[j] || pinned[j] || e2.a === drag.id || e2.b === drag.id) return;
@@ -539,7 +561,7 @@ function exportLayout() {
   Object.keys(nodes).forEach(function (v) {
     out.nodes[v] = {x: Math.round(nodes[v].x), y: Math.round(nodes[v].y)};
   });
-  // 用户锚定边的 waypoints（确定性：按边原序，坐标取整）
+  // Waypoints of user-anchored edges (deterministic: original edge order, rounded coordinates)
   var wps = [];
   edges.forEach(function (e, i) {
     if (!pinned[i]) return;
@@ -559,7 +581,7 @@ function exportLayout() {
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-  } catch (e) { /* 沙箱/无下载 API 环境：探针走 __stdrawExportJSON */ }
+  } catch (e) { /* sandboxed / no download API: probes go through __stdrawExportJSON */ }
   return out;
 }
 function reset() {
@@ -575,7 +597,7 @@ function reset() {
     var g = svg.querySelector('[data-edge="' + i + '"]');
     if (!g) return;
     var paths = g.querySelectorAll('path');
-    // 原始渲染（vg path_d 含 fillet 弧）按初始 d 串复位
+    // Original rendering (vg path_d incl. fillet arcs) restored from the initial d strings
     if (paths[0] && e.d0) paths[0].setAttribute('d', e.d0);
     else if (paths[0]) paths[0].setAttribute('d', edgeD(e.pts));
     if (paths[1]) {
@@ -597,7 +619,7 @@ window.__stdrawNodePos = function (v) {
   return v ? [nodes[v].x, nodes[v].y]
            : Object.keys(nodes).map(function (k) { return [k, nodes[k].x, nodes[k].y]; });
 };
-// 探针钩子：当前折线顶点 / 锚定态 / vg 边清单 / 把手清单
+// Probe hooks: current polyline vertices / anchored state / vg edge list / handle list
 window.__stdrawEdgePts = function (i) {
   return (i === undefined || i === null)
     ? edges.map(function (e) { return e.pts; })

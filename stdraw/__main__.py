@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-"""CLI：python -m stdraw layout <input.cld|input.json> [选项]
+"""CLI: python -m stdraw layout <input.cld|input.json> [options]
 
-产出（--outdir，默认 ./stdraw-out）：
-  graph.json          图模型（DSL→JSON 正规化）
-  layout.json         2D 平面布局（交付坐标，全部整数）
-  geometry_report.json 11 项几何自检（CI 门禁形态）
-  certificate.json    五指标+排布指标+诚实分级证书
-  loops_audit.json    环路语义审计（lint）
-  demo-2d.html        独立渲染页（证书内嵌）
-  positions3d.json    3D 各形体指派坐标
-  demo-3d.html        3D 交互页（需 ../assets/three.min.js 相对路径）
+Outputs (--outdir, default ./stdraw-out):
+  graph.json          graph model (DSL->JSON normalization)
+  layout.json         2D layout (delivered coordinates, all integers)
+  geometry_report.json  11-check geometry self-report (CI gate form)
+  certificate.json    five-metric + placement metrics + honest grading certificate
+  loops_audit.json    loop semantics audit (lint)
+  demo-2d.html        standalone rendering page (certificate embedded)
+  positions3d.json    3D per-solid assignment coordinates
+  demo-3d.html        3D interactive page (needs ../assets/three.min.js relative path)
 """
 import argparse
 import json
@@ -39,17 +39,19 @@ def load_graph(path: str) -> Graph:
 
 
 def load_manual_layout(path: str) -> dict:
-    """手动布局 JSON → layout() 的 manual 参数。
+    """Manual layout JSON -> the manual argument of layout().
 
-    接受完整 layout.json 或 demo-2d.html「导出布局」子集
-    （{nodes: {id: {x,y}|[x,y]}, viewBox}）。source 记文件名供 meta 溯源。
-    ref-scrubbed：可选 edges: [{a, b, waypoints: [[x,y],...]}]——用户在
-    demo-2d 折点把手上手动锚定的 waypoints，--from-layout 按同口径复算。
+    Accepts a full layout.json or the demo-2d.html "Export layout" subset
+    ({nodes: {id: {x,y}|[x,y]}, viewBox}). source records the file name for
+    meta provenance.
+    Optionally edges: [{a, b, waypoints: [[x,y],...]}] — waypoints manually
+    anchored by the user on demo-2d bend handles; --from-layout recomputes
+    them under the same caliber.
     """
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
     if "nodes" not in raw:
-        raise ValueError(f"{path}: 手动布局缺 nodes（节点 id→x,y）")
+        raise ValueError(f"{path}: manual layout is missing nodes (node id -> x,y)")
     return {"nodes": raw["nodes"], "viewBox": raw.get("viewBox"),
             "edges": raw.get("edges"),
             "source": os.path.basename(path)}
@@ -58,54 +60,55 @@ def load_manual_layout(path: str) -> dict:
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="stdraw",
-        description="stdraw — planarity-aware 系统思维图引擎"
-                    "（文本 DSL 进，带质量证书的图出）",
+        description="stdraw — planarity-aware systems-thinking diagram engine "
+                    "(text DSL in, certified diagram out)",
         epilog=(
-            "示例：\n"
+            "Examples:\n"
             "  stdraw layout examples/limits-to-growth.cld --outdir out\n"
             "  python -m stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62\n"
-            "产出（--outdir，默认 ./stdraw-out）：graph.json / layout.json /\n"
+            "Outputs (--outdir, default ./stdraw-out): graph.json / layout.json /\n"
             "geometry_report.json / certificate.json / loops_audit.json /\n"
             "demo-2d.html / positions3d.json / demo-3d.html"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("command", choices=["layout", "layout-diff"],
-                    help="子命令：layout=布局全管线；layout-diff=auto vs 手动布局三层 diff")
-    ap.add_argument("input", help="输入 .cld（DSL）或 .json（图模型）")
+                    help="subcommand: layout = full layout pipeline; layout-diff = auto vs manual three-layer diff")
+    ap.add_argument("input", help="input .cld (DSL) or .json (graph model)")
     ap.add_argument("input2", nargs="?",
-                    help="layout-diff 第二参数：手动布局 layout.json")
+                    help="layout-diff second argument: manual layout layout.json")
     ap.add_argument("--outdir", default="stdraw-out")
     ap.add_argument("--recipe", default="auto", choices=["auto", "ortho"],
-                    help="布局配方：auto=auto-v2（默认，直线/弧线+新硬门）；"
-                         "ortho=ortho-v1（正交竖线构造法，行为冻结，pin-safe）")
+                    help="layout recipe: auto = auto-v2 (default, straight/arc lines + new hard gates); "
+                         "ortho = ortho-v1 (orthogonal vertical-line constructive, behavior frozen, pin-safe)")
     ap.add_argument("--linestyle", default="straight", choices=["straight", "arc"],
-                    help="auto 配方线型（默认 straight；arc 全弧线偏好）")
-    ap.add_argument("--skip-3d", action="store_true", help="只跑 2D 层")
+                    help="auto recipe line style (default straight; arc = all-arc preference)")
+    ap.add_argument("--skip-3d", action="store_true", help="run the 2D layer only")
     ap.add_argument("--solids", default="sphere,cube,tetra,cone",
-                    help="3D 形体列表（逗号分隔）")
+                    help="3D solid list (comma separated)")
     ap.add_argument("--pitch", type=int, default=None,
-                    help="行距 px（缺省 56；小图可调大过净距门禁，参数透明）")
-    ap.add_argument("--name", default="", help="图名（缺省取 DSL graph 名）")
+                    help="row pitch px (default 56; raise it for small graphs to pass the clearance gate, parameter is transparent)")
+    ap.add_argument("--name", default="", help="graph name (default: the DSL graph name)")
     ap.add_argument("--exact", action="store_true",
-                    help="WS2 精确交叉数层：B&B 夹逼计算 cr(G) 并写入证书 "
-                         "exactness 块（proven_optimal/gap；需可选依赖 ortools，"
-                         "未装时如实降级标注）")
+                    help="WS2 exact crossing-number layer: B&B squeeze computes cr(G) and writes the "
+                         "certificate exactness block (proven_optimal/gap; requires the optional "
+                         "ortools dependency; honestly degraded when not installed)")
     ap.add_argument("--from-layout", default=None, metavar="MANUAL_JSON",
-                    help="手动布局 JSON（demo-2d.html「导出布局」产物或 "
-                         "layout.json 子集：节点 id→x,y + viewBox）。按手动坐标"
-                         "跑同一布线+证书管线，硬门口径不变、如实评分")
+                    help="manual layout JSON (the demo-2d.html \"Export layout\" product or a "
+                         "layout.json subset: node id->x,y + viewBox). Runs the same routing + "
+                         "certificate pipeline on manual coordinates; hard-gate caliber unchanged, "
+                         "graded honestly")
     ap.add_argument("--compare-auto", action="store_true",
-                    help="配合 --from-layout：同图另跑自动布局到 <outdir>-compare-auto/，"
-                         "输出双证书对比 compare-auto.json（引擎与人的审美距离）")
+                    help="with --from-layout: also runs the automatic layout of the same graph into <outdir>-compare-auto/, "
+                         "writing the dual-certificate comparison compare-auto.json (the aesthetic distance between engine and human)")
     ap.add_argument("--cld", default=None,
-                    help="layout-diff：图源（.cld/.json），启用语义级（回路归属/聚拢）")
+                    help="layout-diff: graph source (.cld/.json), enables the semantic layer (loop membership / cohesion)")
     ap.add_argument("--diff-out", default="layout-diff.json",
-                    help="layout-diff：机器可读 JSON 输出路径")
+                    help="layout-diff: machine-readable JSON output path")
     a = ap.parse_args(argv)
 
     if a.command == "layout-diff":
         if not a.input2:
-            print("layout-diff 需要 <auto-layout.json> <manual-layout.json> 两个参数",
+            print("layout-diff requires two arguments: <auto-layout.json> <manual-layout.json>",
                   file=sys.stderr)
             sys.exit(2)
         from .layoutdiff import main as diff_main
@@ -115,11 +118,11 @@ def main(argv=None):
 
     g = load_graph(a.input)
     os.makedirs(a.outdir, exist_ok=True)
-    deferred_exit = 0        # --compare-auto：先出对照报告，再按几何 fail 退出
+    deferred_exit = 0        # --compare-auto: emit the comparison report first, exit later on geometry fail
     name = a.name or g.name or os.path.splitext(os.path.basename(a.input))[0]
     problems = g.validate()
     if problems:
-        print("结构校验失败:", *problems, sep="\n  ", file=sys.stderr)
+        print("Structural validation failed:", *problems, sep="\n  ", file=sys.stderr)
         sys.exit(2)
 
     def w(fn, obj):
@@ -128,23 +131,23 @@ def main(argv=None):
             json.dump(obj, f, ensure_ascii=False, indent=1)
         return p
 
-    # 图模型 + DSL 正规化文本
+    # Graph model + normalized DSL text
     p = w("graph.json", g.to_dict())
     with open(os.path.join(a.outdir, "graph.cld"), "w", encoding="utf-8") as f:
         f.write(dumps(g))
-    print(f"[1/6] 图模型 OK：{len(g.nodes)} 节点 / {len(g.edges)} 边 / "
-          f"{len(g.loops)} 声明环 -> {p}")
+    print(f"[1/6] graph model OK: {len(g.nodes)} nodes / {len(g.edges)} edges / "
+          f"{len(g.loops)} declared loops -> {p}")
 
-    # 环路语义审计（lint）
+    # Loop semantics audit (lint)
     lr = loops_audit(g)
     p = w("loops_audit.json", lr)
-    print(f"[2/6] 环路审计：声明 {lr['summary']['declared']}，闭合 "
-          f"{lr['summary']['closed']}，独立枚举 {lr['summary']['enumerated']}，"
-          f"问题 {lr['summary']['problems']} -> {p}")
+    print(f"[2/6] loop audit: declared {lr['summary']['declared']}, closed "
+          f"{lr['summary']['closed']}, independently enumerated {lr['summary']['enumerated']}, "
+          f"problems {lr['summary']['problems']} -> {p}")
     for pr in lr["problems"]:
         print("   lint:", pr)
 
-    # 2D 平面布局
+    # 2D layout
     if a.recipe == "ortho":
         cfg = LayoutConfig()
         if a.pitch:
@@ -153,27 +156,27 @@ def main(argv=None):
         try:
             v4 = eng.run()
         except NotPlanarError as e:
-            print(f"[3/6] 2D 平面层不适用：{e}")
-            print("      诚实降级：跳过 2D 证书（布局层的可替换实现属 M1+）")
+            print(f"[3/6] 2D planar layer inapplicable: {e}")
+            print("      honest degradation: skipping the 2D certificate (a replaceable layout-layer implementation is M1+)")
             v4 = None
         else:
             labels = {n.id: n.label for n in g.nodes}
             values = {n.id: n.value for n in g.nodes if n.value}
             p = w("layout.json", v4)
-            print(f"[3/6] 2D 布局（ortho-v1 冻结配方）：{v4['viewBox'][2]}×"
-                  f"{v4['viewBox'][3]}，{v4['meta']['rows']} 行 -> {p}")
-            # 11 项几何自检（跑在交付坐标上）
+            print(f"[3/6] 2D layout (ortho-v1 frozen recipe): {v4['viewBox'][2]}x"
+                  f"{v4['viewBox'][3]}, {v4['meta']['rows']} rows -> {p}")
+            # 11-check geometry self-report (runs on delivered coordinates)
             rc = geometry_report_to_file(
                 v4, os.path.join(a.outdir, "geometry_report.json"))
-            # 五指标证书（legacy 口径，逐字节兼容）
+            # Five-metric certificate (legacy caliber, byte-compatible)
             cert = certificate(scene_from_planar(v4), graph_name=name,
                                layer="2D",
-                               notes=["无关线遮挡式穿卡为设计允许（卡片不透明）"])
+                               notes=["unrelated lines piercing cards occlusion-style is allowed by design (cards are opaque)"])
             p = w("certificate.json", cert)
             m = cert["metrics"]
-            print(f"[4/6] 证书：交叉 {m['crossings']} / 真穿卡 {m['occlusions_true_0px']} / "
-                  f"净距 {m['min_card_gap']} / 对齐 {m['row_align_rate']} / CV "
-                  f"{m['spacing_cv']} → 分级【{cert['grade']}】-> {p}")
+            print(f"[4/6] certificate: crossings {m['crossings']} / true card piercings {m['occlusions_true_0px']} / "
+                  f"gap {m['min_card_gap']} / alignment {m['row_align_rate']} / CV "
+                  f"{m['spacing_cv']} -> grade [{cert['grade']}] -> {p}")
             hp = os.path.join(a.outdir, "demo-2d.html")
             with open(hp, "w", encoding="utf-8") as f:
                 f.write(render_html(v4, name, cert, lr, labels, values))
@@ -187,13 +190,14 @@ def main(argv=None):
         if a.pitch:
             cfg.pitch = a.pitch
         if a.from_layout:
-            # 手动布局：同一布线+证书管线，硬门口径不变、如实评分
+            # Manual layout: same routing + certificate pipeline; hard-gate
+            # caliber unchanged, graded honestly
             from .layout_auto import layout as _auto_layout_fn
             try:
                 _manual = load_manual_layout(a.from_layout)
                 v4 = _auto_layout_fn(g, cfg, a.linestyle, manual=_manual)
             except ValueError as e:
-                print(f"手动布局不可用：{e}", file=sys.stderr)
+                print(f"manual layout unusable: {e}", file=sys.stderr)
                 sys.exit(2)
         else:
             v4 = recipes_run("auto-v2", g, cfg, a.linestyle)
@@ -201,9 +205,9 @@ def main(argv=None):
         values = {n.id: n.value for n in g.nodes if n.value}
         p = w("layout.json", v4)
         meta = v4["meta"]
-        print(f"[3/6] 2D 布局（auto-v2，engine={meta['position_engine']}，"
-              f"线型={meta['line_style']}）：{v4['viewBox'][2]}×{v4['viewBox'][3]}，"
-              f"{meta['rows']} 行 -> {p}")
+        print(f"[3/6] 2D layout (auto-v2, engine={meta['position_engine']}, "
+              f"line style={meta['line_style']}): {v4['viewBox'][2]}x{v4['viewBox'][3]}, "
+              f"{meta['rows']} rows -> {p}")
         rc = geometry_report_to_file(
             v4, os.path.join(a.outdir, "geometry_report.json"))
         exactness = None
@@ -218,47 +222,47 @@ def main(argv=None):
                                 graph=g, exactness=exactness)
         p = w("certificate.json", cert)
         m = cert["metrics"]
-        print(f"[4/6] 证书：交叉 {m['crossings']} / 框压线 {m['box_press_1px']} / "
-              f"边-框净距 {m['edge_box_min_clear']} / 锚点违例 {m['anchor_violations']} / "
-              f"净距 {m['min_card_gap']} / CV {m['spacing_cv']} → "
-              f"分级【{cert['grade']}】-> {p}")
+        print(f"[4/6] certificate: crossings {m['crossings']} / box press {m['box_press_1px']} / "
+              f"edge-box clearance {m['edge_box_min_clear']} / anchor violations {m['anchor_violations']} / "
+              f"gap {m['min_card_gap']} / CV {m['spacing_cv']} -> "
+              f"grade [{cert['grade']}] -> {p}")
         hp = os.path.join(a.outdir, "demo-2d.html")
         with open(hp, "w", encoding="utf-8") as f:
             f.write(render_html(v4, name, cert, lr, labels, values))
         print(f"      demo -> {hp}")
         if rc:
             if a.from_layout and a.compare_auto:
-                deferred_exit = 1     # 先出对照报告，退出码延后
+                deferred_exit = 1     # emit the comparison report first, exit code deferred
             else:
                 sys.exit(1)
 
-    # 3D 各形体指派
+    # 3D per-solid assignment
     if not a.skip_3d:
         gd = {"nodes": [{"id": n.id, "label": n.label} for n in g.nodes],
               "edges": [{"a": e.a, "b": e.b, "p": e.polarity} for e in g.edges]}
         solids = [s.strip() for s in a.solids.split(",") if s.strip()]
         unknown = [s for s in solids if s not in SOLIDS]
         if unknown:
-            print(f"未知形体 {unknown}，可选 {list(SOLIDS)}", file=sys.stderr)
+            print(f"unknown solids {unknown}, choose from {list(SOLIDS)}", file=sys.stderr)
             sys.exit(2)
         layouts = {s: layout3d(gd, s) for s in solids}
         p = w("positions3d.json",
               {s: layouts[s]["positions"] for s in solids})
-        print(f"[5/6] 3D 指派：{solids} -> {p}")
+        print(f"[5/6] 3D assignment: {solids} -> {p}")
         hp = os.path.join(a.outdir, "demo-3d.html")
-        note = ("确定性排布：槽位+最短总边长指派；3D 无交叉承诺，"
-                "投影交叉由相机解决")
+        note = ("deterministic placement: slots + minimum-total-edge-length assignment; "
+                "no crossing promise in 3D, projection crossings are solved by the camera")
         with open(hp, "w", encoding="utf-8") as f:
             f.write(render_3d_html(gd, layouts, name, note))
-        print(f"      demo -> {hp}（需与 assets/three.min.js 相对路径同仓）")
-    # ── compare-auto：同图自动布局对照（双证书对比）──
+        print(f"      demo -> {hp} (must live in the same tree as assets/three.min.js relative path)")
+    # ── compare-auto: automatic-layout comparison for the same graph (dual certificates) ──
     if a.from_layout and a.compare_auto:
         cmp_dir = a.outdir.rstrip("/\\") + "-compare-auto"
-        print("\n── compare-auto：同图自动布局对照 ──")
+        print("\n-- compare-auto: automatic layout comparison for the same graph --")
         try:
             rc_cmp = main(["layout", a.input, "--outdir", cmp_dir, "--skip-3d"]
                           + (["--name", name] if name else []))
-        except SystemExit as _e:                    # 几何 fail → exit 1，如实记录
+        except SystemExit as _e:                    # geometry fail -> exit 1, recorded honestly
             rc_cmp = _e.code
 
         def _cert(d):
@@ -284,23 +288,25 @@ def main(argv=None):
             "grade": {"manual": cert_m["grade"], "auto": cert_a["grade"]},
             "gates_passed": {"manual": cert_m["gates_passed"],
                              "auto": cert_a["gates_passed"]},
-            "note": ("差距即引擎与人的审美距离（后续优化目标函数的依据）；"
-                     "硬门口径对 manual 同样适用、如实评分不因手动放水；"
-                     "对照自动布局未跑 --exact 精确层"),
+            "note": ("the gap is the aesthetic distance between engine and human "
+                     "(the basis for future objective-function tuning); the hard-gate "
+                     "caliber applies equally to manual layouts and grades honestly "
+                     "without manual favors; the comparison automatic layout did not "
+                     "run the --exact layer"),
         }
         p = os.path.join(a.outdir, "compare-auto.json")
         with open(p, "w", encoding="utf-8") as f:
             json.dump(cmp_obj, f, ensure_ascii=False, indent=1)
-        print("  指标                        manual       auto")
+        print("  metric                      manual       auto")
         for k, v in table.items():
             print(f"  {k:<26} {str(v['manual']):>8} {str(v['auto']):>10}"
-                  f"  Δ={v['delta_manual_minus_auto']}")
-        print(f"  分级：manual={cert_m['grade']} / auto={cert_a['grade']}；"
-              f"门禁 manual {cert_m['gates_passed']} / auto {cert_a['gates_passed']}"
-              f"（auto_cli_exit={rc_cmp}）")
+                  f"  D={v['delta_manual_minus_auto']}")
+        print(f"  grade: manual={cert_m['grade']} / auto={cert_a['grade']}; "
+              f"gates manual {cert_m['gates_passed']} / auto {cert_a['gates_passed']}"
+              f" (auto_cli_exit={rc_cmp})")
         print(f"  -> {p}")
 
-    print("[6/6] 完成。")
+    print("[6/6] done.")
     return deferred_exit
 
 

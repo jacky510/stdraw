@@ -1,22 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""拖拽跟随扫掠探针（ref-scrubbed 验收）：无头 CDP 真拖逐图复现 jacky 实测场景。
+"""Drag-follow sweep probe (ref-scrubbed acceptance): headless CDP real drags
+reproduce jacky's observed scenario graph by graph.
 
-数据源（优先级）：
-  1. <user-home>/Downloads/stdraw-manual/ 的 19 张 jacky 手动布局
-     （layout.json 节点坐标经 --from-layout 在 HEAD 重渲染，交互层=本卡新版）；
-  2. 缺省回退 benchmarks/corpus/classic/ 19 张自动布局。
+Data sources (priority):
+  1. the 19 jacky manual layouts under <user-home>/Downloads/stdraw-manual/
+     (layout.json node coordinates re-rendered at HEAD via --from-layout; the
+     interactive layer is this card's new version);
+  2. default fallback: the 19 auto layouts from benchmarks/corpus/classic/.
 
-每图断言（真实 pointer 事件，非 JS 直调）：
-  A. 逐节点拖动：每步对全部非弧折线边做「Python 独立复算预览布线」对拍
-     （直线可见→直线；被挡→膨胀角点可见性图最短路+捷径，c=16/17.5 同口径），
-     证明折点逐帧重算而非钉死（jacky 问题 2 的回归门）；
-  B. 强制 vg 场景：拖第三节点压到某直线边中点 → 该边变折线（预览绕障）且
-     与复算一致；继续拖走 → 仍一致（旧绕行不作废残留）；
-  C. 全程 0 页面错误。
+Per-graph assertions (real pointer events, not direct JS calls):
+  A. drag each node in turn: at every step, cross-check all non-arc polyline
+     edges against a "preview routing independently recomputed in Python"
+     (visible straight -> straight; blocked -> inflated-corner visibility
+     graph shortest path + shortcut, same caliber c=16/17.5), proving the
+     bend points are recomputed frame by frame rather than pinned (the
+     regression gate for jacky issue 2);
+  B. forced vg scenario: drag a third node onto the midpoint of some straight
+     edge -> that edge becomes a polyline (preview obstacle avoidance) and
+     matches the recompute; keep dragging away -> still consistent (the old
+     detour leaves no stale residue);
+  C. zero page errors throughout.
 
-playwright 不可用 → SKIP exit 2。用法：
-  python tests/probe_drag_follow.py [图名过滤子串]
+SKIP exit 2 when playwright is unavailable. Usage:
+  python tests/probe_drag_follow.py [graph-name filter substring]
 """
 import json
 import math
@@ -29,7 +36,7 @@ import tempfile
 try:
     from playwright.sync_api import sync_playwright
 except Exception:
-    print("SKIP  probe_drag_follow: playwright 不可用（可选层）")
+    print("SKIP  probe_drag_follow: playwright unavailable (optional layer)")
     sys.exit(2)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,12 +44,15 @@ PY = sys.executable
 
 
 def _pin_local_stdraw():
-    """ref-scrubbed 本树自证：脚本模式 sys.path[0]=tests/，in-process import 会命中
-    site-packages editable 安装（__editable__.stdraw-*.pth 指向共享主树），而 demo
-    渲染子进程用 cwd=ROOT 的本树代码——两树不同步时对拍恒红（存量 0/19 根因）。
-    剥离 editable meta_path 钩子并强制 stdraw 从本探针所在的树加载。"""
+    """ref-scrubbed same-tree self-check: in script mode sys.path[0]=tests/, so an
+    in-process import hits the site-packages editable install
+    (__editable__.stdraw-*.pth pointing at the shared main tree), while the demo
+    render subprocess uses this tree's code with cwd=ROOT -- when the two trees
+    are out of sync the cross-check is always red (root cause of the stock 0/19).
+    Strip the editable meta_path hooks and force stdraw to load from the tree
+    this probe lives in."""
     if not os.path.isfile(os.path.join(ROOT, "stdraw", "__init__.py")):
-        print("SKIP  probe_drag_follow: 未找到本树 stdraw 包: %s" % ROOT)
+        print("SKIP  probe_drag_follow: stdraw package not found in this tree: %s" % ROOT)
         sys.exit(2)
     for f in [m for m in sys.meta_path
               if "__editable__" in str(getattr(m, "__module__", ""))]:
@@ -54,14 +64,14 @@ def _pin_local_stdraw():
     import stdraw
     if os.path.realpath(os.path.dirname(stdraw.__file__)) != \
             os.path.realpath(os.path.join(ROOT, "stdraw")):
-        print("SKIP  probe_drag_follow: stdraw 未从本树加载: %s"
+        print("SKIP  probe_drag_follow: stdraw not loaded from this tree: %s"
               % stdraw.__file__)
         sys.exit(2)
 
 
 _pin_local_stdraw()
-# jacky 手动布局导出目录（本机验收源）；缺省/不存在时回退 corpus 自动布局。
-# 用环境变量注入，避免把机器特定路径写死进仓：STDRAW_MANUAL_SWEEP_DIR=...
+# jacky's manual-layout export directory (local acceptance source); fall back to corpus auto layouts when unset/absent.
+# Injected via an environment variable to avoid hard-coding machine-specific paths into the repo: STDRAW_MANUAL_SWEEP_DIR=...
 MANUAL_DIR = os.environ.get("STDRAW_MANUAL_SWEEP_DIR", "")
 
 
@@ -88,8 +98,10 @@ def _match(js_pts, expect, tol=0.6):
 
 
 def _fallback_keeps_shape(js_pts, prev_pts, tol=0.6):
-    """expected 不可达（None）时的诚实兜底口径：JS 保形重锚——折点与上一帧
-    一致（端点重锚可动）。prev_pts=None（首帧/初始 CLI 几何）时不判。"""
+    """Honest fallback caliber when expected is unreachable (None): JS keeps
+    the shape and re-anchors -- bend points match the previous frame
+    (endpoints may move via re-anchoring). Not judged when prev_pts=None
+    (first frame / initial CLI geometry)."""
     if not prev_pts or len(js_pts) != len(prev_pts):
         return False
     return all(math.hypot(p[0] - q[0], p[1] - q[1]) <= tol
@@ -120,11 +132,15 @@ def _to_screen(pg, vx, vy):
 
 def _check_all_edges(pg, lay, payload, tag, failures, prev=None, fallbacks=None,
                     drag_node=None):
-    """prev: {edge_idx: 上一帧 pts}（兜底口径判定用）；fallbacks: 计数表。
+    """prev: {edge_idx: previous frame pts} (for the fallback-caliber check);
+    fallbacks: counter table.
 
-    断言范围 = 拖拽承诺面：①被拖节点的关联边（每帧无条件重布线）；
-    ②当前折线形边（障碍变化即重算，含 dense vg/poly 基线）。非关联的
-    两点直线（CLI 锚变体/未触发）不在「实时跟随」承诺内，跳过。
+    Assertion scope = the drag promise surface: (1) edges incident to the
+    dragged node (unconditionally rerouted every frame); (2) currently
+    polyline-shaped edges (recomputed whenever obstacles change, incl. the
+    dense vg/poly baseline). Non-incident two-point straight lines (CLI
+    anchor variants / not triggered) are outside the "live follow" promise
+    and are skipped.
     """
     npx = _nodes_px(pg, lay)
     allpts = pg.evaluate("window.__stdrawEdgePts()")
@@ -139,12 +155,12 @@ def _check_all_edges(pg, lay, payload, tag, failures, prev=None, fallbacks=None,
         if ex is not None:
             ok = _match(allpts[i], ex)
         else:
-            # 可见性图不可达：诚实兜底=保形重锚（或初始 CLI 几何）
+            # visibility graph unreachable: honest fallback = shape-preserving re-anchor (or initial CLI geometry)
             ok = (prev is None) or _fallback_keeps_shape(allpts[i], prev.get(i))
             if ok and fallbacks is not None:
                 fallbacks[i] = fallbacks.get(i, 0) + 1
         if not ok:
-            failures.append(f"{tag}: edge {e['a']}->{e['b']} 不随拖重算 "
+            failures.append(f"{tag}: edge {e['a']}->{e['b']} not recomputed on drag "
                             f"(n={len(allpts[i])} expect_n="
                             f"{len(ex) if ex else 'unreachable'})")
             return False, allpts
@@ -186,7 +202,7 @@ def sweep_graph(browser, src_dir, tmp, filt):
     pg.goto("file://" + demo.replace("\\", "/"))
     pg.wait_for_timeout(300)
 
-    # A. 逐节点拖动（每节点独立：拖完 reset）
+    # A. drag node by node (each node independent: reset after dragging)
     dragged = 0
     fallbacks = {}
     for v in [n["id"] for n in payload["nodes"]]:
@@ -194,7 +210,7 @@ def sweep_graph(browser, src_dir, tmp, filt):
         pg.mouse.move(cx, cy)
         pg.mouse.down()
         ok = True
-        prev = None          # 首帧 prev=None：接受初始 CLI 几何/首算结果
+        prev = None          # first frame prev=None: accept initial CLI geometry / first-compute result
         for k in range(1, 4):
             pg.mouse.move(cx + 14 * k, cy + 9 * k, steps=1)
             pg.wait_for_timeout(40)
@@ -211,9 +227,9 @@ def sweep_graph(browser, src_dir, tmp, filt):
         if failures:
             break
 
-    # B. 强制 vg：第三节点压直线边中点 → 折线出现且对拍 → 拖走仍对拍。
-    # 先在 Python 侧预检（c 压中点后的预期路线为折线）选出可行组合，避免
-    # 把「可见性图不可达→诚实保持直线」误判为失败。
+    # B. forced vg: a third node presses onto a straight edge midpoint -> polyline appears and cross-checks -> still matches after dragging away.
+    # Pre-screen on the Python side first (the expected route after c presses the midpoint is a polyline) to pick a viable
+    # combination, so "visibility graph unreachable -> honest straight line kept" is not misjudged as a failure.
     vg_forced = None
     if not failures:
         straight = [e for e in payload["edges"]
@@ -255,7 +271,7 @@ def sweep_graph(browser, src_dir, tmp, filt):
                 pts2 = pg.evaluate(f"window.__stdrawEdgePts({ei})")
                 npx = _nodes_px(pg, lay)
                 ex2 = _expected_preview_route(npx, a, b)
-                # 不可达时接受诚实兜底（保形重锚：折点与压线帧一致）
+                # when unreachable, accept the honest fallback (shape-preserving re-anchor: bend points match the pressed frame)
                 still = (_match(pts2, ex2) if ex2 is not None
                          else _fallback_keeps_shape(pts2, pts))
                 pg.mouse.up()
@@ -263,15 +279,15 @@ def sweep_graph(browser, src_dir, tmp, filt):
                 vg_forced = (a, b, c, became_poly, still,
                              len(pts), len(pts2))
                 if not became_poly:
-                    failures.append(f"force-vg: {a}->{b} 压线后未成折线 "
+                    failures.append(f"force-vg: {a}->{b} no polyline after pressing "
                                     f"(n={len(pts)} expect_n="
                                     f"{len(ex) if ex else '?'})")
                 if not still:
-                    failures.append(f"force-vg: {a}->{b} 拖走后未重算 (n2={len(pts2)})")
+                    failures.append(f"force-vg: {a}->{b} not recomputed after dragging away (n2={len(pts2)})")
             else:
-                vg_forced = ("屏幕坐标越界，跳过该组合",)
+                vg_forced = ("screen coordinates out of range, combination skipped",)
         else:
-            vg_forced = ("无可行压线组合（全部不可达/无直线边）",)
+            vg_forced = ("no feasible press combination (all unreachable / no straight edges)",)
         pg.click("#stdraw-reset")
         pg.wait_for_timeout(80)
 
@@ -291,11 +307,11 @@ def main():
                       for d in os.listdir(MANUAL_DIR)
                       if os.path.isdir(os.path.join(MANUAL_DIR, d))
                       and os.path.exists(os.path.join(MANUAL_DIR, d, "layout.json")))
-        src_label = f"jacky 手动布局 {MANUAL_DIR}"
+        src_label = f"jacky manual layout {MANUAL_DIR}"
     else:
         import glob
         srcs = sorted(glob.glob(os.path.join(ROOT, "benchmarks/corpus/classic/*.cld")))
-        src_label = "corpus 自动布局"
+        src_label = "corpus auto layout"
     tmp = tempfile.mkdtemp(prefix="stdraw-sweep-")
     passed = failed = skipped = 0
     try:
@@ -304,11 +320,11 @@ def main():
                 browser = p.chromium.launch(channel="msedge", headless=True)
             except Exception:
                 browser = p.chromium.launch(headless=True)
-            print(f"== 拖拽跟随扫掠（{src_label}，共 {len(srcs)} 张）==")
+            print(f"== drag-follow sweep ({src_label}, {len(srcs)} graphs) ==")
             for src in srcs:
                 if not src.endswith(".cld"):
                     res = sweep_graph(browser, src, tmp, filt)
-                else:  # corpus 回退：包一层（用自动渲染目录）
+                else:  # corpus fallback: wrap it (use the auto-rendered directory)
                     out = os.path.join(tmp, "auto-" + os.path.basename(src)[:-4])
                     subprocess.run([PY, "-m", "stdraw", "layout", src,
                                     "--outdir", out, "--skip-3d"],

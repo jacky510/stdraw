@@ -1,63 +1,63 @@
-# stdraw viewer — 关系图形态查看器
+# stdraw viewer — Causal Diagram Form Viewer
 
-一张因果图（CLD / 关系图）做好后，用户选择展示形态；每个形态都带**实时质量证书**。
+Once a causal diagram (CLD) is built, the user picks a display form; every form ships with a **live quality certificate**.
 
-## 快速开始
+## Quick Start
 
-用浏览器打开 `viewer/index.html`（单文件、零依赖、零联网，three.js 已内联）。
-内置示例：经典「增长极限」原型（5 节点 / 7 边 / 3 条反馈环）。
+Open `viewer/index.html` in a browser (single file, zero dependencies, zero network — three.js is inlined).
+Built-in example: the classic "Limits to Growth" archetype (5 nodes / 7 edges / 3 feedback loops).
 
-## 四种展示形态
+## Four Display Forms
 
-| 形态 | 内容 | 说明 |
+| Form | Content | Notes |
 |---|---|---|
-| 2D · 零交叉 | 数据自带的参考布局（`ref` 字段，可选） | 0 交叉的静态可打印形态；节点可拖拽微调 |
-| 2D · 允许交叉 | 均匀网格排布：间距恒定槽位 + 总边长最小化指派 | 排布优先，交叉数如实报告、不做硬约束 |
-| 3D · 球面 | 球面槽位 + 总边长最小化确定性指派 | 规则立体排布，任意角度旋转 |
-| 3D · 力导向 | 确定性力导向（无随机数，同图同布局） | 通用对照形态 |
+| 2D · Zero-crossing | Reference layout shipped with the data (`ref` field, optional) | Static, printable form with 0 crossings; nodes can be drag-tuned |
+| 2D · Crossings allowed | Even grid placement: constant-spacing slots + total-edge-length-minimizing assignment | Placement first; crossing count reported honestly, not a hard constraint |
+| 3D · Sphere | Sphere slots + deterministic total-edge-length-minimizing assignment | Regular 3D placement, rotatable from any angle |
+| 3D · Force-directed | Deterministic force-directed (no RNG; same graph → same layout) | General-purpose reference form |
 
-## 核心特性
+## Core Features
 
-- **排布优先**：节点排布（均匀 / 对称规律）是第一目标函数，线交叉第二——互斥时保排布、放交叉。
-- **质量证书（页面内实时复算）**：交叉数 / 卡片重叠 / 最小净距 / 行对齐率 / 间距变异系数 CV / 线穿无关卡。数字跑在渲染坐标上，不是预存结论。拖动节点松手后即时重算。
-- **节点拖拽**：2D 形态左键按住卡片拖动，线与箭头实时跟随。
-- **环路面板**：自动枚举全部有向简单回路，按极性乘积分类为增强环（R，偶数条负边）/ 调节环（B，奇数条负边），短环优先排列（短环=强反馈）。点击某环：琥珀（R）/天蓝（B）粗管高亮整条环路 + 环上节点光晕，其余压暗。
-- **单弓弧线**：曲线均为单一弧度的二次贝塞尔（一个控制点），永不出现 S 形；双向边对画成透镜形双弧（一弧一箭头）。
-- **3D 深度可读性**：远端（深度大）标签自动降低不透明度（近端 1.0 → 远端 0.30，线性、确定性阈值），近端始终可读；3D 标签按屏幕投影框做确定性避让，任意视角、任意缩放下互不压字。
-- **WebGL 降级提示**：WebGL 被禁用或初始化失败时不再黑屏——页面显示说明卡片，并指引用 `stdraw layout` 生成不依赖 WebGL 的 2D SVG 形态。
-- **确定性**：所有自动布局无随机数（或固定种子），同输入同输出。
+- **Placement first**: node placement (even spacing / symmetric regularity) is the primary objective function, line crossings second — when they conflict, keep placement, give up crossings.
+- **Quality certificate (recomputed live on the page)**: crossings / card overlaps / minimum clearance / row alignment rate / spacing coefficient of variation (CV) / edges crossing unrelated cards. The numbers run on rendered coordinates, not pre-stored conclusions. Recomputed instantly when a dragged node is released.
+- **Node dragging**: in the 2D forms, hold the left mouse button on a card and drag; lines and arrows follow in real time.
+- **Loop panel**: automatically enumerates all directed simple cycles and classifies them by polarity product into reinforcing loops (R, an even number of negative edges) / balancing loops (B, an odd number of negative edges), ordered shortest-first (short loop = strong feedback). Click a loop: amber (R) / sky-blue (B) thick tubes highlight the whole loop + halos on its nodes, while everything else dims.
+- **Single-bow arcs**: every curve is a quadratic Bézier with a single bow (one control point) — S-shapes never occur; bidirectional edge pairs are drawn as lens-shaped double arcs (one arc, one arrow).
+- **3D depth readability**: labels of far nodes (greater depth) automatically fade (near 1.0 → far 0.30 opacity, linear, deterministic thresholds) so near labels always stay readable; 3D labels use deterministic decluttering on projected screen boxes — no overlapping text at any angle or zoom.
+- **WebGL fallback notice**: when WebGL is disabled or fails to initialize, the page no longer goes black — it shows an explanatory card and points to `stdraw layout` for WebGL-free 2D SVG forms.
+- **Determinism**: all automatic layouts use no RNG (or a fixed seed); same input, same output.
 
-## 数据格式
+## Data Format
 
-图数据为 JSON（见 `data/example-limits-to-growth.json`）：
+Graph data is JSON (see `data/example-limits-to-growth.json`):
 
 ```json
 {
-  "nodes": [ {"id": "rate", "l": "采纳率"} ],
+  "nodes": [ {"id": "rate", "l": "adoption rate"} ],
   "edges": [ {"a": "rate", "b": "adopters", "p": "+"} ],
   "ref": { "H": 26, "nodes": { "rate": {"x": 170, "y": 420} } }
 }
 ```
 
-- `p`：极性，`"+"` 同向 / `"−"` 反向（U+2212）。
-- `ref`：可选的参考布局（卡片中心坐标 + 卡高）。提供则启用「2D·零交叉」形态；不提供时可只用其余三个形态。
+- `p`: polarity, `"+"` same sign / `"−"` opposite sign (U+2212).
+- `ref`: optional reference layout (card center coordinates + card height). If present, the "2D · Zero-crossing" form is enabled; without it, only the other three forms are available.
 
-替换 `index.html` 内嵌的 `GRAPH` / `LAYOUTS` 两个常量即可加载自己的图
-（也可用 `python -m stdraw layout` 生成整套交付物——布局 / 证书 / 环路审计）。
+To load your own graph, replace the `GRAPH` / `LAYOUTS` constants embedded in `index.html`
+(or generate the full deliverable set — layouts / certificates / loop audit — with `python -m stdraw layout`).
 
-## 设计原则
+## Design Principles
 
-1. **不骗你**：每个形态的取舍用证书如实亮出（例如某形态排布满分但交叉 4 处），不冒充最优。
-2. **排布优先于交叉**：复杂图尽量平均排布（间距 CV 度量），简单图对称或几何规律（环形 / 网格 / 多边形）。
-3. **确定性输出**：同输入同布局，图进版本库 diff 干净。
-4. **验证跑在交付坐标上**：一切指标在渲染坐标上实时复算。
+1. **No lies**: every form's trade-offs are shown honestly by its certificate (e.g. a form with perfect placement but 4 crossings); nothing poses as optimal.
+2. **Placement over crossings**: complex graphs aim for even placement (spacing CV metric); simple graphs aim for symmetry or geometric regularity (ring / grid / polygon).
+3. **Deterministic output**: same input, same layout — clean diffs in version control.
+4. **Verification runs on delivered coordinates**: every metric is recomputed live on rendered coordinates.
 
-## 路线图
+## Roadmap
 
-- [x] 布局引擎从查看器解耦（Python / CLI），DSL 与平面性判定（见根目录 `stdraw/` 包）
-- [ ] 不可平面图的最小交叉求解 + 3D 指标（遮挡数 / 投影边分离度 / 深度展开度）
-- [ ] agent 深度集成（MCP server 形态、自纠错回路）
+- [x] Layout engine decoupled from the viewer (Python / CLI), DSL and planarity testing (see the `stdraw/` package at the repo root)
+- [ ] Minimum-crossing solver for non-planar graphs + 3D metrics (occlusion count / projected edge separation / depth spread)
+- [ ] Deep agent integration (MCP server form, self-correcting loop)
 
-## 许可
+## License
 
-MIT（见根目录 LICENSE）。three.js（内联于 index.html）为 MIT 许可的第三方库。
+MIT (see LICENSE at the repo root). three.js (inlined in index.html) is a third-party MIT-licensed library.

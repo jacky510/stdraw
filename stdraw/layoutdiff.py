@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
-"""布局 diff（审美采集闭环，ref-scrubbed）：auto 布局 vs 手动布局的三层对比。
+"""Layout diff (aesthetics-collection loop, ref-scrubbed): three-layer comparison of the auto layout vs the manual layout.
 
-人拖 → 机器 diff → AI 归纳审美规律 → 反哺目标函数；本模块是「机器 diff」环节，
-输出机器可读（JSON）+ 人可读（stdout 表）双格式：
+Human drags -> machine diff -> AI distills aesthetic rules -> feeds back into the objective function; this module is the "machine diff" stage,
+outputting both machine-readable (JSON) and human-readable (stdout table) formats:
 
-  1) 节点级：每节点位移向量 (dx,dy,|d|) + 朝向归类（往环心收 / 往列对齐靠 /
-     往对称位移；|d|<4px 记「未移动」）；
-  2) 结构级：关键指标前后变化表——交叉数 / 穿卡数(1px 口径) / 行对齐率 /
-     卡间最小净距 / 间距 CV / 平均边长 / 对称轴误差 / 回路聚拢度
-     （auto vs manual 两列 + 差值）；
-  3) 语义级（--cld/.json 带图时）：被移动节点参与的回路与角色（环上/支路），
-     移动后是否更靠近其主环；逐回路聚拢度变化。
+    1) Node level: per-node displacement vector (dx,dy,|d|) + direction classification (toward loop center / toward column alignment /
+          toward symmetry; |d| < 4px counts as "not moved");
+    2) Structural level: before/after table of key metrics -- crossings / card presses (1px accounting) / row alignment rate /
+          minimum card gap / spacing CV / average edge length / symmetry-axis error / loop cohesion
+          (auto vs manual columns + delta);
+    3) Semantic level (when --cld/.json carries a graph): loops and roles (on-ring / branch) of moved nodes,
+          whether they end up closer to their main ring after the move; per-loop cohesion changes.
 
-口径（全部可复算，定义同步写进输出 definitions 块）：
-  - 边几何：折线取 route.points；弧线（arc+ctrl）按二次贝塞尔 24 段离散；
-  - 交叉：不共享端点的边对，任一段相交记 1 对（与证书 crossings 同口径）；
-  - 穿卡：边采样点（4px 步长）进入无关卡矩形（+1px 余量）按 边×卡 去重计数；
-  - 行对齐率：y 差 ≤4px 成组，组内计数 / n（metrics.ROW_EPS 口径）；
-  - 间距 CV：最近邻中心距 std/mean（证书同口径）；
-  - 对称轴误差：竖直轴 x=mean(x_i)；节点 i 的镜像点 (2a-x_i, y_i) 到最近
-    其他节点的距离记 err_i，对称轴误差 = mean(err_i)（越小越镜像对称）；
-  - 回路聚拢度：环上节点平均两两距离 / 环直径（最大两两距离），越小越聚拢。
+Accounting (all reproducible; definitions are also written into the output definitions block):
+    - Edge geometry: polylines take route.points; arcs (arc+ctrl) are discretized into 24 quadratic Bezier segments;
+    - Crossings: for edge pairs sharing no endpoint, any segment intersection counts as 1 pair (same accounting as certificate crossings);
+    - Card presses: edge sample points (4px step) entering unrelated card rectangles (+1px margin), deduplicated by edge x card;
+    - Row alignment rate: grouped by y difference <= 4px, in-group count / n (metrics.ROW_EPS accounting);
+    - Spacing CV: std/mean of nearest-neighbor center distances (same accounting as the certificate);
+    - Symmetry-axis error: vertical axis x = mean(x_i); for node i, the distance from its mirror point (2a-x_i, y_i) to the nearest
+        other node is err_i; symmetry-axis error = mean(err_i) (smaller means more mirror symmetry);
+    - Loop cohesion: average pairwise distance of on-ring nodes / ring diameter (largest pairwise distance); smaller means more compact.
 """
 import argparse
 import json
@@ -29,7 +29,7 @@ import os
 import sys
 
 
-# ── 几何基元（与 metrics.py/routing.py 同口径的独立复算）──
+# ── Geometry primitives (independent recomputation, same accounting as metrics.py/routing.py) ──
 EPS = 1e-9
 ROW_EPS = 4
 
@@ -82,17 +82,17 @@ def _sample(pts, step=4.0):
     return out
 
 
-# ── 布局装载与指标 ──
+# ── Layout loading and metrics ──
 def _load_layout(path):
     with open(path, encoding="utf-8") as f:
         lay = json.load(f)
     if "nodes" not in lay or "edges" not in lay:
-        raise SystemExit(f"{path}: 不是 layout.json（缺 nodes/edges）")
+        raise SystemExit(f"{path}: not a layout.json (missing nodes/edges)")
     return lay
 
 
 def _edge_polys(lay):
-    """边列表 [(a,b)] 与离散折线（弧线按贝塞尔 24 段）。"""
+    """Edge list [(a,b)] and discretized polylines (arcs as 24 Bezier segments)."""
     edges, polys = [], []
     for e in lay["edges"]:
         r = e.get("route", {})
@@ -105,7 +105,7 @@ def _edge_polys(lay):
 
 
 def _symmetry_err(pos):
-    """对称轴误差：竖直轴 x=mean(x)；mean_i min_{j≠i} dist(mirror_i, p_j)。"""
+    """Symmetry-axis error: vertical axis x=mean(x); mean_i min_{j!=i} dist(mirror_i, p_j)."""
     if len(pos) < 2:
         return 0.0
     axis = sum(p[0] for p in pos.values()) / len(pos)
@@ -126,7 +126,7 @@ def _node_sym_err(pos, v):
 
 
 def layout_metrics(lay, graph=None):
-    """单布局的关键指标（证书同口径的独立复算 + 对称/聚拢扩展）。"""
+    """Key metrics of a single layout (independent recomputation with certificate accounting + symmetry/cohesion extensions)."""
     nodes = lay["nodes"]
     card_h = lay.get("meta", {}).get("cardH", 44)
     ids = list(nodes)
@@ -207,7 +207,7 @@ def layout_metrics(lay, graph=None):
         "symmetry_axis_err_px": round(_symmetry_err(pos), 1),
     }
 
-    # 回路聚拢度（带图时）：环上节点平均两两距离 / 环直径
+    # loop cohesion (when a graph is given): average pairwise distance of on-ring nodes / ring diameter
     if graph is not None:
         loops = {}
         for lp in graph.loops:
@@ -226,13 +226,13 @@ def layout_metrics(lay, graph=None):
     return m
 
 
-# ── 三层 diff ──
+# ── Three-layer diff ──
 def diff_layouts(auto, manual, graph=None, auto_path="", manual_path=""):
     an, mn = auto["nodes"], manual["nodes"]
     missing = [v for v in an if v not in mn]
     extra = [v for v in mn if v not in an]
     if missing or extra:
-        raise SystemExit(f"两布局节点集不一致：缺 {missing}，多 {extra}")
+        raise SystemExit(f"layout node sets do not match: missing {missing}, extra {extra}")
     apos = {v: (an[v]["x"], an[v]["y"]) for v in an}
     mpos = {v: (mn[v]["x"], mn[v]["y"]) for v in mn}
 
@@ -242,7 +242,7 @@ def diff_layouts(auto, manual, graph=None, auto_path="", manual_path=""):
             for v in lp.nodes:
                 loops_of.setdefault(v, []).append(lp.id)
 
-    # 列对齐参照：manual 里 ≥3 节点共享（±2px）的 x 视为列
+    # column-alignment reference: an x shared by >= 3 nodes (within +/-2px) in manual counts as a column
     def _columns(pos):
         xs = sorted(p[0] for p in pos.values())
         cols, cur = [], [xs[0]]
@@ -265,10 +265,10 @@ def diff_layouts(auto, manual, graph=None, auto_path="", manual_path=""):
         item = {"node": v, "dx": dx, "dy": dy, "|d|": round(d, 1),
                 "tags": []}
         if d < 4:
-            item["tags"] = ["未移动(<4px)"]
+            item["tags"] = ["not moved (<4px)"]
             node_level.append(item)
             continue
-        # 往环心收：位移与「环心(auto) - 原位置」夹角小（投影占比 ≥0.6）
+        # toward loop center: the angle between the displacement and (loop center (auto) - original position) is small (projection ratio >= 0.6)
         for lid in loops_of.get(v, []):
             members = [w for w in
                        next(l for l in graph.loops if l.id == lid).nodes
@@ -279,18 +279,18 @@ def diff_layouts(auto, manual, graph=None, auto_path="", manual_path=""):
             proj = (dx * vec[0] + dy * vec[1]) / (d * math.hypot(*vec)) \
                 if math.hypot(*vec) > EPS else 0.0
             if proj >= 0.6:
-                item["tags"].append(f"往环心收({lid})")
+                item["tags"].append(f"toward loop center ({lid})")
             elif proj <= -0.6:
-                item["tags"].append(f"背离环心({lid})")
-        # 往列对齐靠：manual x 落进某列（±2px），auto x 不在
+                item["tags"].append(f"away from loop center ({lid})")
+        # toward column alignment: manual x falls into some column (within +/-2px) while auto x does not
         if any(abs(mpos[v][0] - col) <= 2 for col in mcols) and \
            not any(abs(apos[v][0] - col) <= 2 for col in mcols):
-            item["tags"].append("往列对齐靠")
-        # 往对称位移：该节点对称误差显著下降（<70%）
+            item["tags"].append("toward column alignment")
+        # toward symmetry: the node's symmetry error drops significantly (below 70%)
         if _node_sym_err(mpos, v) < 0.7 * _node_sym_err(apos, v):
-            item["tags"].append("往对称位移")
+            item["tags"].append("toward symmetric position")
         if not item["tags"]:
-            item["tags"] = ["自由位移"]
+            item["tags"] = ["free displacement"]
         node_level.append(item)
 
     ma, mm = layout_metrics(auto, graph), layout_metrics(manual, graph)
@@ -306,9 +306,9 @@ def diff_layouts(auto, manual, graph=None, auto_path="", manual_path=""):
         sem_nodes = []
         for it in node_level:
             v = it["node"]
-            if it["tags"] == ["未移动(<4px)"] or not loops_of.get(v):
-                if it["tags"] != ["未移动(<4px)"] and not loops_of.get(v):
-                    sem_nodes.append({"node": v, "role": "支路",
+            if it["tags"] == ["not moved (<4px)"] or not loops_of.get(v):
+                if it["tags"] != ["not moved (<4px)"] and not loops_of.get(v):
+                    sem_nodes.append({"node": v, "role": "branch",
                                       "loops": []})
                 continue
             entries = []
@@ -326,7 +326,7 @@ def diff_layouts(auto, manual, graph=None, auto_path="", manual_path=""):
                                 "closer_to_loop_center_after": dm < da,
                                 "dist_auto_px": round(da, 1),
                                 "dist_manual_px": round(dm, 1)})
-            sem_nodes.append({"node": v, "role": "环上",
+            sem_nodes.append({"node": v, "role": "on-ring",
                               "loops": loops_of[v], "loop_moves": entries})
         semantic = {
             "nodes": sem_nodes,
@@ -348,14 +348,14 @@ def diff_layouts(auto, manual, graph=None, auto_path="", manual_path=""):
         "structural": structural,
         "semantic": semantic,
         "definitions": {
-            "moved": "|d| >= 4px；其余记「未移动」",
-            "crossings": "不共享端点的边对任一段相交记 1 对（证书同口径）；"
-                         "弧线按二次贝塞尔 24 段离散",
-            "edge_card_press_1px": "边采样点(4px)进入无关卡矩形(+1px)按 边×卡 去重",
-            "row_align_rate": "y 差 ≤4px 成组计数 / n",
-            "symmetry_axis_err_px": "轴 x=mean(x_i)；mean_i min_{j≠i} dist(mirror_i, p_j)，"
-                                    "越小越镜像对称",
-            "loop_cohesion": "环上节点平均两两距离 / 环直径（越小越聚拢）",
+            "moved": "|d| >= 4px; everything else counts as not moved",
+            "crossings": "edge pairs sharing no endpoint count 1 per any segment intersection (same caliber as the certificate); "
+                         "arcs discretized as 24 quadratic Bezier segments",
+            "edge_card_press_1px": "edge sample points (4px) entering unrelated card rectangles (+1px), deduplicated per edge x card",
+            "row_align_rate": "grouped counting with y difference <= 4px / n",
+            "symmetry_axis_err_px": "axis x=mean(x_i); mean_i min_{j!=i} dist(mirror_i, p_j), "
+                                    "smaller means more mirror-symmetric",
+            "loop_cohesion": "average pairwise distance of on-ring nodes / ring diameter (smaller means more cohesive)",
             "delta": "manual - auto",
         },
     }
@@ -363,30 +363,30 @@ def diff_layouts(auto, manual, graph=None, auto_path="", manual_path=""):
 
 def _human(diff):
     out = []
-    out.append(f"布局 diff：{diff['auto']} (auto) vs {diff['manual']} (manual)")
+    out.append(f"layout diff: {diff['auto']} (auto) vs {diff['manual']} (manual)")
     out.append("")
-    out.append("── 节点级（位移向量 + 朝向）──")
+    out.append("-- node level (displacement vectors + orientation) --")
     for it in diff["node_level"]:
         out.append(f"  {it['node']:<24} dx={it['dx']:>5} dy={it['dy']:>5} "
                    f"|d|={it['|d|']:>6}  {'; '.join(it['tags'])}")
     out.append("")
-    out.append("── 结构级（auto → manual，Δ=manual−auto）──")
+    out.append("-- structural level (auto -> manual, delta = manual - auto) --")
     for k, v in diff["structural"].items():
         out.append(f"  {k:<22} {v['auto']:>10} → {v['manual']:>10}  Δ={v['delta']}")
     if diff.get("semantic"):
         out.append("")
-        out.append("── 语义级（回路归属与聚拢）──")
+        out.append("-- semantic level (loop membership and cohesion) --")
         for n in diff["semantic"]["nodes"]:
-            if not n.get("loops") and n["role"] != "支路":
+            if not n.get("loops") and n["role"] != "branch":
                 continue
             moves = "; ".join(
                 f"{m['loop']}:{m['dist_auto_px']}→{m['dist_manual_px']}px"
-                f"({'更近' if m['closer_to_loop_center_after'] else '更远'})"
+                f"({'closer' if m['closer_to_loop_center_after'] else 'farther'})"
                 for m in n.get("loop_moves", [])) or "-"
             out.append(f"  {n['node']:<24} [{n['role']}] {moves}")
         for lid, lp in diff["semantic"]["loops"].items():
-            out.append(f"  回路 {lid}: 聚拢度 {lp['cohesion_auto']} → "
-                       f"{lp['cohesion_manual']}，平均两两距离 Δ="
+            out.append(f"  loop {lid}: cohesion {lp['cohesion_auto']} -> "
+                       f"{lp['cohesion_manual']}, mean pairwise distance delta="
                        f"{lp['mean_pairwise_delta_px']}px")
     return "\n".join(out)
 
@@ -394,14 +394,14 @@ def _human(diff):
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="stdraw layout-diff",
-        description="auto 布局 vs 手动布局三层 diff（审美采集闭环的数据源）")
-    ap.add_argument("auto", help="自动布局 layout.json")
-    ap.add_argument("manual", help="手动布局 layout.json（或导出的子集）")
+        description="three-layer diff of the auto layout vs the manual layout (data source of the aesthetics-collection loop)")
+    ap.add_argument("auto", help="automatic layout layout.json")
+    ap.add_argument("manual", help="manual layout layout.json (or an exported subset)")
     ap.add_argument("--cld", default=None,
-                    help="图源（.cld/.json），启用语义级（回路归属/聚拢）")
+                    help="graph source (.cld/.json), enables the semantic layer (loop membership / cohesion)")
     ap.add_argument("--out", default="layout-diff.json",
-                    help="机器可读 JSON 输出路径（默认 ./layout-diff.json；"
-                         "空串跳过写盘）")
+                    help="machine-readable JSON output path (default ./layout-diff.json; "
+                         "empty string skips writing)")
     a = ap.parse_args(argv)
 
     graph = None
@@ -416,7 +416,7 @@ def main(argv=None):
     if a.out:
         with open(a.out, "w", encoding="utf-8") as f:
             json.dump(d, f, ensure_ascii=False, indent=1)
-        print(f"\n机器可读 JSON -> {a.out}")
+        print(f"\nmachine-readable JSON -> {a.out}")
     return 0
 
 

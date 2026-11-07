@@ -1,1 +1,1 @@
-{"tool": "stdraw-ortho", "graph": "random-n20-i00", "n": 20, "m": 32, "status": "not_planar_skip", "why": "core 子图非平面（18 节点 / 32 边）——2D 平面层不适用，请降级 3D 层或走均匀排布形态"}
+{"tool": "stdraw-ortho", "graph": "random-n20-i00", "n": 20, "m": 32, "status": "not_planar_skip", "why": "core subgraph non-planar (18 nodes / 32 edges) — 2D planar layer inapplicable; degrade to the 3D layer or use the uniform placement forms"}

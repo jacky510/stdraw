@@ -1,176 +1,219 @@
-# AGENTS.md — stdraw（进仓 worker 口径 + 使用说明）
+# AGENTS.md — stdraw (in-repo worker caliber + usage manual)
 
-> 本文件分两部分：**第一部分**给进仓干活的 AI 卡 worker（进仓即带口径）；
-> **第二部分**给使用 stdraw 引擎的 agent（原《给 agent 的 stdraw 使用说明》）。
-> 卡文与本文件冲突时：安全/验收/发布口径以本文件为准，需求内容以卡文为准。
-> 本文件由 default 维护口径；worker 发现口径过时 → 卡上评论上报，不直接改本节。
+> This file has two parts: **Part One** for AI card workers entering the repo
+> (the caliber travels with the repo); **Part Two** for agents using the
+> stdraw engine (originally "stdraw usage manual for agents").
+> When a card text conflicts with this file: safety / verification / release
+> caliber follows this file; requirement content follows the card.
+> This file's caliber is maintained by default; workers finding stale caliber
+> -> report via a card comment, do not edit this section directly.
 >
-> 技能指针（作用域指针，不放副本）：`systems-thinking-diagram` 技能正本在
-> default 侧 `<user-home>/AppData/Local/hermes/skills/autonomous-ai-agents/systems-thinking-diagram/`；
-> 本仓 `skills/stdraw/SKILL.md` 是对外发布的开源 Agent Skill（`npx skills add jacky510/stdraw`
-> 安装入口），两者各自独立——正本不抄进仓，仓内发布面也不回写正本，副本必漂移。
+> Skill pointers (scoped pointers, no copies): the `systems-thinking-diagram`
+> skill canonical copy lives on the default side at
+> `<user-home>/AppData/Local/hermes/skills/autonomous-ai-agents/systems-thinking-diagram/`;
+> this repo's `skills/stdraw/SKILL.md` is the openly published Agent Skill
+> (install entry via `npx skills add jacky510/stdraw`) — the two are
+> independent: the canonical copy is never copied into the repo, and the
+> repo's publishing face never writes back to the canonical copy (a copy
+> always drifts).
 
-## 仓结构
+## Repo structure
 
-| 路径 | 用途 |
+| Path | Purpose |
 |---|---|
-| `stdraw/` | 引擎包：DSL 解析 / 排布（auto-v2 模式化）/ 数学布线（WS3）/ 精确交叉（WS2）/ 证书 / CLI（`python -m stdraw` 入口） |
-| `tests/` | pytest 用例 + `ci_checks.py`（CI 铁门脚本）+ `baselines/`（ortho-v1 冻结基线，逐字节 pin） |
-| `examples/` | `.cld` 样例（limits-to-growth / classic-cld-growth-and-burden） |
-| `demos/` | 交付 demo HTML + 证书 JSON——**发布面**，必须与当前引擎重渲染逐字节一致 |
-| `docs/` | 口径正本：`dsl-spec-v0.1.md` / `layout-modes.md` / `crossing-exact.md` / `gallery/`（截图） |
-| `benchmarks/` | 语料 `corpus/` + 原始留证 `raw/` + `REPORT.md`（基准摘要表正本）+ `tools/` |
-| `skills/stdraw/` | 对外发布的 Agent Skill（开源安装入口，见上方指针节） |
-| `viewer/` | 零依赖 3D 交互查看器 |
-| `assets/` | viewer/3D 页第三方 JS（three.min.js 等，不擅自改版本） |
+| `stdraw/` | engine package: DSL parsing / placement (auto-v2 mode-based) / mathematical routing (WS3) / exact crossings (WS2) / certificates / CLI (`python -m stdraw` entry) |
+| `tests/` | pytest cases + `ci_checks.py` (CI iron-gate script) + `baselines/` (ortho-v1 frozen baselines, byte-pinned) |
+| `examples/` | `.cld` samples (limits-to-growth / classic-cld-growth-and-burden) |
+| `demos/` | deliverable demo HTML + certificate JSON — **publishing face**, must stay byte-identical to a fresh re-render by the current engine |
+| `docs/` | caliber originals: `dsl-spec-v0.1.md` (+ `.zh-CN.md` counterpart) / `layout-modes.md` / `crossing-exact.md` / `gallery/` (screenshots) |
+| `benchmarks/` | corpus `corpus/` + raw evidence `raw/` + `REPORT.md` (benchmark summary-table original) + `tools/` |
+| `skills/stdraw/` | the openly published Agent Skill (open-source install entry, see the pointer note above) |
+| `viewer/` | zero-dependency 3D interactive viewer |
+| `assets/` | third-party JS for viewer/3D pages (three.min.js etc.; do not bump versions on your own) |
 
-## 常用命令
+## Common commands
 
-本机开发解释器：`<user-home>/AppData/Local/Programs/Python/Python312/python.exe`（仓路径 `<user-home>/Projects/stdraw`）。
+Local dev interpreter: `<user-home>/AppData/Local/Programs/Python/Python312/python.exe` (repo path `<user-home>/Projects/stdraw`).
 
-| 命令 | 用途 |
+| Command | Purpose |
 |---|---|
-| `python -m pytest tests/ -q` | 单测 |
-| `python tests/ci_checks.py` | CI 铁门：ortho 冻结回归逐字节 pin + auto-v2 硬门 + 确定性双跑（+ 可选 DOM 层） |
-| `python -m stdraw layout examples/classic-cld-growth-and-burden.cld --name classic-cld --skip-3d` | 跑主样例，出证书/demo |
-| 同一命令连跑两次 + `sha256sum` 对比 | 确定性验证（产出可安全入库，diff 必须干净） |
-| demo 重渲染后与 `demos/classic-cld-2d.html` 逐字节比对 | demo 新鲜度门（交付件过期检测） |
+| `python -m pytest tests/ -q` | unit tests |
+| `python tests/ci_checks.py` | CI iron gates: ortho frozen regression byte-pinned + auto-v2 hard gates + determinism double-run (+ optional DOM layer) |
+| `python -m stdraw layout examples/classic-cld-growth-and-burden.cld --name classic-cld --skip-3d` | run the main sample, producing certificate/demo |
+| same command twice + `sha256sum` comparison | determinism verification (outputs are safe to commit, diff must be clean) |
+| re-render the demo and compare byte-for-byte against `demos/classic-cld-2d.html` | demo freshness gate (stale-deliverable detection) |
 
-## 允许（worker 可直接做）
+## Allowed (workers may do directly)
 
-- 修 bug、加测试、改卡面指定范围内的文件；`docs/` 新增文档；`tests/` 新增用例
-- `examples/` / `benchmarks/corpus/` 追加样例（不动已有语料与 REPORT.md 已发布数字）
-- 重渲染更新 `demos/`（须过新鲜度门 + 门面级验收，见「验证与提交」）
+- Fix bugs, add tests, change files within the card's stated scope; add docs under `docs/`; add cases under `tests/`
+- Append samples to `examples/` / `benchmarks/corpus/` (do not touch existing corpora or REPORT.md's published numbers)
+- Re-render `demos/` updates (must pass the freshness gate + publishing-face acceptance, see "Verification & commit")
 
-## 禁止（必须挂卡或 kanban_block 等答复，不许自作主张）
+## Forbidden (must hang a card or kanban_block and wait — never decide on your own)
 
-- 改 `tests/baselines/` 冻结基线与 ortho-v1 冻结行为——除非卡面明确要求「重新定基」并写明依据（同文件先例才可做）
-- 碰发布面（`README*` / `demos/` / `docs/gallery/` / `skills/stdraw/SKILL.md`）而不做门面级验收
-- 放宽证书硬门阈值或改动 grade 分级语义（最优/其次/最次/未获证书）——不许为让图过门而调门
-- 把 default 侧 `systems-thinking-diagram` 技能正本抄进仓（只留指针，见文件头）
-- 版本号（`pyproject.toml` / README 徽章 / 本文件「版本」节）顺带 bump——**ref-scrubbed 之后版本收尾统一走专项「版本收尾卡」**，不散改
-- 共享主树纪律：`<user-home>/Projects/stdraw` 主树常有多卡并发在途改动——**绝不提交不是自己卡清单里的文件**；提交一律走临时 clone（参照先例 ref-scrubbed）
-- 凭据、网络配置、删数据、强推 main / 改写历史
+- Changing the `tests/baselines/` frozen baselines or ortho-v1 frozen behavior — unless the card explicitly requires "re-baselining" and states the basis (only with same-file precedent)
+- Touching the publishing face (`README*` / `demos/` / `docs/gallery/` / `skills/stdraw/SKILL.md`) without publishing-face acceptance
+- Relaxing certificate hard-gate thresholds or changing the grade semantics (best/second/3d/uncertified) — never tune gates to let a figure pass
+- Copying the default-side `systems-thinking-diagram` skill canonical copy into the repo (pointers only, see the header)
+- Bumping the version number (`pyproject.toml` / README badges / the "Version" section of this file) as a side effect — **since ref-scrubbed, version closure is unified through a dedicated "version closure card"**, no scattered bumps
+- Shared-main-tree discipline: `<user-home>/Projects/stdraw` main tree often has multiple cards' in-flight changes — **never commit files that are not on your own card's list**; commits always go through a temporary clone (precedent ref-scrubbed)
+- Credentials, network configuration, deleting data, force-pushing main / rewriting history
 
-## 验证与提交
+## Verification & commit
 
-- 提交前必须跑：`python -m pytest tests/ -q` + `python tests/ci_checks.py`；跑不了就如实写「未验证 + 原因」，不许虚称
-- **确定性快照验收**（改引擎行为的卡）：同输入双跑逐字节一致；多图 sweep 相对 base 逐字节零漂移（参照 ref-scrubbed 先例：19 图仅目标图命中，其余 18 张零漂移）
-- **净化检查**（碰发布面的卡）：入库前核查发布面无本机绝对路径、内部卡号/代号、凭据与机器特定信息（开源门面卫生）
-- **验收分级**：卡级 = 本卡验收（测试 + 对拍）；门面 = 发布面 + CI 证书门。碰发布面的改动**两级都要过**；门面级验收先写逐格对拍脚本再改文档（证书 gates 逐键、REPORT.md 摘要表逐格、CLI 参数表 vs `--help` 实测）
-- 卡面写的门槛数字是拟稿时快照，终态以实测 JSON 为准
-- push 后必须回读：`gh api repos/jacky510/stdraw/commits?per_page=1 --jq '.[0].commit.committer.date'`
-- 提交信息写明对应卡 id
+- Before committing you must run: `python -m pytest tests/ -q` + `python tests/ci_checks.py`; if you cannot run them, write honestly "unverified + why" — never claim otherwise
+- **Determinism snapshot acceptance** (cards changing engine behavior): same input, two runs, byte-identical; multi-graph sweep with byte-zero drift relative to base (precedent ref-scrubbed: 19 graphs, only the target graph switched, the other 18 zero-drift)
+- **Sanitization check** (cards touching the publishing face): before committing, verify the publishing face contains no local absolute paths, internal card ids/codenames, credentials, or machine-specific info (open-source facade hygiene)
+- **Acceptance tiers**: card-level = this card's acceptance (tests + cross-checks); publishing-face = publishing face + CI certificate gates. Changes touching the publishing face **must pass both tiers**; for publishing-face acceptance, write the cell-by-cell cross-check script before editing docs (certificate gates per key, REPORT.md summary table per cell, CLI parameter table vs `--help` measured)
+- Threshold numbers written on a card are snapshots from drafting; the final state follows the measured JSON
+- After pushing you must read back: `gh api repos/jacky510/stdraw/commits?per_page=1 --jq '.[0].commit.committer.date'`
+- Commit messages state the corresponding card id
 
-## 分支与发布
+## Branches & release
 
-- 主干 = `main`，卡级验收过可直接 push（轻量文档/修复类）；大功能卡先完成 sweep 零漂移验证再 push
-- push 后盯远端 CI 双 job 必须 success；红了先修再交卡
-- 版本发布走「版本收尾卡」：统一 bump 版本号 / 徽章 / 本文件「版本」节 + 证书摘要对拍
-- 发布面改动必须附门面级验收证据（对拍输出 / 截图 / 证书 gates 清单）
+- Trunk = `main`; after card-level acceptance passes you may push directly (lightweight doc/fix-class); big feature cards complete the sweep zero-drift verification before pushing
+- After pushing, watch the remote CI double job until success; if red, fix before closing the card
+- Version releases go through a "version closure card": unified bump of version number / badges / the "Version" section of this file + certificate summary cross-check
+- Publishing-face changes must attach publishing-face acceptance evidence (cross-check output / screenshots / certificate gates list)
 
 ---
 
-以下为原《给 agent 的 stdraw 使用说明》（除标题行外逐字保留）：
+The following is the original "stdraw usage manual for agents" (preserved verbatim except the title line):
 
-## 给 agent 的 stdraw 使用说明（详版）
+## stdraw usage manual for agents (detailed)
 
-stdraw 是 planarity-aware 的系统思维图（CLD / 因果回路图）引擎：
-**文本 DSL 进，带质量证书的图出**。它专为 agent 设计——零交互、确定性输出、
-每个交付物都是机器可读的 JSON + 可直接打开的 HTML。
+stdraw is a planarity-aware systems-thinking diagram (CLD / causal loop
+diagram) engine: **text DSL in, diagram with a quality certificate out**.
+It is designed for agents — zero interaction, deterministic output, and every
+deliverable is machine-readable JSON + directly openable HTML.
 
-给 agent host 的最短路径：本仓 `skills/stdraw/SKILL.md` 是标准 Agent Skill
-（`npx skills add jacky510/stdraw` 可直接安装）；本文是详版说明书，两者内容一致。
+The shortest path for an agent host: this repo's `skills/stdraw/SKILL.md` is
+the standard Agent Skill (`npx skills add jacky510/stdraw` installs it
+directly); this document is the detailed manual — the two carry the same
+content.
 
-## 能做什么（v0.7.1 终态）
+## What it can do (v0.7.1 end state)
 
-1. **auto-v2 默认配方（模式化排布）**：按图结构确定性选择排布模式，优先级
-   = 领结对对称（双三角共边，4 节点 5 边）→ 领结共点 bowtie-vertex（v0.7.0，
-   枚举简单环恰 2 个、两环恰共享 1 点）→ 纵柱+翼位 spine-wing（v0.7.1，
-   中枢对公共邻居 ≥3 + rest 次级簇可配对 + 主链占比 ≤0.5）→ 纵列（3≤n≤12 ∧ 最长简单回路
-   3≤k≤4 ∧ k<n）→ 环形（纯环 / 主环覆盖 ≥n−2 或环边占比 ≥0.9 ∧ k≥5 或
-   覆盖全图）→ 分层；每个模式带**试验闸门**（构造后排布跑同一布线器复核硬门
-   代理），任一不过**静默回退**下一级，负例逐字节不变。规则详见
-   [docs/layout-modes.md](docs/layout-modes.md)。
-   - **排布硬门**：框不压线 = 0（任意角度、1px 余量）、边-框净距 ≥16px、
-     锚点平滑、卡间净距 ≥16px（目标 36px 呼吸感）、互环对（a↔b 双向边）两线
-     分离 ≥4px、线-线视觉重合 = 0；排布规律门按模式切换——ring：环上等间距
-     CV ≤0.05 + 正多边形模板拟合 ≤0.05；column：主链列轴偏差 ≤2px + 主链
-     行距恒等；symmetric：镜像轴误差 ≤2px；bowtie-vertex：镜像轴误差 ≤2px；
-     spine-wing：纵柱 x 对齐 ≤2px + 中线贴靠 ≤2px + 镜像 ≤2px；
-     layered：行距恒等 + 列吸附；锚点带内（v0.7.3，全引擎硬门）：转角
-     命中 = 0 + 带内比例（±1/4 边长）≥ v0.7.2 基线锁表，spine-wing 须
-     100% 带内；
-   - **交叉与行对齐是报告项（软目标）**：排布规律达标时允许 ≤2 交叉（秩序与
-     优美优先）；分级语义不变——「最优」仍要求 0 交叉；
-   - **R/B 极性颜色化**（替代文字徽标）：单环边 R=琥珀 `#d97706`、B=天蓝
-     `#0284c7`；多环异 kind 或非环边中性灰 `#64748b`；负极性边虚线
-     （`stroke-dasharray="6 4"`）。
-2. **数学布线层（WS3）**：绕障 = 净距膨胀障碍**可见性图 Dijkstra 最短路**
-   （图上精确最优；相对圆角障碍连续空间真最短路每贴角至多多
-   (2−π/2)·膨胀余量 px）；平滑 = 折角**相切圆弧**（G1 切线连续、曲率有界，
-   逐弧净距复检）；互环对走透镜双弧/平行偏移/外围绕行，禁止重合成双箭头线；
-   **交叉双口径**：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，
-   不一致拒发证书；折线带固定类型代价（vg 绕障折角 +120 / poly 车道折线
-   +40 / wrap 外围绕行 +200）——直线/弧线可行时折线不抢分，折线=最后手段。
-3. **精确交叉数层（WS2，`--exact`）**：ordering 插入 ILP + 平面化 oracle +
-   B&B 夹逼计算 cr(G)，写入证书 `exactness` 块（`proven_optimal` / `gap` /
-   `lb` / `crossing_number`）。已证参考真值：K5=1、K3,3=1（Kuratowski）、
-   K6=3（Guy 1960 公式）、Petersen=2——方法学与文献口径见
-   [docs/crossing-exact.md](docs/crossing-exact.md)。最优性只相对该文档 §1-5
-   定义的模型类成立（good-drawing 口径、安全缩减后的 2-边-连通核族、B&B
-   覆盖的可平面子图 × 全嵌入族），不虚称任意画法空间。需可选依赖
-   `pip install "stdraw[solver]"`；未装时 `computed:false` 如实标注。
-4. **ortho-v1 冻结配方（`--recipe ortho`）**：平面嵌入 + st 编号 + 可见性
-   表示，线全竖直、可平面图 **0 交叉有定理保证**；行为冻结、CI
-   byte-regression 铁门保护，生产调用方可安全 pin。不可平面输入抛
-   `NotPlanarError`（CLI 打印诚实降级并继续 3D 层，不算失败）。
-5. **环路语义审计（lint）**：验证声明环闭合性、R/B 极性奇偶，独立枚举全图
-   回路对照；`loops_audit.json` 的 `summary.problems` 必须 = 0。
-6. **手动微调闭环（拖拽 → 导出 → 复算）**：`demo-2d.html`（auto 配方）内置
-   拖拽层——拖节点时**全部线型实时重布线**（JS 移植可见性图最短路，与
-   Python 同数学口径；障碍被拖走后旧绕行即时作废）；绕障折点渲染为**可拖
-   把手**，拖动即用户锚定，「导出布局」对锚定边写 `edges[].waypoints`；
-   `--from-layout` 按手动坐标跑同一布线+证书管线（硬门口径不变、如实
-   评分）；`--compare-auto` 同图另跑自动布局输出双证书对比
-   `compare-auto.json`；`layout-diff` 出三层 diff（节点位移 / 结构指标 /
-   回路语义）。
-7. **3D 升维 + viewer**：节点排成规则立体（球面/立方体/四面体/圆锥），空间
-   弦线不相交，投影交叉由相机解决；`viewer/index.html` 零依赖交互查看器
-   （四种形态 + 拖拽 + 回路面板）。
+1. **auto-v2 default recipe (mode-based placement)**: deterministically picks
+   a placement mode by graph structure, priority
+   = bowtie-pair symmetric (two triangles sharing an edge, 4 nodes 5 edges)
+   -> bowtie-vertex (v0.7.0, exactly 2 enumerated simple cycles sharing
+   exactly 1 node) -> spine-wing (v0.7.1, hub pair with >= 3 common neighbors
+   + pairable rest secondary clusters + main-chain share <= 0.5)
+   -> column (3<=n<=12 AND longest simple cycle 3<=k<=4 AND k<n)
+   -> ring (pure cycle / main cycle covering >= n-2 or cycle-edge share
+   >= 0.9 AND k>=5 or covering the whole graph) -> layered; every mode has a
+   **trial gate** (after construction, placement re-runs the same router's
+   hard-gate proxies for review), and any failure **silently falls back** to
+   the next tier, with negative cases byte-identical. Full rules in
+   [docs/layout-modes.md](docs/layout-modes.md) (Chinese).
+   - **Placement hard gates**: box-over-line = 0 (any angle, 1px margin),
+     edge-box clearance >= 16px, smooth anchors, card gap >= 16px (36px
+     breathing target), mutual pairs (a<->b bidirectional edges) two-line
+     separation >= 4px, line-line visual coincidence = 0; placement
+     regularity gates switch per mode — ring: on-ring equal spacing
+     CV <= 0.05 + regular-polygon template fit <= 0.05; column: main-chain
+     column-axis deviation <= 2px + constant main-chain row pitch;
+     symmetric: mirror-axis error <= 2px; bowtie-vertex: mirror-axis error
+     <= 2px; spine-wing: spine x alignment <= 2px + midline adherence
+     <= 2px + mirror <= 2px; layered: constant row pitch + column snap;
+     anchor mid-band (v0.7.3, engine-wide hard gate): corner hits = 0
+     + in-band share (+/- 1/4 edge length) >= the v0.7.2 baseline lock table,
+     spine-wing requires 100% in-band;
+   - **Crossings and row alignment are report items (soft targets)**: when
+     placement regularity holds, <= 2 crossings are allowed (order and
+     elegance first); grading semantics unchanged — "best" still requires
+     0 crossings;
+   - **R/B polarity coloring** (replacing letter badges): single-loop edges
+     R = amber `#d97706`, B = sky blue `#0284c7`; multi-loop mixed-kind or
+     non-loop edges neutral gray `#64748b`; negative-polarity edges dashed
+     (`stroke-dasharray="6 4"`).
+2. **Mathematical routing layer (WS3)**: obstacle avoidance =
+   clearance-inflated obstacle **visibility-graph Dijkstra shortest path**
+   (exactly optimal on the graph; at most (2 - pi/2) x inflation margin px
+   more per hugging corner than the true continuous-space shortest path
+   around rounded-corner obstacles); smoothing = **tangent arcs** at
+   polyline bends (G1 tangent-continuous, bounded curvature, per-arc
+   clearance recheck); mutual pairs take lens double arcs / parallel offsets
+   / outer detours, merging back into a double-arrowhead line is forbidden;
+   **dual crossing accounting**: the router's theoretical per-edge hit-count
+   sum / 2 must equal the geometric recount on delivered coordinates, and a
+   mismatch refuses the certificate; polylines carry fixed type costs
+   (vg detour bend +120 / poly lane polyline +40 / wrap outer detour +200)
+   — when straight/arc lines are feasible, polylines don't win the score;
+   polylines are the last resort.
+3. **Exact crossing-number layer (WS2, `--exact`)**: ordering insertion ILP +
+   planarization oracle + B&B squeeze computing cr(G), written into the
+   certificate `exactness` block (`proven_optimal` / `gap` / `lb` /
+   `crossing_number`). Proven reference truths: K5=1, K3,3=1 (Kuratowski),
+   K6=3 (Guy 1960 formula), Petersen=2 — methodology and literature caliber
+   in [docs/crossing-exact.md](docs/crossing-exact.md) (Chinese). Optimality
+   holds only relative to the model class defined in that document's
+   sections 1-5 (good-drawing caliber, the 2-edge-connected core family
+   after safe reduction, the planar-subgraph x full-embedding family covered
+   by the B&B), with no claim over an arbitrary drawing space. Requires the
+   optional dependency `pip install "stdraw[solver]"`; when absent,
+   `computed:false` is honestly marked.
+4. **ortho-v1 frozen recipe (`--recipe ortho`)**: planar embedding +
+   st-numbering + visibility representation, all wires strictly vertical,
+   **0 crossings on planar graphs with theorem guarantee**; behavior frozen,
+   protected by a CI byte-regression iron gate, safe for production callers
+   to pin. Non-planar input raises `NotPlanarError` (the CLI prints an
+   honest degradation and continues to the 3D layer — not a failure).
+5. **Loop semantics audit (lint)**: verifies declared loop closure and R/B
+   polarity parity against an independent enumeration of all graph loops;
+   `loops_audit.json`'s `summary.problems` must = 0.
+6. **Manual touch-up loop (drag -> export -> recompute)**: `demo-2d.html`
+   (auto recipe) has a built-in drag layer — while dragging nodes, **all
+   line styles re-route live** (a JS port of the visibility-graph shortest
+   path, same mathematical caliber as Python; stale detours are invalidated
+   the moment their obstacle is dragged away); detour fold points render as
+   **draggable handles**, dragging pins the edge as user-anchored, and
+   "Export layout" writes `edges[].waypoints` for anchored edges;
+   `--from-layout` re-runs the same routing + certificate pipeline on manual
+   coordinates (hard-gate caliber unchanged, graded honestly);
+   `--compare-auto` additionally runs the automatic layout of the same graph
+   and outputs the dual-certificate comparison `compare-auto.json`;
+   `layout-diff` produces a three-layer diff (node displacement / structural
+   metrics / loop semantics).
+7. **3D dimension lift + viewer**: nodes arranged on regular solids
+   (sphere/cube/tetrahedron/cone), spatial chords don't intersect, projection
+   crossings are solved by the camera; `viewer/index.html` is a
+   zero-dependency interactive viewer (four forms + dragging + loop panel).
 
-## 安装
+## Install
 
 ```bash
-pip install stdraw              # 或仓内 pip install -e .；唯一硬依赖 networkx；Python >= 3.9
-pip install "stdraw[solver]"    # 可选：ortools（auto-v2 CP-SAT 定位精化 + --exact 精确层）
+pip install stdraw              # or in-repo pip install -e .; the only hard dependency is networkx; Python >= 3.9
+pip install "stdraw[solver]"    # optional: ortools (auto-v2 CP-SAT placement refinement + --exact exact layer)
 ```
 
-未装 solver 时 auto-v2 优雅降级为构造法（功能完整、构造档质量），证书如实标注。
+Without the solver, auto-v2 degrades gracefully to the constructive method
+(full features, construct-tier quality), honestly marked in the certificate.
 
-## CLI（以 `--help` 实测为准）
+## CLI (the `--help` output is authoritative)
 
 ```bash
-stdraw layout <input.cld|.json> [选项]        # 布局全管线（等价 python -m stdraw layout ...）
-stdraw layout-diff <layout.json> <layout2.json> [--cld 图源] [--diff-out diff.json]
+stdraw layout <input.cld|.json> [options]        # full layout pipeline (equivalent to python -m stdraw layout ...)
+stdraw layout-diff <layout.json> <layout2.json> [--cld graph-source] [--diff-out diff.json]
 ```
 
-| 选项 | 默认 | 说明 |
+| Option | Default | Description |
 |---|---|---|
-| `--outdir` | `stdraw-out` | 产出目录 |
-| `--recipe {auto,ortho}` | `auto` | auto=auto-v2（直线/弧线 + 硬门 + 模式排布）；ortho=ortho-v1（构造法，行为冻结 pin-safe） |
-| `--linestyle {straight,arc}` | `straight` | auto 配方线型（arc=全弧线偏好） |
-| `--skip-3d` | off | 只跑 2D 层 |
-| `--solids` | `sphere,cube,tetra,cone` | 3D 形体列表（逗号分隔） |
-| `--pitch` | 56 | 行距 px；小图调大（如 62）更易过净距门禁 |
-| `--name` | 取 DSL graph 名 | 证书里的图名 |
-| `--exact` | off | 精确交叉数层：B&B 夹逼计算 cr(G) 写入证书 exactness 块（需 `stdraw[solver]`） |
-| `--from-layout` | — | 手动布局 JSON（demo-2d.html「导出布局」产物或 layout.json 子集：节点 id→x,y + viewBox [+ edges[].waypoints]）。按手动坐标跑同一布线+证书管线，硬门口径不变、如实评分 |
-| `--compare-auto` | off | 配合 `--from-layout`：同图另跑自动布局到 `<outdir>-compare-auto/`，输出双证书对比 `compare-auto.json` |
-| `--cld` | — | layout-diff：图源（.cld/.json），启用语义级（回路归属/聚拢） |
-| `--diff-out` | — | layout-diff：机器可读 JSON 输出路径 |
+| `--outdir` | `stdraw-out` | output directory |
+| `--recipe {auto,ortho}` | `auto` | auto = auto-v2 (straight/arc lines + hard gates + mode-based placement); ortho = ortho-v1 (constructive, frozen behavior, pin-safe) |
+| `--linestyle {straight,arc}` | `straight` | auto recipe line style (arc = all-arc preference) |
+| `--skip-3d` | off | run the 2D layer only |
+| `--solids` | `sphere,cube,tetra,cone` | 3D solid list (comma separated) |
+| `--pitch` | 56 | row pitch px; raising it for small graphs (e.g. 62) makes the clearance gates easier |
+| `--name` | the DSL graph name | graph name in the certificate |
+| `--exact` | off | exact crossing-number layer: B&B squeeze computes cr(G) into the certificate exactness block (needs `stdraw[solver]`) |
+| `--from-layout` | — | manual layout JSON (a demo-2d.html "Export layout" product or a layout.json subset: node id->x,y + viewBox [+ edges[].waypoints]). Runs the same routing + certificate pipeline on manual coordinates, hard-gate caliber unchanged, graded honestly |
+| `--compare-auto` | off | with `--from-layout`: also runs the automatic layout of the same graph into `<outdir>-compare-auto/`, outputting the dual-certificate comparison `compare-auto.json` |
+| `--cld` | — | layout-diff: graph source (.cld/.json), enables the semantic layer (loop membership / cohesion) |
+| `--diff-out` | — | layout-diff: machine-readable JSON output path |
 
-示例：
+Examples:
 
 ```bash
 stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62
@@ -180,154 +223,184 @@ stdraw layout model.cld --outdir out-manual --skip-3d --from-layout graph-manual
 stdraw layout-diff out/layout.json out-manual/layout.json --cld model.cld --diff-out diff.json
 ```
 
-## 输入格式（.cld DSL）
+## Input format (.cld DSL)
 
-行导向文本，`#` 起注释。最小闭环 = 变量 / 极性边 / 回路标签（分组可选；
-布局层不消费分组——排布只由关系决定）：
+Line-oriented text, `#` starts a comment. Minimal closed loop = variables /
+polarity edges / loop tags (groups optional; the layout layer does not
+consume groups — placement is decided by relations alone):
 
 ```ld
-graph "图名"
-var rate "采纳率"                       # 变量（先声明后引用）
-rate -> + adopters @loops R1,B1        # 极性边（+ 同向 / - 反向）+ 参与的回路
-loop r1 "采纳扩散" "R" [rate, adopters, word]   # 声明回路：节点序列 + 期望类型 R/B
+graph "graph name"
+var rate "adoption rate"                  # variable (declare before referencing)
+rate -> + adopters @loops R1,B1           # polarity edge (+ same sign / - opposite) + participating loops
+loop r1 "adoption diffusion" "R" [rate, adopters, word]   # declared loop: node sequence + expected kind R/B
 ```
 
-回路标签不是注释——lint 层会对照独立枚举的全图回路验证闭合性与 R/B 奇偶。
-完整语法：[docs/dsl-spec-v0.1.md](docs/dsl-spec-v0.1.md)。也接受 JSON 图模型
-（`nodes`/`edges`/`loops`，结构同 `graph.json` 输出）。
+Loop tags are not comments — the lint layer verifies closure and R/B parity
+against an independently enumerated set of all graph loops.
+Full syntax: [docs/dsl-spec-v0.1.md](docs/dsl-spec-v0.1.md). JSON graph
+models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
+`graph.json` output).
 
-## 输出（全部落在 `--outdir`）
+## Outputs (all under `--outdir`)
 
-| 文件 | 内容 | agent 怎么用 |
+| File | Content | How agents use it |
 |---|---|---|
-| `graph.json` / `graph.cld` | 图模型正规化 + DSL 往返文本 | 下游程序化消费 |
-| `layout.json` | 2D 交付坐标（全整数、2px 网格）；边带 `loop_kinds`/`loop_color` 与布线 `kind`（line/arc/vg/poly/waypoints）及 `via` 折点 | 渲染 / 复算 |
-| `geometry_report.json` | 几何自检（CI 门禁形态），`fail>0` 时 CLI exit 1 | **CI 门禁**（断言 fail==0） |
-| `certificate.json` | 指标 + 门禁 + 报告项 + 诚实分级 + `placement` 排布模式 | **质量断言**（见下） |
-| `loops_audit.json` | 环路审计：声明/闭合/枚举/问题 | 断言 `summary.problems == 0` |
-| `demo-2d.html` | 2D 交付页（证书内嵌 + 拖拽微调层） | 直接给人看/打印 |
-| `positions3d.json` / `demo-3d.html` | 3D 各形体坐标 + 交互页 | demo-3d 需与仓内 `assets/` 相对路径同仓 |
-| `compare-auto.json`（`--compare-auto` 时） | 手动 vs 自动双证书对比 | 量化引擎与人的审美距离 |
+| `graph.json` / `graph.cld` | normalized graph model + DSL round-trip text | downstream programmatic consumption |
+| `layout.json` | 2D delivered coordinates (all integers, 2px grid); edges carry `loop_kinds`/`loop_color` and route `kind` (line/arc/vg/poly/waypoints) plus `via` fold points | rendering / recomputation |
+| `geometry_report.json` | geometry self-checks (CI gate form), CLI exits 1 when `fail>0` | **CI gate** (assert fail==0) |
+| `certificate.json` | metrics + gates + report items + honest grade + `placement` mode | **quality assertion** (below) |
+| `loops_audit.json` | loop audit: declared / closed / enumerated / problems | assert `summary.problems == 0` |
+| `demo-2d.html` | 2D deliverable page (embedded certificate + drag touch-up layer) | directly human-viewable / printable |
+| `positions3d.json` / `demo-3d.html` | 3D per-solid coordinates + interactive page | demo-3d needs the in-repo `assets/` relative path |
+| `compare-auto.json` (with `--compare-auto`) | manual vs automatic dual-certificate comparison | quantifies the aesthetic distance between engine and human |
 
-## 证书怎么读（诚实分级语义）
+## How to read the certificate (honest grading semantics)
 
-`certificate.json`：
+`certificate.json`:
 
-- **metrics**：crossings / box_press_1px / edge_box_min_clear / min_card_gap /
-  spacing_cv / row_align_rate（模式不适用时**如实 null**，如环形/纵列）+
-  报告指标 loop_cohesion_spread（回路聚拢）、center_offset_x、
-  line_kind_counts、ring_spacing_cv / ring_template_deviation（环形口径）；
-- **gates（硬门，按 `placement` 模式切换）**：以
-  `demos/classic-certificate.json` 实测（spine-wing 模式）为例，11 门
-  **11/11 通过**——box_press_zero / edge_box_clear_ge_16 / anchors_smooth /
+- **metrics**: crossings / box_press_1px / edge_box_min_clear / min_card_gap /
+  spacing_cv / row_align_rate (**honestly null** when inapplicable to the
+  mode, e.g. ring/column) + report metrics loop_cohesion_spread (loop
+  cohesion), center_offset_x, line_kind_counts, ring_spacing_cv /
+  ring_template_deviation (ring calibers);
+- **gates (hard gates, switched by `placement` mode)**: as measured on
+  `demos/classic-certificate.json` (spine-wing mode), 11 gates
+  **11/11 passed** — box_press_zero / edge_box_clear_ge_16 / anchors_smooth /
   min_gap_ge_16 / cv_le_035 / spine_axis_le_2px / midline_adherence_le_2px /
   symmetry_mirror_le_2px / mutual_pairs_separated / lines_no_coincidence /
-  routing_consistent（gates 键集随 placement 模式切换，以实测 JSON 为准）；
-- **reports（报告项，非硬门）**：`crossings_zero`（软目标：排布规律达标时
-  允许 ≤2 交叉）与 `row_align_ge_060`；分级语义不受影响；
-- **grade**：
+  routing_consistent (the gate key set switches with the placement mode; the
+  measured JSON is authoritative);
+- **reports (report items, not hard gates)**: `crossings_zero` (soft target:
+  <= 2 crossings allowed when placement regularity holds) and
+  `row_align_ge_060`; grading semantics are unaffected;
+- **grade**:
 
-| grade | 语义 |
+| grade | semantics |
 |---|---|
-| `最优` | 排布硬门全过 + 线 0 交叉（auto 配方为优化结果，非定理保证；ortho 配方为定理保证） |
-| `其次` | 排布硬门全过 + 交叉 ≤2 处（`crossing_details` 给坐标供复核） |
-| `最次` | 3D 升维交付（2D 层不适用或被放弃时） |
-| `未获证书` | 其余情况——**如实不评级**。这不是错误，是诚实边界 |
+| `best` | all placement hard gates pass + 0 line crossings (auto recipe: an optimization result, not a theorem guarantee; ortho recipe: theorem-guaranteed) |
+| `second` | all placement hard gates pass + <= 2 crossings (`crossing_details` gives coordinates for review) |
+| `3d` | 3D dimension-lift delivery (when the 2D layer is inapplicable or abandoned) |
+| `uncertified` | everything else — **honestly ungraded**. This is not an error; it is the honest boundary |
 
-铁律：stdraw **绝不宣称任意图 0 交叉**。CLD 环多常不可平面，0 交叉有数学
-边界。agent 向用户转述时**必须原样传达分级**——拿到「未获证书」不许说成
-「完成了」。
+Iron rule: stdraw **never claims 0 crossings for arbitrary graphs**. CLDs
+are often non-planar; 0 crossings has a mathematical boundary. When relaying
+to users, agents **must convey the grade verbatim** — receiving
+"uncertified" must never be reported as "done".
 
-典型断言（agent / CI 通用）：
+Typical assertions (agent / CI alike):
 
 ```python
 cert = json.load(open("out/certificate.json", encoding="utf-8"))
-assert cert["grade"] == "最优"          # 或按需 >= "其次"
+assert cert["grade"] == "best"            # or >= "second" as needed
 geo = json.load(open("out/geometry_report.json", encoding="utf-8"))
 assert geo["summary"]["fail"] == 0
 audit = json.load(open("out/loops_audit.json", encoding="utf-8"))
 assert audit["summary"]["problems"] == 0
 ```
 
-## 确定性
+## Determinism
 
-同输入同输出（逐字节一致，含 3D 指派与 HTML）。布局无 RNG，CP-SAT 单
-worker + 固定种子；n>10 的 CP-SAT 定位用**确定性时间预算**
-（`max_deterministic_time=8`，操作计数口径而非墙钟——同版本同输入在任何
-机器上同一 incumbent；`layout.json` meta 的 `solver_status`/
-`solver_det_budget` 如实标注）。产出文件可以安全进版本库，diff 干净。
+Same input, same output (byte-identical, incl. 3D assignments and HTML).
+Layout has no RNG; CP-SAT single worker + fixed seed; CP-SAT placement for
+n>10 uses a **deterministic time budget** (`max_deterministic_time=8`, an
+operation-count caliber rather than wall clock — the same version on the
+same input yields the same incumbent on any machine; `layout.json` meta's
+`solver_status`/`solver_det_budget` are honestly marked). Output files can
+safely enter the version library with clean diffs.
 
-## 基准对比摘要（benchmarks/，protocol 见 REPORT.md §2）
+## Benchmark summary (benchmarks/, protocol in REPORT.md section 2)
 
-语料 = 19 张经典 CLD + 80 张固定种子随机稀疏图 × {stdraw ortho / stdraw
-auto / auto+精确层} × {Graphviz 16.1.0 dot/neato/sfdp, ELK layered}，六指标
-同源实现、全部原始评测 JSON 留证 `benchmarks/raw/`。**测量基点**：stdraw
-auto/auto-exact 为 WS5 性能修复后引擎（b4ea801+）重测；Graphviz/ELK 基线
-与 stdraw-ortho 沿用 WS4 同机实测。
+Corpus = 19 classic CLDs + 80 fixed-seed random sparse graphs x {stdraw
+ortho / stdraw auto / auto+exact layer} x {Graphviz 16.1.0 dot/neato/sfdp,
+ELK layered}, six metrics from one same-source implementation, all raw
+evaluation JSON archived in `benchmarks/raw/`. **Measurement base point**:
+stdraw auto/auto-exact re-measured on the post-WS5-performance-fix engine
+(b4ea801+); Graphviz/ELK baselines and stdraw-ortho carried over from WS4
+same-machine measurements.
 
-classic 均值（REPORT.md §7）：
+Classic means (REPORT.md section 7):
 
-| 工具 | 交叉 | 框压线 | 净距违规 | CV | 行对齐 | 耗时s | 成功率 |
+| Tool | Crossings | Box press | Clearance violations | CV | Row align | Time s | Success |
 |---|---|---|---|---|---|---|---|
-| stdraw·ortho(构造法) | 0.0 | 1.4 | 1.7 | 0.296 | 0.48 | 0.01 | 19/19 |
-| stdraw·auto(WS3布线) | 0.2 | **0.0** | **0.0** | 0.133 | 0.34 | 10.02 | 19/19 |
-| stdraw·auto+WS2(精确层) | 0.2 | **0.0** | **0.0** | 0.133 | 0.34 | 10.42 | 19/19 |
+| stdraw·ortho (constructive) | 0.0 | 1.4 | 1.7 | 0.296 | 0.48 | 0.01 | 19/19 |
+| stdraw·auto (WS3 routing) | 0.2 | **0.0** | **0.0** | 0.133 | 0.34 | 10.02 | 19/19 |
+| stdraw·auto+WS2 (exact layer) | 0.2 | **0.0** | **0.0** | 0.133 | 0.34 | 10.42 | 19/19 |
 | Graphviz dot | 0.2 | 0.1 | 2.6 | 0.139 | 0.34 | 0.03 | 19/19 |
 | Graphviz neato | **0.1** | 1.2 | 3.1 | 0.080 | 0.05 | 0.06 | 19/19 |
 | Graphviz sfdp | 0.3 | **0.0** | **0.0** | 0.131 | 0.37 | 0.03 | 19/19 |
 | ELK layered | **0.1** | **0.0** | 3.0 | 0.208 | 0.41 | 0.07 | 19/19 |
 
-诚实结论（赢的写赢，输的写输）：
+Honest conclusions (wins stated as wins, losses as losses):
 
-- **赢的域**：classic 上「框压线=0 且净距违规=0」双零达成的工具只有
-  stdraw-auto（-exact）与 sfdp，且该组内 stdraw 交叉数更低（0.16 vs
-  0.26）；同输入同框尺寸的 CLD 卡片画法 + 硬门语义全维度同时达标是 stdraw
-  的比较优势域；
-- **输的域**：交叉数全场最低**不成立**（neato/ELK 均值 0.05 更低，代价是
-  破坏排布硬门）；运行时间慢基线 **2~3 个数量级**（10.0s vs 0.03–0.07s）；
-- **随机稀疏族**：n=20/30 出图 20/20、n=50 出图 19/20，但框压线/净距非 0
-  （布线是惩罚最小化非定理保证）；「全规模最好」主张不成立；
-- **OGDF**：未同题运行（无构建工具链，如实评估），不参与胜负判定。
+- **Where it wins**: on the classic corpus, the only tools achieving the
+  double zero of "box press = 0 AND clearance violations = 0" are
+  stdraw-auto (-exact) and sfdp, and within that group stdraw has fewer
+  crossings (0.16 vs 0.26); CLD card drawing with same-input same-box
+  dimensions + hard-gate semantics met simultaneously across all dimensions
+  is stdraw's comparative advantage domain;
+- **Where it loses**: "lowest crossings overall" **does not hold** (neato/ELK
+  average 0.05 lower, at the cost of breaking placement hard gates); runtime
+  is **2-3 orders of magnitude** slower than baselines (10.0s vs
+  0.03-0.07s);
+- **Random sparse family**: n=20/30 produce 20/20 figures, n=50 19/20, but
+  box press / clearance are non-zero (routing is penalty minimization, not a
+  theorem guarantee); a "best at all scales" claim does not hold;
+- **OGDF**: not run on the same problem (no build toolchain, honestly
+  assessed), not part of the win/loss verdict.
 
-## 局限（诚实边界，转述给用户时不要夸大）
+## Limitations (honest boundaries — do not overstate when relaying to users)
 
-- 交叉为软目标（v0.6.0 起）：排布规律优先，硬门全过时 ≤2 交叉可接受
-  （「最优」级仍需 0 交叉）；ortho 配方不可平面输入抛 `NotPlanarError`，
-  2D 平面化降级在路线图；
-- ortho-v1 允许「无关线遮挡式穿卡」（卡片不透明，v0.1 设计口径），证书如实
-  计数；auto-v2 的框压线是硬门 = 0；
-- 3D 层不做 2D 交叉承诺；
-- 随机稀疏图 n≥20：定位为 8det 预算内最优 incumbent（非证到最优），布线
-  框压线/净距以 REPORT §4 实测为准（非 0）；`_polish` 回喂仅 n≤10 执行；
-- 局部搜索邻域限于行内平移与相邻交换，个别图最后一处交叉可能需更大邻域
-  （路线图 M3）。
+- Crossings are a soft target (since v0.6.0): placement regularity first;
+  with all hard gates passed, <= 2 crossings are acceptable (the "best"
+  grade still requires 0 crossings); the ortho recipe raises
+  `NotPlanarError` on non-planar input; 2D planarization degradation is on
+  the roadmap;
+- ortho-v1 allows "unrelated wires occluded under cards" (cards opaque, the
+  v0.1 design caliber), honestly counted in the certificate; auto-v2's
+  box-over-line is a hard gate = 0;
+- The 3D layer makes no 2D crossing promise;
+- Random sparse graphs n>=20: positioned as the best incumbent within the
+  8det budget (not proven optimal); routing box press / clearance follow
+  REPORT section 4 measurements (non-zero); `_polish` feedback runs only for
+  n<=10;
+- The local-search neighborhood is limited to in-row shifts and adjacent
+  swaps; the last crossing of some graphs may need a larger neighborhood
+  (roadmap M3).
 
-## MCP server（预留位）
+## MCP server (placeholder)
 
-MCP server 形态在路线图中（规划中，未实现）。当前 agent 集成走 CLI + JSON
-文件：任何能跑命令、读 JSON 的 agent 都能完整使用 stdraw。实现后本节会
-更新接入方式。
+The MCP server form is on the roadmap (planned, not implemented). Current
+agent integration goes through CLI + JSON files: any agent that can run
+commands and read JSON can use stdraw fully. When implemented, this section
+will be updated with the integration method.
 
-## 版本
+## Version
 
-当前 **0.7.5**（`stdraw.__version__`，与 `pyproject.toml` 一致）。DSL 为
-v0.1 草案，向后兼容升级会同步 bump 与规范文档。
+Current **0.7.5** (`stdraw.__version__`, consistent with `pyproject.toml`).
+The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
+the spec documents.
 
-- **v0.7.5 版本收尾**（落地卡 ref-scrubbed）：pyproject / __init__ / README
-  双语徽章统一 0.7.4→0.7.5；证书摘要字节对拍（版本串不进输出字节）；同批
-  落地 AGENTS.md 口径同步（gates 示例改 spine-wing 11 门、锚点带内索引行、
-  版本历史补 v0.7.2–v0.7.5，承接 ref-scrubbed 已批 diff）；发布面卡号净化
-  （ref-scrubbed，dbe2890）；
-- **v0.7.4 版本收尾**（落地卡 ref-scrubbed）：发布面对齐（README 图注 /
-  auto-v2 描述改模式化口径、SKILL.md 模式清单补 bowtie-vertex / spine-wing、
-  demos/classic-certificate.json 重渲 spine-wing 11 门）；批量切换核验 =
-  19 图 sweep（HEAD 69d49af）仅 classic-cld 命中 spine-wing，bullwhip /
-  tragedy-of-the-commons 为 column-chain 同构族不触发（W≤2）、
-  limits-to-growth rest=0 不触发；
-- **v0.7.3 锚点带内 CI 硬门 / v0.7.2 交付件重渲染 + demo 新鲜度门**
-  （ref-scrubbed 系返修）；
-- **v0.7.1 纵柱+翼位 spine-wing**（落地卡 ref-scrubbed）：判定条件、排布模板
-  与规律门口径正本 = [docs/layout-modes.md](docs/layout-modes.md) §纵柱+翼位，
-  本文不放副本；
-- **v0.7.0 领结共点 bowtie-vertex**（落地卡 ref-scrubbed，美学 v3）：口径正本
-  = 同上 §领结共点对称。
+- **v0.7.5 version closure** (landing card ref-scrubbed): pyproject / __init__ /
+  README bilingual badges unified 0.7.4->0.7.5; certificate summary byte
+  cross-check (the version string never enters output bytes); landed in the
+  same batch — AGENTS.md caliber sync (gates example switched to spine-wing
+  11 gates, anchor mid-band index row, version history filled for
+  v0.7.2-v0.7.5, taking over ref-scrubbed's approved diff); publishing-face
+  card-id sanitization (ref-scrubbed, dbe2890);
+- **v0.7.4 version closure** (landing card ref-scrubbed): publishing-face
+  alignment (README captions / auto-v2 description switched to mode-based
+  caliber, SKILL.md mode list gained bowtie-vertex / spine-wing,
+  demos/classic-certificate.json re-rendered to spine-wing 11 gates);
+  batch-switch verification = 19-graph sweep (HEAD 69d49af) with only
+  classic-cld hitting spine-wing, bullwhip / tragedy-of-the-commons being
+  column-chain isomorphic families that don't trigger (W<=2),
+  limits-to-growth rest=0 not triggering;
+- **v0.7.3 anchor mid-band CI hard gate / v0.7.2 deliverable re-render +
+  demo freshness gate** (ref-scrubbed series reworks);
+- **v0.7.1 spine-wing** (landing card ref-scrubbed): detection conditions,
+  placement template and regularity-gate caliber original =
+  [docs/layout-modes.md](docs/layout-modes.md) (Chinese) section spine-wing;
+  no copy in this document;
+- **v0.7.0 bowtie-vertex** (landing card ref-scrubbed, aesthetics v3): caliber
+  original = same document, section bowtie-vertex symmetric.

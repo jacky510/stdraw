@@ -1,33 +1,44 @@
 # -*- coding: utf-8 -*-
-"""槽位离散化放置层（WS2 第 6 项）：结构检测驱动的规律槽位。
+"""Slot-discretized placement layer (WS2 item 6): structure-detection-driven regular slots.
 
-设计（docs/crossing-exact.md §6 同源）：
+Design (same source as docs/crossing-exact.md §6):
 
-- **结构驱动槽型**：
-    cycle 图 → 正 k 边形槽位（角度均分 i·2π/k；环序指派使环边全在凸包上
-               → 交叉按构造 = 0；正多边形偏差按构造 = 0）——构造法，无需求解器；
-    chain 图 → 共线等距槽位（直线度按构造 = 1；相邻边几何重叠由下游布线层
-               以弧线消解，中心口径的交叉/规律指标不受影响）——构造法；
-    general  → 分层行槽位 + CP-SAT（唯一需要求解器的分支）。
-- **CP-SAT 分支硬约束**（违反即不可行）：
-    1) 行内卡净距 ≥ min_gap（≥16px 门留余量）；
-    2) 框不压线（含 1px 余量）：跨行边在中间行处的插值 x 与无关框缘
-       距离 ≥ CLEARANCE（t ∈ {1/2,1/3,2/3,3/4,1/4} 精确线性化，
-       其余插值系数用保守双端约束）；
-    3) viewBox 内：槽位域限定。
-- **CP-SAT 目标**：min 60·Σ交叉 + Σ|Δx|（交叉为主、行内均匀为辅——
-   与 auto-v2 定位目标同构）。
-- **确定性**：num_workers=1 + seed 42；不设墙钟时限（时限随负载漂移）。
-- **交付纪律**：返回坐标后由调用方跑 metrics/check 硬门复核，任何违例
-  回退 auto-v2 构造法——本层绝不带伤交付。
-- **诚实边界**：cycle/chain 分支的「规律最优」是相对槽位模型类而言
-  （正多边形槽 + 声明环序指派），不是全排列最优性证明；general 分支的
-  交叉目标是行槽保守口径（近距不算），求解到 OPTIMAL 才是该口径最优。
+- **Structure-driven slot shapes**:
+    cycle graph -> regular k-gon slots (angles evenly split as i*2pi/k;
+               cycle-order assignment puts all ring edges on the convex hull
+               -> crossings = 0 by construction; regular-polygon deviation = 0
+               by construction) — constructive, no solver needed;
+    chain graph -> collinear equidistant slots (straightness = 1 by
+               construction; geometric overlap of adjacent edges is resolved
+               downstream by the routing layer with arcs; the center-caliber
+               crossing/regularity metrics are unaffected) — constructive;
+    general  -> layered row slots + CP-SAT (the only branch that needs a solver).
+- **CP-SAT branch hard constraints** (violation = infeasible):
+    1) in-row card gap >= min_gap (headroom over the >=16px gate);
+    2) boxes must not press lines (with 1px headroom): the interpolated x of a
+       cross-row edge at intermediate rows stays >= CLEARANCE from unrelated
+       box edges (exact linearization for t in {1/2,1/3,2/3,3/4,1/4},
+       conservative two-sided constraints for the other interpolation factors);
+    3) inside the viewBox: slot-domain bounding.
+- **CP-SAT objective**: min 60*sum(crossings) + sum(|dx|) (crossings primary,
+   in-row evenness secondary — isomorphic to the auto-v2 placement objective).
+- **Determinism**: num_workers=1 + seed 42; no wall-clock limit (a wall-clock
+   limit drifts with load).
+- **Delivery discipline**: after coordinates are returned the caller re-runs the
+  metrics/check hard gates; any violation
+  falls back to the auto-v2 constructive path — this layer never delivers
+  while injured.
+- **Honest boundary**: "regularity-optimal" for the cycle/chain branches is
+  relative to the slot-model class
+  (regular-polygon slots + the declared cycle-order assignment), not a proof
+  of optimality over all permutations; the crossing objective of the general
+  branch is the conservative row-slot caliber (close proximity not counted),
+  and only solving to OPTIMAL makes it optimal for that caliber.
 """
 import math
 
 SLOT = 24
-CLEARANCE = 16 + 1     # 16px 硬门 + 1px 余量
+CLEARANCE = 16 + 1     # 16px hard gate + 1px headroom
 
 
 def has_solver():
@@ -40,9 +51,9 @@ def has_solver():
 
 def place(graph, widths, rows=None, card_h=44, pitch=80, top=92, margin=44,
           min_gap=18, target_w=1280):
-    """槽位放置入口。返回 {x, y, viewBox, structure, engine} 或 None（回退）。
+    """Slot placement entry point. Returns {x, y, viewBox, structure, engine} or None (fallback).
 
-    graph: stdraw.model.Graph；widths: {v: 卡宽}；rows: 分层行（general 用）。
+    graph: stdraw.model.Graph; widths: {v: card width}; rows: layered rows (used by general).
     """
     from . import regularity
     nodes = graph.node_ids()
@@ -63,10 +74,13 @@ def place(graph, widths, rows=None, card_h=44, pitch=80, top=92, margin=44,
 
 
 def _place_cycle(cyc, target_w):
-    """正 k 边形槽位（角度均分，环序指派）。交叉 0、偏差 0 按构造成立。
+    """Regular k-gon slots (angles evenly split, cycle-order assignment).
+    Crossings 0 and deviation 0 hold by construction.
 
-    量化用 2px 网格（交付坐标口径）：24px 粗量化会显著扭曲正多边形，
-    抬高 radial/angular CV——规律指标跑在交付坐标上，量化必须够细。"""
+    Quantization uses a 2px grid (the delivered-coordinate caliber): coarse
+    24px quantization visibly distorts the regular polygon and inflates
+    radial/angular CV — regularity metrics run on delivered coordinates, so
+    the quantization must be fine enough."""
     k = len(cyc)
     radius = max(150, min(420, k * 34))
     cx = max(k * 48, target_w) // 2
@@ -84,7 +98,7 @@ def _place_cycle(cyc, target_w):
 
 
 def _place_chain(chain, widths, margin):
-    """共线等距槽位（声明链序）。直线度 1 按构造成立。"""
+    """Collinear equidistant slots (declared chain order). Straightness 1 holds by construction."""
     cur = max(margin, SLOT * 2)
     xs, ys = {}, {}
     for v in chain:
@@ -97,7 +111,7 @@ def _place_chain(chain, widths, margin):
 
 def _place_layered(graph, nodes, edges, widths, rows, pitch, top, margin,
                    min_gap, target_w):
-    """分层行槽位 + CP-SAT（唯一需要求解器的分支）。"""
+    """Layered row slots + CP-SAT (the only branch that needs a solver)."""
     if not rows:
         return None
     from ortools.sat.python import cp_model
@@ -106,7 +120,7 @@ def _place_layered(graph, nodes, edges, widths, rows, pitch, top, margin,
     m = cp_model.CpModel()
     xs = {v: m.NewIntVar(margin // SLOT, n_slots - 1, f"sx_{v}") for v in nodes}
 
-    # 硬约束 1：行内卡净距（槽位尺度）
+    # Hard constraint 1: in-row card gap (slot scale)
     for vs in rows:
         for i in range(len(vs)):
             for j in range(i + 1, len(vs)):
@@ -117,7 +131,7 @@ def _place_layered(graph, nodes, edges, widths, rows, pitch, top, margin,
                 m.AddAbsEquality(d, xs[u] - xs[w])
                 m.Add(d >= need)
 
-    # 硬约束 2：跨行边不压无关框（含 1px 余量）
+    # Hard constraint 2: cross-row edges must not press unrelated boxes (with 1px headroom)
     for (a, b) in edges:
         ra, rb = row_of[a], row_of[b]
         if ra == rb:
@@ -136,7 +150,7 @@ def _place_layered(graph, nodes, edges, widths, rows, pitch, top, margin,
                     break
             slack = int(math.ceil(CLEARANCE / SLOT)) + 1
             if denom:
-                # x_at = xa + (xb − xa)·p_/denom；约束两边乘 denom 整数化
+                # x_at = xa + (xb - xa)*p_/denom; multiply both sides of the constraint by denom to integerize
                 left = m.NewBoolVar("")
                 right = m.NewBoolVar("")
                 expr = denom * xs[a] + p_ * (xs[b] - xs[a])
@@ -155,7 +169,7 @@ def _place_layered(graph, nodes, edges, widths, rows, pitch, top, margin,
                 m.Add(xs[b] >= xv + slack).OnlyEnforceIf(right_b)
                 m.AddBoolOr([left_b, right_b])
 
-    # 目标：交叉（行区间交错 + 端点相对序相反，保守近距不算）+ Σ|Δx|
+    # Objective: crossings (row-interval interleaving + reversed endpoint relative order, conservative, close proximity not counted) + sum(|dx|)
     einfo = []
     for (a, b) in edges:
         ra, rb = row_of[a], row_of[b]
@@ -192,8 +206,8 @@ def _place_layered(graph, nodes, edges, widths, rows, pitch, top, margin,
         lens.append(d)
     m.Minimize(60 * sum(cross_terms) + sum(lens))
     solver = cp_model.CpSolver()
-    solver.parameters.num_workers = 1      # 确定性铁律
-    solver.parameters.random_seed = 42     # 不设墙钟：时限随负载漂移
+    solver.parameters.num_workers = 1      # determinism iron rule
+    solver.parameters.random_seed = 42     # no wall-clock limit: time limits drift with load
     st = solver.Solve(m)
     if st not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         return None

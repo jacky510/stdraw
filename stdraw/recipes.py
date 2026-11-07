@@ -1,18 +1,24 @@
 # -*- coding: utf-8 -*-
-"""配方（recipe）注册表 —— 引擎对外行为的版本化接口。
+"""Recipe registry — the versioned interface to the engine's outward behavior.
 
-调用方**必须显式指定配方**（stdraw CLI 默认 auto-v2）：
-  - ortho-v1：可见性表示构造法（planar.py，正交竖线）。**行为冻结**，
-    生产调用方显式 pin 此配方——stdraw CI 以 tests/baselines/ 逐字节回归
-    保护（改 planar.py 必先过这条门）。
-    已知边界（legacy，如实声明）：允许无关线遮挡式穿卡；净距门禁 16px 靠调用方
-    --pitch 调参。后续质量修复只在 auto-v2 演进，不回写冻结层。
-  - auto-v2：分层 + 交叉数进目标 + 直线/弧线一等布线 + 新硬门
-    （框压线=0、边-框净距≥16px、锚点平滑、简单图规律性）。默认配方。
+Callers **must specify the recipe explicitly** (the stdraw CLI defaults to auto-v2):
+  - ortho-v1: visibility-representation construction (planar.py, orthogonal
+    vertical lines). **Behavior frozen**;
+    production callers explicitly pin this recipe — stdraw CI protects it with
+    byte-for-byte regression against tests/baselines/
+    (any change to planar.py must pass this gate first).
+    Known limitations (legacy, declared honestly): unrelated lines may pass
+    through cards and occlude them; the 16px clearance gate is left for
+    callers to tune via --pitch. Future quality fixes evolve only in auto-v2,
+    never backported to the frozen layer.
+  - auto-v2: layered + crossing count in the objective + straight/arc
+    first-class routing + new hard gates
+    (box press=0, edge-box clearance>=16px, anchor smoothing, simple-graph
+    regularity). Default recipe.
 
-用法（import 形态）：
+Usage (import form):
     import stdraw
-    v4 = stdraw.recipes.run("ortho-v1", graph, config)      # 生产行为 pin
+    v4 = stdraw.recipes.run("ortho-v1", graph, config)      # production behavior pin
     v4 = stdraw.recipes.run("auto-v2", graph, linestyle="arc")
 """
 from . import __version__
@@ -41,4 +47,4 @@ def run(recipe: str, graph, config=None, linestyle: str = "straight") -> dict:
         return ortho_v1(graph, config)
     if recipe == "auto-v2":
         return auto_v2(graph, config, linestyle)
-    raise ValueError(f"未知配方 {recipe!r}；可选 {sorted(RECIPE_VERSIONS)}")
+    raise ValueError(f"unknown recipe {recipe!r}; available {sorted(RECIPE_VERSIONS)}")

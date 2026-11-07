@@ -77,12 +77,12 @@
  "gates_passed": "11/11",
  "reports": {
   "crossings_zero": true,
-  "crossings_note": "软目标：排布规律达标时允许 ≤2 交叉（产品定调：部分线相交可以接受，秩序与优美优先）；分级口径不变（最优=硬门全过+0 交叉）",
+  "crossings_note": "soft target: <=2 crossings allowed when placement regularity holds (product call: some line intersection is acceptable; order and elegance come first); grading caliber unchanged (best = all hard gates + 0 crossings)",
   "row_align_ge_060": true,
-  "row_align_note": "报告项：行对齐不再一票否决（手动样本 row_align delta≈0）"
+  "row_align_note": "report item: row alignment is no longer a veto (hand-pulled samples show row_align delta ~= 0)"
  },
- "grade": "最优",
- "grade_note": "硬门全过（框压线0/净距≥16/锚点平滑/规律）+ 线 0 交叉",
+ "grade": "best",
+ "grade_note": "all hard gates passed (box press 0 / clearance >=16 / anchors smooth / regularity) + 0 line crossings",
  "proven_optimal": null,
  "gap": null,
  "exactness": {
@@ -93,7 +93,7 @@
   "lb": null,
   "coverage": null,
   "method": "crossing-number exactness not computed (pass --exact to compute)",
-  "scope": "proven_optimal 只相对 docs/crossing-exact.md §1-5 定义的模型类成立：good-drawing 交叉数口径（相邻边不交叉、每对至多一次、无三边共点）、安全缩减后的 2-边-连通核族、B&B 覆盖的可平面子图 × 全嵌入族。不虚称全体指标集或任意画法空间的最优性。"
+  "scope": "proven_optimal holds only relative to the model class defined in docs/crossing-exact.md sections 1-5: the good-drawing crossing-number caliber (adjacent edges do not cross, each pair at most once, no three edges through one point), the 2-edge-connected core family after safe reduction, and the planar-subgraph x full-embedding family covered by the B&B. No optimality claim is made over the full metric set or an arbitrary drawing space."
  },
  "regularity": {
   "structure": "general",
@@ -103,14 +103,14 @@
   "dominant": "symmetry_axis_alignment"
  },
  "honest_notes": [
-  "硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性",
-  "互环对（a↔b 双向边）两线最小间距 ≥4px（透镜双弧/平行偏移/外围绕行，禁止重合成双箭头线；穿卡计数按边×卡去重）",
-  "线-线视觉重合对数=0（任意两线 <1px 并行同走 >8px 判重合；端点锚点处的瞬时会合不计；机器可查指标）",
-  "交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，不一致拒发证书",
-  "布线数学：绕障 = 净距膨胀障碍可见性图 Dijkstra 最短路（图上精确最优；相对圆角障碍连续空间真最短路每贴角至多多 (2−π/2)·膨胀余量 px）；平滑 = 折角相切圆弧（G1 切线连续、曲率有界），凸角相切弧向障碍侧下探 r·(1/cos(θ/2)−1)，受膨胀余量约束",
-  "纵柱+翼位口径（v0.7.1）：中枢对纵柱严格垂直居轴（x 对齐 ≤2px 门）、翼位压中线水平带（贴靠 ≤2px 门）、翼外镜像对上下对称（镜像误差 ≤2px 门）——对拍手拉基准样本 classic-cld-growth-and-burden；判定=确定性拓扑度量（中枢对公共邻居 ≥3 + rest 次级簇可配对 + 主链长度占比 ≤0.5），详见 docs/layout-modes.md；纵柱边构造竖直直线，其余走 Router；行对齐率/列吸附报告不适用（如实 None）"
+  "Hard-gate caliber: box press = 0 (1px margin), edge-box clearance >= 16px, smooth anchors, simple-graph regularity",
+  "Mutual pairs (a<->b bidirectional edges): two-line minimum distance >= 4px (lens double-arc / parallel offset / outer detour; merging back into a double-arrowhead line is forbidden; card-piercing counting deduped per edge x card)",
+  "Line-line visual coincidence pairs = 0 (any two lines running in parallel within <1px over >8px count as coincident; momentary meetings at endpoint anchors excluded; machine-checkable metric)",
+  "Dual crossing accounting: the routing-theory per-edge hit count sum / 2 must equal the delivered-geometry recheck count; on mismatch the certificate is refused",
+  "Routing math: obstacle avoidance = clearance-inflated obstacle visibility graph Dijkstra shortest path (exactly optimal on the graph; vs the true continuous-space shortest path around rounded-corner obstacles, at most (2 - pi/2) x inflation margin px more per hugging corner); smoothing = tangent arcs at bends (G1 tangent-continuous, bounded curvature); convex tangent arcs dip toward the obstacle side by r*(1/cos(theta/2) - 1), bounded by the inflation margin",
+  "Spine-wing caliber (v0.7.1): hub pair strictly vertical on the spine axis (x alignment <= 2px gate), wings pressed onto the midline horizontal band (adherence <= 2px gate), outer mirror pairs symmetric top-to-bottom (mirror error <= 2px gate) — cross-checked against the hand-pulled reference sample classic-cld-growth-and-burden; detection = deterministic topological metrics (hub pair with >= 3 common neighbors + pairable rest secondary clusters + main-chain length share <= 0.5), see docs/layout-modes.md; spine edges constructed as vertical straight lines, the rest through the Router; row alignment / column snap reports inapplicable (honestly None)"
  ],
- "no_zero_crossing_claim_for_all_graphs": "CLD 环多常不可平面，交叉数是目标函数最小化项而非定理保证；本证书只对本图本布局成立",
+ "no_zero_crossing_claim_for_all_graphs": "CLDs are often non-planar; the crossing count is an objective-function minimization term, not a theorem guarantee. This certificate holds only for this graph and this layout",
  "spine_wing": {
   "spine": [
    "adopters",

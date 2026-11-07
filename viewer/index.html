@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>stdraw · 关系图形态查看器</title>
+<title>stdraw · CLD Form Viewer</title>
 <style>
   html,body{margin:0;height:100%;overflow:hidden;background:#0b0e14;font-family:"Microsoft YaHei",system-ui,sans-serif}
   #c{display:block;width:100%;height:100%}
@@ -11,7 +11,7 @@
        padding:10px 16px;background:rgba(11,14,20,.85);border-bottom:1px solid #263041;
        color:#e2e8f0;font-size:13px;z-index:10;flex-wrap:wrap}
   .bar h1{font-size:15px;margin:0;font-weight:600}
-  .bar .meta{display:none} /* 说明文字隐藏（数据仍写入，供自动化验证） */
+  .bar .meta{display:none} /* meta text hidden (data still written for automated verification) */
   .seg{display:flex;gap:0;border:1px solid #334155;border-radius:8px;overflow:hidden}
   .seg button{background:#1e293b;color:#e2e8f0;border:none;padding:5px 12px;font-size:13px;
        cursor:pointer;font-family:inherit;border-right:1px solid #334155}
@@ -48,34 +48,34 @@
 </head>
 <body>
 <div class="bar">
-  <h1> 关系图 · 形态查看器</h1>
+  <h1> CLD · Form Viewer</h1>
   <div class="seg" id="modes">
-    <button data-m="0" class="on">2D·零交叉</button>
-    <button data-m="1">2D·允许交叉</button>
-    <button data-m="2">3D·球面</button>
-    <button data-m="3">3D·力导向</button>
+    <button data-m="0" class="on">2D · Zero-Crossing</button>
+    <button data-m="1">2D · Crossings Allowed</button>
+    <button data-m="2">3D · Sphere</button>
+    <button data-m="3">3D · Force-Directed</button>
   </div>
   <span class="meta" id="meta">…</span>
-  <span class="leg"><span><span class="dot" style="background:#22d3ee"></span>＋ 同向</span>
-  <span><span class="dot" style="background:#fb923c"></span>− 反向</span></span>
-  <button class="plain" id="btnLoops">环路</button>
-  <button class="plain" id="btnShot">导出PNG快照</button>
-  <button class="plain" id="btnRot">自动旋转：关</button>
-  <button class="plain" id="btnReset">重置视角</button>
+  <span class="leg"><span><span class="dot" style="background:#22d3ee"></span>+ Same sign</span>
+  <span><span class="dot" style="background:#fb923c"></span>− Opposite sign</span></span>
+  <button class="plain" id="btnLoops">Loops</button>
+  <button class="plain" id="btnShot">Export PNG Snapshot</button>
+  <button class="plain" id="btnRot">Auto-rotate: Off</button>
+  <button class="plain" id="btnReset">Reset View</button>
 </div>
 <div id="loops">
-  <div class="lhead"><span>环路（自动枚举 · 短环=强反馈）</span><button id="loopClose">收起</button></div>
+  <div class="lhead"><span>Loops (auto-enumerated · short loop = strong feedback)</span><button id="loopClose">Close</button></div>
   <div id="loopList"></div>
 </div>
 <div class="hint" id="hint"></div>
 <canvas id="c"></canvas>
 <div id="webgl-fallback"><div class="card">
-  <h2>无法启用 WebGL，交互查看器不可用</h2>
+  <h2>WebGL could not be enabled — interactive viewer unavailable</h2>
   <p class="why" id="webgl-why"></p>
-  <p>本页四个形态（2D / 3D）全部由 WebGL 渲染，WebGL 被禁用或初始化失败时只会显示空白。
-  可以改用引擎的 <b>2D 静态形态</b>（内联 SVG，不依赖 WebGL）：</p>
-  <p><code>stdraw layout input.cld --outdir out</code>，然后打开 <code>out/demo-2d.html</code></p>
-  <p>或在浏览器设置中启用「硬件加速 / Use graphics acceleration when available」后刷新本页。</p>
+  <p>All four forms (2D / 3D) on this page are rendered with WebGL; when WebGL is disabled or fails to initialize, only a blank area would show.
+  Use the engine's <b>2D static form</b> instead (inline SVG, no WebGL needed):</p>
+  <p><code>stdraw layout input.cld --outdir out</code>, then open <code>out/demo-2d.html</code></p>
+  <p>Or enable "Hardware acceleration / Use graphics acceleration when available" in browser settings and reload this page.</p>
 </div></div>
 <script>
 /**
@@ -1147,14 +1147,14 @@ const ADJ = GRAPH.nodes.map(()=>[]);
 GRAPH.edges.forEach(e=>{ ADJ[idx[e.a]].push(idx[e.b]); ADJ[idx[e.b]].push(idx[e.a]); });
 const DEG = ADJ.map(a=>a.length);
 const POLI = {};
-GRAPH.edges.forEach(e=>{ POLI[e.a+"|"+e.b]=e.p; }); // 只按真实方向存：双向边两个方向各有自己的极性
+GRAPH.edges.forEach(e=>{ POLI[e.a+"|"+e.b]=e.p; }); // Store by true direction only: a bidirectional edge has its own polarity for each direction
 const COL_P = new THREE.Color(0x22d3ee), COL_M = new THREE.Color(0xfb923c);
 const colOf = (a,b)=>((POLI[a+"|"+b]||"+").includes("+")?COL_P:COL_M);
 const EIDX = {}; GRAPH.edges.forEach((e,i)=>{ EIDX[idx[e.a]+"|"+idx[e.b]]=i; });
 const DIRADJ = GRAPH.nodes.map(()=>[]);
 GRAPH.edges.forEach(e=>{ DIRADJ[idx[e.a]].push(idx[e.b]); });
 
-// ── 环路枚举（有向简单回路，起点=环内最小节点规范化，长度≤12，确定性） ──
+// ── Loop enumeration (directed simple cycles, canonical start = smallest node in loop, length ≤ 12, deterministic) ──
 function findLoops(){
   const loops=[];
   const dfs=(start,cur,path,visited)=>{
@@ -1182,7 +1182,7 @@ const LOOPS=(function(){
     for(let i=0;i<p.length;i++){
       const a=p[i], b=p[(i+1)%p.length];
       const ei=EIDX[a+"|"+b];
-      if(ei===undefined) return null; // 方向不完整的环（防御）
+      if(ei===undefined) return null; // Loop with incomplete edge directions (defensive)
       eidx.push(ei);
       if((POLI[ids[a]+"|"+ids[b]]||"+").includes("−")) neg++;
     }
@@ -1194,7 +1194,7 @@ const LOOPS=(function(){
   return out;
 })();
 
-// ── 球面槽位 + 确定性指派（3D·球面） ──────────────────────
+// ── Sphere slots + deterministic assignment (3D · Sphere) ──────────────────────
 function shapeSphere(n){
   const pts=[], ga=Math.PI*(3-Math.sqrt(5)), R=380;
   for(let i=0;i<n;i++){
@@ -1260,7 +1260,7 @@ function layoutForce(){
   return P;
 }
 
-// ── 标签卡 sprite：2D 按布局原始卡尺寸 1:1；3D 自适应 ─────
+// ── Label card sprites: 2D at 1:1 original layout card size; 3D auto-sized ─────
 function makeLabel(text, wW, hW){
   let cw, ch, fixed=false;
   if(wW&&hW){ cw=Math.round(wW*2); ch=Math.round(hW*2); fixed=true; }
@@ -1288,29 +1288,29 @@ function makeLabel(text, wW, hW){
   return sp;
 }
 
-// ── 场景 ─────────────────────────────────────────────────
-// F3-1：WebGL 可用性守卫——禁用/初始化失败时显示降级提示层，不再黑屏
+// ── Scene ─────────────────────────────────────────────────
+// F3-1: WebGL availability guard — show the fallback overlay on disable/init failure instead of a black screen
 function webglAvailable(){
   try{
-    if(!window.WebGLRenderingContext) return "浏览器不支持 WebGL（缺少 WebGLRenderingContext）";
+    if(!window.WebGLRenderingContext) return "Browser lacks WebGL support (missing WebGLRenderingContext)";
     const c=document.createElement("canvas");
     const gl=c.getContext("webgl")||c.getContext("experimental-webgl");
-    if(!gl) return "WebGL 上下文创建失败（可能被浏览器或系统禁用）";
+    if(!gl) return "Failed to create a WebGL context (possibly disabled by the browser or OS)";
     return null;
-  }catch(err){ return "WebGL 探测异常："+(err&&err.message||err); }
+  }catch(err){ return "WebGL probe exception: "+(err&&err.message||err); }
 }
 let renderer=null, webglFail=webglAvailable();
 if(webglFail===null){
   try{
     renderer=new THREE.WebGLRenderer({canvas:document.getElementById("c"),antialias:true,preserveDrawingBuffer:true});
-  }catch(err){ renderer=null; webglFail="WebGL 初始化失败："+(err&&err.message||err); }
+  }catch(err){ renderer=null; webglFail="WebGL initialization failed: "+(err&&err.message||err); }
 }
 if(!renderer){
   window.__webglFallback=webglFail;
   document.getElementById("webgl-why").textContent=webglFail;
   document.getElementById("webgl-fallback").style.display="flex";
   document.getElementById("hint").textContent="";
-  window.__ready=true; // 降级路径同样标记就绪（自动化探针用）
+  window.__ready=true; // Fallback path also marks ready (for automated probes)
 }else{
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 const scene=new THREE.Scene();
@@ -1320,7 +1320,7 @@ let HOME=new THREE.Vector3(0,0,1500);
 let P=null, group=null, MODE=0;
 
 function clearGroup(){ if(group){ scene.remove(group); group=null; } }
-function addSprites(dims){ // dims: null=3D 自适应；否则 [{w,h}]
+function addSprites(dims){ // dims: null = 3D auto-size; otherwise [{w,h}]
   const arr=[];
   GRAPH.nodes.forEach((n,i)=>{
     const d=dims?dims[i]:null;
@@ -1360,7 +1360,7 @@ function arcPts(p0,nrm,k,p1,SAM){
   const pts=[]; for(let s=0;s<=SAM;s++) pts.push(qbez(p0,pc,p1,s/SAM));
   return pts;
 }
-// 平面三角形箭头（2D 专用，无视锥投影变形；z=1：线之上、卡之下）
+// Flat triangle arrow (2D only, no perspective distortion; z=1: above lines, below cards)
 function flatArrow(pos, dir, s, col){
   const perp=new THREE.Vector3(-dir.y, dir.x, 0);
   const tip=pos.clone().add(dir.clone().multiplyScalar(s*0.9));
@@ -1372,7 +1372,7 @@ function flatArrow(pos, dir, s, col){
   return new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:col, side:THREE.DoubleSide}));
 }
 
-// ── 证书体系（跑在渲染坐标上） ────────────────────────────
+// ── Certificate system (computed on rendered coordinates) ────────────────────
 function segInt(p1,p2,p3,p4){
   const ccw=(A,B,C)=>(C.y-A.y)*(B.x-A.x)>(B.y-A.y)*(C.x-A.x);
   return ccw(p1,p3,p4)!==ccw(p2,p3,p4)&&ccw(p1,p2,p3)!==ccw(p1,p2,p4);
@@ -1388,7 +1388,7 @@ function countCrossings(){
 }
 function certify2d(occlusionAllowed){
   const sps=group.userData.sprites||[];
-  // 卡片重叠 / 最小净距（AABB）
+  // Card overlaps / minimum gap (AABB)
   let ov=0, minGap=1e9;
   for(let i=0;i<sps.length;i++) for(let j=i+1;j<sps.length;j++){
     const a=sps[i].position, b=sps[j].position;
@@ -1397,7 +1397,7 @@ function certify2d(occlusionAllowed){
     if(dx<0&&dy<0) ov++;
     else minGap=Math.min(minGap,Math.max(dx,dy));
   }
-  // 行对齐率（y±4 同组）
+  // Row alignment rate (grouped within y±4)
   const ys=P.map(p=>Math.round(p.y)).sort((a,b)=>a-b);
   let inRow=0, start=0;
   for(let k=1;k<=ys.length;k++){
@@ -1406,7 +1406,7 @@ function certify2d(occlusionAllowed){
     }
   }
   const align=Math.round(inRow/N*100);
-  // 间距 CV（最近邻中心距）
+  // Spacing CV (nearest-neighbor center distance)
   let cv=0;
   try{
     const ds=P.map((p,i)=>Math.min(...P.map((q,j)=>i===j?1e9:Math.hypot(p.x-q.x,p.y-q.y))));
@@ -1414,7 +1414,7 @@ function certify2d(occlusionAllowed){
     const sd=Math.sqrt(ds.reduce((s,x)=>s+(x-m)*(x-m),0)/N);
     cv=sd/m;
   }catch(e){}
-  // 线穿无关卡：按 边×卡 去重计数（一条弧线的多个采样段穿同一张卡只算 1）
+  // Edge through unrelated card: deduplicated by edge×card (multiple sampled segments of one arc through the same card count once)
   const segs=group.userData.segs||[]; let thru=0; const seenT=new Set();
   segs.forEach(s=>{
     sps.forEach((sp,ri)=>{
@@ -1431,24 +1431,24 @@ function certify2d(occlusionAllowed){
     });
   });
   const cr=countCrossings();
-  return "证书:交叉"+cr+" 重叠"+ov+" 净距"+(minGap<1e8?Math.round(minGap):"—")+"px 对齐"+align+"% CV"+cv.toFixed(3)+
-    (occlusionAllowed ? (" 遮挡穿卡"+thru+"(设计)") : (" 穿卡"+thru));
+  return "cert: crossings "+cr+" overlaps "+ov+" gap "+(minGap<1e8?Math.round(minGap):"—")+"px align "+align+"% CV "+cv.toFixed(3)+
+    (occlusionAllowed ? (" occlusion "+thru+"(by design)") : (" thru-cards "+thru));
 }
 
-// ── 形态 1：2D 零交叉（ 手动布局 1:1，54 边全直线认证 0 交叉） ──
-function textPxEst(s){ // 12.5px 字号估宽（CJK 全宽 / ASCII 0.58），与  线上口径一致
+// ── Form 1: 2D zero-crossing (manual layout 1:1, 54 straight edges certified 0 crossings) ──
+function textPxEst(s){ // width estimate at 12.5px font size (CJK full width / ASCII 0.58), consistent with the engine
   let w=0; for(const ch of s) w += ord(ch)>0x2E7F ? 12.5 : 12.5*0.58;
   return w;
 }
 function ord(ch){ return ch.codePointAt(0); }
 function build2dManual(){
-  const L=LAYOUTS.ref; // {nodes:{id:{x,y}}, H}——参考布局（可选，数据自带；无则建议用形态2）
+  const L=LAYOUTS.ref; // {nodes:{id:{x,y}}, H} — reference layout (optional, shipped with the data; without it prefer Form 2)
   const xs=Object.values(L.nodes).map(v=>v.x), ys=Object.values(L.nodes).map(v=>v.y);
   const cx=(Math.max(...xs)+Math.min(...xs))/2, cy=(Math.max(...ys)+Math.min(...ys))/2;
   P = GRAPH.nodes.map(n=>{ const q=L.nodes[n.id]; return new THREE.Vector3(q.x-cx, -(q.y-cy), 0); });
   addSprites(GRAPH.nodes.map(n=>({w:Math.max(60,Math.min(220,textPxEst(n.l)+20)), h:L.H})));
   const segs=[];
-  // 双向边对识别：同一对节点互为反向的两条边 → 透镜双弧（一弧一箭头，避免双头箭头观感）；零交叉形态允许弧线
+  // Bidirectional pair detection: two opposite edges between the same node pair → lens double-arc (one arc, one arrow — avoids the double-headed look); the zero-crossing form allows arcs
   const pairCnt={}, pairSeen={}, specs=[];
   GRAPH.edges.forEach(e=>{ const key=[e.a,e.b].sort().join("|"); pairCnt[key]=(pairCnt[key]||0)+1; });
   GRAPH.edges.forEach(e=>{
@@ -1482,9 +1482,9 @@ function build2dManual(){
   group.userData.edgeSpecs=specs;
   group.userData.arrowMeshes=(group.userData.pendingArrows||[]).map(a=>{const m=flatArrow(a.pos,a.dir,a.s,a.col); group.add(m); return m;});
   group.userData.pendingArrows=null;
-  return "参考布局（数据自带）· 单边直线+双向对透镜双弧 · 节点可拖动";
+  return "reference layout (shipped with the data) · straight single edges + lens double-arcs for bidirectional pairs · nodes draggable";
 }
-// ── 形态 2：2D 允许交叉（均匀网格：间距恒定，指派最小化总边长；交叉如实报告，不追 0） ──
+// ── Form 2: 2D crossings allowed (even grid: constant spacing, assignment minimizes total edge length; crossings reported honestly, not forced to 0) ──
 function build2dGrid(){
   const cols=8, rows=Math.ceil(N/cols), dx=250, dy=150;
   const slots=[];
@@ -1507,7 +1507,7 @@ function build2dGrid(){
     if(nrm.length()<1e-3) nrm=new THREE.Vector3(0,1,0);
     nrm.normalize();
     const k=Math.min(0.13*p0.distanceTo(p1),55);
-    // 两种弓向挑违规少的（交叉+穿卡，确定性贪心；不追 0，只挑相对好的）
+    // Pick the bow direction with fewer violations (crossings + thru-cards, deterministic greedy; not chasing 0, just the relatively better one)
     const toSegs=(pts)=>{ const ss=[];
       for(let i=0;i<pts.length-1;i++) ss.push({a:{x:pts[i].x,y:pts[i].y},b:{x:pts[i+1].x,y:pts[i+1].y},ea:ia,eb:ib});
       return ss; };
@@ -1542,9 +1542,9 @@ function build2dGrid(){
   group.userData.edgeSpecs=specs;
   group.userData.arrowMeshes=(group.userData.pendingArrows||[]).map(a=>{const m=flatArrow(a.pos,a.dir,a.s,a.col); group.add(m); return m;});
   group.userData.pendingArrows=null;
-  return "均匀网格排布（间距恒定 · 指派最小化总边长 · 弓向择优）· 交叉如实报告不追 0 · 节点可拖动";
+  return "even grid placement (constant spacing · assignment minimizes total edge length · better bow wins) · crossings reported honestly, not forced to 0 · nodes draggable";
 }
-// ── 形态 3/4：3D ─────────────────────────────────────────
+// ── Forms 3/4: 3D ─────────────────────────────────────────
 function build3d(sphere){
   if(sphere){
     const slots=shapeSphere(N);
@@ -1581,7 +1581,7 @@ function build3d(sphere){
       new THREE.WireframeGeometry(new THREE.SphereGeometry(R,20,12)),
       new THREE.LineBasicMaterial({color:0x64748b,transparent:true,opacity:0.13})));
   }
-  return (sphere?"球面槽位+总边长最小化指派（确定性）":"力导向（确定性，无 RNG）")+" · 弧线=背离中心单弓（无 S 形）";
+  return (sphere?"sphere slots + total-edge-length-minimizing assignment (deterministic)":"force-directed (deterministic, no RNG)")+" · arcs bow away from center (no S-shapes)";
 }
 
 function build(m){
@@ -1597,14 +1597,14 @@ function build(m){
   if(m<2) group.userData.sprites.forEach(sp=>sp.position.z=2);
   fitCamera(m>=2);
   if(m>=2){
-    // F3-2：深度透明度参考——近端 D0-Rm → 不透明度 1.0，远端 D0+Rm → 0.30（布局常量，确定性）
+    // F3-2: depth opacity reference — near end D0-Rm → opacity 1.0, far end D0+Rm → 0.30 (layout constants, deterministic)
     const D0=window.__fitDist||1200;
     const Rm=Math.max(...P.map(p=>p.length()));
     group.userData.depthNear=Math.max(1,D0-Rm);
     group.userData.depthFar=D0+Rm;
     window.__depthRefs=[group.userData.depthNear,group.userData.depthFar];
   } else { window.__depthRefs=null; }
-  let metaText = N+" 节点 / "+GRAPH.edges.length+" 边 · "+desc;
+  let metaText = N+" nodes / "+GRAPH.edges.length+" edges · "+desc;
   if(m<2){ const c=certify2d(false); group.userData.baseDesc=desc; metaText += " · "+c; window.__cert=c; }
   document.getElementById("meta").textContent = metaText;
   document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on", +b.dataset.m===m));
@@ -1613,8 +1613,8 @@ function build(m){
   else if(controls.autoRotate===false && !window.__userRotOff){ controls.autoRotate=true; }
   syncRot();
   document.getElementById("hint").textContent = m>=2
-    ? "左键拖动旋转 · 滚轮缩放 · 右键平移 · 触屏手势同样支持"
-    : "2D 形态：滚轮缩放 · 右键平移（旋转已锁定，保持正面视角）";
+    ? "Left-drag to rotate · wheel to zoom · right-drag to pan · touch gestures also supported"
+    : "2D form: wheel to zoom · right-drag to pan (rotation locked to keep a head-on view)";
 }
 function fitCamera(is3d){
   camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
@@ -1646,7 +1646,7 @@ function fitCamera(is3d){
 const controls=new THREE.OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true; controls.dampingFactor=.08;
 controls.autoRotate=false; controls.autoRotateSpeed=.7;
-function syncRot(){ document.getElementById("btnRot").textContent="自动旋转："+(controls.autoRotate?"开":"关"); }
+function syncRot(){ document.getElementById("btnRot").textContent="Auto-rotate: "+(controls.autoRotate?"On":"Off"); }
 controls.addEventListener("start",()=>{ controls.autoRotate=false; window.__userRotOff=true; syncRot(); });
 document.getElementById("btnRot").onclick=()=>{ controls.autoRotate=!controls.autoRotate; window.__userRotOff=!controls.autoRotate; syncRot(); };
 document.getElementById("btnReset").onclick=()=>{ camera.position.copy(HOME); controls.target.set(0,0,0); };
@@ -1663,7 +1663,7 @@ function resize(){ const w=innerWidth,h=innerHeight;
   renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 addEventListener("resize",resize); resize();
 
-// ── 2D 节点拖拽：左键按住卡片拖动，线/箭头实时跟随，松手重算证书 ──
+// ── 2D node dragging: hold the left button on a card to drag, lines/arrows follow live, certificate recomputed on release ──
 const raycaster=new THREE.Raycaster(), ndcV=new THREE.Vector2();
 let dragIdx=-1; const dragOff=new THREE.Vector3();
 function setNDC(e){ const r=renderer.domElement.getBoundingClientRect();
@@ -1744,11 +1744,11 @@ addEventListener("pointerup", ()=>{
   renderer.domElement.style.cursor="default";
   const c=certify2d(false);
   document.getElementById("meta").textContent =
-    N+" 节点 / "+GRAPH.edges.length+" 边 · "+group.userData.baseDesc+" · "+c;
+    N+" nodes / "+GRAPH.edges.length+" edges · "+group.userData.baseDesc+" · "+c;
   window.__cert=c;
 });
 
-// ── 环路高亮：按当前形态的边规格重算路径，选中环亮色+其余压暗 ──
+// ── Loop highlight: recompute paths from the current form edge specs, selected loop lit + the rest dimmed ──
 function computeEdgePts(sp){
   const sprites=group.userData.sprites;
   const A=P[sp.ia], B=P[sp.ib];
@@ -1794,14 +1794,14 @@ function showLoop(li){
     const pts=computeEdgePts(group.userData.edgeSpecs[ei]);
     for(let s=0;s<pts.length-1;s++){
       const a=pts[s], b=pts[s+1];
-      if(MODE<2) pos.push(a.x,a.y,2.5, b.x,b.y,2.5); // 卡片(z=2)之上，环线绝不被遮挡
+      if(MODE<2) pos.push(a.x,a.y,2.5, b.x,b.y,2.5); // above the cards (z=2) so the loop line is never occluded
       else pos.push(a.x,a.y,a.z+2, b.x,b.y,b.z+2);
     }
   });
   const g=new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
   hlGroup=new THREE.Group();
-  // 粗管高亮：WebGL 线宽恒 1px 不可靠，TubeGeometry 给真实可见粗度
+  // Thick-tube highlight: WebGL line width is pinned at 1px and unreliable, TubeGeometry gives real visible thickness
   L.eidx.forEach(ei=>{
     const pts=computeEdgePts(group.userData.edgeSpecs[ei]);
     const curve=new THREE.CatmullRomCurve3(pts);
@@ -1809,7 +1809,7 @@ function showLoop(li){
       new THREE.MeshBasicMaterial({color:colr, transparent:true, opacity:0.95, depthTest:false}));
     tube.renderOrder=10; hlGroup.add(tube);
   });
-  // 环上节点光晕衬板 + 放大（在压暗背景中一眼可辨）
+  // Halo backplates + scale-up for loop nodes (instantly recognizable against the dimmed background)
   L.path.forEach(i=>{
     const sp=group.userData.sprites[i]; sp.scale.multiplyScalar(1.25);
     const halo=new THREE.Mesh(
@@ -1825,7 +1825,7 @@ function renderLoopList(){
   document.getElementById("loopList").innerHTML = LOOPS.map((L,i)=>
     `<div class="loop" data-i="${i}"><span class="tag ${L.type}">${L.name}</span>`+
     `<span class="nodes">${L.path.map(x=>GRAPH.nodes[x].l).join("→")}↻</span>`+
-    `<span class="lm">${L.len}节点·${L.len-L.neg}＋${L.neg}−</span></div>`).join("");
+    `<span class="lm">${L.len} nodes · ${L.len-L.neg}+${L.neg}−</span></div>`).join("");
   document.querySelectorAll("#loopList .loop").forEach(el=>{
     el.onclick=()=>{ const i=+el.dataset.i;
       if(HL && HL.li===i) clearHL();
@@ -1839,7 +1839,7 @@ document.getElementById("btnLoops").onclick=()=>{
 document.getElementById("loopClose").onclick=()=>{ document.getElementById("loops").style.display="none"; };
 renderLoopList();
 
-// ── F3-3：3D 标签避让——投影屏幕框两两重叠时按最小平移分开（确定性，每帧复算） ──
+// ── F3-3: 3D label decluttering — separate pairwise-overlapping projected screen boxes by minimum translation (deterministic, recomputed every frame) ──
 function labelRects3d(){
   const sps=group.userData.sprites, out=[];
   const tanH=Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
@@ -1847,9 +1847,9 @@ function labelRects3d(){
   const v=new THREE.Vector3();
   for(let i=0;i<sps.length;i++){
     const toNode=P[i].clone().sub(camera.position);
-    if(toNode.dot(fwd)<=0){ out.push({skip:true}); continue; } // 相机背面不参与避让
+    if(toNode.dot(fwd)<=0){ out.push({skip:true}); continue; } // behind the camera: skipped for decluttering
     const d=camera.position.distanceTo(P[i]);
-    const ppw=(innerHeight/2)/(tanH*d); // 像素/世界单位（透视各向同性）
+    const ppw=(innerHeight/2)/(tanH*d); // pixels per world unit (perspective is isotropic)
     v.copy(P[i]).project(camera);
     out.push({x:(v.x*0.5+0.5)*innerWidth, y:(-v.y*0.5+0.5)*innerHeight,
       hw:sps[i].scale.x/2*ppw, hh:sps[i].scale.y/2*ppw, skip:false});
@@ -1859,7 +1859,7 @@ function labelRects3d(){
 function declutter3d(){
   if(MODE<2||!group||!group.userData.sprites) return -1;
   const rects=labelRects3d();
-  const PAD=2; // 像素净距
+  const PAD=2; // pixel clearance
   for(let pass=0;pass<16;pass++){
     let moved=false;
     for(let i=0;i<rects.length;i++){
@@ -1870,7 +1870,7 @@ function declutter3d(){
         const ox=rects[i].hw+rects[j].hw+PAD-Math.abs(dx);
         const oy=rects[i].hh+rects[j].hh+PAD-Math.abs(dy);
         if(ox>0&&oy>0){
-          if(ox<oy){ rects[i].x+=dx>=0?ox:-ox; } // 最小平移轴；平局走 y 轴（确定性）
+          if(ox<oy){ rects[i].x+=dx>=0?ox:-ox; } // minimum-translation axis; ties go to the y axis (deterministic)
           else{ rects[i].y+=dy>=0?oy:-oy; }
           moved=true;
         }
@@ -1884,7 +1884,7 @@ function declutter3d(){
       if(Math.abs(rects[i].x-rects[j].x)<rects[i].hw+rects[j].hw&&
          Math.abs(rects[i].y-rects[j].y)<rects[i].hh+rects[j].hh) overlaps++;
     } }
-  // 位移后的屏幕位置 → 保持节点深度的相机平面世界位置（标签仍朝向相机）
+  // displaced screen position → world position on the camera plane preserving node depth (label still faces the camera)
   const sps=group.userData.sprites;
   sps.forEach((sp,i)=>{
     const r=rects[i];
@@ -1903,12 +1903,12 @@ build(0); syncRot();
 let frames=0;
 (function loop(){ requestAnimationFrame(loop); controls.update();
   if(group && group.userData.sprites){
-    if(MODE>=2) declutter3d(); // F3-3：每帧确定性避让（相机静止时结果恒定，旋转中连续跟随）
+    if(MODE>=2) declutter3d(); // F3-3: deterministic decluttering every frame (constant when the camera is still, follows continuously while rotating)
     const D0=window.__fitDist||1200;
     group.userData.sprites.forEach((sp,i)=>{
       let o;
       if(MODE>=2 && group.userData.depthFar>group.userData.depthNear){
-        // F3-2：深度衰减——近端(≤depthNear)1.0，远端(≥depthFar)0.30，线性内插（确定性阈值）
+        // F3-2: depth falloff — near (≤depthNear) 1.0, far (≥depthFar) 0.30, linear interpolation (deterministic thresholds)
         const d=camera.position.distanceTo(P[i]);
         const t=THREE.MathUtils.clamp((d-group.userData.depthNear)/(group.userData.depthFar-group.userData.depthNear),0,1);
         o=1-0.70*t;
