@@ -486,6 +486,32 @@ def main():
         print("OK  R/B 颜色化: 回路边按极性着色（R=琥珀/B=天蓝），"
               "文字徽标已移除，极性数据保留")
 
+        # I. demo 交付件新鲜度（ref-scrubbed 返修，v0.7.1 教训）：引擎切
+        #    spine-wing 后 demos/classic-cld-2d.html 没重渲染，jacky 眼验
+        #    看到的仍是 ring-construct 旧图被误判「结构不一致」。铁门：
+        #    交付 demo 必须与当前引擎重渲染逐字节一致（引擎确定性已由
+        #    双跑验证，可逐字节 pin）。
+        fresh_out = os.path.join(tmp, "I-fresh-demo")
+        r_f = run_cli("examples/classic-cld-growth-and-burden.cld", fresh_out,
+                      ("--name", "classic-cld", "--skip-3d"), pitch=None)
+        if r_f.returncode != 0:
+            failures.append(f"demo 新鲜度: CLI exit {r_f.returncode}\n"
+                            f"{r_f.stderr[-500:]}")
+        else:
+            committed = os.path.join(root, "demos", "classic-cld-2d.html")
+            with open(committed, "rb") as a, \
+                    open(os.path.join(fresh_out, "demo-2d.html"), "rb") as b:
+                if a.read() != b.read():
+                    failures.append(
+                        "demo 新鲜度: demos/classic-cld-2d.html 与当前引擎"
+                        "重渲染不一致（交付件过期——重跑 "
+                        "python -m stdraw layout examples/"
+                        "classic-cld-growth-and-burden.cld --name classic-cld"
+                        " --skip-3d 并更新 demo + docs/gallery 截图）")
+                else:
+                    print("OK  demo 新鲜度: demos/classic-cld-2d.html 与当前"
+                          "引擎重渲染逐字节一致（ref-scrubbed 防过期门）")
+
         if failures:
             print("\nFAILURES:")
             for f in failures:

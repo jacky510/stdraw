@@ -277,6 +277,106 @@ class TestSpineWing(unittest.TestCase):
         self.assertEqual(cert["metrics"]["symmetry_mirror_err"], 0)
 
 
+class TestSpineWingManualEquivalence(unittest.TestCase):
+    """ref-scrubbed 返修：auto 排布 vs jacky 手拉样本**结构等价**（角色归组一致）。
+
+    样本 = benchmarks/manual/classic-cld-manual-layout.json（jacky 手拉
+    ground truth，ref-scrubbed 附件留档，见 benchmarks/manual/README.md）。
+    角色归组（谁在纵柱/中线行/右翼列/落单位）从样本坐标按结构规律
+    **自动推导**（不在测试里写坐标副本），再要求引擎输出归组相同且
+    定量规律达标：纵柱 |dx|≤2、中线行 |dy|≤2、翼列 |dx|≤2（样本自身
+    6px 的理想化）、落单与纵柱底同带 |dy|≤2、左右/上下的相对方位与
+    样本逐节点一致。
+    """
+
+    MANUAL = os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "benchmarks", "manual",
+        "classic-cld-manual-layout.json")
+
+    @classmethod
+    def _roles(cls, nodes):
+        """从坐标推导角色归组（确定性；样本与引擎输出共用同一推导器）。
+
+        ① 中线行：同 y ±2 的最大组（≥2）；
+        ② 端点纵列：跨中线的同列对（|dx|≤2），并列取 y 跨距大者
+           （引擎里翼镜像对也同列跨中线，纵柱必是跨距最大的那对）；
+        ③ 右翼同列：余下节点中 |dx|≤8 的对（样本自身 6px）；
+        ④ 其余 = 落单（恰 1 个，镜像可构性）。
+        """
+        ids = sorted(nodes)
+        xs = {i: nodes[i]["x"] for i in ids}
+        ys = {i: nodes[i]["y"] for i in ids}
+        mid = []
+        for i in ids:
+            row = sorted(j for j in ids if abs(ys[j] - ys[i]) <= 2)
+            if len(row) > len(mid):
+                mid = row
+        self2 = len(mid) >= 2
+        assert self2, "无中线行组"
+        mid_y = sum(ys[i] for i in mid) / len(mid)
+        rest = [i for i in ids if i not in mid]
+        cands = [(a, b) for a in rest for b in rest
+                 if a < b and abs(xs[a] - xs[b]) <= 2
+                 and (ys[a] - mid_y) * (ys[b] - mid_y) < 0]
+        assert cands, "无跨中线同列端点对"
+        spine = min(cands, key=lambda p: (-abs(ys[p[0]] - ys[p[1]]),
+                                          tuple(sorted(p))))
+        left = [i for i in rest if i not in spine]
+        wcands = [(a, b) for a in left for b in left
+                  if a < b and abs(xs[a] - xs[b]) <= 8]
+        assert wcands, "无同列翼对"
+        wing = max(wcands, key=lambda p: (abs(ys[p[0]] - ys[p[1]]), p))
+        single = set(left) - set(wing)
+        assert len(single) == 1, f"落单数 {len(single)} ≠ 1"
+        return {"spine": set(spine), "midline": set(mid),
+                "wing_col": set(wing), "single": single,
+                "mid_y": mid_y,
+                "top": max(spine, key=lambda i: -ys[i]),
+                "bottom": max(spine, key=lambda i: ys[i])}
+
+    def test_engine_roles_and_geometry_match_sample(self):
+        with open(self.MANUAL, encoding="utf-8") as f:
+            sample = json.load(f)["nodes"]
+        s = self._roles(sample)
+        v4 = layout(load("classic-cld-growth-and-burden"))
+        self.assertEqual(v4["meta"]["placement"], "spine-wing")
+        nodes = v4["nodes"]
+        e = self._roles(nodes)
+        # ① 角色归组逐组一致
+        self.assertEqual(e["spine"], s["spine"], "纵柱归组")
+        self.assertEqual(e["midline"], s["midline"], "中线行归组")
+        self.assertEqual(e["wing_col"], s["wing_col"], "右翼列归组")
+        self.assertEqual(e["single"], s["single"], "落单归组")
+        # ② 定量规律（引擎构造约束达标本档）
+        top, bot = e["top"], e["bottom"]
+        self.assertLessEqual(abs(nodes[top]["x"] - nodes[bot]["x"]), 2,
+                             "纵柱两端点同列 ≤2px")
+        mid_y = e["mid_y"]
+        for w in e["midline"]:
+            self.assertLessEqual(abs(nodes[w]["y"] - mid_y), 2, f"中线行 {w}")
+        up, down = sorted(e["wing_col"], key=lambda i: nodes[i]["y"])
+        wx = [nodes[i]["x"] for i in e["wing_col"]]
+        self.assertLessEqual(max(wx) - min(wx), 2, "右翼同列 ≤2px")
+        self.assertLess(nodes[up]["y"], mid_y, "翼上位在中线上方")
+        self.assertGreater(nodes[down]["y"], mid_y, "翼下位在中线下方")
+        sg = next(iter(e["single"]))
+        self.assertLessEqual(abs(nodes[sg]["y"] - nodes[bot]["y"]), 2,
+                             "落单与纵柱底同带 ≤2px")
+        # ③ 相对方位逐节点与样本一致（左/右、上/下）
+        sx = (nodes[top]["x"] + nodes[bot]["x"]) / 2
+        ssx = (sample[s["top"]]["x"] + sample[s["bottom"]]["x"]) / 2
+        for w in e["midline"]:
+            self.assertEqual(nodes[w]["x"] < sx, sample[w]["x"] < ssx,
+                             f"中线行 {w} 左右侧")
+        self.assertEqual(nodes[sg]["x"] > sx, sample[sg]["x"] > ssx,
+                         "落单在纵柱右侧")
+        self.assertLess(nodes[sg]["x"], min(wx), "落单在翼列内侧")
+        s_wing = sorted(s["wing_col"], key=lambda i: sample[i]["y"])
+        self.assertEqual(up == min(e["wing_col"], key=lambda i: nodes[i]["y"]),
+                         s_wing[0] == min(s["wing_col"], key=lambda i: sample[i]["y"]),
+                         "翼上下序与样本一致")
+
+
 class TestDeterminism(unittest.TestCase):
     def test_two_runs_byte_identical(self):
         py = sys.executable
