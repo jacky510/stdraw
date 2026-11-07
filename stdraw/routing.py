@@ -54,6 +54,7 @@ ROUND_GUARD = 0.15     # 交付舍入（0.1px）保守余量：贴边 <0.15px �
 COINCIDE_THR = 1.0          # 距离 <1px 视为贴合（与证书口径同源）
 COINCIDE_SPAN = 8.0         # 贴合累计 >8px 才计「视觉重合」（端点会合豁免）
 FAN_STEP = 18.0             # 同节点同侧多锚点均匀展开步距（ref-scrubbed 规则 3）
+REANCHOR_STEP = 4.0         # ref-scrubbed midband_reanchor 阶梯钳制步距
 
 EPS = 1e-9
 
@@ -213,6 +214,22 @@ class Router:
         return abs(yb - ya)
 
     # -- 锚点 --
+    def _band_clamp_pt(self, v, p):
+        """ref-scrubbed 锚点口径：互环对候选锚点钳制到边中点 ±1/4 带内。
+
+        透镜/嵌套双弧只有从带内锚出发，交付层 midband_reanchor 才无带外可
+        钳——带外锚经交付钳制后弧线切向易扎入框内触发压线回退（classic-cld
+        crowding↔quickfix 实测：锚点回退带外 = jacky 二验打回根因）。
+        仅互环对候选层调用；非互环边决策层出口几何不变（零漂移）。
+        """
+        cx, cy, hw, hh = self.N[v]
+        on_x = abs(abs(p[0] - cx) - hw) <= abs(abs(p[1] - cy) - hh)
+        if on_x:
+            lim = hh / 2
+            return [p[0], cy + max(-lim, min(lim, p[1] - cy))]
+        lim = hw / 2
+        return [cx + max(-lim, min(lim, p[0] - cx)), p[1]]
+
     def _anchors(self, a, b, side):
         """框边规划锚点。side=0 正常；side=±1 互环对沿框边切向偏移分离。"""
         ax, ay, ahw, ahh = self.N[a]
@@ -250,6 +267,24 @@ class Router:
         for off in (10, 20, 30):
             for s in (1, -1):
                 variants.append(self._offset_anchors(a, b, *base, s * off))
+        return variants
+
+    def _band_anchor_variants(self, a, b):
+        """ref-scrubbed 带内锚点变体（仅互环对局部重定线兜底用）。
+
+        全部变体（中线 + ±12 分离 + ±10/20/±30 探索）经 _band_clamp_pt 收进
+        边中点 ±1/4 带。不进常规候选池——决策层旧出口几何保持不变（其余
+        18 图零漂移）；只在交付层 midband_reanchor 钳制失败后的互环对局部
+        重定线里启用，经典 classic-cld 透镜双弧即此情形。
+        """
+        base = self._anchors(a, b, 0)
+        variants = [(self._band_clamp_pt(a, base[0]),
+                     self._band_clamp_pt(b, base[1]))]
+        for off in (12, 10, 20, 30):
+            for s in (1, -1):
+                pa, pb = self._offset_anchors(a, b, *base, s * off)
+                variants.append((self._band_clamp_pt(a, pa),
+                                 self._band_clamp_pt(b, pb)))
         return variants
 
     # -- 候选生成 --
@@ -980,23 +1015,189 @@ class Router:
                     routes[i2]["points"] = pts_b
         return routes
 
-    def midband_reanchor(self, routes, frozen=()):
+    def _pt_in_band(self, v, p):
+        """锚点 p 是否已在该框边 ±1/4 带内（且在框边上）。"""
+        q = self._band_clamp_pt(v, p)
+        return abs(q[0] - p[0]) <= 1e-6 and abs(q[1] - p[1]) <= 1e-6
+
+    def _own_box_ok(self, i, routes):
+        """自家框内部无侵入（ref-scrubbed）：_edge_stats 只计他框 press，
+        弧线锚点带内钳制 + ctrl 随动后切向可下扎自家框（classic-cld
+        crowding→quickfix 实测），交付门必须补自家框内部检查——与
+        _evaluate 自家框规则同口径（内部采样点 + PRESS_MARGIN/ROUND_GUARD）。"""
+        pts = routes[i]["points"]
+        a, b = self.edges[i]
+        samples = sample_polyline(pts)[1:-1]
+        for v in (a, b):
+            cx, cy, hw, hh = self.N[v]
+            for (px, py) in samples:
+                if dist_point_rect(px, py, cx, cy,
+                                   hw + PRESS_MARGIN, hh + PRESS_MARGIN) \
+                        <= ROUND_GUARD:
+                    return False
+        return True
+
+    def _anchors_in_band(self, i, routes):
+        pts = routes[i]["points"]
+        for idx in (0, len(pts) - 1):
+            v = self.edges[i][0] if idx == 0 else self.edges[i][1]
+            if not self._pt_in_band(v, pts[idx]):
+                return False
+        return True
+
+    def _band_candidates(self, a, b, idx):
+        """ref-scrubbed 互环对带内候选。
+
+        line/arc：对全部锚点变体先 _band_clamp_pt 收进带内、再按新弦重算
+        几何（纯过滤不行——窄框 ±1/4 带下原始变体几乎全带外，classic-cld
+        crowding 带宽 48px vs 变体偏移 30-55px 实测只剩 2 候选）；arc 双侧别
+        （嵌套弧=带内口径下互环分离逃生门，北弧切向扎框已被 _own_box_ok
+        硬门封死）。vg/poly/wrap 走廊族：锚点由走廊结构决定、中间点不可随
+        锚重算，只保留锚点天然带内的（侧缘中点 poly 等）。仅由
+        _reroute_pair_band（交付钳制失败兜底）调用，不进常规候选池。
+        """
+        out = []
+        seen = set()
+        mutual = (min(a, b), max(a, b)) in self.mutual
+        for pa, pb in self._anchor_variants(a, b):
+            pa2 = pa if self._pt_in_band(a, pa) else self._band_clamp_pt(a, pa)
+            pb2 = pb if self._pt_in_band(b, pb) else self._band_clamp_pt(b, pb)
+            cands = [("line", [pa2, pb2], pa2, pb2)]
+            vx, vy = pb2[0] - pa2[0], pb2[1] - pa2[1]
+            dist = math.hypot(vx, vy)
+            if dist > EPS:
+                ux, uy = norm(-vy, vx)
+                ks = tuple(dict.fromkeys((adaptive_arc_k(dist),) + ARC_KS))
+                for k in ks:
+                    for s in (1, -1):
+                        ctrl = [(pa2[0] + pb2[0]) / 2 + ux * k * dist * s,
+                                (pa2[1] + pb2[1]) / 2 + uy * k * dist * s]
+                        cands.append(("arc", quad_points(pa2, ctrl, pb2),
+                                      pa2, pb2, ctrl))
+                        if mutual:
+                            ctrl_m = [(pa2[0] + pb2[0]) / 2 - ux * k * dist * s,
+                                      (pa2[1] + pb2[1]) / 2 - uy * k * dist * s]
+                            cands.append(("arc", quad_points(pa2, ctrl_m, pb2),
+                                          pa2, pb2, ctrl_m))
+            for cand in cands:
+                key = (cand[0], tuple(map(tuple, cand[1])))
+                if key not in seen:
+                    seen.add(key)
+                    out.append(cand)
+        for cand in self._candidates(a, b, idx):
+            if cand[0] in ("line", "arc"):
+                continue
+            if not (self._pt_in_band(a, cand[2]) and
+                    self._pt_in_band(b, cand[3])):
+                continue
+            key = (cand[0], tuple(map(tuple, cand[1])))
+            if key not in seen:
+                seen.add(key)
+                out.append(cand)
+        return out
+
+    def _reroute_pair_band(self, routes, i, j):
+        """交付兜底：互环对带内锚点局部重定线（ref-scrubbed）。
+
+        midband_reanchor 阶梯钳制全档失败（带外锚钳不进硬门——透镜弧切向
+        扎框回退）时启用：仅这两条边用带内候选重建，贪心两遍（i 定 → j 对
+        新 i 定 → 复评）选最优组合；硬门与交付口径一致（压线/净距/锚角/
+        交叉数不增/互环分离 ≥4px），无解回退原路线。确定性：固定候选序 +
+        固定评分，无 RNG。其余边不动（其余 18 图零漂移的结构性保证）。
+        """
+        a, b = self.edges[i]
+        ctx = {}
+        for k2, r in routes.items():
+            if k2 in (i, j):
+                continue
+            segs = list(zip(r["points"][:-1], r["points"][1:]))
+            bb = [(min(p[0], q[0]), min(p[1], q[1]),
+                   max(p[0], q[0]), max(p[1], q[1])) for p, q in segs]
+            ctx[k2] = (segs, bb)
+        cands_i = self._band_candidates(a, b, i)
+        cands_j = self._band_candidates(b, a, j)
+        keep_i, keep_j = routes[i], routes[j]
+        st_i0 = self._edge_stats(i, routes)
+        st_j0 = self._edge_stats(j, routes)
+
+        def gates_ok():
+            for k2, st0 in ((i, st_i0), (j, st_j0)):
+                s = self._edge_stats(k2, routes)
+                if (s[0] > st0[0] or s[3] > st0[3] or
+                        (s[1] is not None and s[1] < self.cl - 1e-6) or
+                        s[2] < ANCHOR_MIN_DEG or
+                        (s[4] is not None and s[4] < 4.0) or
+                        not self._own_box_ok(k2, routes)):
+                    return False
+            return True
+
+        def pick(ii, aa, bb, cands, other):
+            sib = sample_polyline(routes[other]["points"], step=12)
+            best = None
+            for cand in cands:
+                sc, info = self._evaluate(cand, aa, bb, ctx, sib)
+                if info is None:
+                    continue
+                old = routes[ii]
+                routes[ii] = info
+                ok = gates_ok()
+                routes[ii] = old
+                if ok and (best is None or sc < best[0] - EPS):
+                    best = (sc, info)
+            return best
+
+        done = False
+        for _pass in (0, 1):
+            r1 = pick(i, a, b, cands_i, j)
+            if r1 is None:
+                break
+            routes[i] = r1[1]
+            r2 = pick(j, b, a, cands_j, i)
+            if r2 is None:
+                routes[i] = keep_i
+                break
+            routes[j] = r2[1]
+        else:
+            done = routes[i] is not keep_i and routes[j] is not keep_j \
+                and gates_ok()
+        if not done:
+            routes[i] = keep_i
+            routes[j] = keep_j
+        return done
+
+    def midband_reanchor(self, routes, frozen=(), enhanced=True):
         """交付层连接点口径（ref-scrubbed）：锚点钳制到边中点 ±1/4 边长带。
 
         jacky：「线连在方框上的点也优先选每条边的中点，尽量不要选转角的
         地方。」路由决策层保持旧出口几何（候选覆盖不变）；本通道在交付前
         把带外锚点沿所属框边切向钳到 ±1/4 带内——转角整体排除（带内不可能
-        贴角）。逐边硬门复核（压线/净距/锚角/交叉数不增/互环分离 ≥4px），
-        任一违例该边回退原锚（比例如实计入带内统计）。确定性：固定边序，
-        无 RNG。frozen 边（构造路线 / waypoints）不动——对称模式构造弧已
-        自带弦坐标映射口径。
+        贴角）。逐边硬门复核（压线/净距/锚角/交叉数不增/互环分离 ≥4px）。
+
+        ref-scrubbed 返修（jacky 二验打回）：三段式——
+        档 0「基线口径」：v0.7.2 原语义（端点钳制、ctrl 不动、原硬门集）
+        先行，成功即交付（其余 18 图与 v0.7.2 逐字节一致的保证）；
+        档 1「增强阶梯」：仅基线失败/仍带外时启用——① 弧线（ctrl 存在）
+        锚点钳制时 ctrl 同步随动平移（保出发切向）并按贝塞尔重散 dense
+        points（旧版只动端点样本，弧线几何与 ctrl 脱节）；② 沿框边向边
+        中点阶梯步进（REANCHOR_STEP=4px，≤半带封顶）逐档重试，门集加
+        自家框内部检查（_edge_stats 只计他框 press，ctrl 随动后切向可下扎
+        自家框，classic-cld 实测）；③ 全档失败 → 互环对带内局部重定线
+        （_reroute_pair_band）。确定性：固定边序 + 固定档序，无 RNG。
+        frozen 边（构造路线 / waypoints）不动——对称模式构造弧已自带弦坐
+        标映射口径。
         """
+        handled = set()
         for i in sorted(routes.keys()):
-            if i in frozen:
+            if i in frozen or i in handled:
                 continue
-            pts = routes[i]["points"]
-            before_pts = [list(p) for p in pts]
+            before_pts = [list(p) for p in routes[i]["points"]]
             before = self._edge_stats(i, routes)
+            ctrl0 = routes[i].get("ctrl")
+            # ── 档 0：基线口径（v0.7.2 原语义，成功即字节不变）──
+            baseline_done = False
+            if self._anchors_in_band(i, routes):
+                continue                     # 已带内，无钳制需要
+            pts = [list(p) for p in before_pts]
             changed = False
             for idx in (0, len(pts) - 1):
                 v = self.edges[i][0] if idx == 0 else self.edges[i][1]
@@ -1014,13 +1215,83 @@ class Router:
                     pts[idx] = np_
                     changed = True
             if changed:
+                routes[i]["points"] = pts
                 after = self._edge_stats(i, routes)
                 ok = (after[0] <= before[0] and after[3] <= before[3] and
                       (after[1] is None or after[1] >= self.cl - 1e-6) and
                       after[2] >= ANCHOR_MIN_DEG and
                       (after[4] is None or after[4] >= 4.0))
-                if not ok:
+                if ok:
+                    baseline_done = True
+                else:
                     routes[i]["points"] = before_pts
+            if baseline_done:
+                continue
+            if not enhanced:
+                continue     # 非 spine-wing：基线口径止步（其余 18 图字节不变）
+            # ── 档 1：增强阶梯（ctrl 随动 + own_box 门）──
+            for k in range(0, 9):
+                pts = [list(p) for p in before_pts]
+                changed = False
+                for idx in (0, len(pts) - 1):
+                    v = self.edges[i][0] if idx == 0 else self.edges[i][1]
+                    cx, cy, hw, hh = self.N[v]
+                    p = pts[idx]
+                    dxo, dyo = p[0] - cx, p[1] - cy
+                    on_x = abs(abs(dxo) - hw) <= abs(abs(dyo) - hh)
+                    if on_x:
+                        lim = hh / 2.0
+                        np_ = [p[0], cy + max(-lim, min(lim, dyo))]
+                        if k:
+                            t = np_[1] - cy
+                            step = max(-lim, min(lim,
+                                                 t - (REANCHOR_STEP if t > 0
+                                                      else -REANCHOR_STEP) * k))
+                            np_[1] = cy + step
+                    else:
+                        lim = hw / 2.0
+                        np_ = [cx + max(-lim, min(lim, dxo)), p[1]]
+                        if k:
+                            t = np_[0] - cx
+                            step = max(-lim, min(lim,
+                                                 t - (REANCHOR_STEP if t > 0
+                                                      else -REANCHOR_STEP) * k))
+                            np_[0] = cx + step
+                    if abs(np_[0] - p[0]) > 1e-9 or abs(np_[1] - p[1]) > 1e-9:
+                        pts[idx] = np_
+                        changed = True
+                if not changed:
+                    if k == 0:
+                        break            # 已带内，无钳制需要
+                    continue
+                # 弧线：ctrl 随动平移（端点位移向量和）+ dense 重散，保几何一致
+                if ctrl0 is not None:
+                    da = [pts[0][0] - before_pts[0][0],
+                          pts[0][1] - before_pts[0][1]]
+                    db = [pts[-1][0] - before_pts[-1][0],
+                          pts[-1][1] - before_pts[-1][1]]
+                    ctrl = [ctrl0[0] + da[0] + db[0], ctrl0[1] + da[1] + db[1]]
+                    pts = quad_points(pts[0], ctrl, pts[-1])
+                    routes[i]["ctrl"] = ctrl
+                routes[i]["points"] = pts
+                after = self._edge_stats(i, routes)
+                ok = (after[0] <= before[0] and after[3] <= before[3] and
+                      (after[1] is None or after[1] >= self.cl - 1e-6) and
+                      after[2] >= ANCHOR_MIN_DEG and
+                      (after[4] is None or after[4] >= 4.0) and
+                      self._own_box_ok(i, routes))
+                if ok:
+                    break
+                routes[i]["points"] = before_pts
+                if ctrl0 is not None:
+                    routes[i]["ctrl"] = list(ctrl0)
+            # 阶梯全档失败（终态仍带外）→ 互环对带内局部重定线兜底
+            if not self._anchors_in_band(i, routes):
+                a_, b_ = self.edges[i]
+                j = self.eidx.get((b_, a_))
+                if j is not None and j not in frozen and j not in handled:
+                    if self._reroute_pair_band(routes, i, j):
+                        handled.add(j)
         return routes
 
     # -- 主入口 --

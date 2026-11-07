@@ -1074,7 +1074,13 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     routes = router.coincide_reroute(routes, frozen=_frozen)
     # ref-scrubbed 连接点口径：交付层锚点钳制到边中点 ±1/4 带（转角排除，
     # 逐边硬门复核）；同节点同侧多锚点再按入射角均匀展开（不堆叠）。
-    routes = router.midband_reanchor(routes, frozen=_frozen)
+    # ref-scrubbed：增强通道（ctrl 随动阶梯 + 互环对带内局部重定线）仅对
+    # spine-wing 排布启用——ring/bowtie 基线存在在册带外锚点（互环对基线
+    # 回退），修复会改动其交付字节（含 viewBox dx 平移连带），与本卡
+    # 「其余 18 图逐字节零漂移」硬门冲突 → 本卡只修 spine-wing（classic-cld），
+    # 其余引擎 CI 锚点门锁 v0.7.2 基线比例防回退，带外修复归后续卡。
+    routes = router.midband_reanchor(routes, frozen=_frozen,
+                                     enhanced=(engine == "spine-construct"))
     routes = router.fan_spread(routes, frozen=_frozen)
     router_pairs = router.final_crossing_pairs(routes)
 

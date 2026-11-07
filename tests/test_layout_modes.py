@@ -377,6 +377,59 @@ class TestSpineWingManualEquivalence(unittest.TestCase):
                          "翼上下序与样本一致")
 
 
+class TestAnchorBand(unittest.TestCase):
+    """ref-scrubbed 二验返修：交付锚点带内口径（边中点 ±1/4 带、转角=0）。
+
+    spine-wing（classic-cld）= 100% 带内硬门；其余 19 图语料锁 v0.7.2
+    基线比例（CI 门 tests/ci_checks.py BASELINE_BAND 同源口径）。
+    """
+
+    def _band_stats(self, v4):
+        ch = float(v4["meta"].get("cardH", 44.0))
+        total = band = corner = 0
+        worst = []
+        for e in v4["edges"]:
+            rt = e["route"]
+            for side, idx in (("a", 0), ("b", len(rt["points"]) - 1)):
+                nd = v4["nodes"][e[side]]
+                cx, cy, hw, hh = nd["x"], nd["y"], nd["w"] / 2.0, ch / 2.0
+                p = rt["points"][idx]
+                dxo, dyo = p[0] - cx, p[1] - cy
+                on_x = abs(abs(dxo) - hw) <= abs(abs(dyo) - hh)
+                total += 1
+                if abs(abs(dxo) - hw) < 0.75 and abs(abs(dyo) - hh) < 0.75:
+                    corner += 1
+                ok = (abs(dyo) <= hh / 2 + 1e-6) if on_x \
+                    else (abs(dxo) <= hw / 2 + 1e-6)
+                if ok:
+                    band += 1
+                elif len(worst) < 3:
+                    worst.append(f"{e['a']}->{e['b']}:{side}")
+        return total, band, corner, worst
+
+    def test_spine_wing_anchors_all_in_band(self):
+        # jacky 二验打回项：classic-cld 交付锚点须全部带内、转角命中 0
+        # （症状解虚线出发 (602,174) 距角 3px 的带外违规已由互环对带内
+        # 局部重定线修复——直线 + 右缘 poly 绕行，全部边中点锚）
+        v4 = layout(load("classic-cld-growth-and-burden"))
+        self.assertEqual(v4["meta"]["placement"], "spine-wing")
+        total, band, corner, worst = self._band_stats(v4)
+        self.assertEqual(corner, 0, "转角命中数须=0")
+        self.assertEqual(band, total, f"spine-wing 锚点须 100% 带内 {worst}")
+
+    def test_corpus_baseline_band_ratios_hold(self):
+        # 其余引擎锁 v0.7.2 基线（零漂移约束下带外遗留不修、防回退）
+        baseline = {"brand-flywheel": 14 / 16, "fishing-collapse": 15 / 18,
+                    "eroding-goals": 8 / 12, "shifting-the-burden": 10 / 16,
+                    "wage-price-spiral": 8 / 12}
+        for name, floor in baseline.items():
+            v4 = layout(load(name))
+            total, band, corner, _ = self._band_stats(v4)
+            self.assertEqual(corner, 0, f"{name} 转角命中数须=0")
+            self.assertGreaterEqual(band / total, floor - 1e-9,
+                                    f"{name} 带内比例跌破 v0.7.2 基线")
+
+
 class TestDeterminism(unittest.TestCase):
     def test_two_runs_byte_identical(self):
         py = sys.executable
