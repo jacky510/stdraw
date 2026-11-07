@@ -583,6 +583,24 @@ def main():
                 else:
                     print("OK  demo 新鲜度: demos/classic-cld-2d.html 与当前"
                           "引擎重渲染逐字节一致（ref-scrubbed 防过期门）")
+                # 证书交付件同口径（ref-scrubbed 收尾抓出：
+                # demos/classic-certificate.json 停在 ring-cycle 9 门
+                # 旧证书，demo html 已新鲜而证书 JSON 过期）——逐字节 pin。
+                committed_cert = os.path.join(root, "demos",
+                                              "classic-certificate.json")
+                with open(committed_cert, "rb") as a, \
+                        open(os.path.join(fresh_out, "certificate.json"),
+                             "rb") as b:
+                    if a.read() != b.read():
+                        failures.append(
+                            "证书新鲜度: demos/classic-certificate.json 与当前"
+                            "引擎重渲染不一致（交付件过期——重跑 "
+                            "python -m stdraw layout examples/"
+                            "classic-cld-growth-and-burden.cld --name classic-cld"
+                            " --skip-3d 并更新 demos/classic-certificate.json）")
+                    else:
+                        print("OK  证书新鲜度: demos/classic-certificate.json 与"
+                              "当前引擎重渲染逐字节一致（ref-scrubbed 防过期门）")
 
         if failures:
             print("\nFAILURES:")
