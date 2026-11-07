@@ -1165,6 +1165,106 @@ class Router:
             routes[j] = keep_j
         return done
 
+    # -- ref-scrubbed 返修①：互环对「直线可行」候选纳入代价分配 --
+    def mutual_straight_reroute(self, routes, frozen=()):
+        """互环对直线重分配（§WS3：直线可行时折线不抢分，折线=最后手段）。
+
+        v0.7.3 候选池 line 族的锚点变体全部挂在基准方向边上（_anchors 的
+        方向出边 × 对端入边，_offset_anchors 只沿同边切向移动），跨边锚
+        组合（如 a 左边中点 × b 顶边中点）根本不在池内——互环对被
+        PAIR_SEP_W 推到 poly 侧车道绕行（classic-cld quickfix→crowding
+        实测 298px 折线 vs 101px 自然直线，且折线与已定线真交叉）。本通道
+        只对「互环对中当前路线为折线（poly/vg/wrap）」的边启用：枚举两框
+        4 边中点锚 × 直线候选（中点天然 ±1/4 带内），交付硬门（压线 0/
+        净距/锚角/交叉数不增/互环分离 ≥4/自家框）全过且总评严格优于现
+        路线才替换；无可行直线原样返回（逐字节不变）。兄弟边（反向边）同
+        批复核——分离/交叉/净距门不因本边换线回退（返修②口径）。确定性：
+        固定边序 + 固定枚举序，无 RNG。仅 enhanced（spine-construct）域
+        调用，其余引擎结构性零漂移。
+        """
+        for i in sorted(routes.keys()):
+            if i in frozen:
+                continue
+            a, b = self.edges[i]
+            if (min(a, b), max(a, b)) not in self.mutual:
+                continue
+            cur = routes[i]
+            if cur.get("kind") not in ("poly", "vg", "wrap"):
+                continue
+            j = self.eidx.get((b, a))
+            if j is None or j in frozen:
+                continue
+            # 评估上下文：其余已定线段+包围盒（供 _evaluate 交叉/压线判定）
+            ctx = {}
+            for k2, r in routes.items():
+                if k2 in (i, j):
+                    continue
+                segs = list(zip(r["points"][:-1], r["points"][1:]))
+                bb = [(min(p[0], q[0]), min(p[1], q[1]),
+                       max(p[0], q[0]), max(p[1], q[1])) for p, q in segs]
+                ctx[k2] = (segs, bb)
+            sib = sample_polyline(routes[j]["points"], step=12)
+            # 现路线参照评分（同 _evaluate 权重；vg 的 corner/fillet 字段
+            # 按空壳补齐——评分只消费 kind/points）
+            cur_cand = (cur.get("kind", "poly"), cur["points"],
+                        cur["points"][0], cur["points"][-1],
+                        {"corner_pts": [], "fillets": []})
+            cur_sc, _ = self._evaluate(cur_cand, a, b, ctx, sib)
+            cur_cross = cur.get("cross", 0)
+            st_j0 = self._edge_stats(j, routes)
+
+            def mids(v):
+                cx, cy, hw, hh = self.N[v]
+                return {"t": [cx, cy - hh], "b": [cx, cy + hh],
+                        "l": [cx - hw, cy], "r": [cx + hw, cy]}
+
+            ma, mb = mids(a), mids(b)
+            best = None
+            for sa in ("t", "b", "l", "r"):
+                for sb in ("t", "b", "l", "r"):
+                    pa, pb = ma[sa], mb[sb]
+                    if abs(pa[0] - pb[0]) < EPS and abs(pa[1] - pb[1]) < EPS:
+                        continue
+                    cand = ("line", [pa, pb], pa, pb)
+                    sc, info = self._evaluate(cand, a, b, ctx, sib)
+                    if info is None or info.get("press", 0):
+                        continue
+                    mc = info.get("min_clear")
+                    if mc is not None and mc < self.cl - 1e-6:
+                        continue          # 硬门：边-框净距
+                    if min(info.get("ang_a", 0.0),
+                           info.get("ang_b", 0.0)) < ANCHOR_MIN_DEG:
+                        continue          # 硬门：锚点平滑
+                    if sc >= cur_sc - EPS:
+                        continue          # §WS3：总评须严格优于现路线
+                    old = routes[i]
+                    routes[i] = info
+                    ok = True
+                    for k2, st0 in ((i, None), (j, st_j0)):
+                        st = self._edge_stats(k2, routes)
+                        if st[0] > 0:
+                            ok = False    # 硬门：框压线
+                        elif (st[1] is not None and st[1] < self.cl - 1e-6):
+                            ok = False    # 硬门：净距
+                        elif st[2] < ANCHOR_MIN_DEG:
+                            ok = False    # 硬门：锚点平滑
+                        elif st[4] is not None and st[4] < 4.0:
+                            ok = False    # 硬门：互环分离
+                        elif not self._own_box_ok(k2, routes):
+                            ok = False    # 硬门：自家框
+                        elif k2 == i and st[3] > cur_cross:
+                            ok = False    # 硬门：交叉数不增
+                        elif k2 == j and st[3] > st0[3]:
+                            ok = False    # 兄弟边交叉数不增
+                        if not ok:
+                            break
+                    routes[i] = old
+                    if ok and (best is None or sc < best[0] - EPS):
+                        best = (sc, info)
+            if best is not None:
+                routes[i] = best[1]
+        return routes
+
     def midband_reanchor(self, routes, frozen=(), enhanced=True):
         """交付层连接点口径（ref-scrubbed）：锚点钳制到边中点 ±1/4 边长带。
 
