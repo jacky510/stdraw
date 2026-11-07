@@ -377,10 +377,20 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.7.5** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.7.6** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
 
+- **v0.7.6 version closure** (implementation card ref-scrubbed, closure
+  card ref-scrubbed): repo-wide bilingual governance — README / AGENTS.md
+  fully English as canonical, dsl-spec English canonical + new zh-CN
+  companion, engineering caliber docs kept Chinese with navigation
+  notes; new language-policy CI gate (tests/check_language_policy.py)
+  wired into ci_checks; grade tokens englishized (best / second / 3d /
+  uncertified — zero semantic change, frozen baselines byte-identical,
+  no re-baselining); gallery converged to 3 real success shots
+  (before/after pair removed, all three re-rendered by headless
+  Chrome);
 - **v0.7.5 version closure** (landing card ref-scrubbed): pyproject / __init__ /
   README bilingual badges unified 0.7.4->0.7.5; certificate summary byte
   cross-check (the version string never enters output bytes); landed in the
