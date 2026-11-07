@@ -461,6 +461,78 @@ def main():
             n_ok += 1
         print(f"OK  corpus 全语料 {n_ok}/19：exit 0 · 最优 · 新口径硬门全过")
 
+        # J. 锚点口径硬门（ref-scrubbed 二验返修）：jacky「线连在方框上的点
+        #    优先选每条边的中点，不要选转角」——docs/layout-modes.md §锚点
+        #    口径。逐图实测：①转角命中数 = 0（全引擎硬门）；②锚点带内比例
+        #    （边中点 ±1/4 边长）：spine-wing（本卡域）= 100%；其余引擎锁
+        #    v0.7.2 基线比例（下表）防回退——ring-cycle 互环对 / bowtie-vertex
+        #    ±12px 辐条走廊为在册遗留带外（修复牵动交付平移与 18 图零漂移
+        #    硬门，归后续卡）。
+        BASELINE_BAND = {
+            # v0.7.2 基线带内比例（band/total 精确分数，防舍入误判）
+            "arms-race": 8 / 8, "brand-flywheel": 14 / 16,
+            "bullwhip": 12 / 12, "burnout-attrition": 12 / 12,
+            "classic-cld-growth-and-burden": 26 / 26,   # spine-wing 提门到 100%
+            "debt-spiral": 12 / 12, "eroding-goals": 8 / 12,
+            "fishing-collapse": 15 / 18, "fixes-that-fail": 10 / 10,
+            "induced-demand": 14 / 14, "learning-flywheel": 10 / 10,
+            "limits-to-growth": 14 / 14, "population-logistic": 12 / 12,
+            "renewable-resource": 14 / 14, "shifting-the-burden": 10 / 16,
+            "soil-erosion": 16 / 16, "tragedy-of-the-commons": 12 / 12,
+            "urban-migration": 16 / 16, "wage-price-spiral": 8 / 12,
+        }
+        n_anchor_ok = 0
+        for fn in sorted(os.listdir(corpus_dir)):
+            if not fn.endswith(".cld"):
+                continue
+            name = fn[:-4]
+            if not os.path.exists(os.path.join(tmp, "H-" + name,
+                                               "layout.json")):
+                continue
+            lay = load(os.path.join(tmp, "H-" + name), "layout.json")
+            ch = lay.get("meta", {}).get("cardH", 44.0)
+            total = band_in = corner = 0
+            worst = []
+            for e in lay["edges"]:
+                rt = e["route"]
+                for side, idx in (("a", 0), ("b", len(rt["points"]) - 1)):
+                    nd = lay["nodes"][e[side]]
+                    cx, cy, hw, hh = nd["x"], nd["y"], nd["w"] / 2.0, ch / 2.0
+                    p = rt["points"][idx]
+                    dxo, dyo = p[0] - cx, p[1] - cy
+                    on_x = abs(abs(dxo) - hw) <= abs(abs(dyo) - hh)
+                    total += 1
+                    if (abs(abs(dxo) - hw) < 0.75 and
+                            abs(abs(dyo) - hh) < 0.75):
+                        corner += 1
+                    if on_x:
+                        if abs(dyo) <= hh / 2 + 1e-6:
+                            band_in += 1
+                        elif len(worst) < 3:
+                            worst.append(f"{e['a']}->{e['b']}:{side}")
+                    else:
+                        if abs(dxo) <= hw / 2 + 1e-6:
+                            band_in += 1
+                        elif len(worst) < 3:
+                            worst.append(f"{e['a']}->{e['b']}:{side}")
+            eng = lay.get("meta", {}).get("engine", "")
+            ratio = band_in / total if total else 1.0
+            floor = BASELINE_BAND.get(name, 1.0)
+            if corner > 0:
+                failures.append(f"corpus {name}: 锚点转角命中 {corner} "
+                                f"（口径 =0）")
+            elif ratio < floor - 1e-9:
+                failures.append(f"corpus {name}: 锚点带内 {band_in}/{total} "
+                                f"({ratio:.0%}) < v0.7.2 基线 {floor:.0%} "
+                                f"{worst}")
+            else:
+                n_anchor_ok += 1
+                print(f"OK  锚点口径 {name}: engine={eng} 带内 {band_in}/{total}"
+                      f" ({ratio:.0%}) 转角 {corner}")
+        if n_anchor_ok == 19:
+            print("OK  锚点口径硬门: 19/19 转角=0 · 带内比例达标"
+                  "（spine-wing=100%，其余锁基线）")
+
         # H3. R/B 颜色化口径：wage R1 琥珀/B1 天蓝/多环异色中性 + 极性数据保留
         out_w = os.path.join(tmp, "H-wage")
         run_cli(os.path.join(corpus_dir, "wage-price-spiral.cld"), out_w,
