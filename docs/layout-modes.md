@@ -15,6 +15,7 @@
 | 1 | 领结对对称（共边） | 核心图恰为两个三角形共享一条边（4 节点 5 边，度序列 {3,3,2,2}，度-3 节点相邻） | `symmetric` |
 | 1 | 领结共点对称（美学 v3） | 枚举简单环（长度 ≥3，规范形去重）恰 2 个、两环恰共享 1 个节点、两环并集=全部非孤立节点（与共边领结拓扑互斥：5 节点 6 边） | `bowtie-vertex` |
 | 2 | 纵柱+翼位（v0.7.1） | 中枢对（公共邻居 3≤W≤4 的有向边，平局：声明环共现多→规范形小）+ rest 次级簇非空可配对 + 主链长度占比 ≤0.5（详见下节） | `spine-wing` |
+| 2 | 双侧梳状（v0.7.7，宽卡 v0.7.8） | 恰两个非相邻 hub，邻居集相同且等于公共源集 S（|S|=m≥3）；其余核心节点为挂在源上的森林（每棵恰含一个源）；comb 源列长 > column 最优 spine 长才抢占纵列；ring ratio 分支在 best k≤4 且 detect_comb 命中时拒绝进入（详见下节） | `comb-bilateral` |
 | 3 | 纵列（长链/少环） | 3≤n≤12 ∧ 最长简单回路 3≤k≤4 ∧ k<n（主环小 → 主链感强；k=n 的大环归环形；环形 pure-cycle/ratio 触发者不进纵列） | `column-chain` |
 | 4 | 环形 | 纯环 / 主环覆盖 ≥n-2 / 环边占比 ≥0.9 ∧ k≥5 或覆盖全图 | `ring-cycle` |
 | 5 | 分层（既有路径） | 其余（链/树/大图等） | `layered` |
@@ -90,6 +91,32 @@
 - 同构一致性：与 limits-to-growth 共享 {rate, adopters, word, potential,
   crowding} 子骨架但 rest=0 不触发——「增长核 vs 增长+负担全图」由 rest
   判据天然区分。
+
+### 双侧梳状（comb-bilateral，v0.7.7；宽卡两档 fan v0.7.8）
+
+> ground truth = jacky 手拉的 HDD 供应链图（K_{5,2}+pendant）：源点单列
+> 严格同轴、双 hub 镜像槽位（列中行）、全部 hub 边直线扇形、列内边垂直。
+
+- **几何**：源+pendant 单列（x 同轴偏差 0）、hub_y 取列中行、双 hub 关于
+  列轴镜像（中心镜像误差 0）；hub_dx 下限 = max(200, (列内最宽卡+hub 卡)/2
+  + 16 + 110)。
+- **两档 fan 实现（v0.7.8）**：
+  - **tier-0（窄卡，v0.7.7 语义不变）**：hub 边走布线器候选池
+    border_point 锚点，hub 半跨 24px 步进加宽括号（≤16 步）找可行窗。
+  - **tier-1（宽卡，8777 双 ticker 级）**：宽卡（hw≫hh）时中心射线几乎
+    总从上/下边出锚，近水平扇线在水平边上的出射角恒 <20°，而加宽只会更
+    平——净距要宽与锚角要窄互斥，tier-0 窗恒空。此时 hub 边改为**贴面
+    竖边锚点构造直线**：中心连线在两卡贴面竖边的截点（带内钳制
+    ±(hh−3)，2px 网格），hub 侧锚点按源行序固定槽序做 1D 展开
+    （≥FAN_SEP_MIN=8px，防堆叠且保序=扇线两两不交的充要条件），线整体
+    活在列带两侧的空走廊内（净距结构性成立，近水平线⊥竖边≈90° 出射
+    角）；走 constructed 注入通道交付（kind=line，冻结于
+    coincide/midband/fan_spread），试验闸门对全边集复跑统一硬门；
+    meta.comb.fan="facing-border" 标记。两档都耗尽才抛 InfeasibleComb
+    静默回退分层。
+- **门集（metrics/check/ci_checks 三处同口径）**：column_axis ≤2px +
+  column_pitch 恒定 + hub 中心镜像 ≤2px + hub_edges_straight + 通用硬门；
+  CV 为结构性报告项不作门。
 
 ### 领结共点对称（bowtie-vertex，美学 v3）
 

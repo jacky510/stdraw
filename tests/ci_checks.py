@@ -41,6 +41,10 @@ EXAMPLES = [
 # baseline breakage.
 AUTO_EXAMPLES = EXAMPLES + [
     "benchmarks/corpus/classic/bullwhip.cld",
+    # v0.7.8 wide-card comb regression (ref-scrubbed): double-ticker cards
+    # make the tier-0 fan angle-infeasible; the tier-1 facing-border fan
+    # must keep the comb contract (grade best, hub edges straight)
+    "tests/data/hdd-wide-tickers.cld",
 ]
 # Layer B2 (WS3-Q routing-quality rework ref-scrubbed): random dense-graph
 # sampling -- in the random n10 fixed-seed corpus, 4/10 cases previously

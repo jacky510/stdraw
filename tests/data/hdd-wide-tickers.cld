@@ -1,0 +1,26 @@
+# HDD-style bilateral supply chain with double-ticker wide cards (8777
+# consumer caliber): same K_{5,2}+pendant topology as
+# examples/hdd-supply-chain.cld, but the source/pendant cards carry long
+# second-line ticker values, so the comb tier-0 fan (router-pool
+# border_point anchors) is angle-infeasible and the v0.7.8 tier-1
+# facing-border fan must realize the all-straight comb contract.
+graph "hdd-wide-tickers"
+var wafer "Wafer supply" @value "SUMCO 3436.T / Siltronic WAF.DE"
+var xval "Memory makers" @value "Samsung 005930.KS / SK Hynix 000660.KS"
+var cloud "Cloud demand" @value "MSFT 413.1 / GOOG 166.9"
+var resonac "Substrates" @value "4004.T 8,210 JPY"
+var hoya "Disk blanks" @value "7741.T 22,395 JPY"
+var head "Head makers" @value "TDK 6762.T 3,510 JPY"
+var stx "Drive maker A" @value "STX 66.32 USD"
+var wdc "Drive maker B" @value "WDC 61.60 USD"
+wafer -> + xval
+xval -> + stx
+xval -> + wdc
+cloud -> + stx
+cloud -> + wdc
+resonac -> + stx
+resonac -> + wdc
+hoya -> + stx
+hoya -> + wdc
+head -> + stx
+head -> + wdc

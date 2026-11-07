@@ -226,8 +226,165 @@ def _hub_fan_clear(pos, y, widths, card_h, plan, cfg, margin=4.0,
     return True
 
 
+def _side_anchor(box, other, y_override=None):
+    """v0.7.8 wide-card fan anchor: the point where the center-to-center
+    segment crosses the box's FACING VERTICAL border, clamped into the
+    border segment (mirrors the +/-3px corner reserve of Router slides).
+
+    Rationale (8777 wide-card root cause): for a wide column card the
+    center-ray exits via the top/bottom border for almost any slope, and the
+    near-horizontal fan line then grazes that horizontal border below
+    ANCHOR_MIN_DEG — the global hub-span bracket can never fix it (widening
+    makes the line flatter, i.e. the angle strictly worse). On the facing
+    vertical border the same near-horizontal line is perpendicular (~90
+    degrees) — smooth by construction. Returns [x, y] ints (x on the border
+    plane, y on the 2px grid) or None when the boxes share an x-center.
+
+    y_override: fan-spread resolver result for the hub-side anchor (the raw
+    crossing clamps would stack several fan lines at the same border point
+    when the column spans many rows)."""
+    cx, cy, hw, hh = box
+    ox = other[0]
+    if abs(ox - cx) < 1e-9:
+        return None
+    t = hw / abs(ox - cx)
+    yy = y_override if y_override is not None else cy + (other[1] - cy) * t
+    lim = hh - 3
+    yy = max(cy - lim, min(cy + lim, yy))
+    yy = float(int(round(yy / 2.0)) * 2)
+    yy = max(cy - lim, min(cy + lim, yy))
+    return [int(cx + (hw if ox > cx else -hw)), int(yy)]
+
+
+FAN_SEP_MIN = 8    # minimum px between distinct hub-border fan anchors
+
+
+def _spread_border_ys(desired, lo, hi, sep=FAN_SEP_MIN):
+    """Deterministic 1D separation of hub-border anchor slots (the
+    fan_spread rule for constructed fans). The slot ORDER is fixed by the
+    desired crossing y (= the source row order: keeping it is exactly the
+    non-crossing condition for the fan segments); forward + backward sweeps
+    then push clamped slots apart inside the border segment. Returns
+    {key: final y} or None when the segment cannot host the anchors."""
+    order = sorted(desired, key=lambda k: (desired[k], k))
+    vals = [min(hi, max(lo, float(desired[k]))) for k in order]
+    for _ in range(2 * len(vals) + 4):
+        for i in range(1, len(vals)):
+            if vals[i] < vals[i - 1] + sep:
+                vals[i] = min(hi, vals[i - 1] + sep)
+        for i in range(len(vals) - 2, -1, -1):
+            if vals[i] > vals[i + 1] - sep:
+                vals[i] = max(lo, vals[i + 1] - sep)
+    vals = [float(int(round(v / 2.0)) * 2) for v in vals]
+    for i in range(1, len(vals)):
+        if vals[i] < vals[i - 1] + sep:
+            vals[i] = min(hi, vals[i - 1] + sep)
+    for i in range(len(vals) - 2, -1, -1):
+        if vals[i] > vals[i + 1] - sep:
+            vals[i] = max(lo, vals[i + 1] - sep)
+    for i in range(len(vals) - 1):
+        if vals[i + 1] - vals[i] < sep - 1e-9:
+            return None
+    return {k: v for k, v in zip(order, vals)}
+
+
+def _side_fan_lines(pos, y, widths, card_h, plan, cfg, margin=4.0,
+                    ang_margin=2.0):
+    """Tier-1 straight-fan construction: every hub edge as the segment
+    between the two facing-border anchors (_side_anchor on both boxes), with
+    hub-side anchor slots spread along the border (no stacking).
+
+    Acceptance (analytic self-checks, same caliber as _hub_fan_clear):
+      - anchors exist and sit on the facing vertical border planes with a
+        non-negative corridor between them (no own-box re-entry);
+      - dense clearance vs every unrelated box >= clearance + margin;
+      - both departure angles vs the vertical border tangent
+        >= ANCHOR_MIN_DEG + ang_margin.
+    Returns {(a, b): {"kind": "line", "points": [pa, pb]}} for the directed
+    hub edges (both declaration directions), or None when any check fails
+    (-> caller widens / gives up)."""
+    import math as _m
+    from .routing import ANCHOR_MIN_DEG
+    from .visibility import seg_rect_distance
+    boxes = {v: (pos[v], y[v], widths[v] / 2.0, card_h / 2.0) for v in pos}
+    # hub-side anchor slots: raw crossing y per (hub, source), then a
+    # deterministic spread inside the hub's facing border segment
+    hub_ys = {}
+    for h in plan["hubs"]:
+        desired = {}
+        for s in plan["sources"]:
+            cx, cy, hw, hh = boxes[h]
+            ox = boxes[s][0]
+            t = hw / abs(ox - cx)
+            desired[s] = cy + (boxes[s][1] - cy) * t
+        spread = _spread_border_ys(desired, boxes[h][1] - (boxes[h][3] - 3),
+                                   boxes[h][1] + (boxes[h][3] - 3))
+        if spread is None:
+            return None
+        hub_ys.update({(h, s): v for s, v in spread.items()})
+    out = {}
+    for s in plan["sources"]:
+        for h in plan["hubs"]:
+            pa = _side_anchor(boxes[s], boxes[h])
+            pb = _side_anchor(boxes[h], boxes[s],
+                              y_override=hub_ys.get((h, s)))
+            if pa is None or pb is None:
+                return None
+            # corridor sanity: both anchors sit on their facing border
+            # planes with a non-negative gap between them (no own-box
+            # re-entry: the segment's x-range stays outside both boxes)
+            if boxes[h][0] < boxes[s][0]:
+                if not (pb[0] + 1e-9 <= pa[0]):
+                    return None
+            else:
+                if not (pa[0] + 1e-9 <= pb[0]):
+                    return None
+            for v, rect in boxes.items():
+                if v not in (s, h):
+                    if seg_rect_distance(pa, pb, rect) < cfg.clearance + margin:
+                        return None
+            dx, dy = pb[0] - pa[0], pb[1] - pa[1]
+            n = _m.hypot(dx, dy)
+            if n < 1e-9:
+                return None
+            # both borders are vertical (tangent (0,1)): one check covers
+            # both departure angles
+            c = abs(dy) / n
+            if _m.degrees(_m.acos(max(0.0, min(1.0, c)))) \
+                    < ANCHOR_MIN_DEG + ang_margin:
+                return None
+            out[(s, h)] = {"kind": "line", "points": [list(pa), list(pb)]}
+            # reverse declaration direction carries the same geometry with
+            # mirrored point order (the delivery channel keys exact tuples)
+            out[(h, s)] = {"kind": "line", "points": [list(pb), list(pa)]}
+    # analytic self-check: fan segments converging on the same hub border
+    # must not properly intersect (the fixed desired-order spread should
+    # guarantee it — verify, never assume)
+    from .routing import seg_cross
+    for h in plan["hubs"]:
+        lines = [out[(s, h)]["points"] for s in plan["sources"]]
+        for i in range(len(lines)):
+            for j in range(i + 1, len(lines)):
+                if seg_cross(lines[i][0], lines[i][1],
+                             lines[j][0], lines[j][1]):
+                    return None
+    return out
+
+
 def place_comb(plan, widths, card_h, cfg):
-    """Comb template -> ({v: x}, {v: y}, meta). All integers, 2px grid."""
+    """Comb template -> ({v: x}, {v: y}, meta, constructed). All integers, 2px grid.
+
+    v0.7.8: a two-tier fan realization. Tier 0 (unchanged v0.7.7 semantics)
+    widens the hub half-span until the router-pool border_point anchors
+    realize the all-straight fan — narrow cards stop here, byte-identical to
+    v0.7.7. Only when that bracket is exhausted (wide column cards: the
+    center-ray anchors graze their horizontal borders below ANCHOR_MIN_DEG
+    and widening is anti-correlated with the angle) does tier 1 kick in:
+    hub edges are CONSTRUCTED between facing-vertical-border anchors and
+    delivered through the constructed-route channel (kind=line), with the
+    same analytic self-checks; the caller's trial gate re-runs the router
+    for the non-hub edges and the unified hard gates over the whole set."""
+
     col = plan["column"]
     k = len(col)
     pitch = cfg.pitch
@@ -242,14 +399,17 @@ def place_comb(plan, widths, card_h, cfg):
     hub_dx = max(HUB_DX_MIN,
                  int((wmax + hub_w) / 2 + cfg.clearance + HUB_CORRIDOR))
     hub_dx = int(math.ceil(hub_dx / 2) * 2)
+    hub_dx_floor = hub_dx
     pos = {v: axis_x for v in col}
     pos[hl] = axis_x - hub_dx
     pos[hr] = axis_x + hub_dx
     y[hl] = y[hr] = hub_y
-    # Deterministic widening: the hub half-span must let the straight fan
-    # clear every column box (steep lines from the column ends cut across
-    # intermediate boxes when the wings are too close). 24px steps, bounded;
-    # exhausted -> the comb template is infeasible for these card widths.
+    constructed = {}
+    # Tier 0 — deterministic widening with the router-pool border_point
+    # anchors (unchanged v0.7.7 semantics): the hub half-span must let the
+    # straight fan clear every column box (steep lines from the column ends
+    # cut across intermediate boxes when the wings are too close). 24px
+    # steps, bounded. Narrow cards stop here.
     for _ in range(16):
         if _hub_fan_clear(pos, y, widths, card_h, plan, cfg):
             break
@@ -257,9 +417,31 @@ def place_comb(plan, widths, card_h, cfg):
         pos[hl] = axis_x - hub_dx
         pos[hr] = axis_x + hub_dx
     else:
-        raise InfeasibleComb(
-            "hub half-span cannot realize an all-straight fan "
-            f"within +{16 * 24}px widening")
+        # Tier 1 — v0.7.8 wide-card path: the tier-0 bracket is exhausted
+        # (angle-bound: wider spans only flatten the fan and worsen the
+        # horizontal-border departure angles). Re-run the bracket with
+        # CONSTRUCTED facing-vertical-border anchors: inside the empty
+        # corridor left/right of the column band both the clearance and the
+        # border angle improve monotonically with the span, so the window
+        # that was empty in tier 0 is searched again under a geometry where
+        # the two constraints no longer conflict.
+        hub_dx = hub_dx_floor
+        pos[hl] = axis_x - hub_dx
+        pos[hr] = axis_x + hub_dx
+        fan = None
+        for _ in range(16):
+            fan = _side_fan_lines(pos, y, widths, card_h, plan, cfg)
+            if fan is not None:
+                break
+            hub_dx += 24
+            pos[hl] = axis_x - hub_dx
+            pos[hr] = axis_x + hub_dx
+        if fan is None:
+            raise InfeasibleComb(
+                "hub half-span cannot realize an all-straight fan "
+                f"within +{16 * 24}px widening (tier-0 pool anchors and "
+                "tier-1 facing-border anchors both exhausted)")
+        constructed = fan
     if plan["deg0"]:
         total = sum(widths[v] for v in plan["deg0"]) + 18 * (len(plan["deg0"]) + 1)
         cur = max(cfg.margin, axis_x - total / 2)
@@ -279,4 +461,9 @@ def place_comb(plan, widths, card_h, cfg):
             "m": plan["m"],
         },
     }
-    return pos, y, meta
+    if constructed:
+        # tier-1 (wide-card) fan: certificate-caliber note only — the gate
+        # set and semantics are unchanged (hub_edges_straight still reads
+        # the delivered line kinds)
+        meta["comb"]["fan"] = "facing-border"
+    return pos, y, meta, constructed
