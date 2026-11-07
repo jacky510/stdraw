@@ -46,12 +46,22 @@ pip install stdraw
 
 全部为当前引擎（v0.7.6）对仓内语料的真实渲染截图——非手改、非旧版残留（点击跳转对应 demo）。
 
-| | |
-|---|---|
-| <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a> | <a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a> |
-| **2D · auto-v2 纵柱+翼位布局**（增长极限×转嫁负担，8n/13e，中央纵柱+中线翼位带+右翼镜像对、0 交叉） | **3D · 球面排布**（任意角度旋转，投影交叉由相机解决） |
-| <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a> | |
-| **质量证书面板**（硬门 + 门禁 + 诚实分级，随 demo 交付；纵柱翼位口径：纵柱轴偏差/中线贴靠/镜像误差） | |
+<table>
+  <tr>
+    <td><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a></td>
+    <td><a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a></td>
+  </tr>
+  <tr>
+    <td><strong>2D · auto-v2 纵柱+翼位布局</strong>（增长极限×转嫁负担，8n/13e，中央纵柱+中线翼位带+右翼镜像对、0 交叉）</td>
+    <td><strong>3D · 球面排布</strong>（任意角度旋转，投影交叉由相机解决）</td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><strong>质量证书面板</strong>（硬门 + 门禁 + 诚实分级，随 demo 交付；纵柱翼位口径：纵柱轴偏差/中线贴靠/镜像误差）</td>
+  </tr>
+</table>
 
 ## 对 agent 说人话
 

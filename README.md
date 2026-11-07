@@ -44,12 +44,22 @@ Mainstream diagram tools stop at "crossing minimization" heuristics, and **none 
 
 All images are real renderings produced by the current engine (v0.7.6) from the in-repo corpus — no mock-ups, no stale artifacts (click through to each demo).
 
-| | |
-|---|---|
-| <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a> | <a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a> |
-| **2D · auto-v2 spine-wing layout** (classic-cld-growth-and-burden, 8n/13e, vertical spine + midline wing band + mirrored right wing, 0 crossings) | **3D · sphere arrangement** (rotate freely; projection crossings solved by the camera) |
-| <a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a> | |
-| **Quality certificate panel** (hard gates + gate tally + honest grade, exactly as shipped in the demo; spine-wing caliber: spine-axis / midline-adherence / mirror deviation) | |
+<table>
+  <tr>
+    <td><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a></td>
+    <td><a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a></td>
+  </tr>
+  <tr>
+    <td><strong>2D · auto-v2 spine-wing layout</strong> (classic-cld-growth-and-burden, 8n/13e, vertical spine + midline wing band + mirrored right wing, 0 crossings)</td>
+    <td><strong>3D · sphere arrangement</strong> (rotate freely; projection crossings solved by the camera)</td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><strong>Quality certificate panel</strong> (hard gates + gate tally + honest grade, exactly as shipped in the demo; spine-wing caliber: spine-axis / midline-adherence / mirror deviation)</td>
+  </tr>
+</table>
 
 ## Ask your agent in plain words
 
