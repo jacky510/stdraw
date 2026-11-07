@@ -75,14 +75,22 @@ def text_width(s: str, fs: float, bold: bool = False) -> float:
 
 
 def card_size(label: str, value: str, fs_title: float, fs_value: float,
-              pad: float = None, min_w: int = 96, min_h: int = 44):
+              pad: float = None, min_w: int = 96, min_h: int = 44,
+              value_pad: float = None):
     """Planned card bounds: worst-case width of the two text lines + conservative padding, on a 2px grid.
 
     Returns (w, h). Height is generous per line count (title line + value line); a single line still keeps the visual height.
+
+    value_pad: extra per-side padding px reserved for the second (value) text
+    line, on top of the historical pad-4 baseline. Default None keeps the
+    historical behavior byte-for-byte (zero drift); callers that render long
+    ticker/price strings (e.g. "7741.T 22,395.00 JPY" measured ~120px vs a
+    108px card) opt in via AutoConfig.value_pad_extra / CLI --value-pad.
     """
     pad_side = pad if pad is not None else PAD_SIDE_MIN + 6
+    value_pad_side = (pad_side - 4) if value_pad is None else value_pad
     w = max(text_width(label, fs_title, bold=True) + 2 * pad_side,
-            text_width(value, fs_value, bold=True) + 2 * (pad_side - 4),
+            text_width(value, fs_value, bold=True) + 2 * value_pad_side,
             min_w)
     two_line = bool(value)
     h = max(min_h, 46 if two_line else 44)

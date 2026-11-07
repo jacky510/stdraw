@@ -210,8 +210,10 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     }
     parts.append(
         '<div class="stdraw-toolbar">'
-        '<span class="stdraw-hint">Drag cards to rearrange (mouse/touch) · metrics are live '
-        'recomputed on preview geometry; the certificate is authoritative via CLI --from-layout</span>'
+        '<span class="stdraw-hint">Drag cards to rearrange (mouse/touch) · double-click a line '
+        'to cycle its style (auto/straight/arc/free) · in free style click the line to add fold '
+        'points (max 3) · metrics are live recomputed on preview geometry; the certificate is '
+        'authoritative via CLI --from-layout</span>'
         '<span id="stdraw-metrics">…</span>'
         '<button id="stdraw-export" type="button">Export layout</button>'
         '<button id="stdraw-reset" type="button">Reset</button>'
@@ -256,6 +258,14 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                 '<h4>Placement mode: column (main chain in one vertical column + '
                 'branches on the nearest side + closing edge as a large left arc; '
                 'row alignment / column snap inapplicable)</h4>')
+        elif placement == "comb-bilateral":
+            metric_rows += (
+                f'<tr><td>Column-axis deviation</td><td>{m.get("column_axis_deviation")}</td></tr>'
+                f'<tr><td>Hub-pair symmetry error</td><td>{m.get("hub_symmetry_err")}</td></tr>')
+            placement_html = (
+                '<h4>Placement mode: comb-bilateral (sources in one vertical '
+                'column + two mirrored hub wings at the column middle row; '
+                'all hub edges straight lines)</h4>')
         elif placement == "symmetric":
             metric_rows += (
                 f'<tr><td>Mirror-axis error</td><td>{m.get("symmetry_mirror_err")}</td></tr>')

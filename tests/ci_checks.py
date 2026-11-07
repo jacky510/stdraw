@@ -86,6 +86,14 @@ SPINE_WING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16",
                          "spine_axis_le_2px", "midline_adherence_le_2px",
                          "symmetry_mirror_le_2px", "mutual_pairs_separated",
                          "lines_no_coincidence")
+# v0.7.7 comb-bilateral (K_{m,2} hubs): column axis + pitch + hub symmetry +
+# all-straight hub fan (CV not applicable as a gate: hub wings are
+# structurally far from the column)
+COMB_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
+                   "min_gap_ge_16", "column_axis_aligned",
+                   "column_pitch_uniform", "hub_symmetry_le_2px",
+                   "hub_edges_straight", "mutual_pairs_separated",
+                   "lines_no_coincidence")
 
 
 def _hard_gates_for(cert):
@@ -96,6 +104,8 @@ def _hard_gates_for(cert):
         return COLUMN_HARD_GATES
     if p == "spine-wing":
         return SPINE_WING_HARD_GATES
+    if p == "comb-bilateral":
+        return COMB_HARD_GATES
     if p in ("symmetric", "bowtie-vertex"):
         return SYM_HARD_GATES
     return HARD_GATES

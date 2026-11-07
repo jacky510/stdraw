@@ -1,6 +1,7 @@
 
 
-# ═══ Interactive layer script (drag rearrange; re-routing + bend handles) ═══
+# ═══ Interactive layer script (drag rearrange; re-routing + bend handles;
+# per-edge style cycle + free fold points + apply API) ═══
 # Pure vanilla JS (zero dependencies, zero network). Attached to pages generated
 # by render_auto_html:
 #   - drag nodes (SVG pointer events, mouse/touch unified; clamped to the
@@ -11,8 +12,8 @@
 #         stdraw/routing+visibility: straight-line candidates need 16px
 #         clearance, otherwise inflated-corner visibility graph Dijkstra +
 #         string-pulling shortcuts, inflation 17.5px) — bends recomputed on
-#         every drag, no more pinned midpoints (fixes the root cause of the
-#         user-reported issue 2: the old reanchor only rebuilt endpoints and
+#         every drag, no more pinned midpoints (fixes the root cause of
+#         the user-reported issue 2: the old reanchor only rebuilt endpoints and
 #         waypoints stayed pinned in place);
 #       · arcs: quadratic Bezier endpoint re-anchoring + control point
 #         translated by the mean endpoint displacement, all vertices follow;
@@ -24,14 +25,28 @@
 #     endpoints and keep user waypoints; the exported layout JSON carries
 #     edges[].waypoints, and CLI --from-layout recomputes under the same
 #     caliber (anchors = box border facing the first/last waypoint);
+#   - v0.7.7 per-edge style cycle: double-click a line to cycle
+#     auto -> straight -> arc -> free -> auto (>=10px hover hit zone,
+#     pointer cursor + highlight; double-click never disturbs node drags);
+#     forced states re-route live and the top-bar metrics recompute
+#     honestly (red when a hard gate fails — no leniency);
+#   - v0.7.7 free fold points: in free mode click the line to insert a
+#     handle (exact WYSIWYG polyline, no smoothing; endpoints re-anchored
+#     on the box borders facing the first/last fold point); at most 3 user
+#     fold points per edge — at the cap a click selects the nearest handle
+#     with the tooltip "max 3 points per edge";
+#   - v0.7.7 persistence: "Export layout" writes edges[].style (+ fold
+#     points as waypoints); window.__stdrawApplyLayout({nodes, edge_styles,
+#     waypoints}) restores a layout programmatically; every drag release /
+#     fold-point insert / style change / reset dispatches the CustomEvent
+#     "stdraw:layoutchanged" on window (detail = the current layout), so
+#     product integrations can drop pointerup polling;
 #   - live metrics in the top bar (truly computed on preview geometry:
 #     crossings / 1px card presses / card gap / CV / row alignment);
 #   - full metric refresh on release + deterministic replay of R/B polarity
 #     markers (same caliber as render._polarity_marker);
-#   - "Export layout" downloads a manual-layout JSON (rounded coordinates, a
-#     layout.json-compatible subset);
-#   - "Reset" restores the initial layout (incl. original path_d rendering and
-#     handle removal).
+#   - "Reset" restores the initial layout (incl. original path_d rendering,
+#     handle removal, style + fold-point clearing).
 # Determinism: the generated HTML contains no timestamps/random numbers;
 # without dragging the initial geometry is pixel-identical to the static render.
 _INTERACTIVE_JS = r"""(function () {
@@ -87,8 +102,28 @@ Object.keys(nodes).forEach(function (v) {
 function edgeD(pts) {
   return 'M ' + pts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ');
 }
+// ── v0.7.7 per-edge hover hit zones (>=10px, pointer cursor, highlight) ──
+var SVGNS_EARLY = 'http://www.w3.org/2000/svg';
+var hitLayer = document.createElementNS(SVGNS_EARLY, 'g');
+hitLayer.id = 'stdraw-hits';
+svg.insertBefore(hitLayer, svg.firstChild);
+edges.forEach(function (e, i) {
+  var h = document.createElementNS(SVGNS_EARLY, 'path');
+  h.setAttribute('class', 'stdraw-hit');
+  h.setAttribute('data-edge', i);
+  h.setAttribute('d', edgeD(e.pts));
+  h.addEventListener('mouseenter', function () { hlEdge(i, true); });
+  h.addEventListener('mouseleave', function () { hlEdge(i, false); });
+  hitLayer.appendChild(h);
+});
+function hlEdge(i, on) {
+  var g = svg.querySelector('[data-edge="' + i + '"]');
+  if (g) { if (on) g.classList.add('hl'); else g.classList.remove('hl'); }
+}
 function updateEdge(i) {
   var e = edges[i], g = svg.querySelector('[data-edge="' + i + '"]');
+  var h = hitLayer.querySelector('.stdraw-hit[data-edge="' + i + '"]');
+  if (h) h.setAttribute('d', edgeD(e.pts));
   if (!g) return;
   var paths = g.querySelectorAll('path');
   if (paths[0]) paths[0].setAttribute('d', edgeD(e.pts));
@@ -272,30 +307,103 @@ function arcFollow(i) {
   e.pts = quad(pa, ctrl, pb, 12);
   e.corners = null;
 }
+// ── v0.7.7 forced geometries (per-edge style cycle; same math caliber as
+// the Python replay in layout_auto._manual_edge_styles/_forced_arc_route) ──
+function forcedStraight(i) {
+  var e = edges[i], A = nodes[e.a], B = nodes[e.b];
+  var pa = borderPoint([A.x, A.y], A.w / 2, cardH / 2, [B.x, B.y]);
+  var pb = borderPoint([B.x, B.y], B.w / 2, cardH / 2, [A.x, A.y]);
+  e.pts = [pa, pb];
+  e.corners = null;
+}
+function adaptiveArcK(d) {
+  // same parameterization as routing.adaptive_arc_k
+  var bulge = Math.min(6.0 + 0.06 * d, 40.0);
+  var k = 2.0 * bulge / Math.max(d, 1e-6);
+  return Math.max(0.12, Math.min(0.50, k));
+}
+function forcedArc(i) {
+  // anchors = box borders facing each other; curvature = chord-adaptive k;
+  // side = the sign whose sampled arc keeps more distance from unrelated
+  // boxes (deterministic tie -> +1). Same rule as the Python replay.
+  var e = edges[i], A = nodes[e.a], B = nodes[e.b];
+  var pa = borderPoint([A.x, A.y], A.w / 2, cardH / 2, [B.x, B.y]);
+  var pb = borderPoint([B.x, B.y], B.w / 2, cardH / 2, [A.x, A.y]);
+  var vx = pb[0] - pa[0], vy = pb[1] - pa[1], d = Math.hypot(vx, vy);
+  var k = adaptiveArcK(d), n = Math.max(d, 1e-6);
+  var ux = -vy / n, uy = vx / n;
+  var best = null;
+  [1, -1].forEach(function (s) {
+    var ctrl = [(pa[0] + pb[0]) / 2 + ux * k * d * s,
+                (pa[1] + pb[1]) / 2 + uy * k * d * s];
+    var pts = quad(pa, ctrl, pb, 12);
+    var mclr = null;
+    Object.keys(nodes).forEach(function (v) {
+      if (v === e.a || v === e.b) return;
+      var nn = nodes[v];
+      for (var q = 0; q < pts.length; q++) {
+        var dd = distRect(pts[q][0], pts[q][1], nn.x, nn.y, nn.w / 2, cardH / 2);
+        mclr = (mclr === null) ? dd : Math.min(mclr, dd);
+      }
+    });
+    var key = (-(mclr === null ? 1e9 : mclr));
+    if (best === null || key < best[0]) best = [key, pts, ctrl];
+  });
+  e.pts = best[1];
+  e.corners = null;
+}
+function reanchorFree(i) {
+  // free mode: exact polyline over the user fold points; endpoints = box
+  // borders facing the first/last fold point (same caliber as waypoints)
+  var e = edges[i], A = nodes[e.a], B = nodes[e.b];
+  var wps = freeWps[i];
+  if (!wps || !wps.length) { forcedStraight(i); return; }
+  var pts = [borderPoint([A.x, A.y], A.w / 2, cardH / 2, wps[0])];
+  pts = pts.concat(wps.map(cp));
+  pts.push(borderPoint([B.x, B.y], B.w / 2, cardH / 2, wps[wps.length - 1]));
+  e.pts = pts;
+  e.corners = null;
+}
 function reroute(i) {
-  if (pinned[i]) { reanchor(i); return; }      // user-anchored: re-anchor endpoints only, keep waypoints
+  var st = styles[i] || 'auto';
+  if (st === 'free') { reanchorFree(i); return; }   // user fold points: re-anchor endpoints only
+  if (pinned[i]) { reanchor(i); return; }           // user-anchored: re-anchor endpoints only, keep waypoints
+  if (st === 'straight') { forcedStraight(i); return; }
+  if (st === 'arc') { forcedArc(i); return; }
   if (edges[i].arc) { arcFollow(i); return; }
   previewRoute(i);
 }
 
 // ── Bend handles (vg polylines / user-anchored edges) ──
 var pinned = {};          // edgeIdx -> true (user dragged a handle = waypoints anchored)
+// v0.7.7 per-edge style cycle: edgeIdx -> 'auto' | 'straight' | 'arc' | 'free'
+// (auto = engine default routing; free = exact polyline on user fold points)
+var styles = {};
+var freeWps = {};         // edgeIdx -> [[x,y], ...] user fold points (free mode, max 3)
+var MAX_FREE_PTS = 3;     // per-edge user fold-point cap
 var NS = 'http://www.w3.org/2000/svg';
 var styleEl = document.createElement('style');
 styleEl.textContent = '#stdraw-handles circle.stdraw-wp{fill:#fff;stroke:#475569;' +
   'stroke-width:1.4;cursor:move;pointer-events:all}' +
-  '#stdraw-handles circle.stdraw-wp:hover{stroke:#dc2626;fill:#fef2f2}';
+  '#stdraw-handles circle.stdraw-wp:hover{stroke:#dc2626;fill:#fef2f2}' +
+  '#stdraw-handles circle.stdraw-wp.sel{stroke:#dc2626;fill:#fef2f2}' +
+  '#stdraw-svg path.stdraw-hit{fill:none;stroke:transparent;stroke-width:12;cursor:pointer;pointer-events:stroke}' +
+  '#stdraw-svg [data-edge].hl > path:not(.stdraw-hit){stroke-width:2.4}' +
+  '.stdraw-tip{position:absolute;z-index:9;background:#1f2937;color:#fff;' +
+  'font:12px/1.4 sans-serif;padding:3px 8px;border-radius:4px;pointer-events:none}';
 document.head.appendChild(styleEl);
 var handleLayer = document.createElementNS(NS, 'g');
 handleLayer.id = 'stdraw-handles';
 svg.appendChild(handleLayer);
 function edgeHasHandles(i) {
   var e = edges[i];
+  if ((styles[i] || 'auto') === 'free') return !!(freeWps[i] && freeWps[i].length);
   if (e.arc) return false;
   if (pinned[i]) return e.pts.length >= 3;
   return !!(e.corners && e.corners.length >= 3);
 }
-function handlePts(i) {     // handle positions: unanchored = current corners; anchored = midpoints of pts
+function handlePts(i) {     // handle positions: free = user fold points; unanchored = current corners; anchored = midpoints of pts
+  if ((styles[i] || 'auto') === 'free') return freeWps[i] || [];
   return pinned[i] ? edges[i].pts : edges[i].corners;
 }
 function rebuildHandles() {
@@ -303,7 +411,24 @@ function rebuildHandles() {
   edges.forEach(function (e, i) {
     if (!edgeHasHandles(i)) return;
     var pts = handlePts(i);
-    if (!pts || pts.length < 3) return;
+    if (!pts || pts.length < 1) return;
+    if ((styles[i] || 'auto') === 'free') {
+      // free-mode handles: one per user fold point (data-wp = fold index;
+      // pts index = fold index + 1)
+      for (var kf = 0; kf < pts.length; kf++) {
+        var cf = document.createElementNS(NS, 'circle');
+        cf.setAttribute('cx', pts[kf][0].toFixed(1));
+        cf.setAttribute('cy', pts[kf][1].toFixed(1));
+        cf.setAttribute('r', '4');
+        cf.setAttribute('class', 'stdraw-wp');
+        cf.setAttribute('data-edge', i);
+        cf.setAttribute('data-wp', kf + 1);
+        cf.setAttribute('data-free', '1');
+        handleLayer.appendChild(cf);
+      }
+      return;
+    }
+    if (pts.length < 3) return;
     for (var k = 1; k < pts.length - 1; k++) {
       var c = document.createElementNS(NS, 'circle');
       c.setAttribute('cx', pts[k][0].toFixed(1));
@@ -418,6 +543,8 @@ function refreshMetrics() {
   var m = metrics();
   el.textContent = 'crossings ' + m.crossings + ' · presses(1px) ' + m.press +
     ' · card gap ' + m.minGap + 'px · CV ' + m.cv + ' · row align ' + m.row;
+  // honest hard-gate coloring (no leniency): red when a gate clearly fails
+  el.style.color = (m.press > 0 || m.crossings > 2 || m.minGap < 16) ? '#dc2626' : '';
 }
 function polyPointAt(pts, t) {
   var segs = [], total = 0, i;
@@ -450,6 +577,93 @@ function refreshMarkers() {
   // Badges removed (edge coloring carries R/B polarity) — empty implementation keeps the interface.
 }
 var drag = null, rafPending = false;
+// ── v0.7.7 per-edge style cycle: auto -> straight -> arc -> free -> auto ──
+var STYLE_ORDER = ['auto', 'straight', 'arc', 'free'];
+function setStyle(i, st) {
+  if (st === 'auto') {
+    delete styles[i];
+    delete freeWps[i];
+    delete pinned[i];       // back to the engine default state (no pins)
+  } else {
+    styles[i] = st;
+  }
+  if (st === 'free' && !freeWps[i]) freeWps[i] = [];
+  reroute(i);
+  updateEdge(i);
+  rebuildHandles();
+  refreshMetrics();
+  fireLayoutChanged();
+}
+function cycleStyle(i) {
+  var cur = styles[i] || 'auto';
+  setStyle(i, STYLE_ORDER[(STYLE_ORDER.indexOf(cur) + 1) % STYLE_ORDER.length]);
+}
+// manual double-click detection on edge pointerdowns: a fold-point insert
+// puts a handle circle exactly under the cursor, so the second click of a
+// browser dblclick lands on a different target and the native dblclick
+// never fires. Track edge pointerdown timestamps instead (deterministic).
+var lastEdgeDown = {edge: -1, t: 0};
+function edgeDblClickCheck(i) {
+  var now = (window.performance && performance.now) ? performance.now() : Date.now();
+  if (lastEdgeDown.edge === i && now - lastEdgeDown.t < 450) {
+    lastEdgeDown = {edge: -1, t: 0};
+    cycleStyle(i);
+    return true;
+  }
+  lastEdgeDown = {edge: i, t: now};
+  return false;
+}
+// ── v0.7.7 free-mode fold points: click inserts, max 3 per edge ──
+function projectOnSeg(p, a, b) {
+  var vx = b[0] - a[0], vy = b[1] - a[1], L2 = vx * vx + vy * vy;
+  var t = L2 < 1e-12 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / L2));
+  return [a[0] + t * vx, a[1] + t * vy];
+}
+var tipEl = null, tipTimer = null;
+function showTip(text, ev) {
+  if (tipEl) tipEl.remove();
+  tipEl = document.createElement('div');
+  tipEl.className = 'stdraw-tip';
+  tipEl.textContent = text;
+  document.body.appendChild(tipEl);
+  var x = 40, y = 40;
+  if (ev && typeof ev.clientX === 'number') { x = ev.clientX + 12; y = ev.clientY - 24; }
+  tipEl.style.left = x + 'px';
+  tipEl.style.top = y + 'px';
+  if (tipTimer) clearTimeout(tipTimer);
+  tipTimer = setTimeout(function () { if (tipEl) tipEl.remove(); tipEl = null; }, 1500);
+}
+function selectNearestFreeHandle(i, p) {
+  var bestH = null, bestD = null;
+  handleLayer.querySelectorAll('.stdraw-wp[data-free="1"]').forEach(function (c) {
+    if (+c.getAttribute('data-edge') !== i) { c.classList.remove('sel'); return; }
+    var d = Math.hypot(+c.getAttribute('cx') - p[0], +c.getAttribute('cy') - p[1]);
+    if (bestD === null || d < bestD) { bestD = d; bestH = c; }
+  });
+  if (bestH) bestH.classList.add('sel');
+}
+function insertFreePoint(i, p, ev) {
+  var wps = freeWps[i] = freeWps[i] || [];
+  if (wps.length >= MAX_FREE_PTS) {
+    selectNearestFreeHandle(i, p);
+    showTip('max ' + MAX_FREE_PTS + ' points per edge', ev);
+    return;
+  }
+  var pts = edges[i].pts;
+  var best = null;
+  for (var s = 0; s < pts.length - 1; s++) {
+    var q = projectOnSeg(p, pts[s], pts[s + 1]);
+    var d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (best === null || d < best[0]) best = [d, s, q];
+  }
+  var wi = Math.min(best[1], wps.length);
+  wps.splice(wi, 0, [Math.round(best[2][0] * 2) / 2, Math.round(best[2][1] * 2) / 2]);
+  reanchorFree(i);
+  updateEdge(i);
+  rebuildHandles();
+  refreshMetrics();
+  fireLayoutChanged();
+}
 function svgPoint(ev) {
   var m = svg.getScreenCTM();
   if (!m) return null;
@@ -463,10 +677,17 @@ function onDown(ev) {
   if (h) {
     var ei = +h.getAttribute('data-edge'), wi = +h.getAttribute('data-wp');
     if (!edges[ei]) return;
-    pinEdge(ei);
-    updateEdge(ei);
+    var isFree = h.getAttribute('data-free') === '1';
+    if (isFree && edgeDblClickCheck(ei)) {
+      ev.preventDefault();
+      return;
+    }
+    if (!isFree) {
+      pinEdge(ei);
+      updateEdge(ei);
+    }
     var p0 = svgPoint(ev);
-    drag = {wp: true, edge: ei, idx: wi, start: [p0.x, p0.y],
+    drag = {wp: true, edge: ei, idx: wi, free: isFree, start: [p0.x, p0.y],
             ox: edges[ei].pts[wi][0], oy: edges[ei].pts[wi][1], g: h};
     try { h.setPointerCapture(ev.pointerId); } catch (e) {}
     ev.preventDefault();
@@ -474,14 +695,36 @@ function onDown(ev) {
     return;
   }
   var g = t && t.closest ? t.closest('[data-node]') : null;
-  if (!g) return;
-  var id = g.getAttribute('data-node');
-  var p = svgPoint(ev);
-  if (!p || !(id in nodes)) return;
-  drag = {id: id, g: g, start: [p.x, p.y], ox: nodes[id].x, oy: nodes[id].y};
-  try { g.setPointerCapture(ev.pointerId); } catch (e) {}
-  g.classList.add('dragging');
-  ev.preventDefault();
+  if (g) {
+    var id = g.getAttribute('data-node');
+    var p = svgPoint(ev);
+    if (!p || !(id in nodes)) return;
+    drag = {id: id, g: g, start: [p.x, p.y], ox: nodes[id].x, oy: nodes[id].y};
+    try { g.setPointerCapture(ev.pointerId); } catch (e) {}
+    g.classList.add('dragging');
+    ev.preventDefault();
+    return;
+  }
+  // free-mode fold-point insertion + double-click style cycle: any
+  // pointerdown resolving to an edge (hit path / visible line / free
+  // handle) participates in the double-click detection
+  var eg = t && t.closest ? t.closest('[data-edge]') : null;
+  if (eg) {
+    var ei2 = +eg.getAttribute('data-edge');
+    if (edges[ei2]) {
+      if (edgeDblClickCheck(ei2)) {
+        ev.preventDefault();
+        return;
+      }
+      if ((styles[ei2] || 'auto') === 'free') {
+        var p1 = svgPoint(ev);
+        if (p1) {
+          drag = {insert: true, edge: ei2, start: [p1.x, p1.y], ev: ev};
+          ev.preventDefault();
+        }
+      }
+    }
+  }
 }
 function onMove(ev) {
   if (!drag) return;
@@ -494,6 +737,7 @@ function onMove(ev) {
     wx = Math.max(4, Math.min(VB[2] - 4, wx));
     wy = Math.max(4, Math.min(VB[3] - 4, wy));
     e.pts[drag.idx] = [wx, wy];
+    if (drag.free && freeWps[drag.edge]) freeWps[drag.edge][drag.idx - 1] = [wx, wy];
     updateEdge(drag.edge);
     rebuildHandles();
     if (!rafPending) {
@@ -536,11 +780,21 @@ function onMove(ev) {
 }
 function onUp(ev) {
   if (!drag) return;
+  if (drag.insert) {
+    var pe = svgPoint(ev);
+    var moved = pe ? Math.hypot(pe.x - drag.start[0], pe.y - drag.start[1]) : 1e9;
+    if (moved < 4 && (styles[drag.edge] || 'auto') === 'free') {
+      insertFreePoint(drag.edge, [pe.x, pe.y], ev);
+    }
+    drag = null;
+    return;
+  }
   if (drag.wp) {
     drag = null;
     rebuildHandles();
     refreshMarkers();
     refreshMetrics();
+    fireLayoutChanged();
     return;
   }
   drag.g.classList.remove('dragging');
@@ -550,27 +804,45 @@ function onUp(ev) {
   rebuildHandles();
   refreshMarkers();
   refreshMetrics();
+  fireLayoutChanged();
 }
 svg.addEventListener('pointerdown', onDown);
 window.addEventListener('pointermove', onMove);
 window.addEventListener('pointerup', onUp);
 window.addEventListener('pointercancel', onUp);
-function exportLayout() {
+function buildLayout() {
   var out = {tool: 'stdraw', kind: 'manual-layout', graph: D.name,
              viewBox: VB.slice(), nodes: {}};
   Object.keys(nodes).forEach(function (v) {
     out.nodes[v] = {x: Math.round(nodes[v].x), y: Math.round(nodes[v].y)};
   });
-  // Waypoints of user-anchored edges (deterministic: original edge order, rounded coordinates)
-  var wps = [];
+  // v0.7.7: edges[] carries the per-edge style + user fold points
+  // (deterministic: original edge order, rounded coordinates); legacy
+  // user-anchored (pinned) edges keep the waypoints-only form
+  var es = [];
   edges.forEach(function (e, i) {
-    if (!pinned[i]) return;
-    wps.push({a: e.a, b: e.b,
-              waypoints: e.pts.slice(1, -1).map(function (p) {
-                return [Math.round(p[0]), Math.round(p[1])];
-              })});
+    var st = styles[i] || 'auto';
+    var wps = null;
+    if (st === 'free' && freeWps[i] && freeWps[i].length) {
+      wps = freeWps[i].map(function (p) {
+        return [Math.round(p[0]), Math.round(p[1])];
+      });
+    } else if (pinned[i]) {
+      wps = e.pts.slice(1, -1).map(function (p) {
+        return [Math.round(p[0]), Math.round(p[1])];
+      });
+    }
+    if (st !== 'auto' || (wps && wps.length)) {
+      var it = {a: e.a, b: e.b, style: st};
+      if (wps && wps.length) it.waypoints = wps;
+      es.push(it);
+    }
   });
-  if (wps.length) out.edges = wps;
+  if (es.length) out.edges = es;
+  return out;
+}
+function exportLayout() {
+  var out = buildLayout();
   var txt = JSON.stringify(out, null, 1);
   try {
     var blob = new Blob([txt], {type: 'application/json'});
@@ -584,8 +856,19 @@ function exportLayout() {
   } catch (e) { /* sandboxed / no download API: probes go through __stdrawExportJSON */ }
   return out;
 }
+// v0.7.7: layout-changed notification (drag release / fold-point insert /
+// style cycle / reset / applyLayout) — product integrations can listen on
+// window 'stdraw:layoutchanged' instead of polling pointerup
+function fireLayoutChanged() {
+  try {
+    window.dispatchEvent(new CustomEvent('stdraw:layoutchanged',
+                                         {detail: buildLayout()}));
+  } catch (e) { /* CustomEvent unavailable: silent */ }
+}
 function reset() {
   pinned = {};
+  styles = {};          // v0.7.7: reset clears pins + forced styles -> auto
+  freeWps = {};
   Object.keys(nodes).forEach(function (v) {
     var n = nodes[v];
     n.x = n.bx; n.y = n.by;
@@ -605,15 +888,81 @@ function reset() {
       var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
       paths[1].setAttribute('transform', 'translate(' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
     }
+    var h = hitLayer.querySelector('.stdraw-hit[data-edge="' + i + '"]');
+    if (h) h.setAttribute('d', edgeD(e.pts));
   });
   Object.keys(polGroups).forEach(function (i) {
     polGroups[i].g.setAttribute('transform', polGroups[i].t);
   });
   rebuildHandles();
   refreshMetrics();
+  fireLayoutChanged();
 }
 window.__stdrawExportLayout = exportLayout;
-window.__stdrawExportJSON = function () { return JSON.stringify(exportLayout(), null, 1); };
+window.__stdrawExportJSON = function () { return JSON.stringify(buildLayout(), null, 1); };
+// v0.7.7 public apply API: programmatically restore a layout
+// ({nodes: {id: {x,y}}, edge_styles: {"a->b": "straight"|"arc"|"free"|"auto"},
+//   waypoints: {"a->b": [[x,y],...]}}) — the inverse of "Export layout"
+window.__stdrawApplyLayout = function (spec) {
+  if (!spec || typeof spec !== 'object') return false;
+  var ns = spec.nodes || {};
+  Object.keys(ns).forEach(function (v) {
+    if (!nodes[v]) return;
+    var q = ns[v];
+    nodes[v].x = +q.x;
+    nodes[v].y = +q.y;
+  });
+  Object.keys(nodes).forEach(function (v) {
+    var n = nodes[v];
+    if (n.g) n.g.setAttribute('transform',
+      'translate(' + (n.x - n.bx).toFixed(1) + ' ' + (n.y - n.by).toFixed(1) + ')');
+  });
+  function edgeIdxByKey(k) {
+    var m = String(k).split('->');
+    if (m.length !== 2) return null;
+    for (var i = 0; i < edges.length; i++) {
+      if (edges[i].a === m[0] && edges[i].b === m[1]) return i;
+    }
+    return null;
+  }
+  styles = {};
+  freeWps = {};
+  var ess = spec.edge_styles || {};
+  Object.keys(ess).forEach(function (k) {
+    var i = edgeIdxByKey(k);
+    if (i !== null && ['auto', 'straight', 'arc', 'free'].indexOf(ess[k]) >= 0) {
+      if (ess[k] === 'free') freeWps[i] = [];
+      if (ess[k] !== 'auto') styles[i] = ess[k];
+    }
+  });
+  var wss = spec.waypoints || {};
+  Object.keys(wss).forEach(function (k) {
+    var i = edgeIdxByKey(k);
+    if (i === null || !Array.isArray(wss[k])) return;
+    freeWps[i] = wss[k].map(function (p) { return [+p[0], +p[1]]; })
+      .filter(function (p) { return isFinite(p[0]) && isFinite(p[1]); })
+      .slice(0, MAX_FREE_PTS);
+    if (!styles[i]) styles[i] = 'free';
+  });
+  edges.forEach(function (e, i) { reroute(i); updateEdge(i); });
+  rebuildHandles();
+  refreshMetrics();
+  fireLayoutChanged();
+  return true;
+};
+// v0.7.7 probe hooks: styled-edge list / per-edge style / free fold points
+window.__stdrawStyles = function () {
+  return Object.keys(styles).map(Number).sort(function (a, b) { return a - b; });
+};
+window.__stdrawEdgeStyle = function (i) {
+  return (i === undefined || i === null) ? JSON.parse(JSON.stringify(styles))
+    : (styles[i] || 'auto');
+};
+window.__stdrawFreePoints = function (i) {
+  return (i === undefined || i === null)
+    ? JSON.parse(JSON.stringify(freeWps))
+    : (freeWps[i] ? freeWps[i].map(cp) : []);
+};
 window.__stdrawMetrics = metrics;
 window.__stdrawNodePos = function (v) {
   return v ? [nodes[v].x, nodes[v].y]

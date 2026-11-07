@@ -88,6 +88,10 @@ def main(argv=None):
                     help="3D solid list (comma separated)")
     ap.add_argument("--pitch", type=int, default=None,
                     help="row pitch px (default 56; raise it for small graphs to pass the clearance gate, parameter is transparent)")
+    ap.add_argument("--value-pad", type=float, default=None, metavar="PX",
+                    help="extra per-side padding px for the value (second) text line "
+                         "(default: historical baseline; raise it when long ticker/price "
+                         "value strings overflow the planned card width)")
     ap.add_argument("--name", default="", help="graph name (default: the DSL graph name)")
     ap.add_argument("--exact", action="store_true",
                     help="WS2 exact crossing-number layer: B&B squeeze computes cr(G) and writes the "
@@ -197,6 +201,8 @@ def main(argv=None):
         cfg = AutoConfig()
         if a.pitch:
             cfg.pitch = a.pitch
+        if a.value_pad is not None:
+            cfg.value_pad_extra = a.value_pad
         if a.from_layout:
             # Manual layout: same routing + certificate pipeline; hard-gate
             # caliber unchanged, graded honestly
