@@ -98,7 +98,9 @@ stdraw 是 planarity-aware 的系统思维图（CLD / 因果回路图）引擎�
      CV ≤0.05 + 正多边形模板拟合 ≤0.05；column：主链列轴偏差 ≤2px + 主链
      行距恒等；symmetric：镜像轴误差 ≤2px；bowtie-vertex：镜像轴误差 ≤2px；
      spine-wing：纵柱 x 对齐 ≤2px + 中线贴靠 ≤2px + 镜像 ≤2px；
-     layered：行距恒等 + 列吸附；
+     layered：行距恒等 + 列吸附；锚点带内（v0.7.3，全引擎硬门）：转角
+     命中 = 0 + 带内比例（±1/4 边长）≥ v0.7.2 基线锁表，spine-wing 须
+     100% 带内；
    - **交叉与行对齐是报告项（软目标）**：排布规律达标时允许 ≤2 交叉（秩序与
      优美优先）；分级语义不变——「最优」仍要求 0 交叉；
    - **R/B 极性颜色化**（替代文字徽标）：单环边 R=琥珀 `#d97706`、B=天蓝
@@ -216,10 +218,11 @@ loop r1 "采纳扩散" "R" [rate, adopters, word]   # 声明回路：节点序�
   报告指标 loop_cohesion_spread（回路聚拢）、center_offset_x、
   line_kind_counts、ring_spacing_cv / ring_template_deviation（环形口径）；
 - **gates（硬门，按 `placement` 模式切换）**：以
-  `demos/classic-certificate.json` 实测（ring-cycle 模式）为例，9 门
-  **9/9 通过**——box_press_zero / edge_box_clear_ge_16 / anchors_smooth /
-  min_gap_ge_16 / ring_spacing_cv_le_005 / ring_template_fit_le_005 /
-  mutual_pairs_separated / lines_no_coincidence / routing_consistent；
+  `demos/classic-certificate.json` 实测（spine-wing 模式）为例，11 门
+  **11/11 通过**——box_press_zero / edge_box_clear_ge_16 / anchors_smooth /
+  min_gap_ge_16 / cv_le_035 / spine_axis_le_2px / midline_adherence_le_2px /
+  symmetry_mirror_le_2px / mutual_pairs_separated / lines_no_coincidence /
+  routing_consistent（gates 键集随 placement 模式切换，以实测 JSON 为准）；
 - **reports（报告项，非硬门）**：`crossings_zero`（软目标：排布规律达标时
   允许 ≤2 交叉）与 `row_align_ge_060`；分级语义不受影响；
 - **grade**：
@@ -307,9 +310,22 @@ MCP server 形态在路线图中（规划中，未实现）。当前 agent 集�
 
 ## 版本
 
-当前 **0.7.1**（`stdraw.__version__`，与 `pyproject.toml` 一致）。DSL 为
+当前 **0.7.5**（`stdraw.__version__`，与 `pyproject.toml` 一致）。DSL 为
 v0.1 草案，向后兼容升级会同步 bump 与规范文档。
 
+- **v0.7.5 版本收尾**（落地卡 ref-scrubbed）：pyproject / __init__ / README
+  双语徽章统一 0.7.4→0.7.5；证书摘要字节对拍（版本串不进输出字节）；同批
+  落地 AGENTS.md 口径同步（gates 示例改 spine-wing 11 门、锚点带内索引行、
+  版本历史补 v0.7.2–v0.7.5，承接 ref-scrubbed 已批 diff）；发布面卡号净化
+  （ref-scrubbed，dbe2890）；
+- **v0.7.4 版本收尾**（落地卡 ref-scrubbed）：发布面对齐（README 图注 /
+  auto-v2 描述改模式化口径、SKILL.md 模式清单补 bowtie-vertex / spine-wing、
+  demos/classic-certificate.json 重渲 spine-wing 11 门）；批量切换核验 =
+  19 图 sweep（HEAD 69d49af）仅 classic-cld 命中 spine-wing，bullwhip /
+  tragedy-of-the-commons 为 column-chain 同构族不触发（W≤2）、
+  limits-to-growth rest=0 不触发；
+- **v0.7.3 锚点带内 CI 硬门 / v0.7.2 交付件重渲染 + demo 新鲜度门**
+  （ref-scrubbed 系返修）；
 - **v0.7.1 纵柱+翼位 spine-wing**（落地卡 ref-scrubbed）：判定条件、排布模板
   与规律门口径正本 = [docs/layout-modes.md](docs/layout-modes.md) §纵柱+翼位，
   本文不放副本；
