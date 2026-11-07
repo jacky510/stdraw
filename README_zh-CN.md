@@ -241,6 +241,34 @@ loop R1 "采纳扩散" "R" [rate, adopters, word]
 
 ## Agent 集成
 
+**按结果选路径，别按本地先例抄。** 最常见的集成错误是拿 `layout.json` 的坐标自烤一张
+静态 SVG——交付物随即退化：不可拖拽、无折叠点手柄、失去「导出→重算」闭环，也没有诚实
+证书。坐标输出自带交付契约元数据（`stdraw/delivery.py`）：坐标-only 模式带
+`"delivery": "coordinates-only"`、`"interactive": false`、`"engine_version"` 及一行
+警告；CLI 全量交付时改标 `"delivery": "stdraw-cli"`、`"interactive": true`。
+`certificate.json` 新增交付面自白栏 `"interactive"` / `"drag_layer"`，宿主 CI 可直接
+拿它做门禁：
+
+| 你要什么 | 用什么 | 若仍走最后一行，失去什么 |
+|---|---|---|
+| 一张完成的图（拖拽修饰 + 证书） | `stdraw layout model.cld` → 交付 **`demo-2d.html`** | — |
+| 把图嵌进自己的页面 | 内嵌 `demo-2d.html`（iframe）+ 持久化导出布局 + `--from-layout`（见下） | — |
+| 给自建渲染器喂坐标 | `layout.json`——自我声明坐标-only 并附警告；确要坐标可显式关警告：`recipes.run(..., suppress_delivery_warning=True)` | 实时拖拽重布线、折叠点手柄、导出→重算闭环、质量证书、CI 门禁 |
+
+### 最小嵌入（官方姿势）
+
+```html
+<!-- 嵌交付页面，不是嵌坐标 -->
+<iframe src="demo-2d.html" style="width:100%;height:820px;border:0"
+        title="stdraw 图（可拖拽修饰）"></iframe>
+```
+
+```bash
+# 在 demo-2d.html 里手工修饰后："Export layout" -> manual-layout.json
+stdraw layout model.cld --from-layout manual-layout.json --outdir out-manual
+# -> 修饰后坐标上重渲染的 demo-2d.html + 重新评分的证书
+```
+
 | Agent host | 接入方式 |
 |---|---|
 | 任意能读文件的 agent | 读 [AGENTS.md](AGENTS.md)（仓根，agent 使用说明书，英文） |

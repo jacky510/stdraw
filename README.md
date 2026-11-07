@@ -252,6 +252,37 @@ symmetry-axis alignment; definitions in docs/crossing-exact.md (Chinese) §7).
 
 ## Agent Integration
 
+**Decide by outcome, not by habit.** The most common integration mistake
+is baking a static SVG from `layout.json` coordinates — that silently
+loses everything stdraw exists to deliver (live drag re-routing, waypoint
+handles, the export→recompute loop, the honest certificate). Coordinate
+outputs carry an explicit delivery contract (`stdraw/delivery.py`):
+`"delivery": "coordinates-only"`, `"interactive": false`,
+`"engine_version"` and a one-line warning on coordinates-only outputs;
+the CLI marks full deliverables `"delivery": "stdraw-cli"`,
+`"interactive": true`. The certificate confesses its delivery face via
+`"interactive"` / `"drag_layer"` (usable as a host CI gate):
+
+| You want | Use | If you take the last row anyway, you lose |
+|---|---|---|
+| One finished diagram (touch-up + certificate) | `stdraw layout model.cld` → deliver **`demo-2d.html`** | — |
+| The diagram inside your own page | embed `demo-2d.html` (iframe) + persist the exported layout + `--from-layout` (below) | — |
+| Coordinates for your own renderer | `layout.json` — self-declares coordinates-only + warning; explicit opt-out: `stdraw.recipes.run(..., suppress_delivery_warning=True)` | live drag re-routing, waypoint handles, export→recompute loop, quality certificate, CI gate |
+
+### Minimal embed (official posture)
+
+```html
+<!-- embed the deliverable page, not the coordinates -->
+<iframe src="demo-2d.html" style="width:100%;height:820px;border:0"
+        title="stdraw diagram (drag to touch up)"></iframe>
+```
+
+```bash
+# after manual touch-up in demo-2d.html: "Export layout" -> manual-layout.json
+stdraw layout model.cld --from-layout manual-layout.json --outdir out-manual
+# -> demo-2d.html re-rendered on the touched-up coordinates + re-graded certificate
+```
+
 | Agent host | Integration |
 |---|---|
 | Any agent that can read files | read [AGENTS.md](AGENTS.md) (repo root, agent manual, English) |

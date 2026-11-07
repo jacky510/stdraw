@@ -133,5 +133,7 @@
   "spine_axis_deviation": 0,
   "midline_deviation": 0,
   "mirror_err": 0
- }
+ },
+ "interactive": "yes",
+ "drag_layer": "yes"
 }

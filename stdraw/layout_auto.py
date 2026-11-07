@@ -1307,4 +1307,5 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                        "detour; hard gates: box-over-line=0, edge-box clearance>=16px"),
         },
     }
-    return v4
+    from .delivery import stamp_coordinates_only
+    return stamp_coordinates_only(v4)

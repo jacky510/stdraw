@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 """Planarity-aware 2D layout layer: planar embedding + st-numbering + dual longest paths + lane packing.
 
+INTERNAL INTERFACE -- coordinates are not the stdraw deliverable. The
+product interface is the CLI (`stdraw layout ...` -> demo-2d.html, the
+interactive deliverable with drag touch-up + embedded certificate) or
+stdraw.recipes.run for programmatic use. Coordinate dicts produced by
+this module carry a delivery contract saying exactly that
+("delivery": "coordinates-only", "interactive": false, "engine_version",
+one-line "delivery_warning" -- see stdraw/delivery.py); treat them as
+an internal layout-layer interface, not a rendering deliverable.
+
 Layout math (Rosenstiehl-Tarjan visibility representation -> all wires strictly vertical, 0 crossings guaranteed by theorem),
 graph data is passed in explicitly through the Graph model, decoupled from any concrete business template.
 
@@ -602,6 +611,8 @@ class PlanarLayout:
         v4["meta"]["method"] = ("visibility-representation (Rosenstiehl-Tarjan) "
                                 "0-crossing guaranteed; wires strictly vertical; "
                                 "compact packing (occlusion allowed under cards)")
+        from .delivery import stamp_coordinates_only
+        v4 = stamp_coordinates_only(v4)
         return v4
 
 
