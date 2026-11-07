@@ -1,14 +1,14 @@
-# 批量 orchestrator：全语料 × 全工具 → raw/。逐 run subprocess 控预算，超时落 DNF。
-# 可重入：已存在的输出跳过。进度写 run_all.log。
+# Batch orchestrator: full corpus × all tools -> raw/. Each run is a subprocess under a budget; timeouts land as DNF.
+# Re-enterable: existing outputs are skipped. Progress is written to run_all.log.
 #
-# 预算（秒，REPORT §2 口径）：
-#   ortho 60；auto classic 300 / 随机 n≤10 350 / 随机 n≥20 100；
-#   auto-exact = auto 布局复用（WS2 已证确定性逐字节一致）+ 单独跑 cr(G)（300s）；
-#   graphviz/elk 120。
-# WS5 后引擎口径：n>10 的 CP-SAT 定位带确定性时间预算（max_deterministic_time
-# =8det，输出仍逐字节可复现），n≤10 与布线层不变（求到最优）；旧版 n≥20 全 DNF
-# 的根因是 CP-SAT 证最优耗时随 n 爆炸（不是 polish——polish 有 core≤10 门），
-# 详见 REPORT §5。
+# Budgets (seconds, per REPORT §2 conventions):
+#   ortho 60; auto classic 300 / random n<=10 350 / random n>=20 100;
+#   auto-exact = auto layout reuse (WS2 proved deterministic byte-identical) + a separate cr(G) run (300s);
+#   graphviz/elk 120.
+# Post-WS5 engine conventions: CP-SAT placement for n>10 carries a deterministic time budget (max_deterministic_time
+# =8det, output still byte-for-byte reproducible), n<=10 and the routing layer unchanged (solved to optimality); the root cause of the old
+# all-DNF for n>=20 was CP-SAT optimality-proof time exploding with n (not polish -- polish has a core<=10 gate),
+# see REPORT §5 for details.
 import glob
 import json
 import os
@@ -54,10 +54,10 @@ def one(cld, family, log):
     n = gtxt.count("\nvar ")
     log.write(f"{family}/{base} (n={n})\n")
     log.flush()
-    # 基线
+    # baselines
     for tool in ("run_graphviz.py", "run_elk.py"):
         run([PY, os.path.join(HERE, tool), cld, RAW], BASELINE_BUDGET, log)
-    # stdraw 构造法
+    # stdraw constructive form
     out = os.path.join(RAW, f"{base}.ortho.json")
     if not os.path.exists(out):
         rc = run([PY, os.path.join(HERE, "run_stdraw.py"), cld, RAW, "ortho"], 60, log)
@@ -75,7 +75,7 @@ def one(cld, family, log):
                                    f"limit by determinism design; CP-SAT uses a "
                                    f"deterministic-time budget for n>10, see REPORT §5)",
                             "budget_s": b})
-    # stdraw auto+WS2 精确层：布局复用 auto（确定性逐字节一致）+ 单独跑 cr(G)
+    # stdraw auto+WS2 exact layer: layout reused from auto (deterministic byte-identical) + a separate cr(G) run
     out = os.path.join(RAW, f"{base}.auto-exact.json")
     auto_path = os.path.join(RAW, f"{base}.auto.json")
     if not os.path.exists(out):

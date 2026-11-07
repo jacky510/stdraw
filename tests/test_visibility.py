@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
-"""WS3 布线数学层单元测试：手工障碍场景逐例验证。
+"""WS3 routing math layer unit tests: hand-built obstacle scenarios, case by case.
 
-覆盖：
-  A. 可见性图最短路——最优性 vs 暴力枚举真值（小规模角点全排列）、
-     净距保持、确定性、不可达检测、G1 切线连续；
-  B. Router 集成——直线被挡自动生成 vg 候选、硬门保持、
-     交叉双口径（路由理论 vs 交付坐标几何复检）一致。
+Coverage:
+  A. visibility-graph shortest path -- optimality vs brute-force enumeration
+     ground truth (full permutations of corner points at small scale),
+     clearance preservation, determinism, unreachability detection, G1
+     tangent continuity;
+  B. Router integration -- a blocked straight line auto-generates vg
+     candidates, hard gates hold, and the two crossing calibers (routing
+     theory vs delivered-coordinate geometric recheck) agree.
 
-运行：python tests/test_visibility.py（stdlib-only，exit 0 = 全过）。
+Run: python tests/test_visibility.py (stdlib-only, exit 0 = all pass).
 """
 import itertools
 import math
@@ -18,7 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from stdraw import visibility as vis
 from stdraw.routing import Router, CLEARANCE, VG_PAD
 
-C = 17.5          # 测试膨胀净距（= CLEARANCE + VG_PAD）
+C = 17.5          # test inflated clearance (= CLEARANCE + VG_PAD)
 FAILURES = []
 
 
@@ -29,7 +32,7 @@ def ok(name, cond, detail=""):
         FAILURES.append(name)
 
 
-# ── A. 可见性图最短路 ────────────────────────────────────
+# -- A. visibility-graph shortest path --------------------------
 def brute_optimal(src, dst, rects, c):
     nodes = vis._graph_nodes(src, dst, rects, c)
     best = float("inf")
@@ -46,21 +49,21 @@ def brute_optimal(src, dst, rects, c):
 def case(name, src, dst, rects, reachable=True):
     r = vis.plan_route(src, dst, rects, C)
     if not reachable:
-        ok(f"{name}: 不可达如实返回 None", r is None)
+        ok(f"{name}: unreachable honestly returns None", r is None)
         return
-    ok(f"{name}: 可达", r is not None)
+    ok(f"{name}: reachable", r is not None)
     if r is None:
         return
     worst = (min(min(vis.pt_rect_distance(px, py, rect) for rect in rects)
                  for (px, py) in r["dense"]) if rects else float("inf"))
-    ok(f"{name}: 净距保持 ≥ {C}", worst >= C - 1e-6, f"min={worst:.2f}")
+    ok(f"{name}: clearance preserved >= {C}", worst >= C - 1e-6, f"min={worst:.2f}")
     opt = brute_optimal(src, dst, rects, C)
     L = sum(math.dist(r["corner_pts"][i], r["corner_pts"][i + 1])
             for i in range(len(r["corner_pts"]) - 1))
-    ok(f"{name}: 最优性（= 暴力枚举真值）", abs(L - opt) < 1e-6,
+    ok(f"{name}: optimality (= brute-force enumeration ground truth)", abs(L - opt) < 1e-6,
        f"L={L:.2f} brute={opt:.2f}")
     r2 = vis.plan_route(src, dst, rects, C)
-    ok(f"{name}: 确定性（两次运行逐字节一致）",
+    ok(f"{name}: determinism (two runs byte-identical)",
        r["dense"] == r2["dense"] and r["path_d"] == r2["path_d"])
     for f in r["fillets"]:
         i = f["i"]
@@ -71,7 +74,7 @@ def case(name, src, dst, rects, reachable=True):
         wx, wy = (b[0] - q[0], b[1] - q[1])
         theta = math.acos(max(-1.0, min(1.0, (ux * wx + uy * wy) /
                         (math.hypot(ux, uy) * math.hypot(wx, wy)))))
-        # 弦向 vs 切向的固有偏差 = θ/(2·采样数)，容差再加 0.3°
+        # inherent chord-vs-tangent deviation = theta/(2*sample_count), tolerance adds another 0.3 deg
         tol = max(1.0, math.degrees(theta / (2 * 16)) + 0.3)
         for seg, s0, s1 in ((a, samples[0], samples[1]),
                             (b, samples[-1], samples[-2])):
@@ -81,37 +84,37 @@ def case(name, src, dst, rects, reachable=True):
             n2 = math.hypot(*d)
             cosang = abs((ux * d[0] + uy * d[1]) / (n1 * n2))
             ang = math.degrees(math.acos(max(-1.0, min(1.0, cosang))))
-            ok(f"{name}: 弧 G1 切线连续（r={f['r']}）", ang < tol,
+            ok(f"{name}: arc G1 tangent continuity (r={f['r']})", ang < tol,
                f"{ang:.2f}deg < tol {tol:.2f}")
 
 
-case("无障碍直线", (0, 300), (600, 300), [])
-case("单障碍居中（对称 tie-break 确定性）", (0, 300), (600, 300),
+case("straight line, no obstacles", (0, 300), (600, 300), [])
+case("single centered obstacle (symmetric tie-break determinism)", (0, 300), (600, 300),
      [(300, 300, 60, 40)])
-case("单障碍偏上（走下方更短）", (0, 320), (600, 320), [(300, 260, 80, 45)])
-case("双障碍 Z 字走廊", (50, 300), (600, 300),
+case("single obstacle above (going below is shorter)", (0, 320), (600, 320), [(300, 260, 80, 45)])
+case("two obstacles, Z-shaped corridor", (50, 300), (600, 300),
      [(250, 270, 70, 60), (420, 330, 70, 60)])
-case("密封障碍不可达", (0, 300), (300, 300), [(300, 300, 60, 60)],
+case("sealed obstacle, unreachable", (0, 300), (300, 300), [(300, 300, 60, 60)],
      reachable=False)
 
-# ── B. Router 集成 ───────────────────────────────────────
-# a 垂直上方 b，中段被 c 挡死 → 直线被挡，须出 vg 候选且硬门保持
+# -- B. Router integration --------------------------------────────
+# a sits directly above b, mid-segment blocked dead by c -> straight line blocked, must produce a vg candidate with hard gates holding
 nodes_px = {"a": (300, 100, 120, 44), "b": (300, 340, 120, 44),
             "c": (300, 220, 140, 44)}
 rt = Router(nodes_px, [("a", "b")], CLEARANCE, 80)
 out = rt.route_all()
 info = out[0]
 kinds = {info["kind"]}
-ok("Router: 直线被挡时生成绕障路线", info["kind"] in ("vg", "poly", "arc"),
+ok("Router: detour route generated when the straight line is blocked", info["kind"] in ("vg", "poly", "arc"),
    f"kind={info['kind']}")
-ok("Router: 框压线 = 0", info["press"] == 0)
+ok("Router: box press = 0", info["press"] == 0)
 clr = info.get("min_clear")
-ok("Router: 净距 ≥ 16px", clr is None or clr >= CLEARANCE, f"min_clear={clr}")
+ok("Router: clearance >= 16px", clr is None or clr >= CLEARANCE, f"min_clear={clr}")
 if info["kind"] == "vg":
-    ok("Router: vg 路线带角点与弧参数",
+    ok("Router: vg route carries corner points and arc parameters",
        "vg_corners" in info and "vg_fillets" in info)
 
-# 双口径：final_crossing_pairs == 交付坐标几何复检（同一布局上两算）
+# dual caliber: final_crossing_pairs == delivered-coordinate geometric recheck (both computed on the same layout)
 edges2 = [("a", "b"), ("b", "c")]
 nodes2 = {"a": (200, 100, 120, 44), "b": (300, 220, 120, 44),
           "c": (400, 340, 120, 44)}
@@ -137,7 +140,7 @@ for x in range(len(items)):
                   for s1 in zip(pa[:-1], pa[1:])
                   for s2 in zip(pb[:-1], pb[1:]))
         geom_pairs += 1 if hit else 0
-ok("Router: 交叉双口径一致（理论 vs 几何）",
+ok("Router: dual crossing calibers agree (theory vs geometry)",
    abs(router_pairs - geom_pairs) < 0.5,
    f"router={router_pairs} geometric={geom_pairs}")
 

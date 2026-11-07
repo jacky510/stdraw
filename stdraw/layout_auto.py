@@ -1,14 +1,21 @@
 # -*- coding: utf-8 -*-
-"""auto 布局层（② 目标函数重构）：分层 + 序/位优化 + 交叉数进目标 + 规律性项。
+"""auto layout layer (② objective-function rework): layering + order/position optimization + crossing count in the objective + regularity terms.
 
-与 ortho-v1（planar.py，平面嵌入构造法，生产行为 pin 用）的区别：
-  - 不要求可平面化：任何 CLD 都可布局，交叉数作为**目标函数的一等项**被显式最小化；
-  - 目标 = 交叉数（权重 60）+ Σ|Δx| 边长项（规律性/紧凑）+ 网格吸附（规律性）；
-  - 定位可用 OR-Tools CP-SAT（`pip install stdraw[solver]`）精化；未安装时优雅降级
-    为确定性构造法（重心序 + 均匀排布），功能齐全、质量退回构造档；
-  - 布线交给 routing.Router（直线/弧线一等，框不压线、净距 16px 硬门）。
+Differences from ortho-v1 (planar.py, plane-embedding construction, used to pin
+production behavior):
+  - No planarity requirement: any CLD can be laid out, and the crossing count
+    is explicitly minimized as a **first-class term of the objective function**;
+  - Objective = crossing count (weight 60) + sum(|dx|) edge-length term
+    (regularity/compactness) + grid snapping (regularity);
+  - Placement can be refined with OR-Tools CP-SAT (`pip install stdraw[solver]`);
+    when not installed it degrades gracefully
+    to the deterministic constructive method (barycenter order + even
+    placement) - full functionality, quality falls back to the constructive tier;
+  - Routing is delegated to routing.Router (straight/arc first-class, boxes do
+    not press lines, 16px clearance hard gate).
 
-确定性：CP-SAT 固定 num_workers=1 + random_seed；构造法无 RNG。同输入同输出。
+Determinism: CP-SAT fixed at num_workers=1 + random_seed; the constructive
+method has no RNG. Same input, same output.
 """
 import math
 from collections import defaultdict
@@ -23,22 +30,22 @@ class AutoConfig:
     fs_value: float = 14.0
     card_min_w: int = 96
     card_h: int = 44
-    pitch: int = 80            # 行距：卡 44 + 行间通道 36（绕行车道的净距来源）
-    top: int = 92              # 首行中心 y（与停车带净距 ≥18px：28+22=50 → 92-22=70）
-    park_y: int = 28           # 孤立节点停车带中心 y
+    pitch: int = 80            # row pitch: card 44 + inter-row corridor 36 (the source of clearance for detour lanes)
+    top: int = 92              # first-row center y (clearance from the parking strip >=18px: 28+22=50 -> 92-22=70)
+    park_y: int = 28           # parking-strip center y for isolated nodes
     margin: int = 44
-    min_gap: int = 18          # 卡间净距（≥16 门禁留余量）
-    clearance: int = 16        # 边-框净距硬门（喂给路由评分）
+    min_gap: int = 18          # card gap (headroom over the >=16 gate)
+    clearance: int = 16        # edge-box clearance hard gate (fed into router scoring)
     grid: int = 8
-    snap_regular: int = 24     # 简单图（≤10 节点）正则吸附
+    snap_regular: int = 24     # regular snap for simple graphs (<=10 nodes)
     target_w: int = 1280
     target_h: int = 680
     aspect_min: float = 1.5
-    park_y: int = 28           # 孤立节点停车带
+    park_y: int = 28           # parking strip for isolated nodes
 
 
 def _cycle_break(nodes, edges):
-    """DFS 破环（声明序确定性），返回 (反转为向后的边集合, DAG 边表)。"""
+    """DFS cycle breaking (deterministic via declaration order). Returns (set of edges reversed to point backward, DAG edge list)."""
     adj = defaultdict(list)
     for i, (a, b) in enumerate(edges):
         adj[a].append((b, i))
@@ -50,7 +57,7 @@ def _cycle_break(nodes, edges):
             if state.get(w, 0) == 0:
                 dfs(w)
             elif state.get(w, 0) == 1:
-                reversed_idx.add(i)   # 回边：分层时视为 w→v
+                reversed_idx.add(i)   # back edge: treated as w->v during layering
         state[v] = 2
     for v in nodes:
         if state.get(v, 0) == 0:
@@ -62,7 +69,7 @@ def _cycle_break(nodes, edges):
 
 
 def _layers(nodes, dag):
-    """DAG 最长路分层 + 空层压缩。"""
+    """DAG longest-path layering + empty-layer compression."""
     preds = defaultdict(list)
     outs = defaultdict(list)
     for a, b in dag:
@@ -72,7 +79,7 @@ def _layers(nodes, dag):
     def calc(v):
         if v in layer:
             return layer[v]
-        layer[v] = 0                      # 防环（理论无环，保险）
+        layer[v] = 0                      # cycle guard (theoretically acyclic, just in case)
         lv = 0 if not preds[v] else 1 + max(calc(u) for u in preds[v])
         layer[v] = lv
         return lv
@@ -90,59 +97,60 @@ def _has_solver():
 
 
 def _solve_positions(nodes, rows, widths, cfg: AutoConfig, linestyle):
-    """定位求解器：CP-SAT 可用 → 交叉数+边长+规律目标；否则构造法。
+    """Placement solver: CP-SAT available -> crossing-count + edge-length + regularity objective; otherwise the constructive method.
 
-    返回 ({v: x_px}, engine, extra_meta)（框心）。y 由 rows 决定。
+    Returns ({v: x_px}, engine, extra_meta) (box centers). y is decided by rows.
     """
     row_of = {v: r for r, vs in enumerate(rows) for v in vs}
-    # 每行最小总宽 → 内容宽度
+    # minimal total width per row -> content width
     row_w = {r: sum(widths[v] for v in vs) + cfg.min_gap * (len(vs) + 1)
              for r, vs in enumerate(rows)}
     content_w = max(row_w.values()) + 2 * cfg.margin
     max_x = int(content_w)
 
-    # 边端行号（用原 y 序比较交叉需要真实 y；用行号即可）
+    # edge endpoint row numbers (comparing crossings on the original y order would need real y; row numbers suffice)
     einfo = []
     for (a, b) in EDGES_REF[0]:
         einfo.append((a, b, row_of[a], row_of[b]))
 
-    # WS5 可扩展性：大图 CP-SAT 求到全局最优不可扩展（交叉对 O(m²) 布尔化后
-    # 证明最优耗时随 n 爆炸——n20 实测 5min+ 无解完）。改用 **确定性时间预算**
-    # （max_deterministic_time，OR-Tools 的可复现性专用口径：按操作计数而非
-    # 墙钟，同版本同输入在任何机器上得到同一 incumbent）。预算取宽：小图
-    # （≤10 节点，classic 全域）在预算内照常证到 OPTIMAL，输出与无预算版
-    # 逐字节一致；仅 n>10 的新域受预算约束（FEASIBLE 如实标注，不冒充最优）。
+    # WS5 scalability: proving CP-SAT global optimality does not scale to large graphs (after O(m^2) booleanization of crossing pairs, proof
+    # time explodes with n - measured on n20: 5min+ without completing the proof). Switched to a **deterministic time budget**
+    # (max_deterministic_time, OR-Tools' dedicated reproducibility caliber: counts operations instead of wall clock, so the same version
+    # and input reach the same incumbent on any machine). The budget is generous: small graphs (<=10 nodes, the entire classic domain)
+    # still prove OPTIMAL within budget, output byte-for-byte identical to the unbudgeted version; only the new n>10 domain is budget-bound
+    # (FEASIBLE labeled honestly, never passed off as optimal).
     det_budget = CP_SAT_DET_BUDGET if len(nodes) > 10 else None
 
     if _has_solver():
         snap = cfg.snap_regular if len(nodes) <= 10 else cfg.grid
         res, status = _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, snap,
                                        det_budget)
-        if res is None and snap != cfg.grid:      # 24px 吸附不可行 → 退 8px 网格
+        if res is None and snap != cfg.grid:      # 24px snap infeasible -> fall back to the 8px grid
             res, status = _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x,
                                            cfg.grid, det_budget)
         if res is not None:
             extra = {}
             if det_budget is not None:
-                # 仅预算路径（n>10）写入 meta：小图路径保持历史输出逐字节不变
+                # only the budgeted path (n>10) writes meta: the small-graph path keeps historical output byte-for-byte unchanged
                 extra = {"solver_status": status,
                          "solver_det_budget": det_budget}
             return res, "cp-sat", extra
     return _construct_positions(nodes, rows, widths, cfg), "construct", {}
 
 
-CP_SAT_DET_BUDGET = 8.0   # 确定性时间预算（det 单位；n20 实测 ≈17s 墙钟/8det）
+CP_SAT_DET_BUDGET = 8.0   # deterministic time budget (det units; measured on n20: ~=17s wall clock per 8 det)
 
 
-EDGES_REF = [()]   # 模块级引用坑位——由 layout() 注入，避免长参表
+EDGES_REF = [()]   # module-level reference slot - injected by layout(), avoids a long parameter list
 
 
 def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid, det_budget=None):
-    """CP-SAT：决策变量 = 框心 x；目标 = 交叉数 + Σ|Δx|；约束 = 净距/网格/边界。
+    """CP-SAT: decision variables = box-center x; objective = crossing count + sum(|dx|); constraints = clearance/grid/bounds.
 
-    det_budget：确定性时间预算（max_deterministic_time，操作计数口径）——
-    超预算取当前最优 incumbent（FEASIBLE），不再证最优。None = 无预算（历史
-    行为：求到最优为止）。返回 (解 or None, "optimal"/"feasible")。
+    det_budget: deterministic time budget (max_deterministic_time, the
+    operation-count caliber) - past budget, take the current best incumbent
+    (FEASIBLE) and stop proving optimality. None = no budget (the historical
+    behavior: solve to optimality). Returns (solution or None, "optimal"/"feasible").
     """
     try:
         from ortools.sat.python import cp_model
@@ -153,7 +161,7 @@ def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid, det_budget=No
     xs = {v: m.NewIntVar(cfg.margin, max_x - cfg.margin, f"x_{v}") for v in nodes}
     for v in nodes:
         m.AddModuloEquality(0, xs[v], grid)
-    # 同行净距（中心距 ≥ 全宽和的一半 + 间隙）
+    # same-row clearance (center distance >= half the summed widths + gap)
     for vs in rows:
         for i in range(len(vs)):
             for j in range(i + 1, len(vs)):
@@ -162,7 +170,7 @@ def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid, det_budget=No
                 d = m.NewIntVar(0, max_x, "")
                 m.AddAbsEquality(d, xs[u] - xs[w])
                 m.Add(d >= need)
-    # 交叉目标：两独立边行区间交错 → 端点序反转即交叉（保守：近距不算）
+    # crossing objective: two independent edges with interleaved row intervals -> reversed endpoint order means a crossing (conservative: close proximity not counted)
     cross_vars = []
     for i in range(len(einfo)):
         a1, b1, r11, r12 = einfo[i]
@@ -174,7 +182,7 @@ def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid, det_budget=No
             lo2, hi2 = min(r21, r22), max(r21, r22)
             if min(hi1, hi2) - max(lo1, lo2) < 1:
                 continue
-            # 比较两端点相对序（在两边的最低/最高行处）
+            # compare the relative order of the two endpoints (at the lowest/highest row of each side)
             top_e = a1 if r11 < r12 else b1
             bot_e = b1 if r11 < r12 else a1
             top_f = a2 if r21 < r22 else b2
@@ -191,7 +199,7 @@ def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid, det_budget=No
             m.Add(p + q == 1).OnlyEnforceIf(c)
             m.Add(p + q != 1).OnlyEnforceIf(c.Not())
             cross_vars.append(c)
-    # 边长项 |Δx|
+    # edge-length term |dx|
     lens = []
     for a, b, _, _ in einfo:
         d = m.NewIntVar(0, max_x, "")
@@ -199,10 +207,10 @@ def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid, det_budget=No
         lens.append(d)
     m.Minimize(60 * sum(cross_vars) + sum(lens))
     solver = cp_model.CpSolver()
-    solver.parameters.num_workers = 1        # 确定性铁律
+    solver.parameters.num_workers = 1        # determinism iron rule
     solver.parameters.random_seed = 42
-    # 墙钟时限会随机器负载漂移（破坏确定性）——预算只用确定性时间口径；
-    # 无预算 = 求到最优（历史行为，小图本来快）
+    # A wall-clock limit drifts with machine load (breaking determinism) - the budget uses only the deterministic-time caliber;
+    # no budget = solve to optimality (historical behavior; small graphs were fast anyway)
     if det_budget is not None:
         solver.parameters.max_deterministic_time = det_budget
     st = solver.Solve(m)
@@ -214,12 +222,12 @@ def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid, det_budget=No
 
 
 def _construct_positions(nodes, rows, widths, cfg):
-    """构造法：重心序 + 行内均匀排布 + 行居中（确定性）。"""
+    """Constructive method: barycenter order + even in-row placement + row centering (deterministic)."""
     pos = {}
     order = {}
     for r, vs in enumerate(rows):
         order[r] = sorted(vs)
-    # 简单重心扫（3 轮上下交替）
+    # simple barycenter sweeps (3 rounds, alternating up/down)
     row_of = {v: r for r, vs in enumerate(rows) for v in vs}
     neigh = defaultdict(list)
     for (a, b) in EDGES_REF[0]:
@@ -252,14 +260,19 @@ def _content_w(rows, widths, cfg):
 
 
 def _route_total(nodes_px, edges, cfg, hard_gates=False, quality=False):
-    """路由真值总成本：压线/净距/交叉/重合/边长的加权和（布局层真目标函数）。
+    """Routing ground-truth total cost: a weighted sum of press/clearance/crossing/coincidence/edge length (the layout layer's true objective function).
 
-    hard_gates：净距/锚点硬罚（1500/条）。默认 False——历史评分口径不变
-    （classic 与既有通过实例的 polish 轨迹逐字节保持）；仅在布线质量返修的
-    门控重排路径启用。quality：Router 扩充 stair 候选池，同样仅门控路径。
-    ref-scrubbed 呼吸感（14 张手动样本：min_card_gap 平均 +35.8px）：新增
-    卡间净距目标 36px 的软惩罚（缺多少罚多少 ×8），间距权重升第一梯队；
-    不设硬门（挤了由既有净距门兜底）。
+    hard_gates: hard clearance/anchor penalties (1500 per violation). Default
+    False - the historical scoring caliber stays unchanged
+    (polish trajectories of the classic domain and existing passing cases stay
+    byte-for-byte); enabled only on the gated reorder path of routing-quality
+    rework. quality: the Router expands the stair candidate pool, likewise
+    gated path only.
+    ref-scrubbed breathing room (14 hand-drawn samples: min_card_gap averaged
+    +35.8px): adds a soft penalty targeting a 36px
+    card gap (penalized 8x by the shortfall), raising the gap weight to the
+    first tier;
+    no hard gate (crowding is caught by the existing clearance gate).
     """
     from .metrics import rect_gap
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch, quality=quality)
@@ -272,7 +285,7 @@ def _route_total(nodes_px, edges, cfg, hard_gates=False, quality=False):
         a, b = edges[i]
         clr = info.get("min_clear")
         clr_pen = (30 * max(0.0, cfg.clearance - clr)) if clr is not None else 30 * cfg.clearance
-        if (b, a) in eset:      # F1：互环对净距加严与 _evaluate 同口径
+        if (b, a) in eset:      # F1: tightened mutual-pair clearance, same caliber as _evaluate
             clr_pen += 120 * (max(0.0, cfg.clearance - clr) if clr is not None
                               else cfg.clearance)
         if hard_gates and clr is not None and clr < cfg.clearance - 1e-6:
@@ -286,11 +299,11 @@ def _route_total(nodes_px, edges, cfg, hard_gates=False, quality=False):
                   clr_pen +
                   0.01 * sum(math.dist(info["points"][k], info["points"][k + 1])
                              for k in range(len(info["points"]) - 1)))
-    # CI 硬门回喂：交叉边对数 > 2 时重罚（证书 gate crossings ≤ 2）
+    # CI hard-gate feedback: heavy penalty when crossing pairs > 2 (certificate gate: crossings <= 2)
     total += 1500.0 * max(0, router.final_crossing_pairs(routes) - 2)
     total += 1500.0 * clr_hard
     total += 1500.0 * ang_hard
-    # ref-scrubbed 呼吸感：卡间净距 ≥36px 目标（软惩罚，第一梯队）
+    # ref-scrubbed breathing room: card gap >=36px target (soft penalty, first tier)
     ids = list(nodes_px)
     if len(ids) > 1:
         mg = min(rect_gap(*nodes_px[u], *nodes_px[v])
@@ -299,14 +312,16 @@ def _route_total(nodes_px, edges, cfg, hard_gates=False, quality=False):
     return total, routes, router
 
 
-GAP_TARGET = 36.0        # 呼吸感：卡间净距目标（jacky 14 张手动样本均值 +35.8px）
+GAP_TARGET = 36.0        # breathing room: card-gap target (jacky's 14 hand-drawn samples averaged +35.8px)
 
 
 def _interleave_count(edges, order):
-    """拓扑交错对数（固定行分配下布线不可回避的交叉下界代理）。
+    """Topological interleaving-pair count (a proxy for the crossing lower bound that routing cannot avoid under a fixed row assignment).
 
-    两独立边（无共享端点）的行区间重叠 ≥1 行，且两端点的行内序都反转 →
-    交错对。行内序相等（同列）不计数。O(m²) 纯算术，确定性。
+    Two independent edges (no shared endpoint) whose row intervals overlap by
+    >=1 row and whose in-row orders are reversed at both endpoints ->
+    an interleaving pair. Equal in-row order (same column) is not counted.
+    O(m^2) pure arithmetic, deterministic.
     """
     pos, row_of = {}, {}
     for r, vs in enumerate(order):
@@ -338,7 +353,7 @@ def _interleave_count(edges, order):
 
 
 def _order_score(edges, order):
-    """重排目标：交错对为主项，行距×列距边长为次项（并列时保紧凑）。"""
+    """Reorder objective: interleaving pairs primary, row-distance*column-distance edge length secondary (keeps things compact on ties)."""
     pos, row_of = {}, {}
     for r, vs in enumerate(order):
         for k, v in enumerate(vs):
@@ -351,11 +366,14 @@ def _order_score(edges, order):
 
 
 def _reorder_rows(edges, rows):
-    """确定性 (行, 行内序) 局部搜索：最小化拓扑交错对（布线质量返修）。
+    """Deterministic (row, in-row order) local search: minimizes topological interleaving pairs (routing-quality rework).
 
-    邻域 = 全部同row对交换 + 全部单节点跨行移动（保留每行 ≥1 节点）。
-    最速下降至局部最优；随后确定性扰动（取当前最优非改进邻点）再下降，
-    共 REORDER_CYCLES 轮，全程记录全局最优。无 RNG，同输入同输出。
+    Neighborhood = all same-row swaps + all single-node cross-row moves
+    (keeping >=1 node per row).
+    Steepest descent to a local optimum; then a deterministic perturbation
+    (take the best non-improving neighbor) and descend again,
+    REORDER_CYCLES rounds in total, tracking the global best throughout.
+    No RNG; same input, same output.
     """
     REORDER_CYCLES = 16
     order = [list(vs) for vs in rows]
@@ -395,7 +413,7 @@ def _reorder_rows(edges, rows):
     best, best_sc = descend(order)
     cur = order
     for _ in range(REORDER_CYCLES):
-        # 确定性扰动：当前邻域中得分最低的非改进邻点（含并列取首个）
+        # deterministic perturbation: the lowest-scoring non-improving neighbor of the current solution (first one on ties)
         cur_sc = _order_score(edges, cur)
         best_n, best_nsc = None, None
         for cand in neighbors(cur):
@@ -411,7 +429,7 @@ def _reorder_rows(edges, rows):
 
 
 def _repack_x(order, widths, cfg):
-    """按重排后的行内序重打包 x（24px 吸附，与 construct 同口径，确定性）。"""
+    """Repack x in the reordered in-row order (24px snap, same caliber as construct, deterministic)."""
     snap = cfg.snap_regular
     pos = {}
     for vs in order:
@@ -428,10 +446,11 @@ def _repack_x(order, widths, cfg):
 
 def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2,
             hard_gates=False):
-    """局部搜索：逐节点 ±24/±48 横移（保同行净距），以路由真值总成本择优。
+    """Local search: per-node +/-24/+/-48 horizontal shifts (preserving same-row clearance), scored by routing ground-truth total cost.
 
-    CP-SAT 全局定位的补充精化——把「布线可行性」显式喂回定位层。
-    确定性：固定遍历序 + 固定扰动集。
+    A supplementary refinement over CP-SAT global placement - it explicitly
+    feeds "routing feasibility" back into the placement layer.
+    Deterministic: fixed traversal order + fixed perturbation set.
     """
     def nodes_px(p):
         return {v: (p[v], y[v], widths[v], card_h) for v in nodes}
@@ -458,7 +477,7 @@ def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2,
                 if sc < best_score - 1e-6:
                     best_pos, best_score, best_routes = cand, sc, routes
                     improved = True
-        # 行内相邻交换（「人工可见更优解」类搬移的机械化）
+        # adjacent in-row swaps (mechanizing the "a human can see a better spot" class of moves)
         for vs in rows:
             for i in range(len(vs) - 1):
                 u, w = vs[i], vs[i + 1]
@@ -475,40 +494,43 @@ def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2,
 
 
 def _manual_waypoints(manual, edges):
-    """--from-layout 边级 waypoints（ref-scrubbed）：{(a,b): [[x,y],...]}。
+    """--from-layout per-edge waypoints (ref-scrubbed): {(a,b): [[x,y],...]}.
 
-    demo-2d 折点把手「用户锚定」的导出产物。校验：(a,b) 必须是图的边、
-    每个点为二元数值；坐标取整（与节点口径一致）；相邻 <0.5px 的重复点
-    去重；去重后为空则视为未锚定。确定性：同输入同输出。
+    The export artifact of the demo-2d bend handles ("user anchoring").
+    Validation: (a,b) must be an edge of the graph and
+    every point a pair of numbers; coordinates are rounded (same caliber as
+    nodes); consecutive duplicate points <0.5px apart are
+    deduplicated; if empty after dedup it counts as not anchored.
+    Deterministic: same input, same output.
     """
     out = {}
     raw = manual.get("edges")
     if raw is None:
         return out
     if not isinstance(raw, list):
-        raise ValueError("手动布局 edges 须为 [{a,b,waypoints}] 列表")
+        raise ValueError("manual layout edges must be a [{a,b,waypoints}] list")
     eset = set(edges)
     for it in raw:
         if not isinstance(it, dict):
-            raise ValueError(f"手动布局 edge 项格式不识别：{it!r}")
+            raise ValueError(f"unrecognized manual layout edge entry: {it!r}")
         a, b = it.get("a"), it.get("b")
         if (a, b) not in eset:
-            raise ValueError(f"手动布局 waypoints 引用了图中不存在的边：{a}->{b}")
+            raise ValueError(f"manual layout waypoints reference an edge not in the graph: {a}->{b}")
         wps = it.get("waypoints")
         if wps is None:
             continue
         if not isinstance(wps, list):
-            raise ValueError(f"边 {a}->{b} 的 waypoints 须为 [[x,y],...] 列表")
+            raise ValueError(f"waypoints of edge {a}->{b} must be a [[x,y],...] list")
         pts = []
         for p in wps:
             if not isinstance(p, (list, tuple)) or len(p) < 2:
-                raise ValueError(f"边 {a}->{b} 的 waypoint 格式不识别：{p!r}")
+                raise ValueError(f"unrecognized waypoint format for edge {a}->{b}: {p!r}")
             try:
                 x, y = float(p[0]), float(p[1])
             except (TypeError, ValueError):
-                raise ValueError(f"边 {a}->{b} 的 waypoint 坐标非数值：{p!r}")
+                raise ValueError(f"waypoint coordinates of edge {a}->{b} are not numeric: {p!r}")
             if not (math.isfinite(x) and math.isfinite(y)):
-                raise ValueError(f"边 {a}->{b} 的 waypoint 坐标非有限值：{p!r}")
+                raise ValueError(f"waypoint coordinates of edge {a}->{b} are not finite: {p!r}")
             q = (int(round(x)), int(round(y)))
             if not pts or math.dist(pts[-1], q) > 0.5:
                 pts.append(q)
@@ -518,35 +540,37 @@ def _manual_waypoints(manual, edges):
 
 
 def _manual_positions(nodes, widths, manual):
-    """--from-layout：吃手动布局（layout.json 兼容子集），返回 (pos, y, rows, meta)。
+    """--from-layout: consume a manual layout (a layout.json-compatible subset), returns (pos, y, rows, meta).
 
-    手动坐标取整并对齐 2px 网格（与几何自检 6b 口径一致，snap 影响如实记录）；
-    卡宽按标签用 textmetrics 重算（与自动管线同口径）。id 集合必须与图完全
-    一致（缺/多节点 → ValueError，CLI 转诚实报错）。
+    Manual coordinates are rounded and aligned to the 2px grid (matching the
+    geometry self-check 6b caliber; snap effects are recorded honestly);
+    card widths are recomputed from labels via textmetrics (same caliber as the
+    automatic pipeline). The id set must match the graph exactly
+    (missing/extra nodes -> ValueError, which the CLI turns into an honest error).
     """
     mn = manual.get("nodes") or {}
     if not isinstance(mn, dict) or not mn:
-        raise ValueError("手动布局缺少 nodes（节点 id→x,y）")
+        raise ValueError("manual layout is missing nodes (node id -> x,y)")
     def _xy(entry):
         if isinstance(entry, dict):
             return entry.get("x"), entry.get("y")
         if isinstance(entry, (list, tuple)) and len(entry) >= 2:
             return entry[0], entry[1]
-        raise ValueError(f"手动布局节点格式不识别：{entry!r}")
+        raise ValueError(f"unrecognized manual layout node format: {entry!r}")
     missing = [v for v in nodes if v not in mn]
     extra = [v for v in mn if v not in set(nodes)]
     if missing or extra:
-        raise ValueError(f"手动布局与图节点集不一致：缺 {missing}，多 {extra}")
+        raise ValueError(f"manual layout node set does not match the graph: missing {missing}, extra {extra}")
     pos, y, snapped = {}, {}, []
     for v in nodes:
         xv, yv = _xy(mn[v])
         try:
             xi, yi = int(round(float(xv))), int(round(float(yv)))
         except (TypeError, ValueError):
-            raise ValueError(f"手动布局节点 {v} 坐标非数值：{xv!r},{yv!r}")
+            raise ValueError(f"manual layout node {v} coordinates are not numeric: {xv!r},{yv!r}")
         if xi % 2 or yi % 2:
             snapped.append(v)
-        pos[v] = xi - (xi % 2)      # 对齐 2px 网格（几何自检 6b 口径）
+        pos[v] = xi - (xi % 2)      # align to the 2px grid (geometry self-check 6b caliber)
         y[v] = yi - (yi % 2)
     rows = [[v for v in nodes if y[v] == yy] for yy in sorted({y[v] for v in nodes})]
     meta = {"source": manual.get("source"),
@@ -556,11 +580,13 @@ def _manual_positions(nodes, widths, manual):
 
 
 def _ring_trial(plan, nodes, widths, card_h, cfg):
-    """环形排布 + 布线试验：硬门代理全过才采纳；否则 None（回退分层，逐字节不变）。
+    """Ring placement + routing trial: adopted only if every hard-gate proxy passes; otherwise None (fall back to layered, byte-for-byte unchanged).
 
-    代理口径与交付证书同源：交叉（路由理论）≤2、框压线=0、边-框净距≥clearance、
-    互环对分离 ≥4px、卡间净距 ≥16、锚点平滑 ≥20°。最终以 certificate_auto
-    在交付坐标上的复检为准（本层只是采纳/回退的确定性闸门）。
+    The proxy caliber shares its source with the delivered certificate:
+    crossings (router theory) <=2, box press=0, edge-box clearance>=clearance,
+    mutual-pair separation >=4px, card gap >=16, anchor smoothing >=20deg.
+    The final word is certificate_auto's recheck on delivered coordinates (this
+    layer is only the deterministic adopt/fallback trial gate).
     """
     from . import ringlayout
     from .routing import (min_pair_dist, sample_polyline, ANCHOR_MIN_DEG)
@@ -571,14 +597,14 @@ def _ring_trial(plan, nodes, widths, card_h, cfg):
     except ringlayout.InfeasibleRing:
         return None
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
-    # 卡间净距 ≥16（place_ring 按 18 放置，逐对复核兜底）
+    # card gap >=16 (place_ring places at 18; a pairwise recheck is the backstop)
     vs = sorted(nodes)
     for i in range(len(vs)):
         for j in range(i + 1, len(vs)):
             a, b = vs[i], vs[j]
             gap_x = abs(pos[a] - pos[b]) - (widths[a] + widths[b]) / 2
             gap_y = abs(y[a] - y[b]) - card_h
-            if max(gap_x, gap_y) < cfg.min_gap - 2:      # rect_gap 口径（≥16 门）
+            if max(gap_x, gap_y) < cfg.min_gap - 2:      # rect_gap caliber (>=16 gate)
                 return None
     router = Router(nodes_px, EDGES_REF[0], cfg.clearance, cfg.pitch)
     routes = router.route_all()
@@ -591,7 +617,7 @@ def _ring_trial(plan, nodes, widths, card_h, cfg):
         clr = info.get("min_clear")
         if clr is None or clr < cfg.clearance:
             return None
-        # 锚点平滑代理（与 check 第 4 项同口径）
+        # anchor smoothing proxy (same caliber as check item 4)
         pts = info["points"]
         for v, p_idx, n_idx in ((EDGES_REF[0][i][0], 0, 1),
                                 (EDGES_REF[0][i][1], len(pts) - 1, len(pts) - 2)):
@@ -599,7 +625,7 @@ def _ring_trial(plan, nodes, widths, card_h, cfg):
             a0 = pts[p_idx]
             if (abs(abs(a0[0] - p[0]) - p[2] / 2) > abs(abs(a0[1] - p[1]) - p[3] / 2) + 1e-9
                     and abs(abs(a0[1] - p[1]) - p[3] / 2) > 0.75):
-                return None                      # 锚点不在框边
+                return None                      # anchor not on the box edge
             dx, dy = pts[n_idx][0] - a0[0], pts[n_idx][1] - a0[1]
             n = math.hypot(dx, dy)
             if n < 1e-9:
@@ -609,7 +635,7 @@ def _ring_trial(plan, nodes, widths, card_h, cfg):
             c = abs(dx * tx + dy * ty) / n
             if math.degrees(math.acos(max(0.0, min(1.0, c)))) < ANCHOR_MIN_DEG:
                 return None
-    # 互环对分离 ≥4px（F1 口径）
+    # mutual-pair separation >=4px (F1 caliber)
     for i in range(len(EDGES_REF[0])):
         for j in range(i + 1, len(EDGES_REF[0])):
             if EDGES_REF[0][i] != (EDGES_REF[0][j][1], EDGES_REF[0][j][0]):
@@ -624,14 +650,17 @@ def _ring_trial(plan, nodes, widths, card_h, cfg):
 
 
 def _constructed_gates(nodes_px, edges, routes, cfg, constructed):
-    """构造路线（闭合弧/镜像弧）与路由路线的统一硬门代理（ref-scrubbed）。
+    """Unified hard-gate proxy over constructed routes (closed arcs / mirror-symmetry arcs) and routed routes (ref-scrubbed).
 
-    与 _ring_trial 同口径：压线=0、边-框净距≥clearance、锚点在框边且平滑
-    ≥ANCHOR_MIN_DEG、卡间净距 ≥ min_gap-2、互环对分离 ≥4px、交叉 ≤2。
-    返回 True=过门。"""
+    Same caliber as _ring_trial: press=0, edge-box clearance>=clearance,
+    anchors on box edges with smoothing
+    >=ANCHOR_MIN_DEG, card gap >= min_gap-2, mutual-pair separation >=4px,
+    crossings <=2.
+    Returns True = gate passed.
+    """
     from .routing import (dist_point_rect, min_pair_dist, sample_polyline,
                           ANCHOR_MIN_DEG)
-    # 卡间净距（rect_gap 口径 ≥ min_gap-2）
+    # card gap (rect_gap caliber, >= min_gap-2)
     vs = sorted(nodes_px)
     for i in range(len(vs)):
         for j in range(i + 1, len(vs)):
@@ -647,7 +676,7 @@ def _constructed_gates(nodes_px, edges, routes, cfg, constructed):
     for i, info in routes.items():
         a, b = edges[i]
         pts = info["points"]
-        # 与 check3 同口径：加密采样复核净距（弦切效应兜底）
+        # same caliber as check3: dense-sampled clearance recheck (a backstop for chord effects)
         dense = sample_polyline([tuple(p) for p in pts], step=4.0)
         for v, (cx, cy, w, h) in nodes_px.items():
             if v in (a, b):
@@ -655,7 +684,7 @@ def _constructed_gates(nodes_px, edges, routes, cfg, constructed):
             for px, py in dense:
                 if dist_point_rect(px, py, cx, cy, w / 2, h / 2) < cfg.clearance:
                     return False
-        # 锚点在框边 + 平滑
+        # anchor on box edge + smoothing
         for v, p_idx, n_idx in ((a, 0, 1), (b, len(pts) - 1, len(pts) - 2)):
             cx, cy, w, h = nodes_px[v]
             a0 = pts[p_idx]
@@ -671,7 +700,7 @@ def _constructed_gates(nodes_px, edges, routes, cfg, constructed):
             c = abs(dx * tx + dy * ty) / n
             if math.degrees(math.acos(max(0.0, min(1.0, c)))) < ANCHOR_MIN_DEG:
                 return False
-    # 互环对分离 ≥4px
+    # mutual-pair separation >=4px
     for i in range(len(edges)):
         for j in range(i + 1, len(edges)):
             if edges[i] != (edges[j][1], edges[j][0]):
@@ -684,13 +713,13 @@ def _constructed_gates(nodes_px, edges, routes, cfg, constructed):
 
 
 def _final_pairs(nodes_px, edges, routes, cfg):
-    """合并构造路线后的交叉边对数（与 Router.final_crossing_pairs 同口径）。"""
+    """Crossing edge-pair count after merging constructed routes (same caliber as Router.final_crossing_pairs)."""
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
     return router.final_crossing_pairs(routes)
 
 
 def _sym_trial(plan, nodes, widths, card_h, cfg):
-    """领结对对称排布 + 布线试验闸门：过门才采纳；否则 None（回退，逐字节不变）。"""
+    """Bowtie-pair symmetric placement + routing trial gate: adopted only if the gate passes; otherwise None (fallback, byte-for-byte unchanged)."""
     from . import symlayout
     edges = EDGES_REF[0]
     try:
@@ -705,7 +734,7 @@ def _sym_trial(plan, nodes, widths, card_h, cfg):
         cr = constructed.get((a, b))
         if cr is not None:
             routes[i] = dict(cr)
-    # 线型一致性硬规则：对称结构内不得出现 vg/poly 折线（弧线>直线>折线）
+    # line-style consistency hard rule: no vg/poly polylines inside the symmetric structure (arc > straight > polyline)
     for i, info in routes.items():
         if info["kind"] in ("vg", "poly", "wrap"):
             return None
@@ -715,11 +744,14 @@ def _sym_trial(plan, nodes, widths, card_h, cfg):
 
 
 def _bowtie_trial(plan, nodes, widths, card_h, cfg):
-    """领结共点对称排布 + 布线试验闸门：过门才采纳；否则 None（回退，逐字节不变）。
+    """Bowtie-vertex symmetric placement + routing trial gate: adopted only if the gate passes; otherwise None (fallback, byte-for-byte unchanged).
 
-    ref-scrubbed（美学 v3）：恰 2 个简单环恰共享 1 节点的图（wage-price-spiral
-    类，jacky 手拉样本为基准）→ bowtie-vertex 对称排布；全直线构造，
-    线型一致性硬规则同 symmetric（禁 vg/poly/wrap 折线）。
+    ref-scrubbed (aesthetics v3): graphs with exactly 2 simple loops sharing
+    exactly 1 node (the wage-price-spiral
+    family, benchmarked on jacky's hand-drawn samples) -> bowtie-vertex
+    symmetric placement; all-straight-line construction,
+    line-style consistency hard rule same as symmetric (vg/poly/wrap polylines
+    forbidden).
     """
     from . import bowtielayout
     edges = EDGES_REF[0]
@@ -735,7 +767,7 @@ def _bowtie_trial(plan, nodes, widths, card_h, cfg):
         cr = constructed.get((a, b))
         if cr is not None:
             routes[i] = dict(cr)
-    # 线型一致性硬规则：对称结构内不得出现 vg/poly 折线（弧线>直线>折线）
+    # line-style consistency hard rule: no vg/poly polylines inside the symmetric structure (arc > straight > polyline)
     for i, info in routes.items():
         if info["kind"] in ("vg", "poly", "wrap"):
             return None
@@ -745,11 +777,14 @@ def _bowtie_trial(plan, nodes, widths, card_h, cfg):
 
 
 def _spine_trial(plan, nodes, widths, card_h, cfg):
-    """纵柱+翼位排布 + 布线试验闸门：过门才采纳；否则 None（回退，逐字节不变）。
+    """Spine-wing placement + routing trial gate: adopted only if the gate passes; otherwise None (fallback, byte-for-byte unchanged).
 
-    ref-scrubbed（v0.7.1）：中枢对纵柱 + 中线翼位带 + 翼外镜像簇
-    （classic-cld-growth-and-burden 类，jacky 手拉样本为基准）；纵柱边
-    构造竖直直线注入，其余走 Router 候选池。
+    ref-scrubbed (v0.7.1): hub pair on the spine + midline wing band + mirrored
+    clusters beyond the wings
+    (the classic-cld-growth-and-burden family, benchmarked on jacky's
+    hand-drawn samples); spine edges
+    are injected as constructed vertical straight lines, the rest go through
+    the Router candidate pool.
     """
     from . import spinewinglayout
     edges = EDGES_REF[0]
@@ -771,7 +806,7 @@ def _spine_trial(plan, nodes, widths, card_h, cfg):
 
 
 def _column_trial(plan, nodes, widths, card_h, cfg):
-    """纵列排布 + 布线试验闸门：过门才采纳；否则 None（回退分层，逐字节不变）。"""
+    """Column placement + routing trial gate: adopted only if the gate passes; otherwise None (fall back to layered, byte-for-byte unchanged)."""
     from . import columnlayout
     from .routing import min_pair_dist, sample_polyline
     edges = EDGES_REF[0]
@@ -795,15 +830,20 @@ def _column_trial(plan, nodes, widths, card_h, cfg):
 
 def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
            manual: dict = None):
-    """auto 配方入口：图 → v4 兼容布局 dict（含折线/弧线路由 + 元数据）。
+    """auto recipe entry point: graph -> a v4-compatible layout dict (with polyline/arc routing + metadata).
 
-    manual：--from-layout 手动布局（{nodes: {id: x,y}, viewBox, source}）。
-    给定时跳过分层/定位/精化，按手动坐标走同一布线+交付管线（硬门口径
-    不变、如实评分）。manual=None（默认）时代码路径与历史逐字节一致。
+    manual: a --from-layout manual layout ({nodes: {id: x,y}, viewBox, source}).
+    When given, layering/placement/polish are skipped and the manual
+    coordinates go through the same routing + delivery pipeline (hard-gate
+    caliber unchanged, scored honestly). With manual=None (default) the code
+    path is byte-for-byte identical to history.
 
-    ref-scrubbed 回路主导环形排布：manual=None 时先做确定性触发判定
-    （ringlayout.detect_ring），命中且布线试验过门 → 主环正多边形槽位；
-    不命中/试验不过 → 既有分层路径（逐字节不变）。
+    ref-scrubbed loop-dominant ring placement: with manual=None the deterministic
+    trigger detection (ringlayout.detect_ring) runs first;
+    a hit whose routing trial passes the gate -> regular-polygon slots for the
+    main ring;
+    no hit / trial failure -> the existing layered path (byte-for-byte
+    unchanged).
     """
     global EDGES_REF
     cfg = config or AutoConfig()
@@ -813,7 +853,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     core = [v for v in nodes if adj[v]]
     deg0 = [v for v in nodes if not adj[v]]
 
-    # ① 框界真值（布局侧）：真实字体度量 + 保守 padding
+    # ① box-boundary ground truth (layout side): real font metrics + conservative padding
     widths, heights = {}, {}
     for v in nodes:
         nd = graph.id2node()[v]
@@ -822,7 +862,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         widths[v], heights[v] = w, h
     card_h = max(heights.values()) if heights else cfg.card_h
 
-    # ②③ 定位：--from-layout 手动坐标，或自动分层+定位
+    # ②③ placement: --from-layout manual coordinates, or automatic layering + placement
     _routes_final = None
     constructed = {}
     from_meta = None
@@ -831,10 +871,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         deg0 = []
         engine, pos_meta = "manual", {}
     else:
-        # ②'' 布局美学 v2（ref-scrubbed，jacky 2026-11-05 全图定调）：模式优先级
-        #  = 领结对对称（learning-flywheel 类）→ 纵列（长链/少环，主环 ≤4）
-        #  → 环形（回路主导小图，ref-scrubbed）→ 既有分层路径。
-        #  每个新模式都带试验闸门：不过门静默回退，回退路径逐字节不变。
+        # ②'' layout aesthetics v2 (ref-scrubbed, jacky's 2026-11-05 direction for the whole graph): mode priority = bowtie-pair symmetry
+        #  (the learning-flywheel family) -> column (long chains / few loops, main ring <=4) -> ring (loop-dominant small graphs, ref-scrubbed)
+        #  -> the existing layered path.
+        #  Every new mode carries a trial gate: silent fallback when the gate fails, and the fallback path is byte-for-byte unchanged.
         sym_plan = None
         bw_plan = None
         sw_plan = None
@@ -845,9 +885,9 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             _sym = _symlayout.detect_bowtie(graph)
             if _sym is not None:
                 sym_plan = _sym_trial(_sym, nodes, widths, card_h, cfg)
-        # ref-scrubbed（美学 v3）领结共点（双环共享单节点）：与共边领结
-        # （symmetric）拓扑互斥、并列最高档；判定用枚举简单环（声明表
-        # 混 2 节点伪环、漏派生环，不可用）。
+        # ref-scrubbed (aesthetics v3) bowtie-vertex (two loops sharing a single node): topologically mutually exclusive with the shared-edge bowtie
+        # (symmetric) and tied with it at the top tier; detection enumerates simple loops (the declared table mixes in 2-node pseudo-loops
+        # and misses derived loops, so it is unusable).
         if sym_plan is None and len(nodes) <= 12:
             from . import bowtielayout as _bowtielayout
             _bw = _bowtielayout.detect_bowtie_vertex(graph)
@@ -863,8 +903,8 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             from . import ringlayout as _ringlayout
             from . import columnlayout as _columnlayout
             _ring_detect = _ringlayout.detect_ring(graph)
-            # 纵列只在「环形不走 pure-cycle/ratio 分支」时判定（cover 触发
-            # 且主环 ≤4 的图归纵列；k≥5 的大环仍归环形）
+            # column is detected only when ring would not take the pure-cycle/ratio branch (cover-triggered graphs with a main ring <=4 go
+            # to column; large rings with k>=5 still go to ring)
             if _ring_detect is None or _ring_detect["trigger"] == "cover":
                 _col = _columnlayout.detect_column(graph)
                 if _col is not None:
@@ -917,19 +957,19 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             engine = "ring-construct"
             pos_meta = rmeta
         else:
-            # ② 分层（破环 + 最长路 + 空层压缩）
+            # ② layering (cycle breaking + longest path + empty-layer compression)
             _, dag = _cycle_break(core, EDGES_REF[0])
             layer = _layers(core, dag)
             nrow = max(layer.values()) + 1 if core else 1
             rows = [[v for v in core if layer[v] == r] for r in range(nrow)]
             rows = [r for r in rows if r]
 
-            # ③ 定位
+            # ③ placement
             pos, engine, pos_meta = _solve_positions(core, rows, widths, cfg, linestyle)
 
-            # y 坐标（行均匀 → 规律性门禁的基座）
+            # y coordinates (even rows -> the foundation of the regularity gate)
             y = {v: cfg.top + r * cfg.pitch for r, vs in enumerate(rows) for v in vs}
-            # 孤立节点停车带：顶部均匀排布（小图 24px 列吸附，与正则门禁一致）
+            # parking strip for isolated nodes: evenly laid out at the top (24px column snap for small graphs, consistent with the regularity gate)
             if deg0:
                 total = sum(widths[v] for v in deg0) + cfg.min_gap * (len(deg0) + 1)
                 cw = _content_w(rows, widths, cfg)
@@ -940,17 +980,17 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     y[v] = cfg.park_y
                     cur += widths[v] + cfg.min_gap
 
-            # ③b 局部精化（小图 ≤10 节点）：以路由真值总成本 hill-climb 横移，
-            # 把布线可行性（压线/净距/交叉）显式喂回定位层
+            # ③b local polish (small graphs <=10 nodes): hill-climbing horizontal shifts on routing ground-truth total cost, explicitly
+            # feeding routing feasibility (press/clearance/crossings) back into the placement layer
             if len(core) <= 10:
                 pos, _sc, _rt = _polish(core, EDGES_REF[0], rows, pos, y,
                                         widths, card_h, cfg)
-                # —— WS3 布线质量返修（随机稠密图 check1 交叉>2 / check3 净距<16）：
-                #    布线硬门不过时，布局层瓶颈不在路由（图可平面而摆放把拓扑交错对
-                #    顶到 3+，贪心路由只能躲掉一部分）而在「行分配 + 行内序」。触发
-                #    确定性 (行,序) 重排 → 24px 重打包 → hard-gate polish，同一评估
-                #    口径下与原摆放择优（不劣于基线）。门控触发：硬门本来达标的布局
-                #    （classic 全域、既有通过实例）零扰动、输出逐字节不变。
+                # -- WS3 routing-quality rework (random dense graphs: check1 crossings>2 / check3 clearance<16): when a routing hard gate fails, the
+                #    layout bottleneck is not the router (the graph is planar but the placement pushes topological interleaving pairs to 3+, and greedy
+                #    routing can only dodge some of them) but the "row assignment + in-row order". Trigger a deterministic (row, order) reorder -> 24px
+                #    repack -> hard-gate polish, and pick the better of it and the original placement under the same evaluation caliber (never worse
+                #    than the baseline). Gated trigger: layouts whose hard gates already pass (the entire classic domain, existing passing cases) get
+                #    zero perturbation, output byte-for-byte unchanged.
                 _r0 = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
                              EDGES_REF[0], cfg.clearance, cfg.pitch)
                 _routes0 = _r0.route_all()
@@ -963,9 +1003,9 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                                       _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
                 _pressbad0 = sum(1 for _i in _routes0.values() if _i.get("press", 0))
                 if _pairs0 > 2 or _clrbad0 or _angbad0 or _pressbad0:
-                    # 路由层第二手：交叉对联合重定线（打破互为最优僵局）。
-                    # quality=True 才扩充 stair 候选池——门控路径专用，普通路径
-                    # （含 polish 的 _route_total）保持历史候选池，通过实例零扰动。
+                    # The router layer's second move: joint rerouting of crossing pairs (breaks the mutual-local-optimum deadlock). quality=True is what
+                    # expands the stair candidate pool - gated path only; the normal path (including polish's _route_total) keeps the historical
+                    # candidate pool, zero perturbation for passing cases.
                     _rq = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
                                  EDGES_REF[0], cfg.clearance, cfg.pitch, quality=True)
                     _routesA = _rq.joint_reroute(dict(_routes0))
@@ -981,8 +1021,8 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     _best = (_gate0, None, None, None, _routes0)
                     if (_pairsA, _clrbadA, _angbadA, _pressbadA) < _best[0]:
                         _best = ((_pairsA, _clrbadA, _angbadA, _pressbadA), pos, y, rows, _routesA)
-                    # 布局层第二手：确定性 (行,序) 重排 → 24px 重打包 → hard-gate
-                    # polish → 路由 → 联合重定线
+                    # The layout layer's second move: deterministic (row, order) reorder -> 24px repack -> hard-gate polish
+                    # -> routing -> joint reroute
                     _order2 = _reorder_rows(EDGES_REF[0], rows)
                     _pos2 = _repack_x(_order2, widths, cfg)
                     _y2 = dict(y)
@@ -992,9 +1032,9 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     _pos2, _sc2, _rt2 = _polish(core, EDGES_REF[0], _order2, _pos2,
                                                 _y2, widths, card_h, cfg,
                                                 hard_gates=True)
-                    # ref-scrubbed：孤立节点不在 rows（顶部停车带交付），门控重排
-                    # 只重排 core——停车带坐标原样带回，Router 全节点键完备
-                    # （存量缺口：门控路径在有孤立节点的图上首次触发即 KeyError）
+                    # ref-scrubbed: isolated nodes are not in rows (delivered on the top parking strip); the gated reorder reorders only core -
+                    # parking-strip coordinates are carried back as-is, so the Router's all-node keys stay complete (legacy gap: on graphs
+                    # with isolated nodes the gated path raised KeyError on first trigger)
                     for _v in deg0:
                         _pos2.setdefault(_v, pos[_v])
                     _r2 = Router({v: (_pos2[v], _y2[v], widths[v], card_h)
@@ -1014,20 +1054,20 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                         _best = ((_pairs2, _clrbad2, _angbad2, _pressbad2),
                                  _pos2, _y2, _order2, _rt2)
                     if _best[1] is None:
-                        _routes_final = _best[4]      # 摆放未变但路线已换优
+                        _routes_final = _best[4]      # placement unchanged but the routes were swapped for better ones
                     elif _best[0] < _gate0:
                         pos, y, rows = _best[1], _best[2], _best[3]
                         _routes_final = _best[4]
 
-    # ④ 布线（直线/弧线一等，框不压线）+ WS3 理论口径（最终路线交叉对数）
+    # ④ routing (straight/arc first-class, boxes do not press lines) + WS3 theoretical caliber (final-route crossing pairs)
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
     router = Router(nodes_px, EDGES_REF[0], cfg.clearance, cfg.pitch)
     routes = router.route_all()
     if _routes_final is not None:
         routes = _routes_final
-    # ref-scrubbed 构造路线注入（纵列闭合弧/领结镜像弧）：该边不走候选池，
-    # 按构造几何交付（试验闸门已复核硬门）；须在 final_crossing_pairs 之前
-    # 注入，保证交叉双口径（check11）含构造路线。
+    # ref-scrubbed constructed-route injection (column closed arcs / bowtie mirror-symmetry arcs): these edges skip the candidate pool and are
+    # delivered with the constructed geometry (the trial gate has already rechecked the hard gates); the injection must happen before
+    # final_crossing_pairs so the dual crossing accounting (check11) includes the constructed routes.
     for i, (a, b) in enumerate(EDGES_REF[0]):
         cr = constructed.get((a, b))
         if cr is None:
@@ -1038,10 +1078,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         if cr.get("ctrl") is not None:
             info["ctrl"] = list(cr["ctrl"])
         routes[i] = info
-    # ref-scrubbed：用户锚定 waypoints 覆盖（demo-2d 折点把手导出）——该边不走
-    # 候选池，按「锚点=框边朝向首/末 waypoint + waypoints 原样」构造交付路线，
-    # 几何/证书复检按同一 points 如实评分（不放水）。覆盖须在
-    # final_crossing_pairs 之前，保证交叉双口径（check11）含 waypoints。
+    # ref-scrubbed: user-anchored waypoint override (demo-2d bend-handle export) - these edges skip the candidate pool; the delivered route is
+    # built as "anchor = box edge aimed at the first/last waypoint + waypoints as-is", and the geometry/certificate recheck scores the same
+    # points honestly (no leniency). The override must happen before final_crossing_pairs, so the dual crossing accounting (check11)
+    # includes the waypoints.
     manual_wps = {}
     if manual is not None:
         manual_wps = _manual_waypoints(manual, EDGES_REF[0])
@@ -1064,37 +1104,37 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                      "ang_a": 0.0, "ang_b": 0.0}
     if manual_wps and from_meta is not None:
         from_meta["waypoint_edges"] = len(manual_wps)
-    # ref-scrubbed：线-线视觉重合定向重定线——扇出边同走廊贴合（stair/lane
-    # 共享车道）的兜底修复。构造路线与用户锚定 waypoints 边不动；只对重合
-    # 对涉及边在硬门不回退（压线/净距/锚点/交叉数）前提下重定线。
+    # ref-scrubbed: directed rerouting for line-line visual coincidence - a backstop fix for fan-out edges hugging the same corridor (stair/lane
+    # shared lanes). Constructed routes and user-anchored waypoint edges are untouched; only edges involved in coincident pairs are rerouted,
+    # on the condition that the hard gates do not regress (press/clearance/anchor/crossing count).
     _frozen = set()
     for i, (a, b) in enumerate(EDGES_REF[0]):
         if constructed.get((a, b)) is not None or manual_wps.get((a, b)):
             _frozen.add(i)
     routes = router.coincide_reroute(routes, frozen=_frozen)
-    # ref-scrubbed 连接点口径：交付层锚点钳制到边中点 ±1/4 带（转角排除，
-    # 逐边硬门复核）；同节点同侧多锚点再按入射角均匀展开（不堆叠）。
-    # ref-scrubbed：增强通道（ctrl 随动阶梯 + 互环对带内局部重定线）仅对
-    # spine-wing 排布启用——ring/bowtie 基线存在在册带外锚点（互环对基线
-    # 回退），修复会改动其交付字节（含 viewBox dx 平移连带），与本卡
-    # 「其余 18 图逐字节零漂移」硬门冲突 → 本卡只修 spine-wing（classic-cld），
-    # 其余引擎 CI 锚点门锁 v0.7.2 基线比例防回退，带外修复归后续卡。
+    # ref-scrubbed connection-point caliber: delivery-layer anchors are clamped to the edge-midpoint +/-1/4 band (corners excluded, per-edge
+    # hard-gate recheck); multiple anchors on the same side of the same node are then evenly spread by incidence angle (no stacking).
+    # ref-scrubbed: the enhanced channel (ctrl-following stair + in-band local rerouting of mutual pairs) is enabled only for spine-wing
+    # placement - the ring/bowtie baselines have registered out-of-band anchors (mutual-pair baseline fallback), and the fix would change
+    # their delivered bytes (including the viewBox dx shift knock-on), conflicting with this card's "the other 18 graphs byte-for-byte zero
+    # drift" hard gate -> this card fixes only spine-wing (classic-cld); the other engines get their CI anchor gate locked to the v0.7.2
+    # baseline ratio against regression, and out-of-band fixes go to a later card.
     routes = router.midband_reanchor(routes, frozen=_frozen,
                                      enhanced=(engine == "spine-construct"))
     routes = router.fan_spread(routes, frozen=_frozen)
-    # ref-scrubbed 返修①：互环对「直线可行」候选纳入代价分配（§WS3 折线=
-    # 最后手段——直线可行时折线不抢分）。带内兜底（_reroute_pair_band）
-    # 产出的 poly 侧车道在此复检：两框 4 边中点锚 × 直线候选可行且总评
-    # 更优则替换（quickfix→crowding 实测 298px 折线→101px 自然直线）。
-    # 仅 spine-construct 域启用（classic-cld 唯一命中）：其余引擎不进新
-    # 代码路径，输出逐字节不变（结构性零漂移）。
+    # ref-scrubbed rework (1): mutual-pair "straight-feasible" candidates join the cost allocation (§WS3 polyline = last resort - when a
+    # straight line is feasible the polyline does not steal the score). The poly side lanes produced by the in-band backstop
+    # (_reroute_pair_band) are rechecked here: if a straight candidate among the 4 edge-midpoint anchors of the two boxes is feasible and
+    # scores better overall, replace it (quickfix->crowding measured: a 298px polyline -> a 101px natural straight line).
+    # Enabled only in the spine-construct domain (classic-cld the only hit): the other engines never enter the new code path, output
+    # byte-for-byte unchanged (structural zero drift).
     if engine == "spine-construct":
         routes = router.mutual_straight_reroute(routes, frozen=_frozen)
     router_pairs = router.final_crossing_pairs(routes)
 
-    # ref-scrubbed R/B 回路着色：边 → 所属声明回路 kind 集合（确定性规则见
-    # docs/layout-modes.md）：单环单色（R=琥珀/B=天蓝）；多环同色取该色；
-    # 多环异色或无环 → 中性（渲染层 slate）；极性（+/-）数据不变。
+    # ref-scrubbed R/B loop coloring: edge -> the set of declared-loop kinds it belongs to (deterministic rules in docs/layout-modes.md):
+    # a single loop in a single color (R=amber/B=sky blue); multiple loops of the same color take that color; multiple loops of different
+    # colors or no loop -> neutral (rendering layer slate); polarity (+/-) data unchanged.
     _eset_dir = {(e.a, e.b) for e in graph.edges}
     _edge_loops = defaultdict(set)
     for lp in getattr(graph, "loops", []):
@@ -1108,7 +1148,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                 _edge_loops[(a, b)].add(kind)
             elif (b, a) in _eset_dir:
                 _edge_loops[(b, a)].add(kind)
-    _LOOP_COLORS = {"R": "#d97706", "B": "#0284c7"}   # R=琥珀 B=天蓝（线上惯例）
+    _LOOP_COLORS = {"R": "#d97706", "B": "#0284c7"}   # R=amber, B=sky blue (online convention)
 
     edges_out = []
     for i, (a, b) in enumerate(EDGES_REF[0]):
@@ -1124,29 +1164,29 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                                   for px, py in info["points"]]},
              "anchors": {"a": list(info["points"][0]), "b": list(info["points"][-1])},
              "arrow": [round(info["points"][-1][0], 1), round(info["points"][-1][1], 1)],
-             "route_cross_edges": int(info.get("cross_edges", 0))}  # 评估期诊断值
+             "route_cross_edges": int(info.get("cross_edges", 0))}  # diagnostic value from the evaluation period
         if info["kind"] == "arc":
             e["route"]["arc"] = True
             e["route"]["ctrl"] = [round(c, 1) for c in info.get("ctrl", info["points"][len(info["points"]) // 2])]
         if info["kind"] == "vg":
-            # 暂存原始角点/弧参数，dx 平移后生成 SVG path（见下方 finalize）
+            # stash raw corner/arc parameters; the SVG path is generated after the dx shift (see finalize below)
             e["_vg"] = ([list(p) for p in info["vg_corners"]],
                         [dict(f) for f in info["vg_fillets"]])
         if info["kind"] == "waypoints":
-            # ref-scrubbed：用户锚定折点（via 在 dx/dy 平移后的交付坐标上生成，
-            # 见下方 finalize——与 vg 的 _vg 处理同构）
+            # ref-scrubbed: user-anchored bends (the via is generated on delivered coordinates after the dx/dy shift, see finalize below
+            # - isomorphic to vg's _vg handling)
             e["_wp"] = [[float(px), float(py)] for px, py in info["points"]]
         edges_out.append(e)
 
     xs_all = [pos[v] - widths[v] / 2 for v in nodes] + [pos[v] + widths[v] / 2 for v in nodes]
     ys_all = [y[v] - card_h / 2 for v in nodes] + [y[v] + card_h / 2 for v in nodes]
 
-    # F3 返修（ref-scrubbed，bullwhip check7 fail）：弧线鼓出可越过节点框外包络
-    # （实测 inventory->forecast 向左鼓 7.5px 出 viewBox 左缘，而 viewBox 自
-    # v0.2 起只按节点框计算）。边几何（采样点 ∪ 弧 ctrl——二次贝塞尔凸包上界，
-    # 保守）必须与节点框一并纳入平移量与 W/H 计算；布线层决策不动，只在交付
-    # 层扩 viewBox，与 check7「全部内容在 viewBox 内」的校验口径（直接取交付
-    # route.points）构造性一致。
+    # F3 rework (ref-scrubbed, bullwhip check7 fail): an arc bulge can cross the node-box outer envelope (measured: inventory->forecast
+    # bulged 7.5px left past the viewBox left edge, while since v0.2 the viewBox is computed from node boxes only). Edge geometry (sampled
+    # points plus arc ctrl - a quadratic-Bezier convex-hull upper bound, conservative) must enter the shift amounts and the W/H
+    # computation together with the node boxes; routing-layer decisions are untouched, the viewBox is only widened at the delivery layer,
+    # constructively consistent with check7's "all content inside the viewBox" validation caliber (which reads the delivered route.points
+    # directly).
     def _edge_geom_bounds():
         exs, eys = [], []
         for e in edges_out:
@@ -1162,10 +1202,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     exs0, eys0 = _edge_geom_bounds()
     min_x = min(xs_all + exs0) - cfg.margin / 2
     dx = max(0, int(math.ceil(cfg.margin / 2 - min_x)))
-    dx = ((dx + 23) // 24) * 24          # 平移量对齐 24px，保持列吸附/网格不变
+    dx = ((dx + 23) // 24) * 24          # shift aligned to 24px, keeping the column snap/grid unchanged
     min_y = min(ys_all + eys0) - cfg.margin / 2
     dy = max(0, int(math.ceil(cfg.margin / 2 - min_y)))
-    dy = ((dy + 7) // 8) * 8             # 8px 对齐：保持 2px 网格与 H 取整口径
+    dy = ((dy + 7) // 8) * 8             # 8px alignment: keeps the 2px grid and the H rounding caliber
     if dx or dy:
         for e in edges_out:
             e["route"]["points"] = [[px + dx, py + dy] for px, py in e["route"]["points"]]
@@ -1173,13 +1213,13 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                             "b": [e["anchors"]["b"][0] + dx, e["anchors"]["b"][1] + dy]}
             e["arrow"][0] += dx
             e["arrow"][1] += dy
-            if "ctrl" in e["route"]:      # bugfix：弧线控制点必须随 dx/dy 平移
+            if "ctrl" in e["route"]:      # bugfix: arc control points must shift with dx/dy
                 e["route"]["ctrl"][0] += dx
                 e["route"]["ctrl"][1] += dy
         for v in nodes:
             pos[v] += dx
             y[v] += dy
-        # ref-scrubbed：排布元数据里的绝对轴坐标随平移同步（对称轴/纵列轴）
+        # ref-scrubbed: absolute axis coordinates in the placement metadata shift in sync (symmetry axis / column axis)
         if isinstance(pos_meta, dict):
             if isinstance(pos_meta.get("symmetry"), dict):
                 pos_meta["symmetry"]["axis_x"] = \
@@ -1189,17 +1229,17 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             if isinstance(pos_meta.get("column"), dict):
                 pos_meta["column"]["axis_x"] = \
                     pos_meta["column"].get("axis_x", 0) + dx
-            # ref-scrubbed 纵柱+翼位：竖直轴/中线轴随平移同步
+            # ref-scrubbed spine-wing: the vertical axis / midline axis shift in sync with the translation
             if isinstance(pos_meta.get("spine_wing"), dict):
                 pos_meta["spine_wing"]["axis_x"] = \
                     pos_meta["spine_wing"].get("axis_x", 0) + dx
                 pos_meta["spine_wing"]["axis_y"] = \
                     pos_meta["spine_wing"].get("axis_y", 0) + dy
 
-    # W/H 必须在平移后的最终坐标上取。bugfix（CI 暴露的 v0.2.0 遗留）：
-    # 原实现用平移前 xs_all 算 W，dx>0 时右移后内容溢出 viewBox
-    # （无字体环境的解析式框宽窄 → min 左缘越界触发大 dx → 右缘超出）。
-    # F3 返修补充：max 一并纳入边几何，弧/vg 鼓出不得越过右/下缘。
+    # W/H must be taken on the final post-shift coordinates. bugfix (a v0.2.0 leftover exposed by CI): the original implementation computed
+    # W from the pre-shift xs_all; with dx>0 the content overflowed the viewBox after the right shift (analytic box widths are narrower
+    # without fonts -> the min left edge violates and triggers a large dx -> the right edge spills). F3 rework addendum: max also includes
+    # edge geometry, so arc/vg bulges must not cross the right/bottom edges.
     xs_all = [pos[v] - widths[v] / 2 for v in nodes] + [pos[v] + widths[v] / 2 for v in nodes]
     ys_all = [y[v] - card_h / 2 for v in nodes] + [y[v] + card_h / 2 for v in nodes]
     exs1, eys1 = _edge_geom_bounds()
@@ -1208,7 +1248,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     W = ((W + 7) // 8) * 8
     H = ((H + 7) // 8) * 8
 
-    # WS3 finalize：vg 路线在平移后的交付坐标上生成精确 SVG path（L+A 命令）
+    # WS3 finalize: vg routes generate the exact SVG path (L+A commands) on the delivered post-shift coordinates
     from .visibility import route_svg_d as _route_svg_d
     for e in edges_out:
         vg = e.pop("_vg", None)
@@ -1223,7 +1263,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             e["route"]["via"] = [[round(px, 1), round(py, 1)] for px, py in corners]
         wp = e.pop("_wp", None)
         if wp:
-            # ref-scrubbed：用户锚定折点入交付（平移后坐标；渲染走折线）
+            # ref-scrubbed: user-anchored bends enter delivery (post-shift coordinates; rendering draws a polyline)
             e["route"]["via"] = [[round(p[0] + dx, 1), round(p[1] + dy, 1)]
                                  for p in wp[1:-1]]
 
@@ -1231,7 +1271,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         row_y_out = [yy + dy for yy in sorted({y[v] for v in nodes})]
         pitch_out = None
     elif engine == "ring-construct":
-        # 环形排布无行结构语义：rowY 记实际 y 去重序，pitch 不适用
+        # ring placement has no row-structure semantics: rowY records the deduplicated order of actual y values; pitch does not apply
         row_y_out = [yy + dy for yy in sorted({y[v] for v in nodes})]
         pitch_out = None
     else:
@@ -1252,7 +1292,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             "recipe": "auto-v2",
             "line_style": linestyle,
             "position_engine": engine,
-            # --from-layout 元数据（仅手动路径写入；auto 路径逐字节不变）
+            # --from-layout metadata (written only on the manual path; the auto path is byte-for-byte unchanged)
             **({} if from_meta is None else {"from_layout": from_meta}),
             "clearance": CLEARANCE,
             "router_cross_pairs": router_pairs,

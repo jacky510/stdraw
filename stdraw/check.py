@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-"""几何自检（11 项）—— 只吃布局 JSON，通用。
+"""Geometry self-report (11 checks) — takes only a layout JSON, generic.
 
-检查跑在**交付坐标**上（取整/导出后的那份 JSON），这是纪律不是优化项。
-输出 report JSON（可当 CI 门禁），fail>0 时 exit 1。
+Checks run on the **delivered coordinates** (the rounded/exported JSON); this
+is discipline, not an optimization option.
+Writes a report JSON (usable as a CI gate); exit 1 when fail > 0.
 """
 import json
 import math
@@ -10,9 +11,10 @@ import sys
 from typing import List
 
 
-# ── ref-scrubbed #13 检查辅助：SVG path d（M/L/A）解析与几何核对 ──
+# ── SVG path d (M/L/A) parsing and geometry verification helpers ──
 def _arc_points(x0, y0, rx, sweep, x1, y1, n=48):
-    """SVG 圆弧（rot=0、正圆、rx=ry；本引擎 laf 恒 0=短弧）→ 采样点列。"""
+    """SVG arc (rot=0, circle, rx=ry; this engine always uses laf=0=minor arc)
+    -> sampled point list."""
     rx = abs(rx)
     if rx < 1e-9 or (abs(x1 - x0) < 1e-12 and abs(y1 - y0) < 1e-12):
         return [(x0, y0), (x1, y1)]
@@ -22,9 +24,10 @@ def _arc_points(x0, y0, rx, sweep, x1, y1, n=48):
     if chord < 1e-12:
         return [(x0, y0), (x1, y1)]
     if chord / 2.0 > rx:
-        rx = chord / 2.0        # 退化保护：半径不足时取半圆
+        rx = chord / 2.0        # degenerate guard: radius clamped to semicircle
     h = math.sqrt(max(0.0, rx * rx - (chord / 2.0) ** 2))
-    # 弦两侧两个候选圆心；短弧下扫过角 ∈(-π,π)，取扫向与 sweep 一致者
+    # Two candidate centers on either side of the chord; for the minor arc the
+    # sweep angle is in (-pi, pi), take the one whose direction matches sweep
     for sgn in (1.0, -1.0):
         cx = mx - dy / chord * h * sgn
         cy = my + dx / chord * h * sgn
@@ -42,9 +45,10 @@ def _arc_points(x0, y0, rx, sweep, x1, y1, n=48):
 
 
 def _parse_path_d(d):
-    """path d（仅 M/L/A，本引擎输出形态）→ 元素列表。
+    """path d (M/L/A only, this engine's output shape) -> element list.
 
-    ('L', (x0,y0), (x1,y1)) 或 ('A', [(采样点)...])。不识别的命令返回 None。
+    ('L', (x0,y0), (x1,y1)) or ('A', [(sampled points)...]). Returns None for
+    unrecognized commands.
     """
     toks = d.replace(",", " ").split()
     elems, cur, i = [], None, 0
@@ -86,7 +90,8 @@ def _path_d_all_points(elems):
 
 
 def _max_poly_dev(pa, pb):
-    """两折线（采样点列）的双向最大最小距（Hausdorff 采样口径）。"""
+    """Two-directional maximum minimum distance between two polylines
+    (sampled Hausdorff caliber)."""
     from .routing import _pt_seg_dist
     def one_way(src, other):
         worst = 0.0
@@ -99,7 +104,8 @@ def _max_poly_dev(pa, pb):
 
 
 def _path_d_g1_max_deg(elems):
-    """path_d 元素序列的最大切向不连续角（度）。L↔A 连接处解析切向。"""
+    """Maximum tangent-discontinuity angle (degrees) of a path_d element
+    sequence. Analytic tangents at L<->A joins."""
     def line_dir(a, b):
         n = math.hypot(b[0] - a[0], b[1] - a[1])
         return ((b[0] - a[0]) / n, (b[1] - a[1]) / n) if n > 1e-12 else None
@@ -109,7 +115,8 @@ def _path_d_g1_max_deg(elems):
             d = line_dir(el[1], el[2])
             return (d, d)
         pts = el[1]
-        # 弧端切向 = 端点弦向（n=48 采样，弦向与真切向差 <0.1°）
+        # Arc end tangent = end chord direction (n=48 sampling; chord vs true
+        # tangent differs by <0.1 deg)
         return (line_dir(pts[0], pts[1]), line_dir(pts[-2], pts[-1]))
 
     worst = 0.0
@@ -141,7 +148,7 @@ def geometry_report(layout: dict) -> dict:
             report["fail"] += 1
         print(("PASS " if ok else "FAIL ") + name + ("  " + detail if detail else ""))
 
-    # 1. 逐边 0 相交（含共线重叠/近距粘连）
+    # 1. Pairwise zero intersection (incl. collinear overlap / near parallel adhesion)
     bad = []
     for i in range(len(edges)):
         for j in range(i + 1, len(edges)):
@@ -150,14 +157,14 @@ def geometry_report(layout: dict) -> dict:
             lo2, hi2 = sorted((b["y1"], b["y2"]))
             if a["x"] == b["x"]:
                 if lo1 < hi2 and lo2 < hi1:
-                    bad.append((i, j, "共线重叠"))
+                    bad.append((i, j, "collinear overlap"))
             elif abs(a["x"] - b["x"]) < 8:
                 if lo1 < hi2 and lo2 < hi1:
-                    bad.append((i, j, "近距平行粘连"))
-    chk("1. 逐边 0 相交（含共线重叠/近距粘连）", not bad,
-        f"{len(edges)} 条边两两求交，冲突 {len(bad)}" + (str(bad[:5]) if bad else ""))
+                    bad.append((i, j, "near-parallel adhesion"))
+    chk("1. pairwise zero intersection (incl. collinear overlap / near-parallel adhesion)", not bad,
+        f"{len(edges)} edges pairwise intersected, conflicts {len(bad)}" + (str(bad[:5]) if bad else ""))
 
-    # 2. 线端点接驳 + 无关线只允许遮挡式穿卡
+    # 2. Line endpoints docked + unrelated lines may only pierce cards occlusion-style
     bad2 = []
     for e in edges:
         x = e["x"]
@@ -167,9 +174,9 @@ def geometry_report(layout: dict) -> dict:
             in_bar = endv in bars and bars[endv][0] - 1 <= x <= bars[endv][1] + 1
             if not (in_card or in_bar):
                 bad2.append((e["a"] + "->" + e["b"], endv))
-    chk("2. 线端点接驳端点节点（卡片或引线内）", not bad2, str(bad2[:5]))
+    chk("2. line endpoints docked at endpoint nodes (card or leader bar)", not bad2, str(bad2[:5]))
 
-    # 3. 引线不被外来线触碰
+    # 3. Leader bars untouched by foreign lines
     bad3 = []
     for v, (b0, b1) in bars.items():
         cy = nodes[v]["y"]
@@ -180,9 +187,9 @@ def geometry_report(layout: dict) -> dict:
                 lo, hi = sorted((e["y1"], e["y2"]))
                 if lo - 1 <= cy <= hi + 1:
                     bad3.append((v, e["a"] + "->" + e["b"]))
-    chk("3. 引线(bar)无外来线搭接/穿越", not bad3, str(bad3[:5]))
+    chk("3. leader bars free of foreign line contact/crossing", not bad3, str(bad3[:5]))
 
-    # 4. 卡片两两不重叠
+    # 4. Cards pairwise non-overlapping
     bad4 = []
     items = list(nodes.items())
     for i in range(len(items)):
@@ -191,9 +198,9 @@ def geometry_report(layout: dict) -> dict:
             if abs(p1["x"] - p2["x"]) < (CW[v1] + CW[v2]) / 2 + 2 and \
                abs(p1["y"] - p2["y"]) < CARD_H + 2:
                 bad4.append((v1, v2))
-    chk("4. 卡片两两不重叠（逐节点宽）", not bad4, str(bad4[:5]))
+    chk("4. cards pairwise non-overlapping (per-node width)", not bad4, str(bad4[:5]))
 
-    # 5. 网格对齐
+    # 5. Grid alignment
     deg0 = set(meta.get("deg0", []))
     rowy = {}
     for v, p in nodes.items():
@@ -202,16 +209,16 @@ def geometry_report(layout: dict) -> dict:
         rowy.setdefault(p["y"], []).append(v)
     pitch_ok = all((b - a) == meta["pitch"] for a, b in zip(sorted(rowy), sorted(rowy)[1:]))
     rowdesc = "; ".join(f"y={y}:{len(vs)}" for y, vs in sorted(rowy.items()))
-    chk("5a. 同行节点 y 完全一致（按 y 分组）", len(rowy) == meta["rows"],
-        f"{len(rowy)} 个 y 值 = meta.rows={meta['rows']}；{rowdesc}")
-    chk("5b. 行距恒等 pitch", pitch_ok, f"pitch={meta['pitch']}")
+    chk("5a. same-row nodes share exactly one y (grouped by y)", len(rowy) == meta["rows"],
+        f"{len(rowy)} y values = meta.rows={meta['rows']}; {rowdesc}")
+    chk("5b. uniform row pitch", pitch_ok, f"pitch={meta['pitch']}")
     odd = [v for v, p in nodes.items() if p["x"] % 2 or p["y"] % 2]
-    chk("5c. 全部坐标 2px 网格（偶数）", not odd, str(odd))
-    chk("5d. 线全部严格垂直（0 拐弯 0 斜线）",
+    chk("5c. all coordinates on the 2px grid (even)", not odd, str(odd))
+    chk("5d. all lines strictly vertical (0 bends 0 diagonals)",
         all(e["y1"] != e["y2"] for e in edges),
-        f"{len(edges)} 条边全部 x1==x2；拐点数 0")
+        f"all {len(edges)} edges have x1==x2; bend count 0")
 
-    # 6. 箭头位置合法
+    # 6. Arrow placement legality
     bad6 = []
     for e in edges:
         ax, ay = e["arrow"][0], e["arrow"][1]
@@ -219,12 +226,12 @@ def geometry_report(layout: dict) -> dict:
         in_card = abs(ax - b["x"]) <= CW[e["b"]] / 2 + 4
         in_bar = e["b"] in bars and bars[e["b"]][0] - 6 <= ax <= bars[e["b"]][1] + 6
         if not (in_card or in_bar):
-            bad6.append((e["a"] + "->" + e["b"], "箭头超出目标卡/引线横向范围"))
+            bad6.append((e["a"] + "->" + e["b"], "arrow beyond target card/bar horizontal range"))
         if abs(ay - yb) > CARD_H / 2 + 12:
-            bad6.append((e["a"] + "->" + e["b"], "箭头距目标行中心过远"))
-    chk("6. 箭头指向目标端卡片边缘/引线", not bad6, str(bad6[:5]))
+            bad6.append((e["a"] + "->" + e["b"], "arrow too far from target row center"))
+    chk("6. arrows point at the target card edge / leader bar", not bad6, str(bad6[:5]))
 
-    # 7. viewBox 完整包含
+    # 7. viewBox fully contains everything
     out = []
     for v, p in nodes.items():
         if not (0 < p["x"] - CW[v] / 2 and p["x"] + CW[v] / 2 < W and
@@ -233,13 +240,13 @@ def geometry_report(layout: dict) -> dict:
     for e in edges:
         if not (0 < e["x"] < W):
             out.append(e["a"] + "->" + e["b"])
-    chk("7. 全部内容在 viewBox 内", not out, str(out))
+    chk("7. all content inside the viewBox", not out, str(out))
 
-    # 8. 渲染比例（1280×800 档）
+    # 8. Rendering scale (1280x800 tier)
     s = min(1280 / W, 680 / H) if W and H else 0
     fs_title, fs_value = meta.get("fs", [12.5, 14.0])
-    chk("8. 1280×800 渲染比例 ≥ 0.85", s >= 0.85,
-        f"viewBox {W}×{H} → s={s:.3f}；标题 {fs_title}×{s:.2f}≈{fs_title * s:.1f}px")
+    chk("8. 1280x800 rendering scale >= 0.85", s >= 0.85,
+        f"viewBox {W}x{H} -> s={s:.3f}; title {fs_title}x{s:.2f}~={fs_title * s:.1f}px")
 
     report["summary"] = {
         "viewBox": [W, H], "aspect": round(W / H, 3) if H else 0,
@@ -266,26 +273,32 @@ def run_check_file(layout_path: str, report_path: str) -> int:
     sys.exit(rc)
 
 
-# ═══ auto-v2 几何自检（2026-11-05 六点返修新硬门）═══
+# ═══ auto-v2 geometry self-report (new hard gates) ═══
 def auto_geometry_report(layout: dict) -> dict:
     from .routing import (sample_polyline, dist_point_rect, seg_cross,
                           PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE)
     nodes, edges = layout["nodes"], layout["edges"]
     meta = layout["meta"]
-    # --from-layout 手动布局：卡距恒等/简单图规律性是「自动管线结构检查」，
-    # 对手动坐标不适用（证书的 regularity 门仍如实评分，不因此放水）。
+    # --from-layout manual layout: uniform card pitch / simple-graph
+    # regularity are "automatic-pipeline structural checks", inapplicable to
+    # manual coordinates (the certificate's regularity gate still grades
+    # honestly, no leniency because of this).
     manual_mode = bool(meta.get("from_layout"))
-    # ref-scrubbed 环形排布：行距恒等/列吸附同属行结构检查，对环排布不适用
-    # （证书改用环上等间距 CV + 正多边形模板拟合误差，见 metrics）。
+    # Ring placement: uniform pitch / column snap are likewise row-structure
+    # checks, inapplicable to ring placement (the certificate switches to
+    # on-ring equal spacing CV + regular-polygon template fit error; see
+    # metrics).
     ring_mode = meta.get("placement") == "ring-cycle"
 
-    # ref-scrubbed 纵列/对称排布：行口径按模式切换（纵列=主链行距恒等+列轴
-    # 对齐；对称=镜像轴误差）；24px 列吸附对两模式不适用。
+    # column-chain / symmetric placement: row caliber switches per mode
+    # (column = uniform main-chain pitch + column-axis alignment;
+    # symmetric = mirror-axis error); 24px column snap inapplicable to both.
     column_mode = meta.get("placement") == "column-chain"
     sym_mode = meta.get("placement") == "symmetric"
-    # ref-scrubbed（美学 v3）领结共点：镜像轴 = 竖直轴 x + 水平轴 y（上下环镜像）
+    # bowtie-vertex: mirror axes = vertical axis x + horizontal axis y
+    # (upper/lower rings mirrored)
     bowtie_mode = meta.get("placement") == "bowtie-vertex"
-    # ref-scrubbed（v0.7.1）纵柱+翼位：纵柱 x 对轴 + 翼位贴中线 + 镜像对误差
+    # spine-wing: spine x on-axis + wings hugging the midline + mirror-pair error
     spine_wing_mode = meta.get("placement") == "spine-wing"
     W, H = layout["viewBox"][2], layout["viewBox"][3]
     CARD_H = meta.get("cardH", 44)
@@ -302,7 +315,7 @@ def auto_geometry_report(layout: dict) -> dict:
         return [([tuple(p) for p in e["route"]["points"]], e)
                 for e in edges]
 
-    # 1. 交叉（折线两两求交，共享端点的边除外）
+    # 1. Crossings (pairwise polyline intersection, edges sharing an endpoint excluded)
     bad = []
     P = polys()
     for i in range(len(P)):
@@ -321,10 +334,11 @@ def auto_geometry_report(layout: dict) -> dict:
                     break
             if hit:
                 bad.append((f"{ei['a']}->{ei['b']}", f"{ej['a']}->{ej['b']}"))
-    chk("1. 交叉 ≤ 2（折线/弧线采样求交；硬门互斥时保硬门放交叉）", len(bad) <= 2,
-        f"{len(edges)} 条边，冲突 {len(bad)}" + (str(bad[:5]) if bad else ""))
+    chk("1. crossings <= 2 (polyline/arc sampled intersection; on hard-gate conflict keep gates, release crossings)", len(bad) <= 2,
+        f"{len(edges)} edges, conflicts {len(bad)}" + (str(bad[:5]) if bad else ""))
 
-    # 2. 框压线 = 0（1px 余量；端点只贴自家框边，自家框内不得有正长度穿越）
+    # 2. Box press = 0 (1px margin; endpoints only touch their own box
+    #    border, no positive-length traversal inside their own box)
     bad2 = []
     for pts, e in P:
         dense = sample_polyline(pts)
@@ -341,9 +355,9 @@ def auto_geometry_report(layout: dict) -> dict:
             if any(dist_point_rect(px, py, p["x"], p["y"], hw + PRESS_MARGIN,
                                    hh + PRESS_MARGIN) <= 0 for (px, py) in dense[1:-1]):
                 bad2.append((f"{e['a']}->{e['b']}", v, "own"))
-    chk("2. 框压线 = 0（任何角度，含 1px 余量）", not bad2, str(bad2[:5]))
+    chk("2. box press = 0 (any angle, incl. 1px margin)", not bad2, str(bad2[:5]))
 
-    # 3. 边-框净距 ≥ 16px（非端点框）
+    # 3. Edge-box clearance >= 16px (non-endpoint boxes)
     worst = None
     for pts, e in P:
         dense = sample_polyline(pts)
@@ -354,10 +368,11 @@ def auto_geometry_report(layout: dict) -> dict:
             d = min(dist_point_rect(px, py, p["x"], p["y"], hw, hh) for (px, py) in dense)
             if worst is None or d < worst[0]:
                 worst = (d, e["a"], e["b"], v)
-    chk("3. 边-框净距 ≥ 16px", worst is None or worst[0] >= CLEARANCE - 1e-6,
-        f"最小 {worst[0]:.1f}px（{worst[1]}->{worst[2]} vs {worst[3]}）" if worst else "")
+    chk("3. edge-box clearance >= 16px", worst is None or worst[0] >= CLEARANCE - 1e-6,
+        f"minimum {worst[0]:.1f}px ({worst[1]}->{worst[2]} vs {worst[3]})" if worst else "")
 
-    # 4. 锚点平滑：锚在框边 + 出发方向与框边切线夹角 ≥ 20°
+    # 4. Anchor smoothness: anchor on box border + departure direction vs
+    #    border tangent angle >= 20 deg
     bad4 = []
     for pts, e in P:
         for v, idx, nidx in ((e["a"], 0, 1), (e["b"], len(pts) - 1, len(pts) - 2)):
@@ -375,9 +390,9 @@ def auto_geometry_report(layout: dict) -> dict:
             if off_border or ang < ANCHOR_MIN_DEG:
                 bad4.append((f"{e['a']}->{e['b']}", v, round(ang, 1),
                              "off-border" if off_border else "tangential"))
-    chk("4. 锚点平滑（框边锚点，切线夹角 ≥ 20°）", not bad4, str(bad4[:5]))
+    chk("4. anchor smoothness (border anchors, tangent angle >= 20 deg)", not bad4, str(bad4[:5]))
 
-    # 5. 卡片两两不重叠
+    # 5. Cards pairwise non-overlapping
     bad5 = []
     items = list(nodes.items())
     for i in range(len(items)):
@@ -386,9 +401,9 @@ def auto_geometry_report(layout: dict) -> dict:
             if abs(p1["x"] - p2["x"]) < (CW[v1] + CW[v2]) / 2 + 2 and \
                abs(p1["y"] - p2["y"]) < CARD_H + 2:
                 bad5.append((v1, v2))
-    chk("5. 卡片两两不重叠（逐节点宽）", not bad5, str(bad5[:5]))
+    chk("5. cards pairwise non-overlapping (per-node width)", not bad5, str(bad5[:5]))
 
-    # 6. 网格/行距
+    # 6. Grid / row pitch
     deg0 = set(meta.get("deg0", []))
     rowy = {}
     for v, p in nodes.items():
@@ -397,19 +412,19 @@ def auto_geometry_report(layout: dict) -> dict:
         rowy.setdefault(p["y"], []).append(v)
     pitch_ok = len({b - a for a, b in zip(sorted(rowy), sorted(rowy)[1:])}) <= 1
     odd = [v for v, p in nodes.items() if p["x"] % 2 or p["y"] % 2]
-    _6a_na = ("（manual: N/A）" if manual_mode else
-              "（ring: N/A）" if ring_mode else
-              "（column: 主链行判）" if column_mode else
-              "（sym: 全行判）" if sym_mode else "")
+    _6a_na = (" (manual: N/A)" if manual_mode else
+              " (ring: N/A)" if ring_mode else
+              " (column: main-chain rows)" if column_mode else
+              " (sym: all rows)" if sym_mode else "")
     if column_mode:
         spine = (meta.get("column") or {}).get("spine") or []
         sys_ = [nodes[v]["y"] for v in spine if v in nodes]
         pitch_ok = len({b - a for a, b in zip(sys_, sys_[1:])}) <= 1 if len(sys_) > 1 else True
-    chk("6a. 行距恒等 pitch（停车带除外）" + _6a_na,
+    chk("6a. uniform row pitch (parking-lane nodes excluded)" + _6a_na,
         True if (manual_mode or ring_mode) else pitch_ok, f"pitch={meta['pitch']}")
-    chk("6b. 全部坐标 2px 网格（偶数）", not odd, str(odd))
+    chk("6b. all coordinates on the 2px grid (even)", not odd, str(odd))
 
-    # 7. viewBox 完整包含
+    # 7. viewBox fully contains everything
     out = []
     for v, p in nodes.items():
         if not (0 < p["x"] - CW[v] / 2 and p["x"] + CW[v] / 2 < W and
@@ -418,17 +433,19 @@ def auto_geometry_report(layout: dict) -> dict:
     for pts, e in P:
         if any(not (0 < px < W and 0 < py < H) for (px, py) in pts):
             out.append(e["a"] + "->" + e["b"])
-    chk("7. 全部内容在 viewBox 内", not out, str(out))
+    chk("7. all content inside the viewBox", not out, str(out))
 
-    # 8. 渲染比例（1280×800 档）
+    # 8. Rendering scale (1280x800 tier)
     s = min(1280 / W, 680 / H) if W and H else 0
     fs_title, fs_value = meta.get("fs", [12.5, 14.0])
-    chk("8. 1280×800 渲染比例 ≥ 0.85", s >= 0.85,
-        f"viewBox {W}×{H} → s={s:.3f}；标题 {fs_title}×{s:.2f}≈{fs_title * s:.1f}px")
+    chk("8. 1280x800 rendering scale >= 0.85", s >= 0.85,
+        f"viewBox {W}x{H} -> s={s:.3f}; title {fs_title}x{s:.2f}~={fs_title * s:.1f}px")
 
-    # 9. 简单图规律性（≤10 节点：行距恒等 + 24px 列吸附 ≥ 60%）
-    # manual 布局：规律性属自动管线结构检查 → N/A（证书 regularity 门仍评分）
-    # ring 排布：行口径不适用 → 环上等间距 CV + 正多边形模板拟合误差（与证书同口径）
+    # 9. Simple-graph regularity (<=10 nodes: uniform pitch + 24px column snap >= 60%)
+    # manual layout: regularity is an automatic-pipeline structural check -> N/A
+    # (the certificate regularity gate still grades)
+    # ring placement: row caliber inapplicable -> on-ring equal spacing CV +
+    # regular-polygon template fit error (same caliber as the certificate)
     snap = sum(1 for p in nodes.values() if p["x"] % 24 == 0) / len(nodes)
     simple = len(nodes) <= 10
     if ring_mode:
@@ -443,10 +460,10 @@ def auto_geometry_report(layout: dict) -> dict:
             rdev = _reg.cycle_polygon_deviation(
                 {v: (nodes[v]["x"], nodes[v]["y"]) for v in rnodes}, rnodes)
             ring_ok = rsv <= 0.05 and rdev <= 0.05
-            ring_detail = f"环上等间距 CV={rsv:.4f}，正多边形偏差 D={rdev:.4f}（门 ≤0.05）"
+            ring_detail = f"on-ring equal spacing CV={rsv:.4f}, regular-polygon deviation D={rdev:.4f} (gate <=0.05)"
         else:
-            ring_ok, ring_detail = False, "meta.ring.nodes 缺失/不足 3 节点"
-        chk("9. 环形排布规律性（环上等间距 CV + 模板拟合）", ring_ok, ring_detail)
+            ring_ok, ring_detail = False, "meta.ring.nodes missing / fewer than 3 nodes"
+        chk("9. ring placement regularity (on-ring equal spacing CV + template fit)", ring_ok, ring_detail)
     elif column_mode:
         import math as _cm
         spine = (meta.get("column") or {}).get("spine") or []
@@ -455,10 +472,10 @@ def auto_geometry_report(layout: dict) -> dict:
             axis = sum(p[0] for p in spts) / len(spts)
             dev = max(abs(p[0] - axis) for p in spts)
             col_ok = dev <= 2.0 and pitch_ok
-            col_detail = f"主链列轴偏差 {dev:.2f}px（门 ≤2px），主链行距恒等 {pitch_ok}"
+            col_detail = f"main-chain column-axis deviation {dev:.2f}px (gate <=2px), main-chain pitch uniform {pitch_ok}"
         else:
-            col_ok, col_detail = False, "meta.column.spine 缺失/不足 2 节点"
-        chk("9. 纵列排布规律性（主链列轴对齐 + 行距恒等）", col_ok, col_detail)
+            col_ok, col_detail = False, "meta.column.spine missing / fewer than 2 nodes"
+        chk("9. column placement regularity (main-chain axis alignment + uniform pitch)", col_ok, col_detail)
     elif sym_mode:
         sym = meta.get("symmetry") or {}
         axis_x = sym.get("axis_x") or 0.0
@@ -469,8 +486,8 @@ def auto_geometry_report(layout: dict) -> dict:
                 errs.append(abs((nodes[l]["x"] + nodes[r]["x"]) / 2 - axis_x))
                 errs.append(abs(nodes[l]["y"] - nodes[r]["y"]))
         sym_ok = bool(errs) and max(errs) <= 2.0
-        chk("9. 对称排布规律性（镜像轴误差 ≤2px）", sym_ok,
-            f"镜像轴误差 {max(errs):.2f}px" if errs else "meta.symmetry.mirror_pairs 缺失")
+        chk("9. symmetric placement regularity (mirror-axis error <=2px)", sym_ok,
+            f"mirror-axis error {max(errs):.2f}px" if errs else "meta.symmetry.mirror_pairs missing")
     elif bowtie_mode:
         sym = meta.get("symmetry") or {}
         axis_x = sym.get("axis_x") or 0.0
@@ -485,11 +502,12 @@ def auto_geometry_report(layout: dict) -> dict:
             errs.append(abs(nodes[sh]["x"] - axis_x))
             errs.append(abs(nodes[sh]["y"] - axis_y))
         bowtie_ok = bool(errs) and max(errs) <= 2.0
-        chk("9. 领结共点排布规律性（镜像轴误差 ≤2px）", bowtie_ok,
-            f"镜像轴误差 {max(errs):.2f}px" if errs else "meta.symmetry 缺失")
+        chk("9. bowtie-vertex placement regularity (mirror-axis error <=2px)", bowtie_ok,
+            f"mirror-axis error {max(errs):.2f}px" if errs else "meta.symmetry missing")
     elif spine_wing_mode:
-        # 纵柱+翼位（ref-scrubbed）：纵柱 x 对轴 ≤2px + 翼位贴中线 ≤2px +
-        # 镜像对误差 ≤2px（与证书 metrics 同口径三处一致）
+        # spine-wing: spine x on-axis <=2px + wings hugging the midline <=2px
+        # + mirror-pair error <=2px (consistent with certificate metrics in
+        # all three places)
         sw = meta.get("spine_wing") or {}
         axis_x = sw.get("axis_x") if sw.get("axis_x") is not None else 0.0
         axis_y = sw.get("axis_y") if sw.get("axis_y") is not None else 0.0
@@ -505,16 +523,16 @@ def auto_geometry_report(layout: dict) -> dict:
                 errs.append(abs(nodes[up]["x"] - nodes[down]["x"]))
                 errs.append(abs((nodes[up]["y"] + nodes[down]["y"]) / 2 - axis_y))
         sw_ok = bool(errs) and max(errs) <= 2.0
-        chk("9. 纵柱+翼位排布规律性（纵柱对轴 + 中线贴靠 + 镜像 ≤2px）",
+        chk("9. spine-wing placement regularity (spine on-axis + midline adherence + mirror <=2px)",
             sw_ok,
-            f"最大偏差 {max(errs):.2f}px" if errs else "meta.spine_wing 缺失")
+            f"maximum deviation {max(errs):.2f}px" if errs else "meta.spine_wing missing")
     else:
-        chk("9. 简单图排布规律性" + ("（manual: N/A）" if manual_mode else ""),
+        chk("9. simple-graph placement regularity" + (" (manual: N/A)" if manual_mode else ""),
             True if manual_mode else ((not simple) or (pitch_ok and snap >= 0.6)),
-            f"n={len(nodes)}，24px 列吸附 {snap:.2f}，行距恒等 {pitch_ok}"
-            + ("；manual 布局不适用" if manual_mode else ""))
+            f"n={len(nodes)}, 24px column snap {snap:.2f}, pitch uniform {pitch_ok}"
+            + ("; inapplicable to manual layouts" if manual_mode else ""))
 
-    # 10. 元数据完备（recipe / line_style / engine）
+    # 10. Metadata completeness (recipe / line_style / engine)
     ok10 = (meta.get("recipe") == "auto-v2" and
             meta.get("line_style") in ("straight", "arc") and
             (meta.get("position_engine") in ("cp-sat", "construct", "manual",
@@ -522,19 +540,21 @@ def auto_geometry_report(layout: dict) -> dict:
                                              "column-construct", "sym-construct",
                                              "bowtie-construct",
                                              "spine-construct")))
-    chk("10. auto-v2 元数据完备", ok10,
+    chk("10. auto-v2 metadata complete", ok10,
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "
         f"engine={meta.get('position_engine')}")
 
-    # 11. WS3 交叉双口径一致性：路由理论（最终路线交叉对数）vs 交付坐标几何复检
+    # 11. WS3 dual crossing accounting consistency: routing theory (crossing
+    # pairs of the final route) vs delivered-geometry recheck
     router_pairs = meta.get("router_cross_pairs")
     if router_pairs is not None:
-        geom_pairs = len(bad)      # 第 1 项的几何复检结果（边对数）
-        chk("11. 交叉双口径一致（路由理论 vs 交付坐标几何复检）",
+        geom_pairs = len(bad)      # geometric recheck result of item 1 (edge pairs)
+        chk("11. dual crossing accounting consistent (routing theory vs delivered-geometry recheck)",
             abs(router_pairs - geom_pairs) < 0.5,
             f"router={router_pairs} geometric={geom_pairs}")
 
-    # 12. F1：互环对（双向边对）两线最小间距 ≥ 4px（透镜双弧；禁止重合成双箭头线）
+    # 12. F1: mutual pairs (bidirectional edge pairs) two-line minimum distance >= 4px
+    # (lens double arcs; merging into a double-arrowhead line is forbidden)
     from .routing import min_pair_dist
     pair_bad = []
     pair_note = []
@@ -548,14 +568,18 @@ def auto_geometry_report(layout: dict) -> dict:
             if md is None or md < 4.0:
                 pair_bad.append((f"{ei['a']}<->{ei['b']}",
                                  md if md is None else round(md, 1)))
-    chk("12. 互环对两线最小间距 ≥ 4px（透镜双弧，禁止重合）",
+    chk("12. mutual-pair two-line minimum distance >= 4px (lens double arcs, merging forbidden)",
         not pair_bad, (str(pair_bad[:5]) if pair_bad else "; ".join(pair_note[:6])))
 
-    # 13. ref-scrubbed #15：path_d 渲染几何 = 核验几何（dense points）+ 弧线 G1 切线连续。
-    # 历史 bug：route_svg_d 曾在 fillet 弧后无条件补画角点本体，渲染层出现
-    # tb→q→ta_next 折返毛刺，而证书只核对 dense 采样点（平滑）——交付与
-    # 核验脱节。本检查直接解析渲染用的 path_d（M/L/A），双向核对两套几何
-    # 偏差 ≤1.5px，且每个 A 段与相邻 L 段切向夹角 ≤4°（取整容差）。
+    # 13. path_d rendering geometry = verification geometry (dense points) +
+    # arc G1 tangent continuity.
+    # Historical bug: route_svg_d unconditionally re-drew the corner point
+    # itself after the fillet arc, producing a tb->q->ta_next zigzag artifact
+    # in the rendering layer while the certificate only checked the dense
+    # sampled points (smooth) — delivery and verification were out of sync.
+    # This check parses the rendered path_d (M/L/A) directly, verifies both
+    # geometries bidirectionally within <=1.5px, and requires each A segment's
+    # tangent angle to adjacent L segments <=4 deg (rounding tolerance).
     pathd_bad = []
     pathd_n = 0
     for pts, e in P:
@@ -565,22 +589,22 @@ def auto_geometry_report(layout: dict) -> dict:
         pathd_n += 1
         elems = _parse_path_d(d)
         if elems is None:
-            pathd_bad.append((f"{e['a']}->{e['b']}", "path_d 解析失败"))
+            pathd_bad.append((f"{e['a']}->{e['b']}", "path_d parse failed"))
             continue
         dp = _path_d_all_points(elems)
         dense = [tuple(p) for p in pts]
         dev = _max_poly_dev(dp, dense)
         if dev > 1.5:
-            pathd_bad.append((f"{e['a']}->{e['b']}", f"渲染/核验几何偏差 {dev:.1f}px"))
+            pathd_bad.append((f"{e['a']}->{e['b']}", f"render/verify geometry deviation {dev:.1f}px"))
             continue
         g1 = _path_d_g1_max_deg(elems)
         if g1 > 4.0:
-            pathd_bad.append((f"{e['a']}->{e['b']}", f"弧线切线不连续 {g1:.1f}°"))
-    chk("13. path_d 渲染几何与核验几何一致 + 弧线 G1 切线连续",
+            pathd_bad.append((f"{e['a']}->{e['b']}", f"arc tangent discontinuity {g1:.1f} deg"))
+    chk("13. path_d rendering geometry consistent with verification geometry + arc G1 tangent continuity",
         not pathd_bad,
         (str(pathd_bad[:5]) if pathd_bad
-         else f"{pathd_n} 条 vg 路径渲染/核验一致（G1 ≤4°，几何偏差 ≤1.5px）"
-         if pathd_n else "本图无 vg path_d 路径（平凡通过）"))
+         else f"{pathd_n} vg paths render/verify consistent (G1 <=4 deg, geometry deviation <=1.5px)"
+         if pathd_n else "no vg path_d routes in this graph (trivially passes)"))
 
     report["summary"] = {
         "viewBox": [W, H], "aspect": round(W / H, 3) if H else 0,

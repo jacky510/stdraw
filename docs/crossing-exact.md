@@ -1,5 +1,7 @@
 # 精确交叉数层与规律性放置（WS2）——数学定义与正确性论证
 
+> Engineering doc, maintained in Chinese — English overview: README.md
+
 本文件给出 `stdraw/crossing_exact.py`、`stdraw/regularity.py`、
 `stdraw/placement.py` 的完整数学框架。所有「proven-optimal」主张都以本文
 定义的模型类为准；证书措辞与本文同步，绝不虚称。

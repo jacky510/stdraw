@@ -1,4 +1,4 @@
-# 完整性核对：每个语料文件应有 7 个工具形态的评测 JSON；另有 exact 参考若干。
+# Completeness check: every corpus file should have evaluation JSONs for 7 tool forms; plus a few exact references.
 import collections
 import glob
 import json

@@ -1,4 +1,4 @@
-# ELK 基线 wrapper：.cld → elk 输入 JSON（px 框尺寸）→ node run_elk.cjs → 评测 JSON。
+# ELK baseline wrapper: .cld -> ELK input JSON (px box sizes) -> node run_elk.cjs -> evaluation JSON.
 import json
 import os
 import subprocess
@@ -12,7 +12,7 @@ sys.path.insert(0, HERE)
 from stdraw.dsl import parse        # noqa: E402
 from eval_core import evaluate, box_size  # noqa: E402
 
-NODE = os.environ.get("STDRAW_NODE", "node")   # node 可执行文件；默认走 PATH，可用环境变量覆盖
+NODE = os.environ.get("STDRAW_NODE", "node")   # node executable; defaults to PATH, overridable via environment variable
 ELK_ENV = os.path.join(HERE, "env", "elk")
 
 

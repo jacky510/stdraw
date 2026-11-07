@@ -1,53 +1,53 @@
-# stdraw DSL 草案 v0.1
+# stdraw DSL Draft v0.1
 
-状态：M0 草案（最小闭环）。解析器：`stdraw/dsl.py`，CLI：`python -m stdraw layout <file.cld>`。
+Status: M0 draft (minimal closed loop). Parser: `stdraw/dsl.py`, CLI: `python -m stdraw layout <file.cld>`.
 
-## 设计原则
+## Design Principles
 
-1. **文本进、带证书的图出**——DSL 是 agent 的输入接口，一份 `.cld` 文件即可跑出布局 + 质量证书；
-2. **最小闭环**：变量 / 极性边 / 回路标签 / 分组（可选），不预支 M1+ 的语义；
-3. **语义可审计**：回路标签（loop）不是注释，而是 lint 层（`stdraw/loops.py`）的验证对象——闭合性 + R/B 极性数边逐条验证，独立枚举全图回路对照（实测抓到「声明环不闭合」「极性标错」）；
-4. **分组与「关系决定布局」的张力**：分组只是语义标注，M0 布局层**不消费**分组——布局由关系（图结构）唯一决定、零人工意图；分组自动推导（社区检测）属 M1+。
+1. **Text in, certified diagram out** — the DSL is the input interface for an agent; a single `.cld` file yields the layout + quality certificate;
+2. **Minimal closed loop**: variables / polarity edges / loop tags / grouping (optional), without borrowing semantics from M1+;
+3. **Auditable semantics**: loop tags (`loop`) are not comments but verification targets of the lint layer (`stdraw/loops.py`) — closure + R/B polarity edge counting are verified per tag, cross-checked against an independent enumeration of all loops in the graph (in practice this has caught "declared loop does not close" and "wrong polarity tag");
+4. **Tension between grouping and "relations decide layout"**: grouping is merely a semantic annotation; the M0 layout layer does **not** consume groups — layout is determined solely by relations (graph structure), with zero manual intent; automatic group derivation (community detection) belongs to M1+.
 
-## 语法
+## Syntax
 
-行导向；`#` 起注释；空行忽略。
+Line-oriented; `#` starts a comment; blank lines are ignored.
 
 ```
-graph "图名"                              # 可选，图名（进证书）
+graph "图名"                              # optional, graph name (goes into the certificate)
 
-var <id> "<标签>" [@value "<数值文本>"]     # 变量（必须先声明后引用）
-                 [@group <gid>]           # 可选分组归属
-                 [@w <补余量px>]           # 可选：混排标题实测补余量（2 的倍数）
+var <id> "<标签>" [@value "<数值文本>"]     # variable (must be declared before use)
+                 [@group <gid>]           # optional group membership
+                 [@w <补余量px>]           # optional: measured padding for mixed-script titles (multiple of 2)
 
-<a> -> <+|-> <b> [@loops <id1>,<id2>]      # 极性边；@loops 声明该边参与的回路
+<a> -> <+|-> <b> [@loops <id1>,<id2>]      # polarity edge; @loops declares the loops this edge participates in
 
-loop <id> "<标签>" "<R|B>" [<n1>, <n2>, ...]   # 声明回路：节点序列 + 期望类型
-group <gid> "<分组标签>"                   # 可选分组声明
+loop <id> "<标签>" "<R|B>" [<n1>, <n2>, ...]   # declare a loop: node sequence + expected type
+group <gid> "<分组标签>"                   # optional group declaration
 ```
 
-- 极性：`+` 同向变化 / `-` 反向变化（渲染为箭头着色/悬停标签，由查看层决定）；
-- `loop` 的节点序列按环上顺序书写（闭合性按该序列在 tagged 边子图里验证）；
-- `R` = 增强环（tagged 边负极性偶数条）/ `B` = 平衡环（奇数条）——声明与实际奇偶不符时 lint 报警。
+- Polarity: `+` same-direction change / `-` opposite-direction change (rendered as arrow coloring / hover label, decided by the viewer layer);
+- The node sequence of `loop` is written in order along the cycle (closure is verified against that sequence on the tagged-edge subgraph);
+- `R` = reinforcing loop (even number of negative-polarity tagged edges) / `B` = balancing loop (odd number) — lint warns when the declared type disagrees with the actual parity.
 
-## 审计规则（lint 层，随每次 layout 自动运行）
+## Audit Rules (lint layer, runs automatically with every layout)
 
-| # | 规则 | 说明 |
+| # | Rule | Description |
 |---|---|---|
-| L1 | 回路闭合性 | 只用该环 tagged 边，从首节点经全部环节点走回自身（DFS ≤12 步） |
-| L2 | R/B 极性数边 | tagged 边负极性奇偶 ↔ 声明类型一致 |
-| L3 | 标签存在性 | 声明环至少有一条边打该标签；边引用的回路必须已声明 |
-| L4 | 独立枚举对照 | 全图简单回路（≤10 步）独立枚举；存在但未声明的回路如实报告 |
+| L1 | Loop closure | Uses only that loop's tagged edges; walks from the first node through all loop nodes back to itself (DFS ≤12 steps) |
+| L2 | R/B polarity edge count | Parity of negative-polarity tagged edges ↔ matches the declared type |
+| L3 | Tag existence | A declared loop has at least one edge carrying its tag; loops referenced by an edge must already be declared |
+| L4 | Independent enumeration cross-check | Simple cycles of the whole graph (≤10 steps) enumerated independently; loops that exist but are not declared are reported as-is |
 
-审计结论进 `loops_audit.json`，问题清单同时打印；**审计不阻断布局**（语义问题与布局质量分离，但都进质量层报告）。
+Audit conclusions go into `loops_audit.json`, and the issue list is printed at the same time; **the audit does not block layout** (semantic issues and layout quality are kept separate, but both go into the quality-layer report).
 
-## 往返一致性
+## Round-trip Consistency
 
-`parse(dumps(g)) == g`：图模型 → DSL 文本 → 图模型，逐字段相等（确定性序列化）。
+`parse(dumps(g)) == g`: graph model → DSL text → graph model, field-by-field equal (deterministic serialization).
 
-## 已知边界（M0 不做，留 M1+）
+## Known Boundaries (not in M0, deferred to M1+)
 
-- 流量/存量（stock/flow）标注；
-- 边上的延迟标记（`||`）；
-- 分组自动推导（社区检测）与分组进布局；
-- 多图/子图、版本化 schema。
+- Stock/flow annotations;
+- Delay markers (`||`) on edges;
+- Automatic group derivation (community detection) and grouping consumed by layout;
+- Multi-graph/subgraph, versioned schema.

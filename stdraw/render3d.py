@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
-"""3D 渲染层：layout3d 结果 → 独立 HTML（three.js r128，零网络依赖）。
+"""3D rendering layer: layout3d results -> standalone HTML (three.js r128,
+zero network dependency).
 
-three.js 经 assets/three.min.js 相对引用（零内联依赖精神：
-与 viewer 共享仓内 assets 目录一份，避免每份 demo 重复内联 600KB）。
-视觉规格：节点=双面渲染球片+深度明暗衰减、
-弦线向外弓（单弧贝塞尔贴合球壳）、形体线框参考、地面网格、OrbitControls。
+three.js is referenced relatively via assets/three.min.js (in the spirit of
+zero inline dependencies: shared with the viewer from one in-repo assets
+directory, avoiding re-inlining 600KB into every demo).
+Visual spec: nodes = double-sided rendered sphere sprites + depth-based
+shading falloff, chord lines bowed outward (single-arc Bezier hugging the
+spherical shell), solid wireframe reference, ground grid, OrbitControls.
 """
 import html
 import json
@@ -12,7 +15,7 @@ import json
 
 def render_3d_html(graph_dict: dict, layouts: dict, graph_name: str = "",
                    cert_note: str = "") -> str:
-    """layouts: {solid: layout3d 结果 dict}。每个形体一个按钮切换。"""
+    """layouts: {solid: layout3d result dict}. One button per solid to switch."""
     data = json.dumps({"name": graph_name,
                        "nodes": graph_dict["nodes"],
                        "edges": graph_dict["edges"],
@@ -34,7 +37,7 @@ button.on{background:#2563eb;border-color:#2563eb}
 </style>
 <div id="bar"><b>stdraw 3D · ''' + html.escape(graph_name) + '''</b> ''' + buttons + '''</div>
 <div id="c"></div>
-<div id="info">拖动旋转 / 滚轮缩放 / 右键平移 · 确定性排布（同图同布局）· ''' + html.escape(cert_note) + '''</div>
+<div id="info">drag to rotate / wheel to zoom / right-drag to pan · deterministic placement (same graph, same layout) · ''' + html.escape(cert_note) + '''</div>
 <script src="../assets/three.min.js"></script>
 <script src="../assets/OrbitControls.js"></script>
 <script>
@@ -85,7 +88,7 @@ function draw(solid){
   const size = Math.max(...Object.values(pos).flat().map(Math.abs));
   group.add(wireframeBox(solid, size));
   const idx = {}; DATA.nodes.forEach((n,i)=>idx[n.id]=i);
-  // 节点：球片 + 标签 sprite（深度明暗在 render 循环按相机距离调透明度）
+  // nodes: sphere sprites + label sprites (depth shading adjusts opacity by camera distance in the render loop)
   const sprites = [];
   DATA.nodes.forEach(n=>{
     const p = pos[n.id];
@@ -105,7 +108,7 @@ function draw(solid){
     sp.position.set(p[0], p[1] + 30, p[2]);
     group.add(sp); sprites.push(sp);
   });
-  // 边：向外弓的单弧弦线（控制点沿位置向量外推）
+  // edges: single-arc chord lines bowed outward (control point pushed out along the position vector)
   DATA.edges.forEach(e=>{
     const a = new THREE.Vector3(...pos[e.a]);
     const b = new THREE.Vector3(...pos[e.b]);
@@ -127,7 +130,7 @@ addEventListener('resize', ()=>{
 });
 (function loop(){
   requestAnimationFrame(loop);
-  if (group) group.children.forEach(ch=>{ // 深度明暗：远处元素降透明度
+  if (group) group.children.forEach(ch=>{ // depth shading: distant elements fade
     if (ch.material && ch.material.opacity !== undefined){
       const d = camera.position.distanceTo(ch.position instanceof THREE.Vector3 ? ch.position : new THREE.Vector3());
       const f = Math.max(0.25, Math.min(1, 1.25 - d/1800));

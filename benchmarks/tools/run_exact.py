@@ -1,5 +1,5 @@
-# WS2 精确交叉数层单独 runner：cr(G)（布局无关参考真值）→ raw JSON。
-# 用法：python run_exact.py <file.cld> <rawdir>   （orchestrator 控 subprocess 超时）
+# WS2 exact crossing-number layer, standalone runner: cr(G) (layout-independent reference ground truth) -> raw JSON.
+# Usage: python run_exact.py <file.cld> <rawdir>   (the orchestrator controls the subprocess timeout)
 import json
 import os
 import sys
@@ -27,7 +27,7 @@ def main(cld_path, rawdir):
                "cr": ex.get("crossing_number"), "proven_optimal": ex.get("proven_optimal"),
                "lb": ex.get("lb"), "gap": ex.get("gap"), "coverage": ex.get("coverage"),
                "status": "ok", "runtime_s": round(time.perf_counter() - t0, 3)}
-    except Exception as exc:      # noqa: BLE001 —— 最后兜底：如实 error 落盘，不崩
+    except Exception as exc:      # noqa: BLE001 -- last-resort fallback: write an honest error record to disk, do not crash
         rec = {"tool": "stdraw-exact", "graph": base, "cr": None,
                "proven_optimal": False, "coverage": "error",
                "status": "error", "error": f"{type(exc).__name__}: {exc}",

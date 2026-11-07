@@ -1,5 +1,7 @@
 # OR-Tools CP-SAT 同题对比报告（auto-v2，2026-11-05）
 
+> Engineering doc, maintained in Chinese — English overview: README.md
+
 对比口径：同输入（种子化随机图 + 两仓内案例）、同引擎代码路径，
 唯一变量 = 定位层是否用 CP-SAT（num_workers=1 + seed 42，确定性）。
 

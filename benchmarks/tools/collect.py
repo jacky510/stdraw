@@ -1,5 +1,5 @@
-# 聚合器：raw/*.json → REPORT.md（大表）+ README.md（摘要）+ manifest.json（全量清单）。
-# 只报真实数字：赢了写赢，输了写输，DNF 如实计数。禁只报总分。
+# Aggregator: raw/*.json -> REPORT.md (big tables) + README.md (summary) + manifest.json (full listing).
+# Report only real numbers: wins written as wins, losses as losses, DNFs counted honestly. Totals-only reporting is forbidden.
 import glob
 import json
 import os
@@ -12,7 +12,7 @@ REPO = os.path.abspath(os.path.join(BENCH, ".."))
 RAW = os.path.join(BENCH, "raw")
 CORPUS = os.path.join(BENCH, "corpus")
 
-TOOLS = [  # (suffix, 显示名)
+TOOLS = [  # (suffix, display name)
     ("stdraw-ortho", "stdraw·ortho(构造法)"),
     ("stdraw-auto", "stdraw·auto(WS3布线)"),
     ("stdraw-auto-exact", "stdraw·auto+WS2(精确层)"),
@@ -74,7 +74,7 @@ def fmt(v, nd=1):
 def main():
     graphs, manifest = load_all()
 
-    # ── 完整 manifest（random + classic 清单）──
+    # ── full manifest (random + classic listing) ──
     manifest["classic_corpus"] = [
         {"file": f"{b}.cld", "n": g["n"], "m": g["m"], "loops": g.get("loops", 0),
          "lint": "0 problems (validate_corpus.py)"}
@@ -94,7 +94,7 @@ def main():
     A("# stdraw 基准对比报告（WS4 建立 · WS5 性能修复后重测；真实数字，赢了写赢，输了写输）\n")
     A("生成：benchmarks/tools/collect.py ← benchmarks/raw/（全部原始评测 JSON 留证）。\n")
 
-    # ═══ §1 结论先行 ═══
+    # ═══ §1 conclusions first ═══
     A("## §1 结论先行（机械生成，无人工修饰；数字出自 §3/§4/§7）\n")
 
     def _agg(graphs_, suf, key):
@@ -130,7 +130,7 @@ def main():
           "同时达标」这一域；交叉数单项与 Graphviz dot 打平、不敌 neato/ELK 裸交叉值；"
           "运行时间为其主要代价\n")
 
-    # ═══ §2 对比协议 ═══
+    # ═══ §2 comparison protocol ═══
     A("## §2 对比协议（口径声明）\n")
     A("- **同一输入**：同标签、同框尺寸（stdraw textmetrics 统一给出 w×h px；Graphviz 以 "
       "inch=px/72 fixedsize 传入、ELK/stdraw 直接 px——各工具 native 坐标同为物理 px）；")
@@ -158,7 +158,7 @@ def main():
       "（引擎 b4ea801+）；基线（Graphviz/ELK）与 stdraw-ortho 沿用 WS4 同机实测"
       "（两者不在本次修复面，引擎未变）。\n")
 
-    # ═══ §3 经典 CLD 大表（每工具一张，六指标全列）═══
+    # ═══ §3 classic CLD corpus (big per-graph tables, one per tool, all six metrics) ═══
     A(f"## §3 经典 CLD 语料（{len(classic)} 张，n=4…8）逐图大表\n")
     for suf, name in TOOLS:
         A(f"### {name}\n")
@@ -178,7 +178,7 @@ def main():
               f"{fmt(r['spacing_cv'],3)} | {fmt(r['row_align_rate'],2)} | "
               f"{fmt(r['runtime_s'],2)} | ok |")
         A("")
-    # cr(G) 精确参考（.exact.json 优先；无则回退 auto-exact 内嵌 exactness 块）
+    # cr(G) exact reference (.exact.json preferred; otherwise fall back to the auto-exact embedded exactness block)
     A("### stdraw WS2 精确层 cr(G) 参考真值（classic 全量）\n")
     A("| 图 | cr(G) | proven_optimal | coverage | 耗时s | 状态 |")
     A("|---|---|---|---|---|---|")
@@ -196,7 +196,7 @@ def main():
               f"{fmt(r['runtime_s'],2)} | ok |")
     A("")
 
-    # ═══ §4 随机族聚合表 ═══
+    # ═══ §4 random-family aggregate tables ═══
     A("## §4 随机稀疏图族（n∈{10,20,30,50} × 20 张，seed 可复现）聚合\n")
     A("聚合口径：均值（交叉/压线/违规/CV/对齐），中位耗时，DNF 率如实单列。\n")
     A("| 工具 | n | 张数 | 交叉均值 | 框压线均值 | 净距违规均值 | CV均值 | 行对齐均值 | "
@@ -224,7 +224,7 @@ def main():
                                          "clear_violations": mean("clear_violations"),
                                          "box_press": mean("box_press")}
     A("")
-    # 可平面/不可平面分层（ortho 适用域）
+    # planar/non-planar split (ortho applicability domain)
     A("### 构造法（ortho-v1）的可平面分层实况（随机族）\n")
     for n in sorted(random_by_n):
         grp = random_by_n[n]
@@ -236,7 +236,7 @@ def main():
           f"不可平面诚实跳过 {skip}")
     A("")
 
-    # ═══ §5 可扩展性瓶颈实测（auto 形态 DNF 根因；WS5 已修复）═══
+    # ═══ §5 scalability bottleneck, measured (root cause of auto-form DNF; fixed in WS5) ═══
     A("## §5 stdraw auto-v2 可扩展性瓶颈（实测定位 → WS5 修复）\n")
     A("- **WS4 实测（修复前）**：n10 每张 ~285s（打点：CP-SAT 定位 <1s，其余全耗在 "
       "`_polish` 的每候选横移全图重布线 route_all，n10 ≈121 次/图）；n≥20 在 100s 预算 "
@@ -268,7 +268,7 @@ def main():
       "慢基线 2~3 个数量级；`_polish`（布线可行性回喂定位）仍只在 n≤10 执行，n≥20 的定位"
       "质量依赖 CP-SAT 预算内 incumbent + 构造法兜底。\n")
 
-    # ═══ §6 OGDF 口径 ═══
+    # ═══ §6 OGDF conventions ═══
     A("## §6 OGDF：未运行（构建成本如实评估）\n")
     A("- 本机（Windows 11，Medium 完整性，无 cmake / 无 MSVC cl）不具备 OGDF 构建工具链，"
       "OGDF 无官方 Windows 预编译分发；按卡面预案降级为**引用其论文公开数据**做数值对照："
@@ -280,7 +280,7 @@ def main():
       "ExactLib/subgraph 抓逼在方法学上同属精确交叉数路线，文献口径见 "
       "docs/crossing-exact.md。\n")
 
-    # ═══ §7 自动结论区 ═══
+    # ═══ §7 auto-generated conclusions ═══
     A("## §7 逐指标自动结论（classic 全量均值 + 随机族；由 collect.py 机械生成，无人工修饰）\n")
     def agg(family_graphs, suf, key):
         vals = [g[suf][key] for g in family_graphs.values()
@@ -299,7 +299,7 @@ def main():
           f"{fmt(vals['clear_violations'])} | {fmt(vals['spacing_cv'],3)} | "
           f"{fmt(vals['row_align_rate'],2)} | {fmt(vals['runtime_s'],2)} | {ok}/{len(classic)} |")
     A("")
-    # 胜负判定（classic 交叉数）：每个基线 vs stdraw-auto
+    # win/loss adjudication (classic crossings): each baseline vs stdraw-auto
     A("### classic 交叉数逐工具对比（vs stdraw-auto 基准行）\n")
     base_cross = classic_summary.get("stdraw-auto", {}).get("crossings")
     if base_cross is not None:
@@ -331,7 +331,7 @@ def main():
             A(f"- {name}：{'，'.join(parts)}")
     A("")
     A("## §8 「最好」主张的可辩护措辞（草案，待 default 复核）\n")
-    # 机械生成措辞素材
+    # mechanically generated wording material
     A("以下措辞只允许引用本报告表格中实际出现的数字与口径：\n")
     A("1. 在经典 CLD 语料上，stdraw auto-v2 于交叉数/框压线/净距/行对齐各列的每项表现，"
       "以 §7 classic 均值表为准逐列对比，不合并总分；")
@@ -345,7 +345,7 @@ def main():
     with open(os.path.join(BENCH, "REPORT.md"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
 
-    # ═══ README.md 摘要 ═══
+    # ═══ README.md summary ═══
     R = []
     R.append(f"# benchmarks — stdraw 基准集与基线对比\n")
     R.append(f"语料：`corpus/classic/`（{len(classic)} 张经典 CLD，lint 全绿）+ `corpus/random/`"

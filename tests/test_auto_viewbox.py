@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
-"""F3 返修回归（ref-scrubbed）：auto 弧线鼓出必须落在 viewBox 内。
+"""F3 rework regression (ref-scrubbed): auto arc bulges must stay inside the viewBox.
 
-背景：viewBox 自 v0.2 起只按节点框计算，bullwhip 的 inventory->forecast 弧向
-左鼓出 7.5px 出 viewBox 左缘 → check7 fail（CLI exit 1）。修复：交付层把全部
-边几何（采样点 ∪ 弧 ctrl）纳入平移量与 W/H 计算。
+Background: since v0.2 the viewBox was computed from node boxes only, and the
+bullwhip inventory->forecast arc bulged 7.5px left past the viewBox left edge
+-> check7 fail (CLI exit 1). Fix: the delivery layer now folds all edge
+geometry (sampled points + arc ctrl) into the translation offset and W/H math.
 
-覆盖：
-  A. bullwhip（回归原案）：CLI exit 0、几何自检 fail=0、
-     全部 route.points/ctrl 严格落在 viewBox 开区间内；
-  B. 双 CI 例（limits-to-growth / classic-cld-growth-and-burden）：
-     同样断言（B 层 ci_checks 已跑，这里做逐点包含的细口径）；
-  C. 确定性：同输入两次 layout 逐字节一致。
+Coverage:
+  A. bullwhip (the original regression case): CLI exit 0, geometry self-check
+     fail=0, all route.points/ctrl strictly inside the viewBox open interval;
+  B. two CI cases (limits-to-growth / classic-cld-growth-and-burden): same
+     assertions (layer-B ci_checks already runs them; here with a finer
+     point-by-point containment caliber);
+  C. determinism: two layouts of the same input are byte-for-byte identical.
 
-运行：python tests/test_auto_viewbox.py（stdlib-only，exit 0 = 全过）。
+Run: python tests/test_auto_viewbox.py (stdlib-only, exit 0 = all pass).
 """
 import json
 import os
@@ -42,7 +44,7 @@ def layout_and_check(root, cld, outdir):
 
 
 def contained(lj):
-    """全部边交付几何（采样点 + 弧 ctrl）严格落在 viewBox 开区间内。"""
+    """All delivered edge geometry (sampled points + arc ctrl) lies strictly inside the viewBox open interval."""
     W, H = lj["viewBox"][2], lj["viewBox"][3]
     bad = []
     for e in lj["edges"]:
@@ -76,12 +78,12 @@ def main():
         ok(f"{name}: geometry fail=0", geo.get("fail", -1) == 0,
            f"fail={geo.get('fail')}")
         bad = contained(lj)
-        ok(f"{name}: 边几何全部在 viewBox 内", not bad,
-           f"viewBox={lj['viewBox']} 越界={bad[:3]}")
+        ok(f"{name}: all edge geometry inside the viewBox", not bad,
+           f"viewBox={lj['viewBox']} out_of_bounds={bad[:3]}")
         layout_and_check(root, cld, o2)
         a = open(os.path.join(o1, "layout.json"), "rb").read()
         b = open(os.path.join(o2, "layout.json"), "rb").read()
-        ok(f"{name}: 确定性（两次 layout.json 逐字节一致）", a == b)
+        ok(f"{name}: determinism (two layout.json runs byte-identical)", a == b)
     print()
     if FAILURES:
         print(f"FAILURES ({len(FAILURES)}):", FAILURES)

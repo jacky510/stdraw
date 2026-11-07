@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
-"""Planarity-Aware 2D 布局层：平面嵌入 + st 编号 + 对偶最长路 + 车道装箱。
+"""Planarity-aware 2D layout layer: planar embedding + st-numbering + dual longest paths + lane packing.
 
-布局数学（Rosenstiehl–Tarjan 可见性表示 → 线全严格竖直、0 交叉有定理保证），
-图数据经 Graph 模型显式传入，不耦合任何具体业务模板。
+Layout math (Rosenstiehl-Tarjan visibility representation -> all wires strictly vertical, 0 crossings guaranteed by theorem),
+graph data is passed in explicitly through the Graph model, decoupled from any concrete business template.
 
-不变量（check.geometry_report 逐项验证）：
-  - 每条边一根严格竖线（0 拐弯 0 斜线）；平行/共线竖线永不相交；
-  - 间距 < GAP_NEAR 的两列，y 覆盖带（含 1 行余量）不重叠；
-  - 引线 bar 只横贯自身关联线列；无关线允许从卡片底下穿过（卡片不透明遮挡）；
-  - 同行卡片互不重叠且留 CARD_GAP 间隙；坐标 2px 网格。
+Invariants (verified item by item by check.geometry_report):
+    - One strictly vertical line per edge (0 bends, 0 diagonals); parallel/collinear vertical lines never intersect;
+    - Two columns closer than GAP_NEAR have non-overlapping y coverage bands (with 1 row of margin);
+    - A leader bar spans only the wire columns it relates to; unrelated wires may pass underneath cards (cards are opaque and occlude them);
+    - Cards in the same row never overlap and keep a CARD_GAP clearance; coordinates on a 2px grid.
 
-前提：core 子图（去掉孤立节点后）必须为平面图——本层不做平面化降级，
-非平面输入抛 NotPlanarError（诚实边界：降级策略属布局层可替换实现，M1+）。
+Precondition: the core subgraph (after removing isolated nodes) must be planar -- this layer does not degrade via planarization;
+non-planar input raises NotPlanarError (honest boundary: degradation policy belongs to replaceable layout-layer implementations, M1+).
 """
 import json
 from collections import defaultdict, deque
@@ -28,21 +28,21 @@ class NotPlanarError(Exception):
 
 @dataclass
 class LayoutConfig:
-    fs_title: float = 12.5        # 标题字号
-    fs_value: float = 14.0        # 数值字号（加粗）
+    fs_title: float = 12.5        # title font size
+    fs_value: float = 14.0        # value font size (bold)
     card_h: int = 42
-    card_min: int = 96            # 卡片最小宽
-    card_pad: int = 22            # 标题左右留白
-    card_gap: int = 8             # 同行卡片最小间隙
-    pitch: int = 56               # 行距（卡 42 + 线隙 14）
-    top: int = 76                 # 首行中心 y
-    park_y: int = 26              # 孤立节点停车带中心 y
-    left: int = 40                # 首列最小 x
-    gap_col: int = 8              # 相邻线列最小间距（无条件）
-    gap_near: int = 16            # 间距小于此值时要求 y 覆盖不相交
+    card_min: int = 96            # minimum card width
+    card_pad: int = 22            # left/right padding for the title
+    card_gap: int = 8             # minimum gap between cards in a row
+    pitch: int = 56               # row pitch (card 42 + wire gap 14)
+    top: int = 76                 # center y of the first row
+    park_y: int = 26              # center y of the parking strip for isolated nodes
+    left: int = 40                # minimum x of the first column
+    gap_col: int = 8              # minimum spacing between adjacent wire columns (unconditional)
+    gap_near: int = 16            # below this spacing, y coverage must not overlap
     target_w: int = 1280
-    target_h: int = 680           # 1280×800 档 svg 净视口（评分基准）
-    aspect_min: float = 1.72      # 内容窄而高时拉伸列距到该比例
+    target_h: int = 680           # net svg viewport for the 1280x800 tier (scoring baseline)
+    aspect_min: float = 1.72      # when content is narrow and tall, stretch column spacing to this ratio
 
 
 def text_px(s, fs, bold=False):
@@ -67,7 +67,7 @@ class PlanarLayout:
         for a, b in self.edges:
             self.real_adj[a].add(b)
             self.real_adj[b].add(a)
-        # 逐节点卡片宽：max(标题, 数值) + 留白，2px 网格
+        # per-node card width: max(title, value) + padding, on a 2px grid
         c = self.cfg
         self.card_w = {}
         for nid in self.nodes:
@@ -76,9 +76,9 @@ class PlanarLayout:
                     text_px(nd.value, c.fs_value, bold=True) + 22,
                     c.card_min)
             self.card_w[nid] = int((w + nd.extra_w + 1) // 2 * 2)
-        self._g = None  # 当前候选的 st 编号
+        self._g = None  # st-numbering of the current candidate
 
-    # ── 1. 平面嵌入 → 旋转系统 ─────────────────────────────
+    # ── 1. Planar embedding -> rotation system ─────────────────────────────
     def build_rotation(self):
         G = nx.Graph()
         G.add_nodes_from(self.core)
@@ -86,8 +86,8 @@ class PlanarLayout:
         planar, emb = nx.check_planarity(G)
         if not planar:
             raise NotPlanarError(
-                f"core 子图非平面（{len(self.core)} 节点 / {len(self.edges)} 边）——"
-                "2D 平面层不适用，请降级 3D 层或走均匀排布形态")
+                f"core subgraph non-planar ({len(self.core)} nodes / {len(self.edges)} edges) — "
+                "2D planar layer inapplicable; degrade to the 3D layer or use the uniform placement forms")
         return {v: list(emb.neighbors_cw_order(v)) for v in self.core}
 
     @staticmethod
@@ -123,7 +123,7 @@ class PlanarLayout:
         assert E == len(edge_faces), "multi-edge?"
         return faces, h2f
 
-    # ── 2. 连通 + 三角剖分（补边） ─────────────────────────
+    # ── 2. Connectivity + triangulation (edge augmentation) ─────────────────────────
     def augment(self, rot):
         rot = {v: list(l) for v, l in rot.items()}
         dummy = set()
@@ -162,7 +162,7 @@ class PlanarLayout:
         self.euler_check(rot)
         return rot, dummy
 
-    # ── 3. Even–Tarjan st 编号 ────────────────────────────
+    # ── 3. Even-Tarjan st-numbering ────────────────────────────
     @staticmethod
     def st_numbering(adj, s, t):
         n = len(adj)
@@ -255,7 +255,7 @@ class PlanarLayout:
                 f"st property violated at {v}"
         return g
 
-    # ── 4. 可见性表示 ─────────────────────────────────────
+    # ── 4. Visibility representation ─────────────────────────────
     def visibility(self, rot, g, st_edge):
         u0, v0 = st_edge
         assert g[u0] < g[v0]
@@ -345,7 +345,7 @@ class PlanarLayout:
                     return False
         return True
 
-    # ── 5. 真实图处理：行合并 → 像素坐标 ──────────────────
+    # ── 5. Real-graph handling: row merging -> pixel coordinates ──────────────────
     def real_dag_levels(self, g):
         order = sorted(self.core, key=lambda v: g[v])
         Y = {}
@@ -414,7 +414,7 @@ class PlanarLayout:
                 break
         return Y
 
-    # ── 6. 像素装箱 ───────────────────────────────────────
+    # ── 6. Pixel packing ───────────────────────────────────────
     def col_extent(self, RXe, Y, c):
         rows = []
         for e, x in RXe.items():
@@ -562,7 +562,7 @@ class PlanarLayout:
         Y_aug, Xe = res
         re_set = {frozenset(e) for e in self.edges}
         RXe = {e: x for e, x in Xe.items() if e in re_set}
-        # 双向边对拆独立列：键改有向，反向边列值 +0.5 强制独立列
+        # split bidirectional edge pairs into independent columns: keys become directed; the reverse edge gets column value +0.5 to force a separate column
         pair_n = defaultdict(int)
         directed = {}
         for (a, b) in self.edges:
@@ -575,7 +575,7 @@ class PlanarLayout:
         return sc, s, t, rot, g, Y_aug, Xe, RXe, dummy, Y, metrics
 
     def run(self):
-        """全候选搜索，返回最优布局 dict（确定性：同图同输出）。"""
+        """Search all candidates and return the best layout dict (deterministic: same graph, same output)."""
         cands = []
         seen_st = set()
         for a, b in self.edges:

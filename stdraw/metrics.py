@@ -1,27 +1,32 @@
 # -*- coding: utf-8 -*-
-"""质量证书（本项目的护城河）—— 五指标 + 排布指标 + 诚实分级。
+"""Quality certificate (this project's moat) — five metrics + placement metrics + honest grading.
 
-一切验证跑在**交付坐标**上（取整/导出后的那份），这是纪律不是优化项。
-指标实现：seg_cross / Liang-Barsky seg_hits_rect / rect_gap / 行对齐率。
-另加排布第一优先指标：间距变异系数 CV。
+All verification runs on the **delivered coordinates** (the rounded/exported
+copy); this is discipline, not an optimization option.
+Metric implementations: seg_cross / Liang-Barsky seg_hits_rect / rect_gap /
+row alignment rate.
+Plus the first-priority placement metric: spacing coefficient of variation (CV).
 
-诚实分级（绝不冒充成品）：
-  最优 = 排布要求满足 + 线 0 交叉
-  其次 = 排布要求满足 + 1~2 处交叉（证书标注交叉坐标供人复核）
-  未获证书 = 其余情况（如实写明，不降格冒充）
-3D 层不在本模块范围（3D 指标属 M2，M0 的 3D demo 只报告排布与边长）。
+Honest grading (never masquerade as a finished product):
+  best = placement requirements met + 0 line crossings
+  second = placement requirements met + 1-2 crossings (certificate records
+           crossing coordinates for human review)
+  uncertified = everything else (stated honestly, never downgraded to fake it)
+The 3D layer is out of scope for this module (3D metrics belong to M2; the M0
+3D demo only reports placement and edge lengths).
 """
 import json
 import math
 from typing import Dict, List, Optional
 
 EPS = 1e-9
-ROW_EPS = 4          # 视觉同行判定：y 差 ≤ 4px 算同排
-INFLATE = 4          # 穿卡口径：卡尺寸外扩 px（16px 膨胀口径的软化替代）
+ROW_EPS = 4          # visual same-row test: y difference <= 4px counts as one row
+INFLATE = 4          # card-piercing caliber: card box outward inflation px
+                     # (a softened substitute for the 16px inflation caliber)
 
 
 def seg_cross(p1, p2, p3, p4):
-    """严格相交判定（含共线重叠；端点相触不算）。"""
+    """Strict intersection test (incl. collinear overlap; endpoint touch excluded)."""
     def orient(a, b, c):
         v = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
         return 0 if abs(v) < EPS else (1 if v > 0 else -1)
@@ -43,7 +48,8 @@ def seg_cross(p1, p2, p3, p4):
 
 
 def seg_hits_rect(x1, y1, x2, y2, cx, cy, hw, hh):
-    """Liang-Barsky：线段是否穿过矩形（含正长度进入才算，贴边不算）。"""
+    """Liang-Barsky: whether a segment crosses a rectangle (positive-length
+    entry counts; merely touching the border does not)."""
     dx, dy = x2 - x1, y2 - y1
     t0, t1 = 0.0, 1.0
     for p, q in ((-dx, x1 - (cx - hw)), (dx, (cx + hw) - x1),
@@ -67,14 +73,14 @@ def seg_hits_rect(x1, y1, x2, y2, cx, cy, hw, hh):
 
 
 def rect_gap(x1, y1, w1, h1, x2, y2, w2, h2):
-    """两卡片的矩形净距（hypot 分量，重叠为 0）。"""
+    """Rectangular gap between two cards (hypot of components; 0 when overlapping)."""
     dx = abs(x1 - x2) - (w1 + w2) / 2
     dy = abs(y1 - y2) - (h1 + h2) / 2
     return math.hypot(max(dx, 0.0), max(dy, 0.0))
 
 
 def scene_from_planar(v4: dict, card_h: int = None) -> dict:
-    """planar 布局 JSON → 通用 scene（segments=竖线，y 为行中心）。"""
+    """Planar layout JSON -> generic scene (segments = vertical lines, y is row center)."""
     nodes = {}
     ch = card_h or v4["meta"].get("cardH", 42)
     for v, p in v4["nodes"].items():
@@ -87,7 +93,8 @@ def scene_from_planar(v4: dict, card_h: int = None) -> dict:
 
 
 def scene_from_grid(nodes: dict, edges: list, card_h: int) -> dict:
-    """中心坐标图（viewer 网格/环形形态）→ 通用 scene（segments=心连线）。"""
+    """Center-coordinate graph (viewer grid/ring forms) -> generic scene
+    (segments = center-to-center lines)."""
     segs = {}
     for i, e in enumerate(edges):
         a, b = nodes[e["a"]], nodes[e["b"]]
@@ -105,7 +112,7 @@ def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
     ids = list(nodes)
     notes = list(notes or [])
 
-    # 1. 直线交叉
+    # 1. Straight-line crossings
     crossings = []
     for i in range(len(edges)):
         for j in range(i + 1, len(edges)):
@@ -119,7 +126,8 @@ def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
                                   "at": si[1] if si[0] == sj[0] and si[1] == sj[1]
                                   else _interpolate(si, sj)})
 
-    # 2. 线穿无关卡（Liang-Barsky）：外扩 INFLATE 口径 + 0px 真穿口径
+    # 2. Line piercing unrelated cards (Liang-Barsky): INFLATE caliber +
+    #    true 0px piercing caliber
     occ_inflated, occ_true = [], []
     for i in range(len(edges)):
         s = segs[i]
@@ -134,10 +142,10 @@ def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
                              p["x"], p["y"], p["w"] / 2, p["h"] / 2):
                 occ_true.append({"edge": f"{edges[i]['a']}->{edges[i]['b']}", "card": v})
 
-    # 3. 平均边长（中心距）
+    # 3. Average edge length (center distance)
     avg_len = (sum(math.dist(segs[i][0], segs[i][1]) for i in segs) / len(segs)) if segs else 0.0
 
-    # 4. 行对齐率（视觉同行：y 差 ≤ ROW_EPS 成组计数）
+    # 4. Row alignment rate (visual same row: grouped counting with y diff <= ROW_EPS)
     ysorted = sorted(p["y"] for p in nodes.values())
     aligned, i = 0, 0
     while i < len(ysorted):
@@ -149,7 +157,7 @@ def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
         i = j + 1
     row_rate = aligned / len(ids) if ids else 0.0
 
-    # 5. 卡间净距（全对最小）
+    # 5. Card gap (minimum over all pairs)
     gaps = []
     for a in range(len(ids)):
         for b in range(a + 1, len(ids)):
@@ -158,7 +166,8 @@ def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
                                  vb["x"], vb["y"], vb["w"], vb["h"]))
     min_gap = min(gaps) if gaps else 0.0
 
-    # 排布第一优先：间距变异系数 CV（最近邻中心距 std/mean）
+    # Placement first priority: spacing CV (std/mean of nearest-neighbor
+    # center distances)
     nn = []
     for a in ids:
         dists = [math.dist((nodes[a]["x"], nodes[a]["y"]),
@@ -196,25 +205,27 @@ def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
             g[k] = v
     g_pass = sum(1 for v in g.values() if v)
 
-    # 诚实分级
+    # Honest grading
     arrangement_ok = g["min_gap_ge_16"] and g["cv_le_035"]
     if metrics["crossings"] == 0 and arrangement_ok:
-        grade = "最优"
-        grade_note = "排布要求满足 + 线 0 交叉"
+        grade = "best"
+        grade_note = "placement requirements met + 0 line crossings"
     elif arrangement_ok and metrics["crossings"] <= 2:
-        grade = "其次"
-        grade_note = ("排布要求满足 + 交叉 ≤2 处（坐标已入证书供复核）；"
-                      "互斥时保排布、放交叉")
+        grade = "second"
+        grade_note = ("placement requirements met + <= 2 crossings "
+                      "(coordinates recorded in the certificate for review); "
+                      "on conflict, keep placement, release crossings")
     else:
-        grade = "未获证书"
-        grade_note = ("排布要求未满足或交叉 >2 处——如实不评级，"
-                      "放宽预算换的证书不冒充成品")
+        grade = "uncertified"
+        grade_note = ("placement requirements unmet or crossings > 2 — honestly "
+                      "ungraded; a certificate bought with a relaxed budget "
+                      "never poses as a finished product")
 
     return {
         "tool": "stdraw", "version": "0.1.0", "layer": layer,
         "graph": graph_name,
         "n": len(ids), "m": len(edges),
-        "coords": "delivered/rounded",     # 一切验证跑在交付坐标上
+        "coords": "delivered/rounded",     # all verification runs on delivered coordinates
         "metrics": metrics,
         "gates": g,
         "gates_passed": f"{g_pass}/{len(g)}",
@@ -222,12 +233,14 @@ def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
         "grade_note": grade_note,
         "honest_notes": notes,
         "no_zero_crossing_claim_for_all_graphs": (
-            "CLD 环多常不可平面，0 交叉有数学边界；本证书只对本图本布局成立"),
+            "CLDs are often non-planar; 0 crossings has a mathematical "
+            "boundary. This certificate holds only for this graph and this layout"),
     }
 
 
 def _interpolate(si, sj):
-    """两线段交点的近似坐标（竖线/直线通用：解两直线方程）。"""
+    """Approximate intersection coordinates of two segments (generic for
+    vertical/straight lines: solve the two line equations)."""
     (x1, y1), (x2, y2) = si
     (x3, y3), (x4, y4) = sj
     denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
@@ -238,8 +251,9 @@ def _interpolate(si, sj):
     return [round(px), round(py)]
 
 
-# ═══ ② 2026-11-05 六点返修：auto 配方 v2 证书（新硬门）═══
-# v1 certificate() 保持逐字节兼容（ortho-v1 生产行为 pin），auto 走 certificate_auto。
+# ═══ (2) 2026-11-05 six-point rework: auto recipe v2 certificate (new hard gates) ═══
+# v1 certificate() stays byte-compatible (ortho-v1 production behavior pin);
+# auto goes through certificate_auto.
 
 from .routing import (sample_polyline, dist_point_rect, seg_cross as _rc_seg_cross,
                       min_pair_dist,
@@ -248,7 +262,7 @@ from .routing import (sample_polyline, dist_point_rect, seg_cross as _rc_seg_cro
 
 
 def scene_from_auto(v4: dict) -> dict:
-    """auto 布局 JSON → v2 scene（折线/弧线离散采样 + 锚点）。"""
+    """Auto layout JSON -> v2 scene (polyline/arc discretized sampling + anchors)."""
     nodes = {}
     ch = v4["meta"].get("cardH", 44)
     for v, p in v4["nodes"].items():
@@ -263,21 +277,22 @@ def scene_from_auto(v4: dict) -> dict:
             "router_pairs": v4["meta"].get("router_cross_pairs"),
             "line_style": v4["meta"].get("line_style", "straight"),
             "deg0": set(v4["meta"].get("deg0", [])),
-            # ref-scrubbed 环形排布口径：证书按排布模式选指标
+            # ring placement caliber: certificate picks metrics per placement mode
             "placement": v4["meta"].get("placement"),
             "ring_nodes": (v4["meta"].get("ring") or {}).get("nodes"),
-            # ref-scrubbed 纵列/对称排布口径
+            # column-chain / symmetric placement calibers
             "column_spine": (v4["meta"].get("column") or {}).get("spine"),
             "symmetry": v4["meta"].get("symmetry"),
-            # ref-scrubbed 纵柱+翼位模式证书口径
+            # spine-wing mode certificate caliber
             "spine_wing": v4["meta"].get("spine_wing"),
-            # 线型统计（弧线>直线>折线层级报告）
+            # line-kind statistics (arc > straight > polyline hierarchy report)
             "line_kinds": [e["route"].get("kind") for e in v4["edges"]],
             }
 
 
 def _anchor_tangent_angle(node, anchor, direction):
-    """锚点处路线方向与所属框边切线的夹角（度）。方向为离开锚点的单位向量。"""
+    """Angle (degrees) between the route direction at an anchor and the tangent
+    of the owning box border. Direction is the unit vector leaving the anchor."""
     cx, cy, hw, hh = node["x"], node["y"], node["w"] / 2, node["h"] / 2
     on_x_border = abs(abs(anchor[0] - cx) - hw) <= abs(abs(anchor[1] - cy) - hh)
     tx, ty = (0.0, 1.0) if on_x_border else (1.0, 0.0)
@@ -285,24 +300,27 @@ def _anchor_tangent_angle(node, anchor, direction):
     return math.degrees(math.acos(max(0.0, min(1.0, c))))
 
 
-# ── 线-线视觉重合（ref-scrubbed #10①/#05 检测：机器可查）─────────────
-# 口径常量（COINCIDE_THR=1.0 <1px 贴合 / COINCIDE_SPAN=8.0 >8px 计重合，
-# 端点会合豁免）正本在 routing.py——路由罚（ref-scrubbed）与证书必须同源。
-
+# ── Line-line visual coincidence (machine-checkable detection) ─────────────
+# Caliber constants (COINCIDE_THR=1.0 within-1px adherence / COINCIDE_SPAN=8.0
+# over-8px counts as coincident, endpoint-meeting exempted) live in
+# routing.py — routing penalty and certificate must share one source.
 
 def _coincidence_span(sa, sb, step, thr=COINCIDE_THR):
-    """两条采样折线在 <thr 距离上并行同走的长度（px，双向取大；确定性）。
+    """Length (px) over which two sampled polylines run in parallel within
+    <thr distance (max of both directions; deterministic).
 
-    两方向都委托 routing.span_one_way_segs（与布线重定线口径同源，副本必漂移）。
-    两端点锚点处的瞬时会合贴合长度只有 ~1-2px，不越 8px 跨度门；真重合
-    （长跨度并行贴合）会被任一方向稳定捕获。
+    Both directions delegate to routing.span_one_way_segs (same source as the
+    routing re-routing caliber; a copy would drift). The momentary adherence
+    at endpoint anchors is only ~1-2px and never crosses the 8px span gate;
+    true coincidence (long-span parallel adherence) is captured stably by
+    either direction.
     """
     return max(span_one_way_segs(sa, list(zip(sb[:-1], sb[1:])), step, thr),
                span_one_way_segs(sb, list(zip(sa[:-1], sa[1:])), step, thr))
 
 
 def _bbox_gap(pa, pb):
-    """两折线包围盒的间隔（0 = 相交/重叠）。"""
+    """Gap between the bounding boxes of two polylines (0 = intersect/overlap)."""
     ax0 = min(p[0] for p in pa); ax1 = max(p[0] for p in pa)
     ay0 = min(p[1] for p in pa); ay1 = max(p[1] for p in pa)
     bx0 = min(p[0] for p in pb); bx1 = max(p[0] for p in pb)
@@ -314,13 +332,18 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                      gates: Optional[dict] = None,
                      notes: Optional[List[str]] = None,
                      graph=None, exactness: Optional[dict] = None) -> dict:
-    """v2 质量证书：五指标 + 新硬门 + 诚实分级。一切验证跑在交付坐标上。
+    """v2 quality certificate: five metrics + new hard gates + honest grading.
+    All verification runs on delivered coordinates.
 
-    新硬门（v0.2 质量返修）：
-      box_press_zero      框压线 = 0（任何边任何角度，含 1px 余量；端点只贴自家框边）
-      edge_box_clear_ge16 边-框净距 ≥ 16px（非端点框，采样最小距离）
-      anchors_smooth      锚点平滑：出发方向与框边切线夹角 ≥ ANCHOR_MIN_DEG
-      regularity_simple   简单图（≤10 节点）排布规律：行距恒等 + 24px 列吸附 ≥ 60%
+    New hard gates (v0.2 quality rework):
+      box_press_zero      box press = 0 (any edge at any angle, incl. 1px
+                          margin; endpoints only touch their own box border)
+      edge_box_clear_ge16 edge-box clearance >= 16px (non-endpoint boxes,
+                          sampled minimum distance)
+      anchors_smooth      anchor smoothness: departure direction vs border
+                          tangent angle >= ANCHOR_MIN_DEG
+      regularity_simple   simple graph (<=10 nodes) placement regularity:
+                          uniform row pitch + 24px column snap >= 60%
     """
     nodes = scene["nodes"]
     edges = scene["edges"]
@@ -329,23 +352,25 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     ids = list(nodes)
     notes = list(notes or [])
     line_style = scene.get("line_style", "straight")
-    # ref-scrubbed 环形排布口径：行对齐率/列吸附对环形排布天然不适用，
-    # 按排布模式选指标（环形 = 环上等间距 CV + 正多边形模板拟合误差）。
+    # Ring placement caliber: row alignment / column snap are naturally
+    # inapplicable to ring placement; metrics are picked per placement mode
+    # (ring = on-ring equal spacing CV + regular-polygon template fit error).
     ring_mode = scene.get("placement") == "ring-cycle"
     ring_nodes = scene.get("ring_nodes") or []
-    # ref-scrubbed 纵列/对称排布口径
+    # column-chain / symmetric placement calibers
     column_mode = scene.get("placement") == "column-chain"
     sym_mode = scene.get("placement") == "symmetric"
-    # ref-scrubbed（美学 v3）领结共点模式证书口径：镜像轴误差（上下环镜像）
+    # bowtie-vertex mode certificate caliber: mirror-axis error (upper/lower
+    # ring mirrored)
     bowtie_mode = scene.get("placement") == "bowtie-vertex"
-    # ref-scrubbed（v0.7.1）纵柱+翼位模式证书口径：纵柱 x 对齐 + 中线贴靠
-    # + 镜像对称误差（翼外镜像对）
+    # spine-wing mode certificate caliber: spine x alignment + midline
+    # adherence + mirror symmetry error (outer mirror pairs)
     spine_mode = scene.get("placement") == "spine-wing"
     spine_wing = scene.get("spine_wing") or {}
     column_spine = scene.get("column_spine") or []
     symmetry = scene.get("symmetry") or {}
 
-    # 1. 交叉（折线两两求交）
+    # 1. Crossings (pairwise polyline intersection)
     crossings = []
     for i in range(len(edges)):
         for j in range(i + 1, len(edges)):
@@ -362,7 +387,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                     continue
                 break
 
-    # 1b. 互环对分离度（F1）：双向边对两线最小间距（按「边对」计，无互环对为 None）
+    # 1b. Mutual-pair separation (F1): minimum two-line distance for
+    # bidirectional edge pairs (counted per "edge pair"; None when no mutual pair)
     pair_infos = []
     for i in range(len(edges)):
         for j in range(i + 1, len(edges)):
@@ -375,9 +401,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     mutual_min_sep = (min(p["pair"][1] for p in pair_infos if p["pair"][1] is not None)
                       if any(p["pair"][1] is not None for p in pair_infos) else None)
 
-    # 1c. 线-线视觉重合对数（ref-scrubbed #10①/#05）：任意两条边（含共享
-    # 节点的边对——端点会合由 8px 跨度门豁免）交付几何 <1px 并行同走
-    # >8px 判重合。bbox 间隔预过滤（重合对 bbox 必重叠，等价加速）。
+    # 1c. Line-line visual coincidence pairs: any two edges (including edge
+    # pairs sharing a node — endpoint meeting is exempt via the 8px span gate)
+    # running in parallel within <1px over >8px on delivered geometry count as
+    # coincident. bbox gap prefilter (coincident pairs must have overlapping
+    # bboxes; an equivalent speedup).
     coincide_pairs = []
     _step = 4.0
     for i in range(len(edges)):
@@ -393,7 +421,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                               f"{edges[j]['a']}->{edges[j]['b']}"],
                      "span_px": round(span, 1)})
 
-    # 2. 框压线（1px 余量）+ 边-框净距 + 自家框端点合规
+    # 2. Box press (1px margin) + edge-box clearance + own-box endpoint compliance
     press, clear_details, anchor_bad = [], [], []
     min_clear = None
     for i, e in enumerate(edges):
@@ -407,14 +435,16 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                        for (px, py) in pts)
             dmin1 = min(dist_point_rect(px, py, p["x"], p["y"], hw + PRESS_MARGIN, hh + PRESS_MARGIN)
                         for (px, py) in pts)
-            # 穿卡计数按「边×卡」去重：同一对 (edge, card) 只记一条
-            # （0 余量命中时不再重复记 1px 余量条目）
+            # Card-piercing counting is deduped per "edge x card": the same
+            # (edge, card) pair is recorded once (a 0-margin hit is not
+            # double-recorded as a 1px-margin entry)
             if dmin <= 0:
                 press.append({"edge": f"{e['a']}->{e['b']}", "card": v})
             elif dmin1 <= 0:
                 press.append({"edge": f"{e['a']}->{e['b']}", "card": v, "margin": 1})
             min_clear = dmin if min_clear is None else min(min_clear, dmin)
-        # 自家框：其余采样点不得进入框内（含 1px 余量）；锚点须在框边上
+        # Own box: no other sampled point may enter the box (incl. 1px margin);
+        # anchors must sit on the box border
         for v, end_key in ((e["a"], "a"), (e["b"], "b")):
             p = nodes[v]
             hw, hh = p["w"] / 2, p["h"] / 2
@@ -427,7 +457,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                            for (px, py) in pts[1:-1])
             if interior:
                 press.append({"edge": f"{e['a']}->{e['b']}", "card": v, "why": "own-box"})
-        # 锚点平滑（角度独立复算）
+        # Anchor smoothness (angle recomputed independently)
         poly = polys[i]
         for end_key, p_idx, nxt_idx in (("a", 0, 1), ("b", len(poly) - 1, len(poly) - 2)):
             a0 = anchors.get(i, {}).get(end_key)
@@ -445,12 +475,12 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                 anchor_bad.append({"edge": f"{e['a']}->{e['b']}", "end": end_key,
                                    "angle": round(ang, 1)})
 
-    # 3. 平均边长 / 行对齐 / 卡间净距 / CV（与 v1 同口径）
+    # 3. Average edge length / row alignment / card gap / CV (same caliber as v1)
     avg_len = sum(sum(math.dist(polys[i][k], polys[i][k + 1])
                       for k in range(len(polys[i]) - 1))
                   for i in polys) / len(polys) if polys else 0.0
     if ring_mode:
-        row_rate = None          # 环形排布：行对齐率不适用（口径如实区分）
+        row_rate = None          # ring placement: row alignment inapplicable (caliber stated honestly)
     else:
         ysorted = sorted(p["y"] for p in nodes.values())
         aligned, i2 = 0, 0
@@ -479,10 +509,14 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     mean_nn = sum(nn) / len(nn) if nn else 0.0
     cv = (math.sqrt(sum((d - mean_nn) ** 2 for d in nn) / len(nn)) / mean_nn) if nn and mean_nn else 0.0
 
-    # 规律性（简单图 ≤10 节点）：行距恒等 + 24px 列吸附占比（停车带节点不计行距）
-    # 环形排布：规律性口径切换为「环上等间距 CV + 正多边形模板拟合误差」
-    # 纵列排布：行距恒等按主链行判（支路半行偏移不计入）；列吸附不适用
-    # 对称排布：规律性口径 = 镜像轴误差（左右顶点 x 对轴等距 + y 同行）
+    # Regularity (simple graph <=10 nodes): uniform row pitch + 24px column
+    # snap share (parking-lane nodes excluded from row pitch).
+    # Ring placement: regularity caliber switches to on-ring equal spacing CV +
+    # regular-polygon template fit error.
+    # Column placement: uniform row pitch judged on main-chain rows (branch
+    # half-row offsets excluded); column snap inapplicable.
+    # Symmetric placement: regularity caliber = mirror-axis error (left/right
+    # vertices equidistant to the axis + y on the same row).
     deg0 = scene.get("deg0", set())
     ring_spacing_cv = None
     ring_template_dev = None
@@ -535,9 +569,10 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         regularity_ok = (sym_mirror_err is not None and sym_mirror_err <= 2.0
                          and pitch_uniform)
     elif spine_mode and spine_wing.get("spine"):
-        # 纵柱+翼位（ref-scrubbed）：纵柱 x 对轴（≤2px）+ 翼位贴中线（≤2px）
-        # + 镜像对误差（x 相等 + y 对水平轴对称，≤2px）；行距恒等按
-        # 翼位行距判（构造行距 row_pitch，全节点 y 差集恒等）
+        # spine-wing: spine x on-axis (<=2px) + wings hugging the midline band
+        # (<=2px) + mirror-pair error (x equal + y symmetric about the
+        # horizontal axis, <=2px); uniform row pitch judged on wing row pitch
+        # (constructed row_pitch, all-node y difference set is constant)
         axis_x = (spine_wing.get("axis_x") if spine_wing.get("axis_x") is not None
                   else 0.0)
         axis_y = (spine_wing.get("axis_y") if spine_wing.get("axis_y") is not None
@@ -566,7 +601,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         regularity_ok = (sym_mirror_err is not None and sym_mirror_err <= 2.0
                          and pitch_uniform)
     elif bowtie_mode and symmetry.get("mirror_pairs"):
-        # 领结共点：上下环镜像（竖直轴 x 等距 + 水平轴 y 对称），共享节点居中
+        # bowtie-vertex: upper/lower ring mirrored (equidistant to the vertical
+        # axis in x + symmetric about the horizontal axis in y), shared node centered
         axis_x = (symmetry.get("axis_x") if symmetry.get("axis_x") is not None
                   else 0.0)
         axis_y = (symmetry.get("axis_y") if symmetry.get("axis_y") is not None
@@ -600,9 +636,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     W = max(p["x"] + p["w"] / 2 for p in nodes.values()) - min(p["x"] - p["w"] / 2 for p in nodes.values())
     H = max(p["y"] + p["h"] / 2 for p in nodes.values()) - min(p["y"] - p["h"] / 2 for p in nodes.values())
 
-    # WS3 交叉双口径：路由理论口径（最终未取整路线的交叉边对数）vs
-    # 交付坐标几何复检（本节第 1 项，严格求交/Liang-Barsky）。双口径一致
-    # 才发证书；不一致 → 未获证书（如实写明两口径数值）。
+    # WS3 dual crossing accounting: routing-theory caliber (crossing edge pairs
+    # of the final unrounded route) vs delivered-geometry recheck (item 1 of
+    # this section, strict intersection / Liang-Barsky). The certificate is
+    # issued only when both agree; disagreement -> uncertified (both values
+    # recorded honestly).
     router_xe = scene.get("router_pairs")
     routing_consistent = None
     router_pairs = None
@@ -610,9 +648,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         router_pairs = router_xe
         routing_consistent = abs(router_pairs - len(crossings)) < 0.5
 
-    # ref-scrubbed 回路聚拢度：每个声明回路 = max 中心距 / 全图对角线
-    # （越小越聚拢；远距离 = 语义断连感）。居中偏移：节点 bbox 中心 vs
-    # 含边几何 bbox 中心的水平偏移（居中规范化报告项）。
+    # Loop cohesion: each declared loop = max center distance / full-graph
+    # diagonal (smaller = more cohesive; large distances read as semantic
+    # disconnection). Center offset: horizontal offset between the node bbox
+    # center and the edge-inclusive geometry bbox center (a centering
+    # normalization report item).
     loop_cohesion = None
     if graph is not None:
         try:
@@ -678,11 +718,14 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         metrics["midline_deviation"] = (round(sw_midline_dev, 2)
                                         if sw_midline_dev is not None else None)
 
-    # ref-scrubbed 交叉口径调整：crossings_zero 从硬门降为报告项（排布规律
-    # 达标时允许 ≤2 交叉——「部分线相交可以接受，秩序与优美优先」）；分级
-    # 语义不变（最优=硬门全过+0 交叉，其次=硬门全过+≤2 交叉）。
+    # Crossing caliber adjustment: crossings_zero demoted from hard gate to
+    # report item (<=2 crossings allowed when placement regularity holds —
+    # "some line intersection is acceptable; order and elegance come first");
+    # grading semantics unchanged (best = all hard gates + 0 crossings,
+    # second = all hard gates + <=2 crossings).
     if ring_mode:
-        # 环形口径门：环上等间距 CV + 模板拟合误差（2px 量化容差内 ≈0）
+        # Ring caliber gates: on-ring equal spacing CV + template fit error
+        # (within 2px quantization tolerance ~= 0)
         g = {
             "box_press_zero": metrics["box_press_1px"] == 0,
             "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
@@ -721,9 +764,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     elif spine_mode:
-        # 纵柱+翼位等价门（ref-scrubbed）：ring CV/模板拟合对纵柱+翼位形态的
-        # 等价口径 = 纵柱 x 对齐 ≤2px + 中线贴靠 ≤2px + 镜像对误差 ≤2px
-        # （crossings 为软目标报告项、确定性由 CLI 双跑逐字节一致门承载）
+        # spine-wing equivalent gates: the equivalent of ring CV/template fit
+        # for the spine-wing shape = spine x alignment <=2px + midline
+        # adherence <=2px + mirror-pair error <=2px (crossings is a soft-target
+        # report item; determinism is carried by the CLI double-run
+        # byte-identical gate)
         g = {
             "box_press_zero": metrics["box_press_1px"] == 0,
             "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
@@ -746,13 +791,15 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "anchors_smooth": metrics["anchor_violations"] == 0,
             "min_gap_ge_16": metrics["min_card_gap"] >= 16,
             "cv_le_035": metrics["spacing_cv"] <= 0.35,
-            # 行对齐降为报告项（ref-scrubbed：14 张手动样本 row_align delta≈0，
-            # 用户不在乎；排布规律由行距恒等 + 列吸附承载）
+            # Row alignment demoted to report item (14 hand-pulled samples show
+            # row_align delta ~= 0, users do not care; placement regularity is
+            # carried by uniform row pitch + column snap)
             "pitch_uniform": pitch_uniform,
             "column_snap24_ge_060": (snap_rate is None or snap_rate >= 0.60),
-            # F1 硬门：互环对两线最小间距 ≥ 4px（无互环对时平凡通过）
+            # F1 hard gate: mutual-pair two-line minimum distance >= 4px
+            # (trivially passes when no mutual pair exists)
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
-            # ref-scrubbed #10①/#05 硬门：线-线视觉重合对数 = 0
+            # Hard gate: line-line visual coincidence pairs = 0
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     if routing_consistent is not None:
@@ -763,12 +810,15 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     g_pass = sum(1 for v in g.values() if v)
     reports = {
         "crossings_zero": metrics["crossings"] == 0,
-        "crossings_note": ("软目标：排布规律达标时允许 ≤2 交叉"
-                           "（产品定调：部分线相交可以接受，秩序与优美优先）；"
-                           "分级口径不变（最优=硬门全过+0 交叉）"),
+        "crossings_note": ("soft target: <=2 crossings allowed when placement "
+                           "regularity holds (product call: some line "
+                           "intersection is acceptable; order and elegance "
+                           "come first); grading caliber unchanged "
+                           "(best = all hard gates + 0 crossings)"),
         "row_align_ge_060": (metrics["row_align_rate"] is None
                              or metrics["row_align_rate"] >= 0.60),
-        "row_align_note": "报告项：行对齐不再一票否决（手动样本 row_align delta≈0）",
+        "row_align_note": ("report item: row alignment is no longer a "
+                           "veto (hand-pulled samples show row_align delta ~= 0)"),
     }
 
     if ring_mode:
@@ -794,22 +844,27 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"] and
                    g["pitch_uniform"])
-    dual_ok = routing_consistent is not False   # 双口径不一致 → 拒发证书
+    dual_ok = routing_consistent is not False   # dual-accounting mismatch -> refuse the certificate
     if metrics["crossings"] == 0 and hard_ok and dual_ok:
-        grade = "最优"
-        grade_note = "硬门全过（框压线0/净距≥16/锚点平滑/规律）+ 线 0 交叉"
+        grade = "best"
+        grade_note = ("all hard gates passed (box press 0 / clearance >=16 / "
+                      "anchors smooth / regularity) + 0 line crossings")
     elif hard_ok and dual_ok and metrics["crossings"] <= 2:
-        grade = "其次"
-        grade_note = ("硬门全过 + 交叉 ≤2 处（明细已入证书供复核）；"
-                      "互斥时保硬门、放交叉")
+        grade = "second"
+        grade_note = ("all hard gates passed + <= 2 crossings (details "
+                      "recorded in the certificate for review); on conflict, "
+                      "keep hard gates, release crossings")
     elif not dual_ok:
-        grade = "未获证书"
-        grade_note = (f"交叉双口径不一致（路由理论 {router_pairs} vs 几何复检 "
-                      f"{len(crossings)}）——理论与几何必须一致才发证书")
+        grade = "uncertified"
+        grade_note = (f"dual crossing accounting mismatch (routing theory "
+                      f"{router_pairs} vs geometric recheck {len(crossings)}) "
+                      f"— theory and geometry must agree before a certificate "
+                      f"is issued")
     else:
-        grade = "未获证书"
-        grade_note = ("硬门未全过或交叉 >2 处——如实不评级，"
-                      "放宽预算换的证书不冒充成品")
+        grade = "uncertified"
+        grade_note = ("hard gates not all passed or crossings > 2 — honestly "
+                      "ungraded; a certificate bought with a relaxed budget "
+                      "never poses as a finished product")
 
     out = {
         "tool": "stdraw", "version": "0.7.1", "layer": layer,
@@ -829,31 +884,43 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "reports": reports,
         "grade": grade,
         "grade_note": grade_note,
-        "proven_optimal": None,          # WS2 精确层：见 exactness 块
+        "proven_optimal": None,          # WS2 exact layer: see the exactness block
         "gap": None,
         "exactness": _exactness_block(exactness),
         "regularity": _regularity_block(graph, nodes),
         "honest_notes": notes + [
-            "硬门口径：框压线=0（1px 余量）、边-框净距≥16px、锚点平滑、简单图规律性",
-            "互环对（a↔b 双向边）两线最小间距 ≥4px（透镜双弧/平行偏移/外围绕行，"
-            "禁止重合成双箭头线；穿卡计数按边×卡去重）",
-            "线-线视觉重合对数=0（任意两线 <1px 并行同走 >8px 判重合；"
-            "端点锚点处的瞬时会合不计；机器可查指标）",
-            "交叉双口径：路由理论逐边命中数之和/2 必须等于交付坐标几何复检数，"
-            "不一致拒发证书",
-            "布线数学：绕障 = 净距膨胀障碍可见性图 Dijkstra 最短路（图上精确最优；"
-            "相对圆角障碍连续空间真最短路每贴角至多多 (2−π/2)·膨胀余量 px）；"
-            "平滑 = 折角相切圆弧（G1 切线连续、曲率有界），"
-            "凸角相切弧向障碍侧下探 r·(1/cos(θ/2)−1)，受膨胀余量约束"],
+            "Hard-gate caliber: box press = 0 (1px margin), edge-box clearance >= 16px, "
+            "smooth anchors, simple-graph regularity",
+            "Mutual pairs (a<->b bidirectional edges): two-line minimum distance >= 4px "
+            "(lens double-arc / parallel offset / outer detour; merging back into a "
+            "double-arrowhead line is forbidden; card-piercing counting deduped per "
+            "edge x card)",
+            "Line-line visual coincidence pairs = 0 (any two lines running in parallel "
+            "within <1px over >8px count as coincident; momentary meetings at endpoint "
+            "anchors excluded; machine-checkable metric)",
+            "Dual crossing accounting: the routing-theory per-edge hit count sum / 2 "
+            "must equal the delivered-geometry recheck count; on mismatch the "
+            "certificate is refused",
+            "Routing math: obstacle avoidance = clearance-inflated obstacle visibility "
+            "graph Dijkstra shortest path (exactly optimal on the graph; vs the true "
+            "continuous-space shortest path around rounded-corner obstacles, at most "
+            "(2 - pi/2) x inflation margin px more per hugging corner); smoothing = "
+            "tangent arcs at bends (G1 tangent-continuous, bounded curvature); convex "
+            "tangent arcs dip toward the obstacle side by r*(1/cos(theta/2) - 1), "
+            "bounded by the inflation margin"],
         "no_zero_crossing_claim_for_all_graphs": (
-            "CLD 环多常不可平面，交叉数是目标函数最小化项而非定理保证；"
-            "本证书只对本图本布局成立"),
+            "CLDs are often non-planar; the crossing count is an objective-function "
+            "minimization term, not a theorem guarantee. This certificate holds only "
+            "for this graph and this layout"),
     }
     if ring_mode:
         out["honest_notes"] = out["honest_notes"] + [
-            "环形排布口径：行对齐率/24px 列吸附对环形排布不适用，"
-            "规律性门切换为环上等间距 CV ≤0.05 + 正多边形模板拟合误差 ≤0.05；"
-            "主环按环序正多边形槽位、弦走环内，环路极性（R/B）徽标沿环可读"]
+            "Ring placement caliber: row alignment / 24px column snap are "
+            "inapplicable to ring placement; the regularity gates switch to "
+            "on-ring equal spacing CV <= 0.05 + regular-polygon template fit "
+            "error <= 0.05; the main ring follows regular-polygon slots in ring "
+            "order with chords inside the ring, and loop polarity (R/B) badges "
+            "stay readable along the ring"]
         out["ring"] = {
             "nodes": list(ring_nodes),
             "spacing_cv": metrics.get("ring_spacing_cv"),
@@ -861,10 +928,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         }
     if column_mode:
         out["honest_notes"] = out["honest_notes"] + [
-            "纵列排布口径：主链纵向对齐一列（列轴偏差 ≤2px 门）、"
-            "主链行距恒等门；支路挂主链近邻侧（半行偏移不计入主链行距门）；"
-            "主链闭合边构造为左侧大弧（回路聚拢/圆环感）；"
-            "行对齐率/列吸附报告不适用（如实 None）"]
+            "Column placement caliber: the main chain aligns vertically in one "
+            "column (column-axis deviation <= 2px gate) with a uniform "
+            "main-chain row-pitch gate; branches hang on the main chain's "
+            "nearest side (half-row offsets excluded from the main-chain "
+            "row-pitch gate); the main-chain closing edge is constructed as a "
+            "large left arc (loop cohesion / ring feel); row alignment / column "
+            "snap reports inapplicable (honestly None)"]
         out["column"] = {
             "spine": list(column_spine),
             "axis_deviation": metrics.get("column_axis_deviation"),
@@ -872,23 +942,29 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         }
     if sym_mode:
         out["honest_notes"] = out["honest_notes"] + [
-            "对称排布口径：领结（双三角共边）结构显式对称——"
-            "共享边端点居纵轴、左右顶点镜像（镜像轴误差 ≤2px 门）；"
-            "线型一致性硬规则：轴边直线 + 侧边全弧（不直弧折混杂）；"
-            "行对齐率/列吸附报告不适用（如实 None）"]
+            "Symmetric placement caliber: bowtie (two triangles sharing an edge) "
+            "structure made explicitly symmetric — shared-edge endpoints on the "
+            "vertical axis, left/right vertices mirrored (mirror-axis error "
+            "<= 2px gate); line-kind consistency hard rule: axis edges straight "
+            "+ side edges all arcs (no mixing); row alignment / column snap "
+            "reports inapplicable (honestly None)"]
         out["symmetry"] = {
             "mirror_pairs": symmetry.get("mirror_pairs"),
             "mirror_err": metrics.get("symmetry_mirror_err"),
         }
     if bowtie_mode:
         out["honest_notes"] = out["honest_notes"] + [
-            "领结共点口径（美学 v3）：双环共享单节点结构显式对称——"
-            "共享节点居中、两环分占上下半平面镜像（镜像轴误差 ≤2px 门，"
-            "对拍手拉基准样本 wage-price-spiral）；判定=枚举简单环"
-            "（恰 2 环恰共享 1 节点），声明 loops 不作判据；"
-            "线型一致性硬规则：全直线（外边水平 + 辐条直连，"
-            "共享侧锚点边中点 ±14px 对称展开）；"
-            "行对齐率/列吸附报告不适用（如实 None）"]
+            "Bowtie-vertex caliber (aesthetics v3): two loops sharing a single "
+            "node made explicitly symmetric — shared node centered, the two "
+            "loops occupying the upper/lower half-planes mirrored "
+            "(mirror-axis error <= 2px gate, cross-checked against the "
+            "hand-pulled reference sample wage-price-spiral); detection = "
+            "enumerated simple cycles (exactly 2 loops sharing exactly 1 "
+            "node), declared loops are not a detection input; line-kind "
+            "consistency hard rule: all straight lines (outer edges horizontal "
+            "+ spokes direct, shared-side anchor edges symmetrically spread "
+            "at edge midpoint +/-14px); row alignment / column snap reports "
+            "inapplicable (honestly None)"]
         out["symmetry"] = {
             "shared_node": symmetry.get("shared_node"),
             "mirror_pairs": symmetry.get("mirror_pairs"),
@@ -896,13 +972,17 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         }
     if spine_mode:
         out["honest_notes"] = out["honest_notes"] + [
-            "纵柱+翼位口径（v0.7.1）：中枢对纵柱严格垂直居轴"
-            "（x 对齐 ≤2px 门）、翼位压中线水平带（贴靠 ≤2px 门）、"
-            "翼外镜像对上下对称（镜像误差 ≤2px 门）——对拍手拉基准样本"
-            " classic-cld-growth-and-burden；判定=确定性拓扑度量"
-            "（中枢对公共邻居 ≥3 + rest 次级簇可配对 + 主链长度占比 ≤0.5），"
-            "详见 docs/layout-modes.md；纵柱边构造竖直直线，其余走 Router；"
-            "行对齐率/列吸附报告不适用（如实 None）"]
+            "Spine-wing caliber (v0.7.1): hub pair strictly vertical on the "
+            "spine axis (x alignment <= 2px gate), wings pressed onto the "
+            "midline horizontal band (adherence <= 2px gate), outer mirror "
+            "pairs symmetric top-to-bottom (mirror error <= 2px gate) — "
+            "cross-checked against the hand-pulled reference sample "
+            "classic-cld-growth-and-burden; detection = deterministic "
+            "topological metrics (hub pair with >= 3 common neighbors + "
+            "pairable rest secondary clusters + main-chain length share "
+            "<= 0.5), see docs/layout-modes.md; spine edges constructed as "
+            "vertical straight lines, the rest through the Router; row "
+            "alignment / column snap reports inapplicable (honestly None)"]
         out["spine_wing"] = {
             "spine": spine_wing.get("spine"),
             "wings": spine_wing.get("wings"),
@@ -916,14 +996,18 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
 
 
 _EXACT_SCOPE_NOTE = (
-    "proven_optimal 只相对 docs/crossing-exact.md §1-5 定义的模型类成立："
-    "good-drawing 交叉数口径（相邻边不交叉、每对至多一次、无三边共点）、"
-    "安全缩减后的 2-边-连通核族、B&B 覆盖的可平面子图 × 全嵌入族。"
-    "不虚称全体指标集或任意画法空间的最优性。")
+    "proven_optimal holds only relative to the model class defined in "
+    "docs/crossing-exact.md sections 1-5: the good-drawing crossing-number "
+    "caliber (adjacent edges do not cross, each pair at most once, no three "
+    "edges through one point), the 2-edge-connected core family after safe "
+    "reduction, and the planar-subgraph x full-embedding family covered by "
+    "the B&B. No optimality claim is made over the full metric set or an "
+    "arbitrary drawing space.")
 
 
 def _exactness_block(exactness):
-    """WS2 证书精确性块：未计算时如实标 computed=False。"""
+    """WS2 certificate exactness block: honestly marked computed=False when
+    not computed."""
     if not exactness:
         return {"computed": False, "proven_optimal": None, "gap": None,
                 "crossing_number": None, "lb": None, "coverage": None,
@@ -941,16 +1025,18 @@ def _exactness_block(exactness):
                                          ensure_ascii=False, sort_keys=True)),
         "scope": _EXACT_SCOPE_NOTE,
         "caliber_note": (
-            "crossing_number 是**图本身**的交叉数 cr(G)（任意画法的下界）；"
-            "metrics.crossings 是**本布局**的交叉数（布局实现达到的值）。"
-            "两者口径不同：cr(G)=0 只保证存在 0 交叉画法，"
-            "不代表本布局实现了它"),
+            "crossing_number is the crossing number cr(G) of the graph itself "
+            "(a lower bound over arbitrary drawings); metrics.crossings is the "
+            "crossing count of this layout (the value achieved). The two "
+            "calibers differ: cr(G) = 0 only guarantees a 0-crossing drawing "
+            "exists, not that this layout achieves it"),
     }
 
 
 def _regularity_block(graph, nodes):
-    """WS2 排布规律性块（结构检测驱动，定义见 stdraw/regularity.py 与
-    docs/crossing-exact.md §6；全部指标可计算、可复算）。"""
+    """WS2 placement regularity block (structure-detection driven; definitions
+    in stdraw/regularity.py and docs/crossing-exact.md section 6; all metrics
+    computable and recomputable)."""
     if graph is None:
         return None
     try:

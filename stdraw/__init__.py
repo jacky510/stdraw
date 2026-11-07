@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""stdraw 系统思维图引擎。
+"""stdraw systems-thinking diagram engine.
 
-三层架构：
-  布局层（planar / layout3d，可替换实现）
-  质量层（metrics 五指标证书 + check 几何自检 + loops 环路语义审计）—— 本项目的护城河
-  查看层（viewer/）
+Three-layer architecture:
+    Layout layer (planar / layout3d, replaceable implementations)
+    Quality layer (metrics five-metric certificate + check geometry self-inspection + loops loop semantic audit) -- this project's moat
+    Viewer layer (viewer/)
 
-诚实分级承诺：拿不到证书就说拿不到；绝不宣称任意图 0 交叉。
+Honest tiering promise: if a certificate cannot be obtained we say so; we never claim 0 crossings for arbitrary graphs.
 """
 
 __version__ = "0.7.5"
@@ -18,10 +18,10 @@ from . import recipes
 from .metrics import certificate, certificate_auto
 from .check import geometry_report
 from .loops import loops_audit
-from . import crossing_exact          # WS2：精确交叉数层（可选 ortools）
-from . import regularity              # WS2：结构检测 + 规律性可计算定义
-from . import placement               # WS2：槽位离散化放置（可选 ortools）
-from . import ringlayout              # ref-scrubbed：回路主导环形排布（触发判定+槽位）
+from . import crossing_exact          # WS2: exact crossing-number layer (optional ortools)
+from . import regularity              # WS2: structure detection + computable definitions of regularity
+from . import placement               # WS2: slot-discretized placement (optional ortools)
+from . import ringlayout              # ref-scrubbed: loop-driven ring placement (trigger decision + slots)
 
 __all__ = [
     "Graph", "Node", "Edge", "Loop", "Group",

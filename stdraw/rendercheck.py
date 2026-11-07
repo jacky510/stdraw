@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
-"""框界真值层（① CI 侧）：真实渲染后用无头浏览器量 DOM 实际框界。
+"""Bounding-box ground-truth layer (1, CI side): after real rendering, measure actual DOM bounds with a headless browser.
 
-与 textmetrics（布局侧保守度量）构成两层验证——缺一层不许报完成：
-  - 布局侧：按真实字体最坏度量 + 保守 padding 规划框界（textmetrics.card_size）；
-  - CI 侧：本模块在真实渲染后逐卡量 DOM `getBBox()`，与规划框界比对，
-    文字实际宽度超出框内可用宽度（框宽 − 2×PAD_SIDE_MIN）即 fail——
-    证书量的不再是估算值，而是渲染真值。
+Together with textmetrics (conservative measurement on the layout side) this forms two-layer verification -- neither layer may be missing when claiming completion:
+    - Layout side: plan bounds with worst-case measurement using the real font + conservative padding (textmetrics.card_size);
+    - CI side: this module measures DOM `getBBox()` per card after real rendering and compares against the planned bounds;
+        actual text width exceeding the usable width inside the box (box width - 2*PAD_SIDE_MIN) fails --
+        the certificate now measures rendered ground truth rather than an estimate.
 
-用法：
-    python -m stdraw.rendercheck <outdir>       # 量 outdir/demo-2d.html vs layout.json
-退出码：0 全过；1 有超出；2 playwright 不可用（如实跳过，不算通过也不算失败）。
+Usage:
+        python -m stdraw.rendercheck <outdir>       # measure outdir/demo-2d.html vs layout.json
+Exit codes: 0 all pass; 1 overflow found; 2 playwright unavailable (honest skip, counted as neither pass nor failure).
 
-依赖：`pip install stdraw[render-check]`（playwright；首次需 playwright install chromium）。
+Dependency: `pip install stdraw[render-check]` (playwright; first run needs playwright install chromium).
 """
 import json
 import sys
@@ -20,9 +20,9 @@ from .textmetrics import PAD_SIDE_MIN
 
 
 def check_dom_bounds(html_path: str, layout: dict, tol: float = 0.5):
-    """playwright 无头 chromium 打开 demo，逐卡量文字 getBBox 对比框界。
+    """Open the demo in headless chromium via playwright; measure text getBBox per card against the bounds.
 
-    返回 (problems, checked_n)。problems: [{node, text_w, avail_w}]。
+    Returns (problems, checked_n). problems: [{node, text_w, avail_w}].
     """
     try:
         from playwright.sync_api import sync_playwright
@@ -56,7 +56,7 @@ def check_dom_bounds(html_path: str, layout: dict, tol: float = 0.5):
     except Exception:
         return None, 0
     id2n = {v: p_ for v, p_ in layout["nodes"].items()}
-    # demo 里 label 文本 → 节点（layout 键序与渲染一致）
+    # label text in the demo -> node (layout key order matches rendering)
     labels = {nd.get("label", ""): v for v, nd in
               (layout.get("_labels") or {}).items()}
     for row in data:
@@ -69,7 +69,7 @@ def check_dom_bounds(html_path: str, layout: dict, tol: float = 0.5):
 
 def main(argv):
     if len(argv) < 1:
-        print("用法: python -m stdraw.rendercheck <outdir>", file=sys.stderr)
+        print("usage: python -m stdraw.rendercheck <outdir>", file=sys.stderr)
         return 2
     import os
     outdir = argv[0]
@@ -78,9 +78,9 @@ def main(argv):
     problems, n = check_dom_bounds(os.path.abspath(
         os.path.join(outdir, "demo-2d.html")), layout)
     if problems is None:
-        print("SKIP: playwright 不可用（pip install stdraw[render-check] 后可跑）")
+        print("SKIP: playwright unavailable (pip install stdraw[render-check] to enable)")
         return 2
-    print(f"{n} 卡 DOM 实测完成，超出 {len(problems)}")
+    print(f"{n} cards DOM-measured, overflows {len(problems)}")
     for pr in problems:
         print("  OVERFLOW", pr)
     return 1 if problems else 0

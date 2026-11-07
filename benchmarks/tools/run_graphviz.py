@@ -1,7 +1,7 @@
-# Graphviz 基线 runner：dot / neato / sfdp × 单文件 → raw JSON。
-# 框尺寸以 inch=px/72、fixedsize 传入（native px 与 stdraw/ELK 同物理尺度）。
-# 边折线取 -Tplain 的 spline 控制点（dot 默认 splines=true 的 bezier 控制多边形；
-# neato/sfdp 为直线两点）。
+# Graphviz baseline runner: dot / neato / sfdp × single file -> raw JSON.
+# Box sizes are passed in as inch=px/72 with fixedsize (native px at the same physical scale as stdraw/ELK).
+# Edge polylines are the -Tplain spline control points (the bezier control polygon with dot's default splines=true;
+# neato/sfdp give a two-point straight line).
 import json
 import os
 import subprocess

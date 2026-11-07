@@ -63,10 +63,10 @@ pip install "stdraw[solver]"
 
 | `grade` | Meaning | What you may tell the user |
 |---|---|---|
-| `最优` | hard gates all pass + 0 crossings | "hard gates pass, zero crossings" (auto-v2: crossings are minimized, not theorem-guaranteed; ortho recipe: theorem-guaranteed) |
-| `其次` | hard gates all pass + ≤2 crossings (coords in cert) | report crossing count + coords |
-| `最次` | 3D delivery (rotate freely; projection crossings solved by camera) | no 2D crossing claim |
-| `未获证书` | everything else — honestly ungraded | **never** dress this up as success |
+| `best` | hard gates all pass + 0 crossings | "hard gates pass, zero crossings" (auto-v2: crossings are minimized, not theorem-guaranteed; ortho recipe: theorem-guaranteed) |
+| `second` | hard gates all pass + ≤2 crossings (coords in cert) | report crossing count + coords |
+| `3d` | 3D delivery (rotate freely; projection crossings solved by camera) | no 2D crossing claim |
+| `uncertified` | everything else — honestly ungraded | **never** dress this up as success |
 
 Iron rule: stdraw never claims arbitrary graphs are 0-crossing. Relay grades as-is.
 

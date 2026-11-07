@@ -10,7 +10,7 @@ button.on{background:#2563eb;border-color:#2563eb}
 </style>
 <div id="bar"><b>stdraw 3D · classic-cld</b> <button onclick="setSolid('sphere')" id="btn-sphere">sphere</button><button onclick="setSolid('cube')" id="btn-cube">cube</button><button onclick="setSolid('tetra')" id="btn-tetra">tetra</button><button onclick="setSolid('cone')" id="btn-cone">cone</button></div>
 <div id="c"></div>
-<div id="info">拖动旋转 / 滚轮缩放 / 右键平移 · 确定性排布（同图同布局）· 确定性排布：槽位+最短总边长指派；3D 无交叉承诺，投影交叉由相机解决</div>
+<div id="info">drag to rotate / wheel to zoom / right-drag to pan · deterministic placement (same graph, same layout) · deterministic placement: slots + minimum-total-edge-length assignment; no crossing promise in 3D, projection crossings are solved by the camera</div>
 <script src="../assets/three.min.js"></script>
 <script src="../assets/OrbitControls.js"></script>
 <script>
@@ -61,7 +61,7 @@ function draw(solid){
   const size = Math.max(...Object.values(pos).flat().map(Math.abs));
   group.add(wireframeBox(solid, size));
   const idx = {}; DATA.nodes.forEach((n,i)=>idx[n.id]=i);
-  // 节点：球片 + 标签 sprite（深度明暗在 render 循环按相机距离调透明度）
+  // nodes: sphere sprites + label sprites (depth shading adjusts opacity by camera distance in the render loop)
   const sprites = [];
   DATA.nodes.forEach(n=>{
     const p = pos[n.id];
@@ -81,7 +81,7 @@ function draw(solid){
     sp.position.set(p[0], p[1] + 30, p[2]);
     group.add(sp); sprites.push(sp);
   });
-  // 边：向外弓的单弧弦线（控制点沿位置向量外推）
+  // edges: single-arc chord lines bowed outward (control point pushed out along the position vector)
   DATA.edges.forEach(e=>{
     const a = new THREE.Vector3(...pos[e.a]);
     const b = new THREE.Vector3(...pos[e.b]);
@@ -103,7 +103,7 @@ addEventListener('resize', ()=>{
 });
 (function loop(){
   requestAnimationFrame(loop);
-  if (group) group.children.forEach(ch=>{ // 深度明暗：远处元素降透明度
+  if (group) group.children.forEach(ch=>{ // depth shading: distant elements fade
     if (ch.material && ch.material.opacity !== undefined){
       const d = camera.position.distanceTo(ch.position instanceof THREE.Vector3 ? ch.position : new THREE.Vector3());
       const f = Math.max(0.25, Math.min(1, 1.25 - d/1800));

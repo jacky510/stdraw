@@ -1,76 +1,76 @@
 # -*- coding: utf-8 -*-
-"""布线层（③ 线型层）：锚点规划 + 直线/弧线/绕行候选 + 避障验证。
+"""Routing layer (line-style layer 3): anchor planning + straight/arc/detour candidates + obstacle-avoidance validation.
 
-硬门几何口径（v0.2 质量返修）：
-  - 框压线 = 0：任何边任何角度都不得进入框内矩形（含 1px 余量）；
-    端点只允许贴在**自家**框边（规划锚点），禁止与他框任何接触；
-  - 边-框净距 ≥ CLEARANCE px（非端点框，折线/弧线采样点最小距离）；
-  - 锚点平滑：边接在框边规划锚点，出发方向与框边切线夹角 ≥ ANCHOR_MIN_DEG；
-  - 互环对（a↔b 双向边）必须分离为透镜形双弧（一弧一箭头），禁止两线重合；
-    评分含重合惩罚（PAIR_SEP_MIN/PAIR_SEP_W），vg/绕行候选锚点切向偏移。
+Hard-gate geometric accounting (v0.2 quality rework):
+    - box press = 0: no edge at any angle may enter the interior rectangle of a box (incl. 1px margin);
+        endpoints may only attach to the **own** box border (planned anchors); any contact with other boxes is forbidden;
+    - edge-box clearance >= CLEARANCE px (non-endpoint boxes; minimum distance over polyline/arc sample points);
+    - anchor smoothness: the edge attaches at a planned anchor on the box border; the departure direction vs the border tangent must form an angle >= ANCHOR_MIN_DEG;
+    - mutual pairs (a<->b bidirectional edges) must separate into a lens-shaped pair of arcs (one arc one arrow); the two lines coinciding is forbidden;
+        scoring includes a coincidence penalty (PAIR_SEP_MIN/PAIR_SEP_W); vg/detour candidates use tangential anchor offsets.
 
-所有候选按固定顺序枚举、按固定评分择优——无 RNG，同图同输出。
+All candidates are enumerated in fixed order and picked by fixed scoring -- no RNG, same graph yields same output.
 """
 import math
 
 from . import visibility as _vis
 
-CLEARANCE = 16          # 边-框最小净距（v0.2 硬门口径）
-PRESS_MARGIN = 1        # 框压线判定余量 px
-ANCHOR_MIN_DEG = 20     # 出发方向与框边切线最小夹角
-SAMPLE_STEP = 4         # 候选验证采样步长 px
-ARC_KS = (0.14, 0.24, 0.36, 0.55, 0.75)   # 弧线弯曲系数 × 距离（枚举梯）
-ARC_BULGE_BASE = 6.0    # ref-scrubbed 弧度参数化：最小鼓出 px（短边小弯）
-ARC_BULGE_SLOPE = 0.06  # 鼓出随弦长线性增长（典型弦 130px → k≈0.21 ≈ 旧观感档）
-ARC_BULGE_MAX = 40.0    # 长边鼓出封顶
+CLEARANCE = 16          # minimum edge-box clearance (v0.2 hard-gate accounting)
+PRESS_MARGIN = 1        # box-press detection margin px
+ANCHOR_MIN_DEG = 20     # minimum angle between the departure direction and the box-border tangent
+SAMPLE_STEP = 4         # candidate validation sampling step px
+ARC_KS = (0.14, 0.24, 0.36, 0.55, 0.75)   # arc curvature coefficient x distance (enumeration ladder)
+ARC_BULGE_BASE = 6.0    # ref-scrubbed arc-curvature parameterization: minimum bulge px (small bends for short edges)
+ARC_BULGE_SLOPE = 0.06  # bulge grows linearly with chord length (typical chord 130px -> k~=0.21 ~= the old-look tier)
+ARC_BULGE_MAX = 40.0    # bulge cap for long edges
 ARC_K_MIN = 0.12
 ARC_K_MAX = 0.50
 
 
 def adaptive_arc_k(dist):
-    """按弦长自适应的弧线弯曲系数（ref-scrubbed 美学 v3）。
+    """Chord-length-adaptive arc curvature coefficient (ref-scrubbed aesthetics v3).
 
-    鼓出（t=0.5 处 ctrl 偏移的一半）= min(8 + 0.12·弦长, 40) px：短边小弯、
-    长边大弯封顶；k = 2·鼓出/弦长，钳制 [0.12, 0.50]。候选弧首档即用本档
-    （梯保留作可行性兜底）；同环弧度一致性由构造弧统一取 median 弦长档。
+        Bulge (half the ctrl offset at t=0.5) = min(8 + 0.12*chord, 40) px: gentle bends for short edges,
+        capped for long ones; k = 2*bulge/chord, clamped to [0.12, 0.50]. The first arc candidate tier uses this value
+        (the ladder is kept as a feasibility fallback); arc-curvature consistency within a loop is achieved by constructed arcs uniformly taking the median chord tier.
     """
     bulge = min(ARC_BULGE_BASE + ARC_BULGE_SLOPE * dist, ARC_BULGE_MAX)
     k = 2.0 * bulge / max(dist, 1e-6)
     return max(ARC_K_MIN, min(ARC_K_MAX, k))
 
 
-SIDE_MARGIN = 18.5                        # 侧通道与遮挡框的净距（16 + 1px 余量 + 建设余量）
-VG_PAD = 1.5                              # WS3 可见性建图膨胀余量（弧线切角下探的兜底）
+SIDE_MARGIN = 18.5                        # clearance between side channels and occluding boxes (16 + 1px margin + construction allowance)
+VG_PAD = 1.5                              # WS3 visibility-graph build inflation allowance (fallback for the arc tangent-angle dip)
 
-# F1 返修（2026-11-05）：互环对（a↔b 双向边）重合惩罚与透镜双弧
-PAIR_SEP_MIN = 10.0    # 互环对两线最小间距目标（评分口径；DOM 硬门 4px + 舍入余量）
-PAIR_SEP_W = 600.0     # 重合惩罚权重（对缺口线性；全重合 ≈6000 >> 单次交叉 40）
-PAIR_VG_OFF = 12       # 互环对 vg/绕行候选的锚点切向偏移（两方向反号 → 平行走廊）
-ROUND_GUARD = 0.15     # 交付舍入（0.1px）保守余量：贴边 <0.15px 判违例
+# F1 rework (2026-11-05): coincidence penalty and lens double-arc for mutual pairs (a<->b bidirectional edges)
+PAIR_SEP_MIN = 10.0    # target minimum spacing between the two lines of a mutual pair (scoring accounting; DOM hard gate 4px + rounding margin)
+PAIR_SEP_W = 600.0     # coincidence penalty weight (linear in the gap; full coincidence ~6000 >> single crossing 40)
+PAIR_VG_OFF = 12       # tangential anchor offset for mutual-pair vg/detour candidates (opposite signs for the two directions -> parallel corridors)
+ROUND_GUARD = 0.15     # conservative margin for delivery rounding (0.1px): border-hugging within <0.15px counts as a violation
 
-# 线-线视觉重合定向重定线口径（ref-scrubbed）：random n10 扇出边经同一行间
-# 走廊候选（stair/lane，y=行心±pitch/2）逐段 <1px 贴合。口径正本 = 本模块
-# span_one_way_segs，证书侧 metrics._coincidence_span 两方向委托同源。
-COINCIDE_THR = 1.0          # 距离 <1px 视为贴合（与证书口径同源）
-COINCIDE_SPAN = 8.0         # 贴合累计 >8px 才计「视觉重合」（端点会合豁免）
-FAN_STEP = 18.0             # 同节点同侧多锚点均匀展开步距（ref-scrubbed 规则 3）
-REANCHOR_STEP = 4.0         # ref-scrubbed midband_reanchor 阶梯钳制步距
+# Line-line visual-coincidence targeted re-routing accounting (ref-scrubbed): the random n10 fan-out edges run through the same
+# inter-row corridor candidates (stair/lane, y = row center +/- pitch/2) with per-segment <1px adherence. The authoritative accounting = this
+# module's span_one_way_segs; the certificate side's metrics._coincidence_span delegates both directions to the same source.
+COINCIDE_THR = 1.0          # distance <1px counts as adherence (same source as the certificate accounting)
+COINCIDE_SPAN = 8.0         # accumulated adherence must exceed 8px to count as "visual coincidence" (endpoint meeting exempted)
+FAN_STEP = 18.0             # uniform spread step for multiple anchors on the same node side (ref-scrubbed rule 3)
+REANCHOR_STEP = 4.0         # ref-scrubbed midband_reanchor ladder-clamping step
 
 EPS = 1e-9
 
 
-# ── 基础几何 ─────────────────────────────────────────────
+# -- basic geometry ----------------------------------------------------
 def norm(vx, vy):
     d = math.hypot(vx, vy)
     return (vx / d, vy / d) if d > EPS else (0.0, 0.0)
 
 
 def border_point(cx, cy, hw, hh, dx, dy):
-    """从框心沿方向 (dx,dy) 与框边的交点（规划锚点）。
+    """Intersection of the ray from the box center in direction (dx,dy) with the box border (planned anchor).
 
-    ref-scrubbed 分层口径：路由决策层保持旧出口几何（候选覆盖不变，WS3 硬例
-    稳定）；**交付层**由 Router.midband_reanchor 把锚点钳制到边中点 ±1/4
-    边长带（转角排除，逐边硬门复核）——见 docs/layout-modes.md 连接点口径。
+        ref-scrubbed layered accounting: the routing decision layer keeps the legacy exit geometry (candidate coverage unchanged, WS3 hard cases
+        stay stable); the **delivery layer** has Router.midband_reanchor clamp anchors into the edge-midpoint +/- 1/4
+        edge-length band (corners excluded, per-edge hard-gate recheck) -- see docs/layout-modes.md for the connection-point accounting.
     """
     if abs(dx) < EPS and abs(dy) < EPS:
         return [cx, cy]
@@ -83,14 +83,14 @@ def border_point(cx, cy, hw, hh, dx, dy):
 
 
 def dist_point_rect(px, py, cx, cy, hw, hh):
-    """点到矩形的最小距离（框内为 0）。"""
+    """Minimum distance from a point to a rectangle (0 when inside)."""
     dx = max(abs(px - cx) - hw, 0.0)
     dy = max(abs(py - cy) - hh, 0.0)
     return math.hypot(dx, dy)
 
 
 def sample_polyline(points, step=SAMPLE_STEP):
-    """折线（含弧线离散）密集采样点列。"""
+    """Densely sampled point sequence of a polyline (including arc discretization)."""
     out = []
     for i in range(len(points) - 1):
         (x1, y1), (x2, y2) = points[i], points[i + 1]
@@ -104,7 +104,7 @@ def sample_polyline(points, step=SAMPLE_STEP):
 
 
 def _pt_seg_dist(p, a, b):
-    """点到线段距离（线-线贴合判定用）。"""
+    """Distance from a point to a segment (for line-line adherence tests)."""
     vx, vy = b[0] - a[0], b[1] - a[1]
     l2 = vx * vx + vy * vy
     if l2 < EPS:
@@ -114,11 +114,11 @@ def _pt_seg_dist(p, a, b):
 
 
 def span_one_way_segs(samples, segs, step=SAMPLE_STEP, thr=COINCIDE_THR):
-    """采样点列对线段集合的单向贴合跨度（px）——线-线视觉重合口径正本。
+    """One-way adherence span (px) of a sampled point sequence against a segment set -- the authoritative line-line visual-coincidence accounting.
 
-    metrics._coincidence_span（证书侧，两方向取大）委托本函数；
-    路由侧候选对已定线只需 src→已定线单向（长跨度并行贴合必双向 <thr，
-    端点会合瞬时接触两个方向都只给 1-2 个采样步，不越 8px 豁免门）。
+        metrics._coincidence_span (certificate side, takes the max over both directions) delegates to this function;
+        on the routing side a candidate vs an already-routed line only needs the src->routed one-way direction (long-span parallel adherence is necessarily <thr both ways,
+        and endpoint-meeting momentary contact yields only 1-2 sample steps in either direction, never crossing the 8px exemption gate).
     """
     total = 0.0
     for p in samples:
@@ -135,7 +135,7 @@ def span_one_way_segs(samples, segs, step=SAMPLE_STEP, thr=COINCIDE_THR):
 
 
 def quad_points(p0, ctrl, p1, n=24):
-    """二次贝塞尔离散（弧线）。"""
+    """Quadratic Bezier discretization (arcs)."""
     pts = []
     for i in range(n + 1):
         t = i / n
@@ -146,9 +146,9 @@ def quad_points(p0, ctrl, p1, n=24):
 
 
 def min_pair_dist(pts_a, pts_b, early_px=1.0):
-    """两采样点列的最小点距（互环对分离度口径）。
+    """Minimum point distance between two sampled point sequences (mutual-pair separation accounting).
 
-    早退：一旦发现 < early_px 即判 0（重合惩罚封顶，不影响排序）；确定性。
+        Early exit: once a pair < early_px is found, report 0 (coincidence penalty capped, ranking unaffected); deterministic.
     """
     best = float("inf")
     e2 = early_px * early_px
@@ -163,7 +163,7 @@ def min_pair_dist(pts_a, pts_b, early_px=1.0):
 
 
 def seg_cross(p1, p2, p3, p4):
-    """严格相交判定（含共线重叠；端点相触不算）。与 metrics 同口径。"""
+    """Strict intersection test (includes collinear overlap; endpoint touching does not count). Same accounting as metrics."""
     def orient(a, b, c):
         v = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
         return 0 if abs(v) < EPS else (1 if v > 0 else -1)
@@ -182,17 +182,17 @@ def seg_cross(p1, p2, p3, p4):
     return False
 
 
-# ── 路由器 ───────────────────────────────────────────────
+# -- router ------------------------------------------------------------
 class Router:
-    """按图上节点框位规划每条边的路线。确定性：固定候选序 + 固定评分。"""
+    """Plan a route for each edge from the node box positions on the canvas. Deterministic: fixed candidate order + fixed scoring."""
 
     def __init__(self, nodes: dict, edges: list, clearance=CLEARANCE, pitch=80,
                  quality=False):
-        """nodes: {id: (x,y,w,h)} 中心+尺寸；edges: [(a,b)] 有向。
+        """nodes: {id: (x,y,w,h)} center + size; edges: [(a,b)] directed.
 
-        quality=False（默认）：历史候选池，输出与 v0.4.x 逐字节一致；
-        quality=True：WS3-Q 布线质量返修扩充候选池（跨多行 stair）——仅在
-        布局层布线硬门失败后的门控重排路径启用，不进普通布局路径。
+            quality=False (default): the legacy candidate pool, output byte-for-byte identical to v0.4.x;
+            quality=True: WS3-Q routing-quality rework extends the candidate pool (multi-row stair) -- enabled only on
+            the gated re-layout path after the layout-layer routing hard gate fails; never enters the normal layout path.
         """
         self.N = {v: (p[0], p[1], p[2] / 2.0, p[3] / 2.0) for v, p in nodes.items()}
         self.edges = list(edges)
@@ -205,7 +205,7 @@ class Router:
                 mutual.add((a, b))
         self.mutual = mutual
         self.eidx = {(a, b): i for i, (a, b) in enumerate(edges)}
-        # 路由顺序：跨行数多的先定（大跨度决定通道），其余按 (a,b)
+        # Routing order: edges spanning more rows are routed first (large spans decide the corridors), the rest by (a,b)
         self.order = sorted(range(len(edges)),
                             key=lambda i: (-self._span(edges[i]), edges[i][0], edges[i][1]))
 
@@ -213,14 +213,14 @@ class Router:
         ya, yb = self.N[e[0]][1], self.N[e[1]][1]
         return abs(yb - ya)
 
-    # -- 锚点 --
+    # -- anchors --
     def _band_clamp_pt(self, v, p):
-        """ref-scrubbed 锚点口径：互环对候选锚点钳制到边中点 ±1/4 带内。
+        """ref-scrubbed anchor accounting: mutual-pair candidate anchors clamped into the edge-midpoint +/- 1/4 band.
 
-        透镜/嵌套双弧只有从带内锚出发，交付层 midband_reanchor 才无带外可
-        钳——带外锚经交付钳制后弧线切向易扎入框内触发压线回退（classic-cld
-        crowding↔quickfix 实测：锚点回退带外 = jacky 二验打回根因）。
-        仅互环对候选层调用；非互环边决策层出口几何不变（零漂移）。
+                Only when departing from in-band anchors does the delivery-layer midband_reanchor have nothing out-of-band left to clamp --
+                out-of-band anchors, once delivery-clamped, tend to send the arc tangent stabbing into the box and trigger a press fallback (classic-cld
+                crowding<->quickfix measured: anchors falling back out-of-band = the root cause of the second-review rejection).
+                Called only in the mutual-pair candidate layer; the decision-layer exit geometry of non-mutual edges is unchanged (zero drift).
         """
         cx, cy, hw, hh = self.N[v]
         on_x = abs(abs(p[0] - cx) - hw) <= abs(abs(p[1] - cy) - hh)
@@ -231,7 +231,7 @@ class Router:
         return [cx + max(-lim, min(lim, p[0] - cx)), p[1]]
 
     def _anchors(self, a, b, side):
-        """框边规划锚点。side=0 正常；side=±1 互环对沿框边切向偏移分离。"""
+        """Planned anchors on box borders. side=0 is normal; side=+/-1 separates mutual pairs by tangential offset along the border."""
         ax, ay, ahw, ahh = self.N[a]
         bx, by, bhw, bhh = self.N[b]
         dx, dy = bx - ax, by - ay
@@ -242,22 +242,22 @@ class Router:
         return pa, pb
 
     def _offset_anchors(self, a, b, pa, pb, off):
-        """锚点沿各自框边切向偏移 off px（钳制在框边线段内，仍为框边锚点）。"""
+        """Offset anchors by off px along each box's own border tangent (clamped inside the border segment, still border anchors)."""
         out = []
         for v, p, q in ((a, pa, pb), (b, pb, pa)):
             cx, cy, hw, hh = self.N[v]
             on_x = abs(abs(p[0] - cx) - hw) <= abs(abs(p[1] - cy) - hh)
-            if on_x:   # 竖边：切向 (0,1)
+            if on_x:   # vertical edge: tangent (0,1)
                 t = max(-hh + 3, min(hh - 3, p[1] + off - cy))
                 q2 = [p[0], cy + t]
-            else:      # 横边：切向 (1,0)
+            else:      # horizontal edge: tangent (1,0)
                 t = max(-hw + 3, min(hw - 3, p[0] + off - cx))
                 q2 = [cx + t, p[1]]
             out.append(q2)
         return out
 
     def _anchor_variants(self, a, b):
-        """锚点变体：中线锚 + 沿框边 ±10/±20/±30（互环对额外反向 ±12 分离）。"""
+        """Anchor variants: midline anchors + +/-10/+/-20/+/-30 along the border (mutual pairs add opposite +/-12 separation)."""
         base = self._anchors(a, b, 0)
         variants = [base]
         key = (min(a, b), max(a, b))
@@ -270,12 +270,12 @@ class Router:
         return variants
 
     def _band_anchor_variants(self, a, b):
-        """ref-scrubbed 带内锚点变体（仅互环对局部重定线兜底用）。
+        """ref-scrubbed in-band anchor variants (only as the fallback for mutual-pair local re-routing).
 
-        全部变体（中线 + ±12 分离 + ±10/20/±30 探索）经 _band_clamp_pt 收进
-        边中点 ±1/4 带。不进常规候选池——决策层旧出口几何保持不变（其余
-        18 图零漂移）；只在交付层 midband_reanchor 钳制失败后的互环对局部
-        重定线里启用，经典 classic-cld 透镜双弧即此情形。
+                All variants (midline + +/-12 separation + +/-10/20/+/-30 exploration) are pulled into the edge-midpoint
+                +/- 1/4 band via _band_clamp_pt. Not in the regular candidate pool -- the decision-layer legacy exit geometry stays unchanged
+                (zero drift on the other 18 graphs); enabled only in the mutual-pair local re-routing after delivery-layer midband_reanchor
+                clamping fails -- the classic classic-cld lens double-arc being exactly this case.
         """
         base = self._anchors(a, b, 0)
         variants = [(self._band_clamp_pt(a, base[0]),
@@ -287,21 +287,21 @@ class Router:
                                  self._band_clamp_pt(b, pb)))
         return variants
 
-    # -- 候选生成 --
+    # -- candidate generation --
     def _candidates(self, a, b, idx):
-        """固定顺序候选：直线 → 弧线（左右 × 弯曲系数）→ 绕行通道，× 锚点变体。"""
+        """Fixed-order candidates: straight -> arc (left/right x curvature) -> detour channels, x anchor variants."""
         cands = []
         key = (min(a, b), max(a, b))
-        # F1 透镜双弧：互环对两方向 arc 侧别取同号（各自参考系相反 → 几何反向弧，
-        # 构成透镜形；每方向一条弧一个箭头，不再出现双头箭头观感）
+        # F1 lens double-arc: both directions of a mutual pair take the same arc side sign (their reference frames are opposite -> geometrically opposite arcs,
+        # forming a lens; one arc one arrow per direction, no more double-headed-arrow look)
         mutual_side = 1 if key in self.mutual else None
         for pa, pb in self._anchor_variants(a, b):
             cands.append(("line", [pa, pb], pa, pb))
             vx, vy = pb[0] - pa[0], pb[1] - pa[1]
             dist = math.hypot(vx, vy)
             ux, uy = norm(-vy, vx)
-            # ref-scrubbed 弧度参数化：首档 = 按弦长自适应 k（短边小弯、长边
-            # 封顶），梯保留作可行性兜底；dedupe 保序，确定性不变
+            # ref-scrubbed arc-curvature parameterization: first tier = chord-adaptive k (small bends for short edges,
+            # capped for long ones), the ladder kept as a feasibility fallback; order-preserving dedupe, determinism unchanged
             ks = tuple(dict.fromkeys((adaptive_arc_k(dist),) + ARC_KS))
             for k in ks:
                 sides = (mutual_side,) if mutual_side else (1, -1)
@@ -309,10 +309,10 @@ class Router:
                     ctrl = [(pa[0] + pb[0]) / 2 + ux * k * dist * s,
                             (pa[1] + pb[1]) / 2 + uy * k * dist * s]
                     cands.append(("arc", quad_points(pa, ctrl, pb), pa, pb, ctrl))
-        # WS3 可见性图最短路候选（数学最优绕障）：直线被挡才生成（确定性）
-        # F1：互环对从多组切向偏移锚点 × 两档膨胀生成 vg——同膨胀同锚的互反向
-        # 最短走廊会贴同一障碍角逐点重合（0.0px），外圈膨胀（+PAIR_VG_OFF）
-        # 的走廊与兄弟边天然分开 ≈ 偏移量，保住「分离且净距达标」的候选存在
+        # WS3 visibility-graph shortest-path candidates (mathematically optimal obstacle avoidance): generated only when the straight line is blocked (deterministic)
+        # F1: mutual pairs build vg from several tangentially offset anchor sets x two inflation tiers -- mutually opposite shortest
+        # corridors with the same inflation and same anchors hug the same obstacle corner and coincide point-by-point (0.0px), while the outer-ring
+        # inflation (+PAIR_VG_OFF) corridor separates from the sibling edge by ~= the offset, preserving a "separated and clearance-compliant" candidate
         base_a, base_b = self._anchors(a, b, 0)
         rects = [n for v, n in self.N.items() if v not in (a, b)]
         if rects:
@@ -333,7 +333,7 @@ class Router:
                     route = _vis.plan_route(sa, sb, rects, c)
                     if route:
                         cands.append(("vg", route["dense"], sa, sb, route))
-        # 绕行通道：行间水平车道（基锚；互环对靠重合惩罚择不同车道/膨胀圈分离）
+        # Detour channels: horizontal inter-row lanes (base anchors; mutual pairs separate by picking different lanes/inflation rings via the coincidence penalty)
         pa0, pb0 = base_a, base_b
         ax, ay = pa0
         bx, by = pb0
@@ -343,7 +343,7 @@ class Router:
                 mx = (pa0[0] + pb0[0]) / 2 + off
                 cands.append(("poly", [pa0, [pa0[0], lane], [mx, lane],
                                        [pb0[0], lane], pb0], pa0, pb0))
-            # 侧通道（右/左）：同列中段遮挡的兜底——锚点改侧边正交出入
+            # Side channels (right/left): fallback for mid-column occlusion in the same column -- anchors switch to orthogonal side entry/exit
             acx, acy, ahw2, ahh2 = self.N[a]
             bcx, bcy, bhw2, bhh2 = self.N[b]
             lo, hi = min(acy, bcy), max(acy, bcy)
@@ -360,7 +360,7 @@ class Router:
                     pa_s, pb_s = [acx - ahw2, acy], [bcx - bhw2, bcy]
                 cands.append(("poly", [pa_s, [x_side, acy], [x_side, bcy], pb_s],
                               pa_s, pb_s))
-            # 行外绕行走廊：同排邻居堵死侧向出口时，从本行底/顶外绕
+            # Out-of-row detour corridor: when same-row neighbors seal the side exits, detour outside via the bottom/top of this row
             acx, acy, ahw2, ahh2 = self.N[a]
             bcx, bcy, bhw2, bhh2 = self.N[b]
             all_bottom = max(n[1] + n[3] for n in self.N.values()) + SIDE_MARGIN
@@ -397,15 +397,15 @@ class Router:
                 pts_e = [pa_e, [ex, y_out], [xs, y_out], [xs, y_mid],
                          [bx2, y_mid], pb_e]
                 cands.append(("poly", pts_e, pa_e, pb_e))
-        # WS3-Q 布线质量返修：跨多行 S 型（stair）。单 lane 候选全部压在
-        # 中点行 y 上，稠密图中间行的水平连接器会把它们全部封死（实测 i04
-        # N02->N03 全候选 cross≥1）。stair 走 a/b 行旁的行间走廊（y=行心
-        # ±pitch/2，距卡边 18px ≥16 净距门），中段垂直在中间行所有卡的
-        # 侧外 x_s 通过——结构上不进任何中间行卡带。固定变体序：侧别 ×
-        # a 出口（侧锚/顶底锚 × 横向偏移），确定性。
+        # WS3-Q routing-quality rework: multi-row S-shape (stair). Single-lane candidates all sit on the midpoint row y;
+        # horizontal connectors in the middle rows of dense graphs seal them all off (measured: i04 N02->N03 has cross>=1 on
+        # every candidate). The stair runs in the inter-row corridors beside the a/b rows (y = row center +/- pitch/2, 18px from card
+        # edges >= the 16px clearance gate); its mid vertical passes outside the side x_s of every card in the middle rows --
+        # structurally it never enters any middle-row card band. Fixed variant order: side x
+        # a exit (side anchor / top-bottom anchor x lateral offset), deterministic.
         _ca, _cb = self.N[a], self.N[b]
         if self.quality and abs(_cb[1] - _ca[1]) > self.pitch * 1.5:
-            a_top = _cb[1] > _ca[1]    # b 在 a 下方
+            a_top = _cb[1] > _ca[1]    # b is below a
             band = [n for v, n in self.N.items() if v not in (a, b) and
                     (_ca[1] < n[1] < _cb[1] if a_top else _cb[1] < n[1] < _ca[1])]
             y_cor_b = (bcy - self.pitch / 2) if a_top else (bcy + self.pitch / 2)
@@ -420,14 +420,14 @@ class Router:
                 else:
                     x_s = (max(acx + ahw2, bcx + bhw2) + SIDE_MARGIN if s > 0
                            else min(acx - ahw2, bcx - bhw2) - SIDE_MARGIN)
-                # 形态 1：a 侧边水平出 → x_s 垂直 → b 旁走廊水平 → b 顶/底垂直入
+                # Shape 1: a exits horizontally from its side -> vertical at x_s -> horizontal in the corridor beside b -> b enters vertically at top/bottom
                 pa_s3 = [acx + s * ahw2, acy]
-                # a_top（自上方进入 b）→ 入顶边（bcy−bhh）；自下方 → 入底边
+                # a_top (entering b from above) -> enter the top border (bcy-bhh); from below -> enter the bottom border
                 pb_s3 = [bx3, bcy + (-bhh2 if a_top else bhh2)]
                 cands.append(("poly", [pa_s3, [x_s, acy], [x_s, y_cor_b],
                                        [bx3, y_cor_b], pb_s3], pa_s3, pb_s3))
-                # 形态 2：a 顶/底锚垂直出 → a 旁走廊 → x_s → b 旁走廊 → b 顶/底入
-                # （a 同行邻居封死侧锚水平出口时的兜底；出口横向偏移固定枚举）
+                # Shape 2: a exits vertically from a top/bottom anchor -> corridor beside a -> x_s -> corridor beside b -> b enters at top/bottom
+                # (fallback when a's same-row neighbors seal the side anchor's horizontal exit; exit lateral offsets are a fixed enumeration)
                 for off in (0, ahw2 - 6, -(ahw2 - 6)):
                     ex3 = acx + off
                     pa_s4 = [ex3, acy + (ahh2 if a_top else -ahh2)]
@@ -435,11 +435,11 @@ class Router:
                     cands.append(("poly", [pa_s4, [ex3, y_cor_a], [x_s, y_cor_a],
                                            [x_s, y_cor_b], [bx3, y_cor_b],
                                            pb_s4], pa_s4, pb_s4))
-        # F1 互环对外围绕行：行间通道 = pitch − 卡高 = 36px（16+16+4），双线同
-        # 通道且各自保 16px 净距时分离上限恰 4px——不可靠。不可分时从行外
-        # 整体绕行：a 顶/底出框 → 全局上/下走廊 → 侧外垂直 → b 顶/底车道
-        # 垂直入框（上下两个方向都试——a 的下侧出口可能被更下方邻框封死；
-        # 固定变体序：方向 × off × 侧 × 外距，确定性）。
+        # F1 mutual-pair outer detour: the inter-row channel = pitch - card height = 36px (16+16+4); with both lines in the same channel
+        # each keeping 16px clearance, the separation ceiling is exactly 4px -- unreliable. When they cannot separate, detour wholesale
+        # outside the rows: a exits its box at top/bottom -> global upper/lower corridor -> vertical outside the sides -> b enters
+        # its box vertically via a top/bottom lane (both up and down directions are tried -- a's lower exit may be sealed by a box
+        # further below; fixed variant order: direction x off x side x outer distance, deterministic).
         if key in self.mutual:
             acx2, acy2, ahw3, ahh3 = self.N[a]
             bcx2, bcy2, bhw3, bhh3 = self.N[b]
@@ -458,8 +458,8 @@ class Router:
                         ex2 = acx2 + off
                         for s in (1, -1):
                             for pad in (8.0, 20.0):
-                                # 走廊 y 与入框车道同按 pad 错层——兄弟边的外环
-                                # 走廊/车道共用同一基线会逐段共线（sep=0）
+                                # The corridor y and the box-entry lane are staggered by the same pad -- the sibling edge's outer-ring
+                                # corridor/lane sharing the same baseline would end up collinear segment by segment (sep=0)
                                 if d == "down":
                                     y_out2 = y_below + pad
                                 else:
@@ -478,23 +478,23 @@ class Router:
                                 cands.append(("wrap", pts_w, pa_w, pb_w))
         return cands
 
-    # -- 候选评估 --
+    # -- candidate evaluation --
     def _evaluate(self, cand, a, b, routed_segs, sib_samples=None):
-        """返回 (score, info)；info 含压线/净距/交叉/锚角/互环分离度明细。
+        """Return (score, info); info carries press/clearance/crossing/anchor-angle/mutual-separation details.
 
-        routed_segs: {j: (已定线段列表, 段包围盒列表)}（由 route_all 预算）。
-        F1：互环对（a↔b）与已定线的兄弟边 (b,a) 最小间距 < PAIR_SEP_MIN 时
-        线性重罚（共享端点豁免不再掩盖重合——分离度按采样点距直接量）。
+                routed_segs: {j: (list of routed segments, list of per-segment bboxes)} (precomputed by route_all).
+                F1: when the minimum spacing between a mutual pair (a<->b) and its already-routed sibling edge (b,a) is < PAIR_SEP_MIN,
+                apply a heavy linear penalty (the shared-endpoint exemption no longer masks coincidence -- separation is measured directly on sampled point distances).
         """
         kind, pts, pa, pb = cand[0], cand[1], cand[2], cand[3]
         samples = sample_polyline(pts)
-        # 交付侧坐标会舍入到 0.1px（最坏把点推近框 0.07px）——路由侧判定
-        # 加 ROUND_GUARD 保守余量，防止 0.0x 级贴边候选舍入后翻成违例
+        # Delivery-side coordinates are rounded to 0.1px (worst case pushing a point 0.07px closer to a box) -- routing-side
+        # checks add the ROUND_GUARD conservative margin to keep 0.0x-level border-hugging candidates from flipping into violations after rounding
         press, clr_def = 0, 0.0
         min_clr = 1e9
-        # WS5 性能：候选包围盒 × 节点（膨胀 PRESS_MARGIN）包围盒距离下界——
-        # 下界 > ROUND_GUARD 时不可能 press；下界 ≥ 当前 min_clr 时不可能刷新
-        # min_clr。两者都成立则整节点跳过（精确等价，不改变任何数值）。
+        # WS5 performance: lower bound on the distance between the candidate bbox and each node's (PRESS_MARGIN-inflated) bbox --
+        # if the lower bound > ROUND_GUARD, press is impossible; if it >= the current min_clr, min_clr cannot be
+        # refreshed. When both hold the whole node is skipped (exactly equivalent, changes no value).
         bxl = min(p[0] for p in pts)
         bxh = max(p[0] for p in pts)
         byl = min(p[1] for p in pts)
@@ -519,7 +519,7 @@ class Router:
                 if gy > 0.0:
                     lb2 += gy * gy
                 if lb2 >= min_clr * min_clr:
-                    continue          # 不可能 press 也不可能刷新 min_clr
+                    continue          # press impossible, min_clr not refreshable
             for (px, py) in samples:
                 d = dist_point_rect(px, py, cx, cy, hw + PRESS_MARGIN, hh + PRESS_MARGIN)
                 if d <= ROUND_GUARD:
@@ -527,7 +527,7 @@ class Router:
                     break
                 min_clr = min(min_clr, d)
         clr_def = max(0.0, self.cl - min_clr) if min_clr < 1e9 else 0.0
-        # 自家框：端点必须落在框边上，其余采样点不得进入框内（含 1px 余量）
+        # Own box: endpoints must land on the box border; all other sample points must stay out of the box interior (incl. 1px margin)
         for v, endp in ((a, pa), (b, pb)):
             cx, cy, hw, hh = self.N[v]
             if dist_point_rect(endp[0], endp[1], cx, cy, hw, hh) > 0.75:
@@ -539,8 +539,8 @@ class Router:
                     break
             if interior:
                 return (1e9, None)
-        # 与已定路线交叉（逐段计数 cross + 逐边命中口径 cross_edges 供双口径核对）
-        # F1 性能保真：段对先做 bbox 不相交预过滤（包围盒不相交 ⇒ 必不相交，精确等价）
+        # Crossings against already-routed routes (per-segment count cross + per-edge hit accounting cross_edges for the dual-accounting cross-check)
+        # F1 performance fidelity: segment pairs go through a bbox-disjoint pre-filter first (disjoint bboxes => no intersection possible, exactly equivalent)
         cross = 0
         hit_edges = 0
         cand_segs = list(zip(pts[:-1], pts[1:]))
@@ -562,7 +562,7 @@ class Router:
                 hit_edges += 1
         length = sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
         kind_pref = 0.0
-        # F1：互环兄弟边重合惩罚（sib_samples 由 route_all 按 12px 粗采样预算好）
+        # F1: mutual-pair sibling-edge coincidence penalty (sib_samples precomputed by route_all at 12px coarse sampling)
         mutual_pair = (min(a, b), max(a, b)) in self.mutual
         pair_sep = None
         sep_def = 0.0
@@ -571,28 +571,28 @@ class Router:
             if pair_sep is not None:
                 sep_def = max(0.0, PAIR_SEP_MIN - pair_sep)
         if mutual_pair and kind == "arc":
-            kind_pref = -2.0      # 透镜双弧轻微优先（分离度相同时避免双直线胜出）
-        # ref-scrubbed 线型层级：弧线 > 直线 > 折线——vg 绕障折角与 poly 车道
-        # 折线加固定类型代价，直线/弧线可行时不再与折线抢分（折线=最后手段）
+            kind_pref = -2.0      # slight preference for the lens double-arc (avoids double straight lines winning on separation ties)
+        # ref-scrubbed line-style hierarchy: arc > straight > polyline -- vg obstacle-avoidance bends and poly lane
+        # polylines carry a fixed type cost, so when straight/arc are feasible they no longer compete with polylines on score (polyline = last resort)
         if kind == "vg":
             kind_pref += 120.0
         if kind == "poly":
             kind_pref += 40.0
         if kind == "wrap":
-            # 外围绕行固定代价：修重合（600·缺口）才值得，不与短候选抢分
+            # Fixed cost for the outer detour: only worth it to fix coincidence (600*gap), does not compete with short candidates on score
             kind_pref += 200.0
         if mutual_pair:
-            # F1 净距加严：分离候选不得牺牲边-框净距门（总权重 150·缺口）
+            # F1 tightened clearance: separation candidates must not sacrifice the edge-box clearance gate (total weight 150*gap)
             clr_def *= 5.0
         score = (4000 * press + 40 * cross + 30.0 * clr_def + 0.01 * length +
                  PAIR_SEP_W * sep_def + kind_pref)
-        # 锚点平滑：出发/进入方向与框边切线夹角
+        # Anchor smoothness: angle between the departure/entry direction and the box-border tangent
         ang_a = self._anchor_angle(a, pa, pts[0], pts[1])
         ang_b = self._anchor_angle(b, pb, pts[-1], pts[-2])
         ang_def = max(0.0, ANCHOR_MIN_DEG - ang_a) + max(0.0, ANCHOR_MIN_DEG - ang_b)
         score += 2.0 * ang_def
         if ang_def > 0.5:
-            score += 1500.0     # 切线出锚软拒：存在平滑候选时不选它（硬门保平滑）
+            score += 1500.0     # soft rejection of tangent-anchor exits: not chosen when a smooth candidate exists (the hard gate preserves smoothness)
         info = {"kind": kind, "points": pts, "press": press,
                 "min_clear": round(min_clr, 1) if min_clr < 1e9 else None,
                 "cross": cross, "cross_edges": hit_edges,
@@ -607,21 +607,21 @@ class Router:
         return (score, info)
 
     def _anchor_angle(self, v, anchor, p_in, p_out):
-        """锚点处路线方向与框边切线的夹角（度）。"""
+        """Angle (degrees) between the route direction at the anchor and the box-border tangent."""
         cx, cy, hw, hh = self.N[v]
         dx, dy = norm(p_out[0] - p_in[0], p_out[1] - p_in[1])
         on_x = abs(abs(anchor[0] - cx) - hw) < abs(abs(anchor[1] - cy) - hh)
-        # 框边切线：竖边 → (0,1)；横边 → (1,0)
+        # Box-border tangent: vertical edge -> (0,1); horizontal edge -> (1,0)
         tx, ty = (0.0, 1.0) if on_x else (1.0, 0.0)
         c = abs(dx * tx + dy * ty)
         return math.degrees(math.acos(max(0.0, min(1.0, c))))
 
-    # -- WS3 双口径·理论口径 --
+    # -- WS3 dual accounting: theoretical accounting --
     def final_crossing_pairs(self, out):
-        """最终路线（未取整浮点几何）的交叉边对数。
+        """Number of crossing edge pairs among the final routes (unrounded float geometry).
 
-        评估时的逐边计数含「对旧路线快照」的陈旧交叉，不能当理论口径；
-        本方法在 route_all 收尾后对最终路线两两复算（严格求交，共享端点除外）。
+                The per-edge counts taken during evaluation include stale crossings against old route snapshots and cannot serve as the
+                theoretical accounting; this method recomputes all pairs over the final routes after route_all finishes (strict intersection, shared endpoints excluded).
         """
         items = sorted(out.items())
         total = 0
@@ -646,9 +646,9 @@ class Router:
                     total += 1
         return total
 
-    # -- WS3-Q 布线质量返修：交叉对联合重定线 --
+    # -- WS3-Q routing-quality rework: joint re-routing of crossing pairs --
     def _poly_cross(self, pa, pb):
-        """两条折线是否严格相交（共享端点豁免由调用方处理）。"""
+        """Whether two polylines strictly intersect (the shared-endpoint exemption is handled by the caller)."""
         for s1 in zip(pa[:-1], pa[1:]):
             for s2 in zip(pb[:-1], pb[1:]):
                 if seg_cross(s1[0], s1[1], s2[0], s2[1]):
@@ -656,12 +656,12 @@ class Router:
         return False
 
     def joint_reroute(self, out, max_sweeps=3, top_k=25):
-        """交叉对联合重定线：打破 pass2 坐标下降的「互为最优」僵局。
+        """Joint re-routing of crossing pairs: breaks the "each is the other's optimum" deadlock of pass2 coordinate descent.
 
-        对每个当前交叉的独立边对 (i,j)：先以「其余已定线（互斥 i/j）」
-        分别预评两边的全部候选，按 (交叉数, 评分) 取各自前 top_k，再对
-        组合精确联合评估（i 对 其余+cj、j 对 其余+ci），总评严格下降才
-        整对替换。固定遍历序 + 固定截断，无 RNG，同图同输出。
+                For each currently crossing independent edge pair (i,j): first, against "the other routed lines (excluding i/j)",
+                pre-evaluate all candidates of both sides separately, take each side's top top_k by (crossing count, score), then
+                evaluate the combinations jointly and exactly (i vs rest+cj, j vs rest+ci); the whole pair is replaced only
+                if the total score strictly decreases. Fixed traversal order + fixed truncation, no RNG, same graph yields same output.
         """
         idx = sorted(out.keys())
         for _ in range(max_sweeps):
@@ -742,7 +742,7 @@ class Router:
         return out
 
     def _joint_score(self, info):
-        """联合评估用评分（与 _evaluate 同权重口径 + 锚点软拒同罚）。"""
+        """Score for joint evaluation (same weight accounting as _evaluate + the same anchor soft-rejection penalty)."""
         length = sum(math.dist(info["points"][k], info["points"][k + 1])
                      for k in range(len(info["points"]) - 1))
         clr = info.get("min_clear")
@@ -754,16 +754,16 @@ class Router:
         return (4000 * info.get("press", 0) + 40 * info.get("cross", 0) +
                 clr_pen + ang_pen + 0.01 * length)
 
-    # -- 线-线视觉重合定向重定线（ref-scrubbed）--
+    # -- Line-line visual-coincidence targeted re-routing (ref-scrubbed) --
     def _pair_coincide_span(self, pts_a, pts_b):
-        """两条折线的贴合跨度（px，双向取大）——与证书 _coincidence_span 同源。"""
+        """Adherence span (px) between two polylines, max over both directions -- same source as the certificate's _coincidence_span."""
         sa = sample_polyline(pts_a)
         sb = sample_polyline(pts_b)
         return max(span_one_way_segs(sa, list(zip(sb[:-1], sb[1:]))),
                    span_one_way_segs(sb, list(zip(sa[:-1], sa[1:]))))
 
     def _route_coincide_pairs(self, routes):
-        """最终路线两两贴合跨度 > COINCIDE_SPAN 的边对（确定性升序）。"""
+        """Edge pairs among the final routes whose adherence span exceeds COINCIDE_SPAN (deterministic ascending order)."""
         idx = sorted(routes.keys())
         out = []
         for a in range(len(idx)):
@@ -776,14 +776,14 @@ class Router:
         return out
 
     def _reroute_candidates(self, a, b, i):
-        """重定线候选池：历史候选池 + 锚点变体 vg 分离变体（ref-scrubbed）。
+        """Re-routing candidate pool: the legacy pool + anchor-variant vg separation variants (ref-scrubbed).
 
-        通用化 F1 互环对分离机制：fan-in/out 兄弟边同膨胀同锚的最短路贴同
-        一障碍角逐点重合——枚举 `_anchor_variants` 框边锚点位 × 切向偏移
-        ±PAIR_VG_OFF 规划 vg（锚点仍在框边上，check13 渲染/核验契约不变，
-        ownbox 切入由 _evaluate 的端点/框内检查天然拒收），走廊走不同障碍角
-        天然分离且净距门依旧成立。只在本通道（重合定向重定线）启用，基线
-        候选池零扰动。确定性枚举。
+                Generalizes the F1 mutual-pair separation mechanism: fan-in/out sibling edges with the same inflation and same anchors have shortest
+                paths hugging the same obstacle corner and coinciding point-by-point -- enumerate `_anchor_variants` border anchor positions x
+                tangential offsets of +/-PAIR_VG_OFF to plan vg (anchors stay on the box border, so the check13 render/verification contract is
+                unchanged, and own-box cut-ins are naturally rejected by _evaluate's endpoint/interior checks); corridors passing different
+                obstacle corners separate naturally with the clearance gate still holding. Enabled only in this channel (coincidence targeted
+                re-routing); the baseline candidate pool is untouched. Deterministic enumeration.
         """
         cands = list(self._candidates(a, b, i))
         rects = [n for v, n in self.N.items() if v not in (a, b)]
@@ -799,13 +799,13 @@ class Router:
         return cands
 
     def coincide_reroute(self, routes, frozen=(), max_sweeps=3):
-        """对计入线-线视觉重合的边做定向重定线（硬门不回退前提下降贴合跨度）。
+        """Targeted re-routing of edges counted as line-line visual coincidence (reduce adherence spans without regressing any hard gate).
 
-        只动重合对涉及的边（frozen：构造路线/用户 waypoints 锚定的边不动；
-        互环对走专用机制，本通道也不动）。替换须同时满足：压线=0、净距
-        ≥clearance、锚点平滑、与其余已定线交叉边数不增、对任意其余边的
-        贴合跨度严格下降（不留新贴合对）。固定遍历序 + 固定候选序，无 RNG。
-        基线零重合的图（classic 全域）无受影响边——输出逐字节不变。
+                Only edges involved in coincidence pairs are touched (frozen: edges anchored by constructed routes / user waypoints stay put;
+                mutual pairs go through their dedicated mechanism and are untouched here too). A replacement must satisfy all of: press=0,
+                clearance >= clearance, anchor smoothness, no increase in crossing-edge count against the other routed lines, and a strictly
+                decreasing adherence span against every other edge (leaving no new adherence pairs). Fixed traversal order + fixed candidate order, no RNG.
+                Graphs with zero baseline coincidence (the whole classic domain) have no affected edges -- output byte-for-byte unchanged.
         """
         for _ in range(max_sweeps):
             pairs = self._route_coincide_pairs(routes)
@@ -818,9 +818,9 @@ class Router:
                 a, b = self.edges[i]
                 cur = routes[i]
                 cands = self._reroute_candidates(a, b, i)
-                base = {}       # j -> (segs, per-seg bb)（交叉判定复用）
-                base_pts = {}   # j -> 折线点列
-                base_pbox = {}  # j -> 全折线包围盒（贴合预过滤）
+                base = {}       # j -> (segs, per-seg bb) (reused for crossing checks)
+                base_pts = {}   # j -> polyline point sequence
+                base_pbox = {}  # j -> whole-polyline bbox (adherence pre-filter)
                 for j, info in routes.items():
                     if j == i:
                         continue
@@ -861,12 +861,12 @@ class Router:
                         continue
                     mc = info.get("min_clear")
                     if mc is not None and mc < self.cl - 1e-6:
-                        continue          # 硬门：边-框净距
+                        continue          # hard gate: edge-box clearance
                     if min(info.get("ang_a", 0.0), info.get("ang_b", 0.0)) \
                             < ANCHOR_MIN_DEG:
-                        continue          # 硬门：锚点平滑
+                        continue          # hard gate: anchor smoothness
                     if (min(a, b), max(a, b)) in self.mutual:
-                        continue          # 互环对走专用机制
+                        continue          # mutual pairs go through their dedicated mechanism
                     pts_n = info["points"]
                     s_n = sample_polyline(pts_n)
                     s_ns = {"pts": s_n,
@@ -878,7 +878,7 @@ class Router:
                     cross = sum(1 for pts_j in base_pts.values()
                                 if self._poly_cross(pts_n, pts_j))
                     if cross > cur_cross:
-                        continue          # 交叉数不增
+                        continue          # crossing count must not increase
                     key = (span, cross, sc)
                     if best is None or key < best[0]:
                         best = (key, info)
@@ -890,7 +890,7 @@ class Router:
         return routes
 
     def _pair_cross_vs_base(self, pts, base):
-        """（诊断保留）单边对其余已定线快照的交叉边数。"""
+        """(kept for diagnostics) Crossing-edge count of one edge against a snapshot of the other routed lines."""
         n = 0
         for k, (segs, bb) in base.items():
             hit = False
@@ -905,9 +905,9 @@ class Router:
                 n += 1
         return n
 
-    # -- 同节点同侧多锚点均匀展开（ref-scrubbed 连接点口径规则 3）--
+    # -- Uniform spread of multiple anchors on the same node side (ref-scrubbed connection-point accounting rule 3) --
     def _side_of(self, v, p):
-        """锚点 p 在节点 v 框的哪条边（r/l/b/t）。"""
+        """Which border (r/l/b/t) of node v's box anchor p sits on."""
         cx, cy, hw, hh = self.N[v]
         on_x = abs(abs(p[0] - cx) - hw) <= abs(abs(p[1] - cy) - hh)
         if on_x:
@@ -915,7 +915,7 @@ class Router:
         return "b" if p[1] > cy else "t"
 
     def _edge_stats(self, i, routes):
-        """边 i 当前路线的硬门摘要：(press, min_clear, ang_min, cross, mutual_sep)。"""
+        """Hard-gate summary of edge i's current route: (press, min_clear, ang_min, cross, mutual_sep)."""
         a, b = self.edges[i]
         pts = routes[i]["points"]
         samples = sample_polyline(pts)
@@ -947,13 +947,13 @@ class Router:
         return (press, min_clr, ang_min, cross, msep)
 
     def fan_spread(self, routes, frozen=()):
-        """同节点同侧 ≥2 个锚点：按入射角排序、沿框边切向在中点两侧对称展开。
+        """Same node side with >= 2 anchors: sort by incidence angle and spread symmetrically on both sides of the midpoint along the border tangent.
 
-        2026-11-06 连接点口径硬规则 3（jacky）：同一节点多条出线不许堆叠在
-        同一边中点——步距 FAN_STEP 均匀分布、钳制在边内 ±(half−3)。展开后
-        逐边复核硬门（压线/净距/锚角/交叉数不增/互环分离 ≥4px），任一违例
-        该节点整体回退到边中点锚（确定性：固定遍历序 + 固定步距，无 RNG）。
-        frozen 边（构造路线 / 用户 waypoints）不动。
+                2026-11-06 connection-point accounting hard rule 3 (jacky): multiple outgoing lines on the same node must not pile up at the
+                same border midpoint -- spread uniformly with step FAN_STEP, clamped inside the border at +/-(half-3). After spreading, every
+                edge rechecks the hard gates (press/clearance/anchor angle/no crossing increase/mutual separation >= 4px); on any violation
+                the whole node falls back to border-midpoint anchors (deterministic: fixed traversal order + fixed step, no RNG).
+                frozen edges (constructed routes / user waypoints) are untouched.
         """
         groups = {}
         for i in sorted(routes.keys()):
@@ -1016,15 +1016,15 @@ class Router:
         return routes
 
     def _pt_in_band(self, v, p):
-        """锚点 p 是否已在该框边 ±1/4 带内（且在框边上）。"""
+        """Whether anchor p is already inside the border's +/- 1/4 band (and on the border)."""
         q = self._band_clamp_pt(v, p)
         return abs(q[0] - p[0]) <= 1e-6 and abs(q[1] - p[1]) <= 1e-6
 
     def _own_box_ok(self, i, routes):
-        """自家框内部无侵入（ref-scrubbed）：_edge_stats 只计他框 press，
-        弧线锚点带内钳制 + ctrl 随动后切向可下扎自家框（classic-cld
-        crowding→quickfix 实测），交付门必须补自家框内部检查——与
-        _evaluate 自家框规则同口径（内部采样点 + PRESS_MARGIN/ROUND_GUARD）。"""
+        """No intrusion into the own box interior (ref-scrubbed): _edge_stats only counts other-box press,
+                but after in-band anchor clamping + ctrl following, the arc tangent can dip into the own box (measured on classic-cld
+                crowding->quickfix), so the delivery gate must add an own-box interior check -- the same
+                accounting as _evaluate's own-box rule (interior sample points + PRESS_MARGIN/ROUND_GUARD)."""
         pts = routes[i]["points"]
         a, b = self.edges[i]
         samples = sample_polyline(pts)[1:-1]
@@ -1046,15 +1046,15 @@ class Router:
         return True
 
     def _band_candidates(self, a, b, idx):
-        """ref-scrubbed 互环对带内候选。
+        """ref-scrubbed mutual-pair in-band candidates.
 
-        line/arc：对全部锚点变体先 _band_clamp_pt 收进带内、再按新弦重算
-        几何（纯过滤不行——窄框 ±1/4 带下原始变体几乎全带外，classic-cld
-        crowding 带宽 48px vs 变体偏移 30-55px 实测只剩 2 候选）；arc 双侧别
-        （嵌套弧=带内口径下互环分离逃生门，北弧切向扎框已被 _own_box_ok
-        硬门封死）。vg/poly/wrap 走廊族：锚点由走廊结构决定、中间点不可随
-        锚重算，只保留锚点天然带内的（侧缘中点 poly 等）。仅由
-        _reroute_pair_band（交付钳制失败兜底）调用，不进常规候选池。
+                line/arc: for every anchor variant, first pull into the band via _band_clamp_pt, then recompute the geometry on the
+                new chord (pure filtering is not enough -- under a narrow box's +/- 1/4 band almost all raw variants are out-of-band; on
+                classic-cld crowding, band width 48px vs variant offsets 30-55px left only 2 candidates measured); arc takes both side
+                signs (nested arcs = the mutual-separation escape hatch under in-band accounting; the north arc's tangent stabbing into the box
+                is already sealed by the _own_box_ok hard gate). vg/poly/wrap corridor families: anchors are decided by the corridor structure,
+                midpoints cannot be recomputed with the anchors, so only those whose anchors are naturally in-band are kept (side-margin
+                midpoint poly etc.). Called only by _reroute_pair_band (the delivery clamping-failure fallback); not in the regular candidate pool.
         """
         out = []
         seen = set()
@@ -1097,13 +1097,13 @@ class Router:
         return out
 
     def _reroute_pair_band(self, routes, i, j):
-        """交付兜底：互环对带内锚点局部重定线（ref-scrubbed）。
+        """Delivery fallback: mutual-pair local re-routing on in-band anchors (ref-scrubbed).
 
-        midband_reanchor 阶梯钳制全档失败（带外锚钳不进硬门——透镜弧切向
-        扎框回退）时启用：仅这两条边用带内候选重建，贪心两遍（i 定 → j 对
-        新 i 定 → 复评）选最优组合；硬门与交付口径一致（压线/净距/锚角/
-        交叉数不增/互环分离 ≥4px），无解回退原路线。确定性：固定候选序 +
-        固定评分，无 RNG。其余边不动（其余 18 图零漂移的结构性保证）。
+                Enabled when every tier of the midband_reanchor ladder clamping fails (out-of-band anchors cannot be clamped past the hard
+                gate -- the lens arc's tangent stabbing into the box falls back): only these two edges are rebuilt with in-band candidates,
+                a greedy two passes (i fixed -> j fixed against the new i -> re-evaluate) picks the best combination; the hard gates match the
+                delivery accounting (press/clearance/anchor angle/no crossing increase/mutual separation >= 4px), falling back to the
+                original routes when unsolvable. Deterministic: fixed candidate order + fixed scoring, no RNG. Other edges are untouched (the structural guarantee of zero drift on the other 18 graphs).
         """
         a, b = self.edges[i]
         ctx = {}
@@ -1165,22 +1165,22 @@ class Router:
             routes[j] = keep_j
         return done
 
-    # -- ref-scrubbed 返修①：互环对「直线可行」候选纳入代价分配 --
+    # -- ref-scrubbed rework 1: cost allocation admitting "straight-line feasible" candidates for mutual pairs --
     def mutual_straight_reroute(self, routes, frozen=()):
-        """互环对直线重分配（§WS3：直线可行时折线不抢分，折线=最后手段）。
+        """Mutual-pair straight-line reassignment (WS3: when a straight line is feasible the polyline must not win on score; polyline = last resort).
 
-        v0.7.3 候选池 line 族的锚点变体全部挂在基准方向边上（_anchors 的
-        方向出边 × 对端入边，_offset_anchors 只沿同边切向移动），跨边锚
-        组合（如 a 左边中点 × b 顶边中点）根本不在池内——互环对被
-        PAIR_SEP_W 推到 poly 侧车道绕行（classic-cld quickfix→crowding
-        实测 298px 折线 vs 101px 自然直线，且折线与已定线真交叉）。本通道
-        只对「互环对中当前路线为折线（poly/vg/wrap）」的边启用：枚举两框
-        4 边中点锚 × 直线候选（中点天然 ±1/4 带内），交付硬门（压线 0/
-        净距/锚角/交叉数不增/互环分离 ≥4/自家框）全过且总评严格优于现
-        路线才替换；无可行直线原样返回（逐字节不变）。兄弟边（反向边）同
-        批复核——分离/交叉/净距门不因本边换线回退（返修②口径）。确定性：
-        固定边序 + 固定枚举序，无 RNG。仅 enhanced（spine-construct）域
-        调用，其余引擎结构性零漂移。
+                In the v0.7.3 candidate pool, all line-family anchor variants hang on the baseline-direction borders (the direction exit
+                border of _anchors x the peer's entry border, _offset_anchors only moves along the same border's tangent); cross-border
+                anchor combinations (e.g. a's left-midpoint x b's top-midpoint) simply are not in the pool -- mutual pairs get pushed
+                by PAIR_SEP_W into poly side-lane detours (measured on classic-cld quickfix->crowding: a 298px polyline vs a 101px
+                natural straight line, with the polyline truly crossing already-routed lines). This channel is enabled only for
+                mutual-pair edges whose current route is a polyline (poly/vg/wrap): enumerate the two boxes' four border-midpoint anchors x
+                straight-line candidates (midpoints are naturally in the +/- 1/4 band); the replacement happens only if the delivery hard
+                gates (press 0/clearance/anchor angle/no crossing increase/mutual separation >= 4/own box) all pass and the total score is
+                strictly better than the current route; with no feasible straight line, return as-is (byte-for-byte unchanged). The sibling
+                edge (reverse edge) is rechecked in the same batch -- the separation/crossing/clearance gates must not regress because this
+                edge switched routes (rework 2 accounting). Deterministic: fixed edge order + fixed enumeration order, no RNG. Invoked only
+                in the enhanced (spine-construct) domain; the other engines are structurally zero-drift.
         """
         for i in sorted(routes.keys()):
             if i in frozen:
@@ -1194,7 +1194,7 @@ class Router:
             j = self.eidx.get((b, a))
             if j is None or j in frozen:
                 continue
-            # 评估上下文：其余已定线段+包围盒（供 _evaluate 交叉/压线判定）
+            # Evaluation context: the other routed segments + bboxes (for _evaluate crossing/press checks)
             ctx = {}
             for k2, r in routes.items():
                 if k2 in (i, j):
@@ -1204,8 +1204,8 @@ class Router:
                        max(p[0], q[0]), max(p[1], q[1])) for p, q in segs]
                 ctx[k2] = (segs, bb)
             sib = sample_polyline(routes[j]["points"], step=12)
-            # 现路线参照评分（同 _evaluate 权重；vg 的 corner/fillet 字段
-            # 按空壳补齐——评分只消费 kind/points）
+            # Reference score of the current route (same _evaluate weights; the vg corner/fillet fields
+            # are padded as empty shells -- scoring only consumes kind/points)
             cur_cand = (cur.get("kind", "poly"), cur["points"],
                         cur["points"][0], cur["points"][-1],
                         {"corner_pts": [], "fillets": []})
@@ -1231,31 +1231,31 @@ class Router:
                         continue
                     mc = info.get("min_clear")
                     if mc is not None and mc < self.cl - 1e-6:
-                        continue          # 硬门：边-框净距
+                        continue          # hard gate: edge-box clearance
                     if min(info.get("ang_a", 0.0),
                            info.get("ang_b", 0.0)) < ANCHOR_MIN_DEG:
-                        continue          # 硬门：锚点平滑
+                        continue          # hard gate: anchor smoothness
                     if sc >= cur_sc - EPS:
-                        continue          # §WS3：总评须严格优于现路线
+                        continue          # WS3: the total score must strictly beat the current route
                     old = routes[i]
                     routes[i] = info
                     ok = True
                     for k2, st0 in ((i, None), (j, st_j0)):
                         st = self._edge_stats(k2, routes)
                         if st[0] > 0:
-                            ok = False    # 硬门：框压线
+                            ok = False    # hard gate: box press
                         elif (st[1] is not None and st[1] < self.cl - 1e-6):
-                            ok = False    # 硬门：净距
+                            ok = False    # hard gate: clearance
                         elif st[2] < ANCHOR_MIN_DEG:
-                            ok = False    # 硬门：锚点平滑
+                            ok = False    # hard gate: anchor smoothness
                         elif st[4] is not None and st[4] < 4.0:
-                            ok = False    # 硬门：互环分离
+                            ok = False    # hard gate: mutual-pair separation
                         elif not self._own_box_ok(k2, routes):
-                            ok = False    # 硬门：自家框
+                            ok = False    # hard gate: own box
                         elif k2 == i and st[3] > cur_cross:
-                            ok = False    # 硬门：交叉数不增
+                            ok = False    # hard gate: crossing count must not increase
                         elif k2 == j and st[3] > st0[3]:
-                            ok = False    # 兄弟边交叉数不增
+                            ok = False    # sibling-edge crossing count must not increase
                         if not ok:
                             break
                     routes[i] = old
@@ -1266,25 +1266,25 @@ class Router:
         return routes
 
     def midband_reanchor(self, routes, frozen=(), enhanced=True):
-        """交付层连接点口径（ref-scrubbed）：锚点钳制到边中点 ±1/4 边长带。
+        """Delivery-layer connection-point accounting (ref-scrubbed): anchors clamped into the edge-midpoint +/- 1/4 edge-length band.
 
-        jacky：「线连在方框上的点也优先选每条边的中点，尽量不要选转角的
-        地方。」路由决策层保持旧出口几何（候选覆盖不变）；本通道在交付前
-        把带外锚点沿所属框边切向钳到 ±1/4 带内——转角整体排除（带内不可能
-        贴角）。逐边硬门复核（压线/净距/锚角/交叉数不增/互环分离 ≥4px）。
+                jacky: "the points where lines attach to boxes should also prefer each border's midpoint; avoid the corners
+                possible." The routing decision layer keeps the legacy exit geometry (candidate coverage unchanged); before delivery, this channel
+                clamps out-of-band anchors along their own border tangent into the +/- 1/4 band -- corners are excluded wholesale (in-band anchors
+                can never hug a corner). Per-edge hard-gate recheck (press/clearance/anchor angle/no crossing increase/mutual separation >= 4px).
 
-        ref-scrubbed 返修（jacky 二验打回）：三段式——
-        档 0「基线口径」：v0.7.2 原语义（端点钳制、ctrl 不动、原硬门集）
-        先行，成功即交付（其余 18 图与 v0.7.2 逐字节一致的保证）；
-        档 1「增强阶梯」：仅基线失败/仍带外时启用——① 弧线（ctrl 存在）
-        锚点钳制时 ctrl 同步随动平移（保出发切向）并按贝塞尔重散 dense
-        points（旧版只动端点样本，弧线几何与 ctrl 脱节）；② 沿框边向边
-        中点阶梯步进（REANCHOR_STEP=4px，≤半带封顶）逐档重试，门集加
-        自家框内部检查（_edge_stats 只计他框 press，ctrl 随动后切向可下扎
-        自家框，classic-cld 实测）；③ 全档失败 → 互环对带内局部重定线
-        （_reroute_pair_band）。确定性：固定边序 + 固定档序，无 RNG。
-        frozen 边（构造路线 / waypoints）不动——对称模式构造弧已自带弦坐
-        标映射口径。
+                ref-scrubbed rework (rejected in jacky's second review): three stages --
+                Tier 0 "baseline accounting": the original v0.7.2 semantics (endpoint clamping, ctrl untouched, the original hard-gate set)
+                runs first and delivers on success (the guarantee that the other 18 graphs stay byte-for-byte identical to v0.7.2);
+                Tier 1 "enhanced ladder": enabled only on baseline failure / still out-of-band -- (1) for arcs (ctrl present), the ctrl
+                translates in lockstep with anchor clamping (preserving the departure tangent) and dense points are re-discretized from the
+                Bezier (the old version only moved the endpoint samples, leaving the arc geometry disconnected from ctrl); (2) step in a
+                ladder along the border toward the border midpoint (REANCHOR_STEP=4px, capped at half the band), retrying tier by tier with
+                the gate set augmented by the own-box interior check (_edge_stats only counts other-box press; after ctrl follows, the tangent
+                can dip into the own box, measured on classic-cld); (3) all tiers failing -> mutual-pair in-band local re-routing
+                (_reroute_pair_band). Deterministic: fixed edge order + fixed tier order, no RNG.
+                frozen edges (constructed routes / waypoints) are untouched -- the symmetric-mode constructed arcs already carry their own
+                chord-coordinate mapping accounting.
         """
         handled = set()
         for i in sorted(routes.keys()):
@@ -1293,10 +1293,10 @@ class Router:
             before_pts = [list(p) for p in routes[i]["points"]]
             before = self._edge_stats(i, routes)
             ctrl0 = routes[i].get("ctrl")
-            # ── 档 0：基线口径（v0.7.2 原语义，成功即字节不变）──
+            # -- Tier 0: baseline accounting (original v0.7.2 semantics, byte-identical on success) --
             baseline_done = False
             if self._anchors_in_band(i, routes):
-                continue                     # 已带内，无钳制需要
+                continue                     # already in band, no clamping needed
             pts = [list(p) for p in before_pts]
             changed = False
             for idx in (0, len(pts) - 1):
@@ -1328,8 +1328,8 @@ class Router:
             if baseline_done:
                 continue
             if not enhanced:
-                continue     # 非 spine-wing：基线口径止步（其余 18 图字节不变）
-            # ── 档 1：增强阶梯（ctrl 随动 + own_box 门）──
+                continue     # not spine-wing: stop at the baseline accounting (the other 18 graphs stay byte-identical)
+            # -- Tier 1: enhanced ladder (ctrl follows + own_box gate) --
             for k in range(0, 9):
                 pts = [list(p) for p in before_pts]
                 changed = False
@@ -1362,9 +1362,9 @@ class Router:
                         changed = True
                 if not changed:
                     if k == 0:
-                        break            # 已带内，无钳制需要
+                        break            # already in band, no clamping needed
                     continue
-                # 弧线：ctrl 随动平移（端点位移向量和）+ dense 重散，保几何一致
+                # Arcs: ctrl translates in lockstep (sum of the endpoint displacement vectors) + dense re-discretized, keeping the geometry consistent
                 if ctrl0 is not None:
                     da = [pts[0][0] - before_pts[0][0],
                           pts[0][1] - before_pts[0][1]]
@@ -1385,7 +1385,7 @@ class Router:
                 routes[i]["points"] = before_pts
                 if ctrl0 is not None:
                     routes[i]["ctrl"] = list(ctrl0)
-            # 阶梯全档失败（终态仍带外）→ 互环对带内局部重定线兜底
+            # Every ladder tier failed (final state still out-of-band) -> mutual-pair in-band local re-routing fallback
             if not self._anchors_in_band(i, routes):
                 a_, b_ = self.edges[i]
                 j = self.eidx.get((b_, a_))
@@ -1394,23 +1394,23 @@ class Router:
                         handled.add(j)
         return routes
 
-    # -- 主入口 --
+    # -- main entry --
     def route_all(self):
-        """两遍路由：第一遍按序定线；第二遍对每条边以「其余边已定线」复评换优。
+        """Two-pass routing: pass one routes each edge in order; pass two re-evaluates every edge against "the other edges already routed" and swaps in improvements.
 
-        两遍均确定性（固定候选序 + 固定评分），同图同输出。
+                Both passes are deterministic (fixed candidate order + fixed scoring); same graph yields same output.
         """
         routed = {}
         out = {}
         order = self.order
-        # WS5 性能：routed_segs 增量维护——同一条已定线的段/包围盒只算一次
-        # （旧版每条边都对全部已定线全量重建，O(m²) 重复派生；内容逐项等价）
+        # WS5 performance: routed_segs maintained incrementally -- each routed line's segments/bboxes are computed once
+        # (the old version fully rebuilt all routed lines for every edge, O(m^2) repeated derivation; contents are item-by-item equivalent)
         seg_cache = {}
         for _pass in (1, 2):
             for i in order:
                 a, b = self.edges[i]
-                # F1：已定线预算（段+包围盒，供交叉 bbox 预过滤）；互环兄弟边
-                # (b,a) 已定线 → 另备 12px 粗采样供重合惩罚
+                # F1: precomputed routed lines (segments + bboxes, for the crossing bbox pre-filter); if the mutual sibling
+                # edge (b,a) is already routed -> also prepare 12px coarse samples for the coincidence penalty
                 routed_segs = {}
                 sib = None
                 for j, rpts in routed.items():
@@ -1442,6 +1442,6 @@ class Router:
                                      "ang_a": 0.0, "ang_b": 0.0})
                 sc, cand, info = best
                 routed[i] = info["points"]
-                seg_cache.pop(i, None)   # 本边重定线：旧缓存作废
+                seg_cache.pop(i, None)   # this edge was re-routed: old cache invalidated
                 out[i] = info
         return out

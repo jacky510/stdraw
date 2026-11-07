@@ -1,5 +1,7 @@
 # 布局模式与美学口径（v0.7.1）
 
+> Engineering doc, maintained in Chinese — English overview: README.md
+
 > jacky 2026-11-05 全图审查定调（最高优先设计原则）：
 > 「如果方框排布能有规律，那么就尽量形成规律，比如纵向对齐一列，比如圆形回路。
 > 线尽量配合方框的排布来画。规律让图形更好看，也更好理解。」

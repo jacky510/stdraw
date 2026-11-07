@@ -1,19 +1,22 @@
 # -*- coding: utf-8 -*-
-"""stdraw DSL v0.1（草案）解析器 —— 最小闭环。
+"""stdraw DSL v0.1 (draft) parser — the minimal closed loop.
 
-语法（行导向，# 起注释，空行忽略）：
+Syntax (line-oriented, # starts a comment, blank lines ignored):
 
-    graph "图名"
-    var <id> "<标签>" [@value "<数值文本>"] [@group <gid>] [@w <补余量px>]
+    graph "graph name"
+    var <id> "<label>" [@value "<value text>"] [@group <gid>] [@w <extra px>]
     <a> -> <+|-> <b> [@loops <id1>,<id2>]
-    loop <id> "<标签>" "<R|B>" [<n1>, <n2>, ...]
-    group <gid> "<分组标签>"
+    loop <id> "<label>" "<R|B>" [<n1>, <n2>, ...]
+    group <gid> "<group label>"
 
-- 变量必须先声明后引用；极性边二元组是布局与证书的输入；
-- 回路标签（loop）声明语义回路，由 loops.lint 做闭合性 + R/B 极性数边验证；
-- 分组（group）可选，M0 不参与布局（张力处理见 model.py 模块注释）。
+- Variables must be declared before use; polarity edge pairs are the input to
+  layout and certificates;
+- Loop declarations state semantic loops, validated by loops.lint for closure
+  + R/B polarity edge counting;
+- Groups are optional and do not participate in layout (tension handling is
+  discussed in the model.py module docstring).
 
-解析是确定性的：同一文本永远得到同一 Graph。
+Parsing is deterministic: the same text always yields the same Graph.
 """
 import re
 from .model import Graph, Node, Edge, Loop, Group
@@ -62,15 +65,15 @@ def parse(text: str) -> Graph:
         if m:
             g.groups.append(Group(id=m.group(1), label=m.group(2)))
             continue
-        raise ValueError(f"DSL 第 {lineno} 行无法解析: {raw.strip()!r}")
+        raise ValueError(f"DSL line {lineno} cannot be parsed: {raw.strip()!r}")
     problems = g.validate()
     if problems:
-        raise ValueError("DSL 结构校验失败:\n  " + "\n  ".join(problems))
+        raise ValueError("DSL structural validation failed:\n  " + "\n  ".join(problems))
     return g
 
 
 def dumps(g: Graph) -> str:
-    """Graph → DSL 文本（往返一致：parse(dumps(g)) == g）。"""
+    """Graph -> DSL text (round-trip consistent: parse(dumps(g)) == g)."""
     out = []
     if g.name:
         out.append(f'graph "{g.name}"')

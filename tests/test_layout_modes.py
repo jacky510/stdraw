@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""布局美学 v2（ref-scrubbed）：纵列/对称模式 + R/B 颜色化 + 交叉软目标测试。"""
+"""Layout aesthetics v2 (ref-scrubbed): column/symmetric modes + R/B coloring + crossing soft-target tests."""
 import json
 import os
 import subprocess
@@ -21,10 +21,10 @@ def load(name):
 
 
 class TestModeTriggers(unittest.TestCase):
-    """触发判定（确定性图论度量）：点名图进新模式，环形保持图不误伤。"""
+    """Trigger detection (deterministic graph-theoretic metrics): named graphs enter the new modes; ring-holding graphs are not misfired."""
 
     def test_named_graphs_get_column(self):
-        # jacky 点名 #17/#18 → 纵列（#19 wage-price-spiral 自 v3 起进领结共点）
+        # jacky named #17/#18 -> column (#19 wage-price-spiral moved to bowtie-vertex since v3)
         for name in ("tragedy-of-the-commons", "urban-migration"):
             v4 = layout(load(name))
             self.assertEqual(v4["meta"]["placement"], "column-chain", name)
@@ -32,8 +32,8 @@ class TestModeTriggers(unittest.TestCase):
                              "column-construct", name)
 
     def test_isomorphic_bowtie_vertex_family(self):
-        # ref-scrubbed（美学 v3）：{eroding-goals, shifting-the-burden,
-        # wage-price-spiral} 有向同构 = 双环共享单节点 → 领结共点对称
+        # ref-scrubbed (aesthetics v3): {eroding-goals, shifting-the-burden,
+        # wage-price-spiral} are digraph-isomorphic = two loops sharing one node -> bowtie-vertex symmetry
         for name in ("eroding-goals", "shifting-the-burden",
                      "wage-price-spiral"):
             v4 = layout(load(name))
@@ -45,7 +45,7 @@ class TestModeTriggers(unittest.TestCase):
             self.assertEqual(len(sym["loops"]), 2, name)
 
     def test_bowtie_symmetric(self):
-        # #11 learning-flywheel 与其有向同构 fixes-that-fail → 领结对对称
+        # #11 learning-flywheel and its digraph-isomorphic fixes-that-fail -> bowtie-pair symmetry
         for name in ("learning-flywheel", "fixes-that-fail"):
             v4 = layout(load(name))
             self.assertEqual(v4["meta"]["placement"], "symmetric", name)
@@ -53,15 +53,15 @@ class TestModeTriggers(unittest.TestCase):
                              name)
 
     def test_ring_graphs_unchanged_mode(self):
-        # 回路主导图（k≥5 大环 / ratio 触发 / 纯环）保持环形，不误伤
-        # （classic-cld 自 v0.7.1 ref-scrubbed 起切 spine-wing，移出本组）
+        # loop-dominant graphs (k>=5 large ring / ratio trigger / pure ring) stay ring, unharmed
+        # (classic-cld switched to spine-wing since v0.7.1 ref-scrubbed, moved out of this group)
         for name in ("debt-spiral", "induced-demand", "arms-race",
                      "brand-flywheel", "fishing-collapse", "soil-erosion"):
             v4 = layout(load(name))
             self.assertEqual(v4["meta"]["placement"], "ring-cycle", name)
 
     def test_layered_fallback_negatives(self):
-        # 无环图（链/树）不触发任何新模式 → 既有分层路径
+        # acyclic graphs (chain/tree) trigger no new mode -> existing layered path
         chain = parse('graph "链"\nvar a "甲"\nvar b "乙"\nvar c "丙"\n'
                       'a -> + b\nb -> + c\n')
         v4 = layout(chain)
@@ -71,8 +71,8 @@ class TestModeTriggers(unittest.TestCase):
 
 
     def test_bowtie_vertex_not_misfired(self):
-        # 领结判定不误伤：08/10/17 虽也只有 2 个简单环但共享 2 节点（共边型）；
-        # classic-cld 4 个简单环（含派生环）——均不得进领结共点模式
+        # bowtie detection must not misfire: 08/10/17 also have just 2 simple loops but share 2 nodes (edge-sharing type);
+        # classic-cld has 4 simple loops (incl. derived ones) -- none may enter bowtie-vertex mode
         for name in ("fishing-collapse", "induced-demand",
                      "tragedy-of-the-commons",
                      "classic-cld-growth-and-burden"):
@@ -84,7 +84,7 @@ class TestModeTriggers(unittest.TestCase):
 
 
 class TestBowtieVertexGeometry(unittest.TestCase):
-    """ref-scrubbed（美学 v3）领结共点几何：对拍 jacky 手拉样本的相对几何。"""
+    """ref-scrubbed (aesthetics v3) bowtie-vertex geometry: relative geometry cross-checked against jacky's hand-drawn sample."""
 
     def _layout(self, name):
         from stdraw.metrics import certificate_auto, scene_from_auto
@@ -101,12 +101,12 @@ class TestBowtieVertexGeometry(unittest.TestCase):
         self.assertEqual(sh["x"], sym["axis_x"])
         self.assertEqual(sh["y"], sym["axis_y"])
         for l, r in sym["mirror_pairs"]:
-            self.assertEqual(nodes[l]["x"], nodes[r]["x"], "镜像对 x 相等")
+            self.assertEqual(nodes[l]["x"], nodes[r]["x"], "mirror pair x equal")
             self.assertEqual((nodes[l]["y"] + nodes[r]["y"]) / 2, sym["axis_y"])
         self.assertEqual(cert["metrics"]["symmetry_mirror_err"], 0)
 
     def test_two_half_planes_and_horizontal_outer_edge(self):
-        # 两环分占上下半平面；三角形外边水平（同样本「顶边近水平」）
+        # the two loops occupy the upper/lower half-planes; the outer triangle edge is horizontal (like the sample's "top edge near-horizontal")
         g, v4, _ = self._layout("wage-price-spiral")
         sym = v4["meta"]["symmetry"]
         nodes = v4["nodes"]
@@ -117,16 +117,16 @@ class TestBowtieVertexGeometry(unittest.TestCase):
         self.assertTrue(all(nodes[v]["y"] > sh_y for v in bots))
         self.assertEqual(nodes[tops[0]]["y"], nodes[tops[1]]["y"])
         self.assertEqual(nodes[bots[0]]["y"], nodes[bots[1]]["y"])
-        # 样本左右位：wages 左 / cost 右；real_income 左 / demand 右
+        # sample left/right placement: wages left / cost right; real_income left / demand right
         self.assertLess(nodes["wages"]["x"], nodes["cost"]["x"])
         self.assertLess(nodes["real_income"]["x"], nodes["demand"]["x"])
 
     def test_all_lines_and_cert_optimal(self):
-        # 线型一致性硬规则：全直线；证书最优（规律门含镜像 ≤2px）
+        # line-kind consistency hard rule: all straight; certificate optimal (regularity gate incl. mirror <=2px)
         g, v4, cert = self._layout("shifting-the-burden")
         kinds = {e["route"]["kind"] for e in v4["edges"]}
         self.assertEqual(kinds, {"line"}, kinds)
-        self.assertEqual(cert["grade"], "最优")
+        self.assertEqual(cert["grade"], "best")
         self.assertIn("symmetry_mirror_le_2px", cert["gates"])
 
 
@@ -137,12 +137,12 @@ class TestColumnGeometry(unittest.TestCase):
         nodes = v4["nodes"]
         xs = [nodes[v]["x"] for v in spine]
         ys = [nodes[v]["y"] for v in spine]
-        self.assertEqual(len(set(xs)), 1, "主链纵向对齐一列")
+        self.assertEqual(len(set(xs)), 1, "main chain aligned in one column")
         diffs = {b - a for a, b in zip(ys, ys[1:])}
-        self.assertEqual(len(diffs), 1, "主链行距恒等")
+        self.assertEqual(len(diffs), 1, "main chain row pitch uniform")
 
     def test_closing_edge_is_arc(self):
-        # 主链闭合边构造为左侧大弧（回路聚拢/圆环感）
+        # the spine closing edge is built as a large left-side arc (loop cohesion / ring feel)
         v4 = layout(load("tragedy-of-the-commons"))
         spine = v4["meta"]["column"]["spine"]
         closing = (spine[-1], spine[0])
@@ -152,11 +152,11 @@ class TestColumnGeometry(unittest.TestCase):
         self.assertIn("ctrl", e["route"])
 
     def test_pendant_near_anchor(self):
-        # 支路挂主链近邻侧：population 与其锚点同行、水平净距 ≥36 级
+        # pendant hangs on the near side of the spine: population is on the same row as its anchor, horizontal clearance at the >=36 tier
         v4 = layout(load("tragedy-of-the-commons"))
         nodes = v4["nodes"]
         p, u = nodes["population"], nodes["usage"]
-        self.assertEqual(p["y"], u["y"], "单锚支路与锚点同行")
+        self.assertEqual(p["y"], u["y"], "single-anchor branch on the same row as its anchor")
         gap = abs(p["x"] - u["x"]) - (p["w"] + u["w"]) / 2
         self.assertGreaterEqual(gap, 34)
 
@@ -173,14 +173,14 @@ class TestSymmetricGeometry(unittest.TestCase):
         self.assertEqual(nodes[l]["y"], nodes[r]["y"])
 
     def test_line_type_consistency(self):
-        # 对称结构线型一致：轴边直线 + 侧边全弧（不出现 vg/poly 折线）
+        # symmetric structures keep line kinds consistent: axis edge straight + side edges all arcs (no vg/poly polylines)
         v4 = layout(load("learning-flywheel"))
         kinds = {e["route"]["kind"] for e in v4["edges"]}
         self.assertTrue(kinds <= {"line", "arc"}, kinds)
 
     def test_learning_flywheel_centered(self):
-        # jacky #11「可对称却偏左」修复：内容居中（节点 bbox 中心 vs
-        # 全内容 bbox 中心水平偏差 ≤ 卡宽的 15%）
+        # jacky #11 "could be symmetric but sits left" fix: content centered (node bbox
+        # center vs full-content bbox center horizontal deviation <= 15% of card width)
         v4 = layout(load("learning-flywheel"))
         nodes = v4["nodes"]
         left = min(p["x"] - p["w"] / 2 for p in nodes.values())
@@ -188,12 +188,12 @@ class TestSymmetricGeometry(unittest.TestCase):
         cx = (left + right) / 2
         W = v4["viewBox"][2]
         self.assertLessEqual(abs(cx - W / 2), 0.06 * W + 8,
-                             f"内容中心 {cx} vs 画布中心 {W / 2}")
+                             f"content center {cx} vs canvas center {W / 2}")
 
 
 class TestCrossingsSoftTarget(unittest.TestCase):
     def test_gates_exclude_crossings_and_rowalign(self):
-        # 交叉/行对齐从硬门降为报告项（不再一票否决）
+        # crossings/row alignment demoted from hard gate to report item (no longer a one-vote veto)
         v4 = layout(load("tragedy-of-the-commons"))
         from stdraw.metrics import certificate_auto, scene_from_auto
         g = load("tragedy-of-the-commons")
@@ -203,7 +203,7 @@ class TestCrossingsSoftTarget(unittest.TestCase):
         self.assertNotIn("row_align_ge_060", cert["gates"])
         self.assertIn("crossings_zero", cert["reports"])
         self.assertIn("row_align_ge_060", cert["reports"])
-        # 排布规律类仍是硬门
+        # placement-regularity checks remain hard gates
         self.assertIn("column_axis_aligned", cert["gates"])
         self.assertIn("spine_pitch_uniform", cert["gates"])
 
@@ -216,13 +216,13 @@ class TestCrossingsSoftTarget(unittest.TestCase):
         spread = cert["metrics"]["loop_cohesion_spread"]
         self.assertIn("R1", spread)
         self.assertIn("B1", spread)
-        # 回路聚拢：环上节点跨度显著小于全图对角线
+        # loop cohesion: on-loop node spread is markedly smaller than the whole-graph diagonal
         self.assertLess(spread["R1"], 0.6)
         self.assertLess(spread["B1"], 0.6)
 
 
 class TestSpineWing(unittest.TestCase):
-    """ref-scrubbed（v0.7.1）纵柱+翼位：触发判定 + 对拍样本几何 + 证书门。"""
+    """ref-scrubbed (v0.7.1) spine-wing: trigger detection + sample-geometry cross-check + certificate gates."""
 
     def _layout(self, name="classic-cld-growth-and-burden"):
         from stdraw.metrics import certificate_auto, scene_from_auto
@@ -232,8 +232,8 @@ class TestSpineWing(unittest.TestCase):
         return g, v4, cert
 
     def test_trigger_hits_only_classic_cld(self):
-        # 19 图 sweep：仅 classic-cld 命中（中枢对公共邻居 ≥3 + rest 次级簇）；
-        # 同构 spine 的 limits-to-growth（rest=0）与纯环族不触发
+        # 19-graph sweep: only classic-cld hits (hub pairs with >=3 common neighbors + rest secondary cluster);
+        # limits-to-growth with isomorphic spine (rest=0) and the pure-ring family do not trigger
         for name in ("limits-to-growth", "arms-race", "bullwhip",
                      "tragedy-of-the-commons", "learning-flywheel"):
             v4 = layout(load(name))
@@ -243,20 +243,20 @@ class TestSpineWing(unittest.TestCase):
         self.assertEqual(v4["meta"]["position_engine"], "spine-construct")
 
     def test_sample_relative_geometry(self):
-        # 对拍 jacky 手拉样本：纵柱垂直居轴、翼位压中线、镜像对上下对称、
-        # 落单者与纵柱底同带
+        # cross-check against jacky's hand-drawn sample: spine vertical on axis, wings pressed onto the midline,
+        # mirror pairs symmetric up/down, the single one banded with the spine bottom
         g, v4, _ = self._layout()
         nodes = v4["nodes"]
         sw = v4["meta"]["spine_wing"]
         top, bot = sw["spine"]
-        self.assertEqual(nodes[top]["x"], nodes[bot]["x"], "纵柱 x 相等（样本 x 差 1px 的理想化）")
-        self.assertLess(nodes[top]["y"], nodes[bot]["y"], "head 顶 / tail 底")
+        self.assertEqual(nodes[top]["x"], nodes[bot]["x"], "spine x equal (idealizing the sample's 1px x difference)")
+        self.assertLess(nodes[top]["y"], nodes[bot]["y"], "head top / tail bottom")
         for w in sw["wings"]:
-            self.assertEqual(nodes[w]["y"], sw["axis_y"], "翼位压中线（样本 y 完全相等）")
+            self.assertEqual(nodes[w]["y"], sw["axis_y"], "wing slots pressed onto the midline (sample y exactly equal)")
         for up, down in sw["mirror_pairs"]:
-            self.assertEqual(nodes[up]["x"], nodes[down]["x"], "镜像对 x 相等（样本 x 差 6px 的理想化）")
+            self.assertEqual(nodes[up]["x"], nodes[down]["x"], "mirror pair x equal (idealizing the sample's 6px x difference)")
             self.assertEqual((nodes[up]["y"] + nodes[down]["y"]) / 2, sw["axis_y"])
-        # 样本左右位：word/potential 左、crowding 右、quickfix 上 / sideeffect 下
+        # sample left/right placement: word/potential left, crowding right, quickfix up / sideeffect down
         axis_x = sw["axis_x"]
         self.assertLess(nodes["word"]["x"], axis_x)
         self.assertLess(nodes["potential"]["x"], axis_x)
@@ -265,9 +265,9 @@ class TestSpineWing(unittest.TestCase):
         self.assertGreater(nodes["sideeffect"]["y"], sw["axis_y"])
 
     def test_cert_optimal_and_equivalent_gates(self):
-        # 证书最优 + 纵柱+翼位等价门（纵柱 x 对齐 / 中线贴靠 / 镜像 ≤2px）
+        # certificate optimal + spine-wing equivalent gates (spine x alignment / midline adherence / mirror <=2px)
         g, v4, cert = self._layout()
-        self.assertEqual(cert["grade"], "最优")
+        self.assertEqual(cert["grade"], "best")
         self.assertEqual(cert["metrics"]["crossings"], 0)
         for k in ("spine_axis_le_2px", "midline_adherence_le_2px",
                   "symmetry_mirror_le_2px"):
@@ -278,15 +278,19 @@ class TestSpineWing(unittest.TestCase):
 
 
 class TestSpineWingManualEquivalence(unittest.TestCase):
-    """ref-scrubbed 返修：auto 排布 vs jacky 手拉样本**结构等价**（角色归组一致）。
+    """ref-scrubbed rework: auto placement vs jacky's hand-drawn sample are
+    **structurally equivalent** (identical role grouping).
 
-    样本 = benchmarks/manual/classic-cld-manual-layout.json（jacky 手拉
-    ground truth，ref-scrubbed 附件留档，见 benchmarks/manual/README.md）。
-    角色归组（谁在纵柱/中线行/右翼列/落单位）从样本坐标按结构规律
-    **自动推导**（不在测试里写坐标副本），再要求引擎输出归组相同且
-    定量规律达标：纵柱 |dx|≤2、中线行 |dy|≤2、翼列 |dx|≤2（样本自身
-    6px 的理想化）、落单与纵柱底同带 |dy|≤2、左右/上下的相对方位与
-    样本逐节点一致。
+    Sample = benchmarks/manual/classic-cld-manual-layout.json (jacky's
+    hand-drawn ground truth, archived as the ref-scrubbed attachment, see
+    benchmarks/manual/README.md). The role grouping (who sits on the spine /
+    midline row / right-wing column / single slot) is **derived
+    automatically** from the sample coordinates via structural regularities
+    (no coordinate copy is written into the test), then the engine output is
+    required to group identically and to meet the quantitative regularities:
+    spine |dx|<=2, midline row |dy|<=2, wing column |dx|<=2 (idealizing the
+    sample's own 6px), single one banded with the spine bottom |dy|<=2, and
+    relative sides (left/right, up/down) matching the sample node by node.
     """
 
     MANUAL = os.path.join(os.path.dirname(os.path.dirname(
@@ -295,13 +299,17 @@ class TestSpineWingManualEquivalence(unittest.TestCase):
 
     @classmethod
     def _roles(cls, nodes):
-        """从坐标推导角色归组（确定性；样本与引擎输出共用同一推导器）。
+        """Derive the role grouping from coordinates (deterministic; the sample
+        and the engine output share the same deriver).
 
-        ① 中线行：同 y ±2 的最大组（≥2）；
-        ② 端点纵列：跨中线的同列对（|dx|≤2），并列取 y 跨距大者
-           （引擎里翼镜像对也同列跨中线，纵柱必是跨距最大的那对）；
-        ③ 右翼同列：余下节点中 |dx|≤8 的对（样本自身 6px）；
-        ④ 其余 = 落单（恰 1 个，镜像可构性）。
+        (1) midline row: the largest group with equal y +/-2 (>=2 members);
+        (2) endpoint spine column: the same-column pair straddling the midline
+           (|dx|<=2), ties broken toward the larger y span (wing mirror pairs
+           are also same-column midline-straddling in the engine; the spine
+           must be the pair with the largest span);
+        (3) right-wing same column: among the remaining nodes, the pair with
+           |dx|<=8 (the sample's own 6px);
+        (4) the rest = single (exactly 1, mirror constructibility).
         """
         ids = sorted(nodes)
         xs = {i: nodes[i]["x"] for i in ids}
@@ -312,22 +320,22 @@ class TestSpineWingManualEquivalence(unittest.TestCase):
             if len(row) > len(mid):
                 mid = row
         self2 = len(mid) >= 2
-        assert self2, "无中线行组"
+        assert self2, "no midline row group"
         mid_y = sum(ys[i] for i in mid) / len(mid)
         rest = [i for i in ids if i not in mid]
         cands = [(a, b) for a in rest for b in rest
                  if a < b and abs(xs[a] - xs[b]) <= 2
                  and (ys[a] - mid_y) * (ys[b] - mid_y) < 0]
-        assert cands, "无跨中线同列端点对"
+        assert cands, "no same-column endpoint pair straddling the midline"
         spine = min(cands, key=lambda p: (-abs(ys[p[0]] - ys[p[1]]),
                                           tuple(sorted(p))))
         left = [i for i in rest if i not in spine]
         wcands = [(a, b) for a in left for b in left
                   if a < b and abs(xs[a] - xs[b]) <= 8]
-        assert wcands, "无同列翼对"
+        assert wcands, "no same-column wing pair"
         wing = max(wcands, key=lambda p: (abs(ys[p[0]] - ys[p[1]]), p))
         single = set(left) - set(wing)
-        assert len(single) == 1, f"落单数 {len(single)} ≠ 1"
+        assert len(single) == 1, f"single count {len(single)} != 1"
         return {"spine": set(spine), "midline": set(mid),
                 "wing_col": set(wing), "single": single,
                 "mid_y": mid_y,
@@ -342,46 +350,48 @@ class TestSpineWingManualEquivalence(unittest.TestCase):
         self.assertEqual(v4["meta"]["placement"], "spine-wing")
         nodes = v4["nodes"]
         e = self._roles(nodes)
-        # ① 角色归组逐组一致
-        self.assertEqual(e["spine"], s["spine"], "纵柱归组")
-        self.assertEqual(e["midline"], s["midline"], "中线行归组")
-        self.assertEqual(e["wing_col"], s["wing_col"], "右翼列归组")
-        self.assertEqual(e["single"], s["single"], "落单归组")
-        # ② 定量规律（引擎构造约束达标本档）
+        # (1) role grouping identical group by group
+        self.assertEqual(e["spine"], s["spine"], "spine grouping")
+        self.assertEqual(e["midline"], s["midline"], "midline row grouping")
+        self.assertEqual(e["wing_col"], s["wing_col"], "right-wing column grouping")
+        self.assertEqual(e["single"], s["single"], "single grouping")
+        # (2) quantitative regularities (engine construction constraints meet this bar)
         top, bot = e["top"], e["bottom"]
         self.assertLessEqual(abs(nodes[top]["x"] - nodes[bot]["x"]), 2,
-                             "纵柱两端点同列 ≤2px")
+                             "spine endpoints same column <=2px")
         mid_y = e["mid_y"]
         for w in e["midline"]:
-            self.assertLessEqual(abs(nodes[w]["y"] - mid_y), 2, f"中线行 {w}")
+            self.assertLessEqual(abs(nodes[w]["y"] - mid_y), 2, f"midline row {w}")
         up, down = sorted(e["wing_col"], key=lambda i: nodes[i]["y"])
         wx = [nodes[i]["x"] for i in e["wing_col"]]
-        self.assertLessEqual(max(wx) - min(wx), 2, "右翼同列 ≤2px")
-        self.assertLess(nodes[up]["y"], mid_y, "翼上位在中线上方")
-        self.assertGreater(nodes[down]["y"], mid_y, "翼下位在中线下方")
+        self.assertLessEqual(max(wx) - min(wx), 2, "right wing same column <=2px")
+        self.assertLess(nodes[up]["y"], mid_y, "upper wing slot above the midline")
+        self.assertGreater(nodes[down]["y"], mid_y, "lower wing slot below the midline")
         sg = next(iter(e["single"]))
         self.assertLessEqual(abs(nodes[sg]["y"] - nodes[bot]["y"]), 2,
-                             "落单与纵柱底同带 ≤2px")
-        # ③ 相对方位逐节点与样本一致（左/右、上/下）
+                             "single banded with the spine bottom <=2px")
+        # (3) relative sides match the sample node by node (left/right, up/down)
         sx = (nodes[top]["x"] + nodes[bot]["x"]) / 2
         ssx = (sample[s["top"]]["x"] + sample[s["bottom"]]["x"]) / 2
         for w in e["midline"]:
             self.assertEqual(nodes[w]["x"] < sx, sample[w]["x"] < ssx,
-                             f"中线行 {w} 左右侧")
+                             f"midline row {w} left/right side")
         self.assertEqual(nodes[sg]["x"] > sx, sample[sg]["x"] > ssx,
-                         "落单在纵柱右侧")
-        self.assertLess(nodes[sg]["x"], min(wx), "落单在翼列内侧")
+                         "single on the right of the spine")
+        self.assertLess(nodes[sg]["x"], min(wx), "single inside the wing column")
         s_wing = sorted(s["wing_col"], key=lambda i: sample[i]["y"])
         self.assertEqual(up == min(e["wing_col"], key=lambda i: nodes[i]["y"]),
                          s_wing[0] == min(s["wing_col"], key=lambda i: sample[i]["y"]),
-                         "翼上下序与样本一致")
+                         "wing up/down order matches the sample")
 
 
 class TestAnchorBand(unittest.TestCase):
-    """ref-scrubbed 二验返修：交付锚点带内口径（边中点 ±1/4 带、转角=0）。
+    """ref-scrubbed second-review rework: delivered-anchor in-band caliber
+    (edge-midpoint +/-1/4 band, corner hits = 0).
 
-    spine-wing（classic-cld）= 100% 带内硬门；其余 19 图语料锁 v0.7.2
-    基线比例（CI 门 tests/ci_checks.py BASELINE_BAND 同源口径）。
+    spine-wing (classic-cld) = 100% in-band hard gate; the other 19 corpus
+    graphs are locked to v0.7.2 baseline ratios (same-source caliber as the
+    CI gate tests/ci_checks.py BASELINE_BAND).
     """
 
     def _band_stats(self, v4):
@@ -408,26 +418,26 @@ class TestAnchorBand(unittest.TestCase):
         return total, band, corner, worst
 
     def test_spine_wing_anchors_all_in_band(self):
-        # jacky 二验打回项：classic-cld 交付锚点须全部带内、转角命中 0
-        # （症状解虚线出发 (602,174) 距角 3px 的带外违规已由互环对带内
-        # 局部重定线修复——直线 + 右缘 poly 绕行，全部边中点锚）
+        # jacky's second-review rejection: classic-cld delivered anchors must all be in-band with zero corner hits
+        # (the symptom-fix dashed departure (602,174) 3px-from-corner out-of-band violation was fixed by locally
+        # rerouting the inter-loop pair in-band -- straight line + right-edge poly detour, all edge-midpoint anchors)
         v4 = layout(load("classic-cld-growth-and-burden"))
         self.assertEqual(v4["meta"]["placement"], "spine-wing")
         total, band, corner, worst = self._band_stats(v4)
-        self.assertEqual(corner, 0, "转角命中数须=0")
-        self.assertEqual(band, total, f"spine-wing 锚点须 100% 带内 {worst}")
+        self.assertEqual(corner, 0, "corner hits must = 0")
+        self.assertEqual(band, total, f"spine-wing anchors must be 100% in-band {worst}")
 
     def test_corpus_baseline_band_ratios_hold(self):
-        # 其余引擎锁 v0.7.2 基线（零漂移约束下带外遗留不修、防回退）
+        # remaining engines locked to the v0.7.2 baseline (zero-drift constraint: leftover out-of-band stays unfixed, prevents regression)
         baseline = {"brand-flywheel": 14 / 16, "fishing-collapse": 15 / 18,
                     "eroding-goals": 8 / 12, "shifting-the-burden": 10 / 16,
                     "wage-price-spiral": 8 / 12}
         for name, floor in baseline.items():
             v4 = layout(load(name))
             total, band, corner, _ = self._band_stats(v4)
-            self.assertEqual(corner, 0, f"{name} 转角命中数须=0")
+            self.assertEqual(corner, 0, f"{name} corner hits must = 0")
             self.assertGreaterEqual(band / total, floor - 1e-9,
-                                    f"{name} 带内比例跌破 v0.7.2 基线")
+                                    f"{name} in-band ratio fell below the v0.7.2 baseline")
 
 
 class TestDeterminism(unittest.TestCase):

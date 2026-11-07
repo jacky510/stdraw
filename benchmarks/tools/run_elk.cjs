@@ -1,7 +1,7 @@
-// ELK 基线 runner：elkjs layered × 单文件 → raw JSON。
-// 输入：<graph>.elk.json（{children:[{id,width,height}], edges:[{id,sources,targets}]}）
-// 输出：<graph>.elk.json.out（评测 JSON 追加写由 python 侧完成；本进程只产原生布局）
-// 用法：node run_elk.mjs <in.json> <out.layout.json>
+// ELK baseline runner: elkjs layered x single file -> raw JSON.
+// Input: <graph>.elk.json ({children:[{id,width,height}], edges:[{id,sources,targets}]})
+// Output: <graph>.elk.json.out (eval JSON appending is done on the python side; this process only produces native layouts)
+// Usage: node run_elk.mjs <in.json> <out.layout.json>
 const ELK = require(process.env.ELKJS_PATH || "elkjs/lib/elk.bundled.js");
 const fs = require("fs");
 

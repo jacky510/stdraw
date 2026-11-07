@@ -1,50 +1,50 @@
 # -*- coding: utf-8 -*-
-"""精确交叉数层（WS2）：OIL 路由 ILP + 平面化 oracle 裁决 + B&B 夹逼。
+"""Exact crossing-number layer (WS2): OIL routing ILP + planarization-oracle adjudication + B&B squeeze.
 
-数学框架（完整证明见 docs/crossing-exact.md）：
+Mathematical framework (full proofs in docs/crossing-exact.md):
 
-1. 安全缩减（每条都有 cr 保持证明）：
-   - 自环删除（自环局部画出，0 交叉）；连通分量分解（cr 可加）；
-   - 度 ≤1 顶点迭代删除（叶子放进邻居关联面 0 交叉重连）；
-   - 桥分解（cr 对 2-边-连通块可加）。
+1. Safe reductions (each carries a cr-preservation proof):
+      - Self-loop removal (self-loops drawn locally, 0 crossings); connected-component decomposition (cr is additive);
+      - Iterative deletion of degree-<=1 vertices (the leaf is reattached inside a face incident to its neighbor with 0 crossings);
+      - Bridge decomposition (cr is additive over 2-edge-connected blocks).
 
-2. 上界（UB）：贪心极大可平面子图 U + 对 (U, Π) 求同时最优插入。
-   插入解经 oracle 验证后是真实画法 → UB 恒真。
+2. Upper bound (UB): greedy maximal planar subgraph U + simultaneous-optimal insertion into (U, Pi).
+      An insertion solution verified by the oracle is a real drawing -> the UB is always true.
 
-3. 分解定理（docs §2）：cr(G) = min over 可平面子图 U、U 的全部平面嵌入 Π、
-   E\\U 同时插入 Π 的最少交叉数。
-   B&B 枚举（docs §3）：候选 F=E\\U 满足 |F| ≤ 2·UB−2 必覆盖最优；
-   每候选：G−F 可平面 + 2-连通 + 全嵌入（旋转系枚举 + 欧拉面数判据）+
-   「存在 cost ≤ UB−1 的**可实现**解」判定。覆盖完备 → cr=UB 是证明。
+3. Decomposition theorem (docs section 2): cr(G) = min over planar subgraphs U, all planar embeddings Pi of U,
+      of the minimum crossings when inserting E\\U into Pi simultaneously.
+      B&B enumeration (docs section 3): candidates F = E\\U with |F| <= 2*UB-2 provably cover the optimum;
+      per candidate: G-F planar + 2-connected + all embeddings (rotation-system enumeration + Euler face-count criterion) plus
+      the decision "a **realizable** solution with cost <= UB-1 exists". Complete coverage -> cr=UB is proven.
 
-4. 插入子问题（对固定 (U, Π)）：**CP-SAT 提议 + oracle 裁决**。
-   - ILP（超集建模，宽松无妨）：每条 F 边 = 三角化嵌入对偶图上的
-     source→sink 单位流路径（每侧 ≤1 次，good drawing 口径；相邻边禁交叉）；
-     c_{e,f} = F-F 互交叉指示（≤1；须共享三角形）。
-   - 裁决：由 (路径, c) 构造**平面化图 H**（U + 弧路径 + 交叉点合一顶点），
-     H 平面 ⇔ 该解可实现（docs §4 双向证明）。H 平面 → 解真实、代价即交叉数；
-     不平面 → no-good 子句精确剔除该解，重解。
-   - 正确性不依赖任何手工拓扑约束集：ILP 是可实现集的超集，oracle 是真值；
-     循环终止于「最优可实现解」或「该代价下无可实现解」。两者皆精确。
-   - 确定性：num_workers=1 + 固定 seed + no-good 循环计数上界（超限如实降级）。
+4. Insertion subproblem (for fixed (U, Pi)): **CP-SAT proposal + oracle adjudication**.
+      - ILP (superset modeling, slack is harmless): each F edge = a unit-flow
+          source->sink path on the dual graph of the triangulated embedding (each side at most once, good-drawing accounting; adjacent edges forbidden to cross);
+          c_{e,f} = F-F mutual-crossing indicator (<= 1; must share a triangle).
+      - Adjudication: build the **planarized graph H** from (paths, c) (U + arc paths + crossing points merged into single vertices),
+          H planar <=> the solution is realizable (two-direction proof in docs section 4). H planar -> the solution is real, its cost is the crossing count;
+          not planar -> a no-good clause eliminates exactly that solution; re-solve.
+      - Correctness does not depend on any hand-crafted topology constraint set: the ILP is a superset of the realizable set, the oracle is ground truth;
+          the loop terminates at the "optimal realizable solution" or "no realizable solution at that cost". Both are exact.
+      - Determinism: num_workers=1 + fixed seed + an upper bound on the no-good loop count (honest degradation when exceeded).
 
-5. 下界（LB，全局有效恒 ≤ cr）：Kuratowski 反例贪心抽取（边不相交）+
-   z-ILP（每个 Kuratowski 子图至少一条边被标）；cr ≥ ⌈被标边数/2⌉。
-   LB == UB 时无论覆盖是否完备都可证最优。
+5. Lower bound (LB, globally valid, always <= cr): greedy extraction of Kuratowski counterexamples (edge-disjoint) +
+      z-ILP (each Kuratowski subgraph has at least one marked edge); cr >= ceil(marked edges / 2).
+      When LB == UB optimality is provable regardless of coverage completeness.
 
-6. 无 ortools / 核规模 >30 / 枚举超 cap → 构造降级，proven_optimal=false，
-   gap 如实标注。
+6. No ortools / core size > 30 / enumeration over cap -> constructive degradation, proven_optimal=false,
+      gap labeled honestly.
 """
 import itertools
 import math
 from collections import defaultdict
 
 
-# ────────────────────────── 图的简单无向视图 ──────────────────────────
+# ────────────────────────── Simple undirected view of the graph ──────────────────────────
 
 
 def undirected_edges(graph):
-    """(a,b) 无向边列表：去自环、保留平行边（good drawing 下平行边不互交）。"""
+    """(a,b) undirected edge list: self-loops removed, parallel edges kept (parallel edges do not cross each other in a good drawing)."""
     edges, selfloops = [], []
     for e in graph.edges:
         if e.a == e.b:
@@ -58,7 +58,7 @@ def _adjacent(e1, e2):
     return bool({e1[0], e1[1]} & {e2[0], e2[1]})
 
 
-# ────────────────────────── 安全缩减（cr 保持） ──────────────────────────
+# ────────────────────────── Safe reductions (cr-preserving) ──────────────────────────
 
 
 def _iter_degree_prune(nodes, edges):
@@ -101,7 +101,7 @@ def _components(nodes, edges):
 
 
 def _bridges_split(nodes, edges):
-    """Tarjan 桥 → 2-边-连通块列表 [(nodes, edges)]（单边桥块 cr=0 已弃）。"""
+    """Tarjan bridges -> list of 2-edge-connected blocks [(nodes, edges)] (single-edge bridge blocks with cr=0 are discarded)."""
     adj = defaultdict(list)
     for i, (a, b) in enumerate(edges):
         adj[a].append((b, i))
@@ -165,7 +165,7 @@ def _bridges_split(nodes, edges):
 
 
 def safe_reduce(graph):
-    """安全缩减主入口 → (cores, info)。cr(图) = Σ cr(cores[i])。"""
+    """Safe-reduction main entry -> (cores, info). cr(graph) = sum of cr(cores[i])."""
     edges, selfloops = undirected_edges(graph)
     nodes = graph.node_ids()
     cores = []
@@ -181,13 +181,13 @@ def safe_reduce(graph):
     return cores, {"selfloops_removed": len(selfloops), "cores": len(cores)}
 
 
-# ────────────────────────── 嵌入工具 ──────────────────────────
+# ────────────────────────── Embedding utilities ──────────────────────────
 
 
 def _faces_from_rotation(rotation, nodes, edges):
-    """旋转系 → 面列表 + 可平面判据（面数 == m − n + 2，连通图欧拉判据）。
+    """Rotation system -> face list + planarity criterion (face count == m - n + 2, Euler criterion for connected graphs).
 
-    dart (u→v) 的后继 = (v→x)，x = rotation[v] 中 u 的循环后继。"""
+    The successor of dart (u->v) is (v->x), where x is the cyclic successor of u in rotation[v]."""
     nxt = {}
     for v in nodes:
         rot = list(rotation[v])
@@ -210,11 +210,11 @@ def _faces_from_rotation(rotation, nodes, edges):
 
 
 def _enum_rotations(nodes, edges, cap=20000):
-    """枚举连通图全部平面嵌入（旋转系）。
+    """Enumerate all planar embeddings (rotation systems) of a connected graph.
 
-    每顶点固定首元素（折叠旋转等价）；首顶点再要求第二元素 < 末元素
-    （折叠全局镜像——镜像插入代价相同）；叶上欧拉面数判据验证可平面。
-    返回 (embeddings, capped)。"""
+    The first element at each vertex is fixed (folding rotations are equivalent); the first vertex additionally requires second element < last element
+    (folding the global mirror -- the mirror image has the same insertion cost); at the leaves the Euler face-count criterion verifies planarity.
+    Returns (embeddings, capped)."""
     deg, neigh = defaultdict(int), defaultdict(set)
     for a, b in edges:
         deg[a] += 1
@@ -258,15 +258,15 @@ def _enum_rotations(nodes, edges, cap=20000):
     return embeddings, capped[0]
 
 
-# ────────────────────────── 三角化结构 ──────────────────────────
+# ────────────────────────── Triangulation structures ──────────────────────────
 
 
 def _split_face(face):
-    """含重复顶点的面游走 → 简单圈列表（割点口袋分解）。
+    """Face walk with repeated vertices -> list of simple cycles (cut-vertex pocket decomposition).
 
-    桥/割点使同一几何面经割点多次：游走 w 在重复顶点 v 处切开，
-    内圈 w[i:j] 与外圈 w[:i]+w[j:] 均为合法闭游走（相邻对都是原游走
-    的 dart），递归至无重复顶点。返回的每个圈首顶点不再重复出现。"""
+    Bridges/cut vertices make the same geometric face pass through a cut vertex multiple times: walk w is split at repeated vertex v;
+    the inner cycle w[i:j] and the outer cycle w[:i]+w[j:] are both valid closed walks (adjacent pairs are darts of the original
+    walk), recursing until no repeated vertices remain. In each returned cycle the first vertex never reappears."""
     walks, out = [face], []
     while walks:
         w = walks.pop()
@@ -281,20 +281,20 @@ def _split_face(face):
             out.append(w)
             continue
         i, j = cut
-        walks.append(w[i:j])            # 内圈（v…返回 v 前，v 仅在首位）
+        walks.append(w[i:j])            # inner cycle (v ... up to just before returning to v; v only at the front)
         if i > 0 or j < len(w):
-            walks.append(w[:i] + w[j:])  # 外圈（去掉内圈段，闭合同游走）
+            walks.append(w[:i] + w[j:])  # outer cycle (inner segment removed; still a closed walk)
     return out
 
 
 class Triangulation:
-    """可平面嵌入的三角化：三角形列表 + 侧（真边侧 / 虚弦侧）。
+    """Triangulation of a planar embedding: triangle list + sides (real-edge sides / virtual-chord sides).
 
     sides[i] = {kind: 'edge'|'chord', nodes: (x, y), payload, t1, t2}
-      'edge':  真边侧——穿行计 1 交叉；payload = 该边在全图边表的下标
-      'chord': 面内虚弦——穿行免费；payload = (face_id, p, q)
-    tri_sides[t] = 三角形 t 的 3 个侧 id；node_tris[v] = 含顶点 v 的三角形。
-    含重复顶点的面（桥/割点口袋）先经 _split_face 拆成简单圈。
+        'edge':  real-edge side -- crossing it counts 1 crossing; payload = index of that edge in the full-graph edge list
+        'chord': virtual chord inside a face -- crossing it is free; payload = (face_id, p, q)
+    tri_sides[t] = the 3 side ids of triangle t; node_tris[v] = triangles containing vertex v.
+    Faces with repeated vertices (bridge/cut-vertex pockets) are first split into simple cycles by _split_face.
     """
 
     def __init__(self, faces, global_index):
@@ -304,7 +304,7 @@ class Triangulation:
         self.tri_sides = defaultdict(list)
         edge_side, chord_sides = {}, {}
         simple_faces = []
-        leaf_pairs = []                 # 2-圈（叶口袋）：[u, v]，叶挂邻居
+        leaf_pairs = []                 # 2-cycles (leaf pockets): [u, v], leaf hanging off its neighbor
         for face in faces:
             for w in _split_face(face):
                 if len(w) < 3:
@@ -332,7 +332,7 @@ class Triangulation:
 
         for fi, face in enumerate(simple_faces):
             if len(face) < 3:
-                continue                     # 二角面（平行边残片）：无三角形
+                continue                     # bigon face (parallel-edge remnant): no triangle
             k = len(face)
             v0 = face[0]
             tris_f = []
@@ -361,11 +361,11 @@ class Triangulation:
         for sid, ts in use.items():
             ts = sorted(set(ts))
             if len(ts) != 2:
-                raise AssertionError(f"侧 {sid} 相邻三角形数 {len(ts)} != 2")
+                raise AssertionError(f"side {sid} has {len(ts)} adjacent triangles != 2")
             self.sides[sid]["t1"], self.sides[sid]["t2"] = ts
-        # 叶顶点（度 1：2-圈口袋被跳过，无三角形）→ 继承邻居的三角形集合。
-        # 语义 = cr 保持定理的「叶子放进邻居关联面 0 交叉重连」：叶位置可重选，
-        # 弧从叶出发等价于从其邻居关联的任意面出发（0 交叉接入）。
+        # Leaf vertices (degree 1: 2-cycle pockets are skipped, no triangles) -> inherit the neighbor's triangle set.
+        # Semantics = the cr-preservation theorem's "reattach the leaf inside a face incident to its neighbor with 0 crossings": the leaf position can be re-chosen,
+        # an arc leaving the leaf is equivalent to leaving any face incident to its neighbor (0-crossing hookup).
         for pair in leaf_pairs:
             u, v = pair
             tu, tv = self.node_tris.get(u), self.node_tris.get(v)
@@ -379,11 +379,11 @@ class Triangulation:
                 self.node_tris[v] = list(merged)
 
 
-# ────────────────────────── OIL 路由 ILP + oracle 裁决 ──────────────────────────
+# ────────────────────────── OIL routing ILP + oracle adjudication ──────────────────────────
 
 
 def _build_model(tri, nodes, edges, F, cp_model):
-    """超集 ILP：路由流 + 互交叉指示（宽松——正确性由 oracle 保证）。"""
+    """Superset ILP: routing flow + mutual-crossing indicators (slack -- correctness is guaranteed by the oracle)."""
     m = cp_model.CpModel()
     nT = len(tri.triangles)
     nS = len(tri.sides)
@@ -409,7 +409,7 @@ def _build_model(tri, nodes, edges, F, cp_model):
             g = side_edge[sid]
             uv = m.NewBoolVar(f"u_{k}_{sid}")
             if g is not None and _adjacent(F[k], edges[g]):
-                m.Add(uv == 0)          # 相邻边禁交叉（good drawing 可扰动消除）
+                m.Add(uv == 0)          # adjacent edges forbidden to cross (removable by perturbation in a good drawing)
             u[(k, sid)] = uv
             t1, t2 = side_tris[sid]
             f0 = m.NewBoolVar(f"f_{k}_{sid}_a")
@@ -463,8 +463,8 @@ def _build_model(tri, nodes, edges, F, cp_model):
 
 
 def _extract_solution(tri, edges, F, F_idx, parts, solver):
-    """从解值提取 (事件序列, mutual)。事件序列[k] 按弧上次序：
-    ('x', 边 idx) = 穿该真边；('m', pair_key) = 与配对弧互交叉。"""
+    """Extract (event sequences, mutual) from solution values. Event sequence[k] follows arc order:
+    ('x', edge idx) = crossing that real edge; ('m', pair_key) = mutual crossing with the paired arc."""
     u, sel_src, sel_end = parts["u"], parts["sel_src"], parts["sel_end"]
     fdir, cvar, zvars = parts["fdir"], parts["cvar"], parts["zvars"]
     side_real, side_edge, side_tris = (parts["side_real"], parts["side_edge"],
@@ -512,15 +512,15 @@ def _extract_solution(tri, edges, F, F_idx, parts, solver):
 
 
 def _planarized_graph(nodes, edges, U_idx, F, F_idx, events, mutual):
-    """(路径, 互交叉) → 平面化抽象图 H。H 平面 ⇔ 解可实现（docs §4）。
+    """(paths, mutual crossings) -> planarized abstract graph H. H planar <=> the solution is realizable (docs section 4).
 
-    返回 None 表示路线断裂（直接判不可实现）。"""
+    Returns None if a route is broken (judged unrealizable directly)."""
     import networkx as nx
     H = nx.Graph()
     H.add_nodes_from(nodes)
     for i in U_idx:
         H.add_edge(*edges[i])
-    split = {}          # 边 idx → 当前细分后 (ga, gb)，同边可被多条弧穿
+    split = {}          # edge idx -> (ga, gb) after the current subdivision; the same edge can be crossed by multiple arcs
     xc = 0
     arc_vertex = {}
     for k, (a, b) in enumerate(F):
@@ -535,7 +535,7 @@ def _planarized_graph(nodes, edges, U_idx, F, F_idx, events, mutual):
                 H.remove_edge(ga, gb)
                 H.add_edge(ga, x)
                 H.add_edge(x, gb)
-                split[g] = (ga, x)      # 交叉点在弧路径序下依次排列
+                split[g] = (ga, x)      # crossing points are ordered along the arc path order
                 H.add_edge(prev, x)
                 prev = x
             elif item[0] == "m":
@@ -556,11 +556,11 @@ def _planarized_graph(nodes, edges, U_idx, F, F_idx, events, mutual):
 
 def oil_insertion(nodes, edges, U_idx, F_idx, rotation,
                   ub=None, minimize=True, lex=True, max_nogood=400):
-    """固定 (U, Π) 的同时最优插入（CP-SAT 提议 + 平面化 oracle 裁决）。
+    """Simultaneous-optimal insertion for fixed (U, Pi) (CP-SAT proposal + planarization-oracle adjudication).
 
-    minimize=True：返回最优可实现解（ok/cost/routes/events/mutual）；
-    minimize=False：判定「存在 cost ≤ ub 的可实现解」（ok/feasible）。
-    why='nogood-cap' 表示裁决循环超限未决——调用方应如实降级覆盖标记。
+    minimize=True: return the optimal realizable solution (ok/cost/routes/events/mutual);
+    minimize=False: decide "a realizable solution with cost <= ub exists" (ok/feasible).
+    why='nogood-cap' means the adjudication loop hit its cap undecided -- the caller should honestly degrade the coverage flag.
     """
     U_key = {}
     for i in U_idx:
@@ -576,7 +576,7 @@ def oil_insertion(nodes, edges, U_idx, F_idx, rotation,
     try:
         tri = Triangulation(faces, U_key)
     except AssertionError as exc:
-        # 嵌入结构异常（面游走非简单圈等）——如实降级，不崩
+        # embedding structure anomaly (non-simple face walk, etc.) -- degrade honestly instead of crashing
         return {"ok": False, "why": f"triangulation-failed: {exc}"}
 
     try:
@@ -600,7 +600,7 @@ def oil_insertion(nodes, edges, U_idx, F_idx, rotation,
         m.Add(total <= ub)
 
     solver = cp_model.CpSolver()
-    solver.parameters.num_workers = 1          # 确定性铁律
+    solver.parameters.num_workers = 1          # determinism hard rule
     solver.parameters.random_seed = 42
     for _round in range(max_nogood + 1):
         st = solver.Solve(m)
@@ -627,13 +627,13 @@ def oil_insertion(nodes, edges, U_idx, F_idx, rotation,
             return {"ok": True, "cost": cost_x, "routes": routes,
                     "events": {F_idx[k]: events[k] for k in events},
                     "mutual": mutual}
-        # 不可实现 → no-good 精确剔除当前 (路由, 互交叉) 指派
+        # not realizable -> a no-good clause eliminates exactly the current (routing, mutual-crossing) assignment
         lits = [v.Not() if solver.Value(v) else v for v in parts["scope"]]
         m.AddBoolOr(lits)
     return {"ok": False, "why": "nogood-cap"}
 
 
-# ────────────────────────── 启发式 / 下界 ──────────────────────────
+# ────────────────────────── Heuristics / lower bound ──────────────────────────
 
 
 def _heuristic_planarization(nodes, edges):
@@ -665,10 +665,10 @@ def _embed_U(nodes, edges, U_idx):
 
 
 def _kuratowski_lb(nodes, edges):
-    """全局下界（恒 ≤ cr）：Kuratowski 反例贪心抽取（边不相交）+ z-ILP。
+    """Global lower bound (always <= cr): greedy extraction of Kuratowski counterexamples (edge-disjoint) + z-ILP.
 
-    cr ≥ ⌈min 被标边数 / 2⌉：任何画法中每个 Kuratowski 子图内部必有交叉；
-    min 被标边数 ≤ 被交叉边数 ≤ 2·交叉数。"""
+    cr >= ceil(min marked edges / 2): in any drawing every Kuratowski subgraph must contain a crossing internally;
+    min marked edges <= crossed edges <= 2 * crossing count."""
     import networkx as nx
     g = nx.Graph()
     g.add_nodes_from(nodes)
@@ -706,16 +706,16 @@ def _kuratowski_lb(nodes, edges):
     return 0, ks
 
 
-# ────────────────────────── 主入口 ──────────────────────────
+# ────────────────────────── Main entry ──────────────────────────
 
 
 def crossing_exact(graph, max_nodes_exact=30, subset_cap=4000,
                    rotation_cap=200000, max_nogood=400):
-    """CLD Graph → 交叉数证书块。
+    """CLD Graph -> crossing-number certificate block.
 
-    crossing_number=UB（oracle 验证的真实画法计数，恒真）；
-    proven_optimal 相对 docs/crossing-exact.md 模型类；
-    lb/gap 如实；coverage: full/partial/planar/trivial。"""
+    crossing_number = UB (count from an oracle-verified real drawing, always true);
+    proven_optimal is relative to the model class in docs/crossing-exact.md;
+    lb/gap are honest; coverage: full/partial/planar/trivial."""
     cores, red = safe_reduce(graph)
     total_ub, total_lb = 0, 0
     proven, coverage = True, "full"
@@ -727,7 +727,7 @@ def crossing_exact(graph, max_nodes_exact=30, subset_cap=4000,
             else:
                 r = _core_exact(cnodes, cedges, subset_cap, rotation_cap,
                                 max_nogood)
-        except Exception as exc:      # noqa: BLE001 —— 未预期路径兜底，如实降级
+        except Exception as exc:      # noqa: BLE001 -- unexpected-path fallback, honest degradation
             r = {"ub": len(cedges), "lb": 0, "proven": False,
                  "coverage": "partial",
                  "method": (f"core failed ({type(exc).__name__}: {exc}) — "
@@ -765,18 +765,18 @@ def _has_solver():
 
 
 def _greedy_insert_ub(nodes, edges, U_idx, F_idx, rotation):
-    """oil 插入失败时的诚实 UB：F 逐条增量插入当前平面化画法。
+    """Honest UB when oil insertion fails: insert F edges one by one into the current planarized drawing.
 
-    每步：当前平面图 P（初始 = U 嵌入，含此前 F 边的细分交叉点）→ 三角化
-    （含桥/割点口袋拆分）→ 对偶图 0/1-Dijkstra 找含两端点三角形间的最少
-    交叉路径 → 单边面路径插入可实现（经典定理）→ 细分更新 P 重嵌。
-    全部插完后用平面化 oracle（定理 C 同款 H 构造）终验一次；任何一步
-    失败返回 (None, None) 交上层兜底。非最优，如实 proven=False。"""
+    Each step: current planar graph P (initially = the U embedding, including subdivision crossing points of earlier F edges) -> triangulate
+    (with bridge/cut-vertex pocket splitting) -> 0/1-Dijkstra on the dual graph to find the minimum-crossing path between triangles containing the two
+    endpoints -> single-edge face-path insertion is realizable (classical theorem) -> subdivide, update P and re-embed.
+    After all insertions, the planarization oracle (the same H construction as Theorem C) verifies once; any step that
+    fails returns (None, None) for the upper-layer fallback. Not optimal, honestly proven=False."""
     import heapq
     import networkx as nx
 
     def _route_and_insert(P, edge_of, a, b, xc_base):
-        """P 的三角化对偶上插 (a,b)：返回 (交叉的原始边 id 列表, 新 P, 新 edge_of)"""
+        """Insert (a,b) on the triangulated dual of P: returns (list of crossed original edge ids, new P, new edge_of)"""
         planar, emb = nx.check_planarity(P)
         if not planar:
             return None, None, None, xc_base
@@ -813,8 +813,8 @@ def _greedy_insert_ub(nodes, edges, U_idx, F_idx, rotation):
                     parent[nt] = (t, sid)
                     heapq.heappush(pq, (w, nt))
         if end_t is None:
-            return None, None, None, xc_base     # 对偶不连通（P 分离）——交上层兜底
-        crossed = []                    # 本路径穿过的 P 边（按路径序）
+            return None, None, None, xc_base     # dual disconnected (P disconnected) -- hand off to the upper-layer fallback
+        crossed = []                    # P edges crossed by this path (in path order)
         t = end_t
         while parent[t] is not None and not (t in starts and dist[t] == 0):
             pt, sid = parent[t]
@@ -822,8 +822,8 @@ def _greedy_insert_ub(nodes, edges, U_idx, F_idx, rotation):
                 crossed.append(tri.sides[sid]["payload"])
             t = pt
         crossed.reverse()
-        # 细分更新 P：交叉点按路径序插入被穿边（同 _planarized_graph 语义）。
-        # 被穿边的两个细分段仍属原边（映射继承）；F 路径段标记 ("F", k)。
+        # Subdivide and update P: crossing points are inserted into the crossed edges in path order (same semantics as _planarized_graph).
+        # The two subdivision segments of a crossed edge still belong to the original edge (mapping inherited); F path segments are tagged ("F", k).
         split = {}
         xc_tag = [xc_base]
         prev = a
@@ -854,7 +854,7 @@ def _greedy_insert_ub(nodes, edges, U_idx, F_idx, rotation):
     if not ok:
         return None, None
     try:
-        Triangulation(faces, U_key)     # 初始嵌入结构自检
+        Triangulation(faces, U_key)     # self-check of the initial embedding structure
     except AssertionError:
         return None, None
     P = nx.Graph()
@@ -870,7 +870,7 @@ def _greedy_insert_ub(nodes, edges, U_idx, F_idx, rotation):
             return None, None
         routes[F_idx[k]] = {"a": a, "b": b, "crossings": orig}
         total += len(orig)
-    if not nx.is_planar(P):             # 终验：P 即平面化图 H（定理 C 语义）
+    if not nx.is_planar(P):             # final check: P is the planarized graph H (Theorem C semantics)
         return None, None
     witness = {"F": list(F_idx), "routes": routes, "mutual": []}
     return total, witness
@@ -889,7 +889,7 @@ def _core_heuristic(nodes, edges):
     if ub is None and rot is not None:
         ub, witness = _greedy_insert_ub(nodes, edges, U, F, rot)
     if ub is None:
-        ub = len(F)             # 嵌入也无效的最后兜底（如实 partial 未证）
+        ub = len(F)             # last fallback when even the embedding is invalid (honestly partial, unproven)
     lb, _ = _kuratowski_lb(nodes, edges)
     return {"ub": ub, "lb": lb, "proven": False, "coverage": "partial",
             "method": "heuristic planarization (optimality not proven)",
@@ -897,7 +897,7 @@ def _core_heuristic(nodes, edges):
 
 
 def _core_exact(nodes, edges, subset_cap, rotation_cap, max_nogood):
-    """单核精确层：UB 启发式 → B&B 全枚举夹逼。"""
+    """Single-core exact layer: UB heuristic -> exhaustive B&B squeeze."""
     import networkx as nx
 
     m = len(edges)
@@ -923,11 +923,11 @@ def _core_exact(nodes, edges, subset_cap, rotation_cap, max_nogood):
             best_ub = r["cost"]
             witness = {"F": F, "routes": r["routes"], "mutual": r["mutual"]}
     if best_ub is None and rot is not None:
-        # oil 未收敛（nogood-cap 等）：贪心逐边插入的诚实 UB（带 witness）。
-        # 注意 len(F) 不是恒真上界（K7：F=6 < cr=9），不可作参考值。
+        # oil did not converge (nogood-cap etc.): honest UB from greedy edge-by-edge insertion (with witness).
+        # Note len(F) is not a universally true upper bound (K7: F=6 < cr=9), so it must not serve as a reference value.
         best_ub, witness = _greedy_insert_ub(nodes, edges, U, F, rot)
     if best_ub is None:
-        best_ub = len(F)        # 嵌入也无效的最后兜底（如实 partial 未证）
+        best_ub = len(F)        # last fallback when even the embedding is invalid (honestly partial, unproven)
     lb, _ks = _kuratowski_lb(nodes, edges)
     if lb >= best_ub:
         return {"ub": best_ub, "lb": lb, "proven": True, "coverage": "full",
@@ -940,7 +940,7 @@ def _core_exact(nodes, edges, subset_cap, rotation_cap, max_nogood):
     kmax = min(m, 2 * best_ub - 2)
     for k in range(1, kmax + 1):
         if k > 2 * best_ub - 2:
-            break              # UB 改善后枚举上界动态收缩（仍覆盖最优，docs §3）
+            break              # enumeration bound shrinks dynamically as the UB improves (still covers the optimum, docs section 3)
         if (k + 1) // 2 >= best_ub:
             continue
         for Fc in itertools.combinations(range(m), k):
@@ -966,8 +966,8 @@ def _core_exact(nodes, edges, subset_cap, rotation_cap, max_nogood):
                     coverage_full = False
                     continue
                 if not r.get("ok"):
-                    # why != infeasible/nogood-cap：该嵌入未完整裁决（三角化
-                    # 失败/求解器 unknown 等）——覆盖不完备，如实标 partial
+                    # why != infeasible/nogood-cap: this embedding was not fully adjudicated (triangulation
+                    # failure / solver unknown, etc.) -- coverage incomplete, honestly mark partial
                     if r.get("why") != "infeasible":
                         coverage_full = False
                     continue

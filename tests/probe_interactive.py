@@ -1,23 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""交互层回归探针（ref-scrubbed 拖拽闭环；ref-scrubbed 视口修复；ref-scrubbed
-重布线 + 折点把手）：
+"""Interactive-layer regression probe (ref-scrubbed drag closed loop;
+ref-scrubbed viewport fix; ref-scrubbed rerouting + bend handles):
 
-  拖动节点 → 顶栏实时指标变化 → 边/箭头/极性标记跟随 → 松手全刷新
-  → 「导出布局」真实下载 JSON → 「重置」恢复初始布局 → 全程 0 页面错误；
-  ref-scrubbed：v0.5.0 环形排布后 svg 渲染高可达 ~1140px，1000px 视口装不下，
-  节点屏幕坐标落在视口外 → pointer 事件落空（旧探针 9/12 FAIL 根因）。
-  修复=1600×1500 视口 + scroll_into_view_if_needed，坐标全部实时量取；
-  ref-scrubbed：
-  - vg 折线夹具（第三节点压边 → --from-layout 产出 vg 折线）：把手渲染、
-    拖端点节点时折线逐帧与 Python 独立复算的预览布线对拍（证明重算而非
-    钉死）、拖障碍节点时全部顶点移动；
-  - 把手拖动 → 用户锚定 → 导出带 waypoints → CLI --from-layout 复算
-    （kind=waypoints + via 回读一致 + 恒等锚定 geometry fail=0）；
-  - 弧线图拖拽：贝塞尔全顶点跟随。
+  drag a node -> top-bar live metrics change -> edges/arrows/polarity marks
+  follow -> full refresh on release -> "export layout" really downloads JSON
+  -> "reset" restores the initial layout -> zero page errors throughout;
+  ref-scrubbed: after v0.5.0 ring placement the rendered svg height can reach
+  ~1140px, which a 1000px viewport cannot hold, so node screen coordinates
+  fall outside the viewport -> pointer events miss (root cause of the old
+  probe's 9/12 FAIL). Fix = 1600x1500 viewport +
+  scroll_into_view_if_needed, all coordinates measured live;
+  ref-scrubbed:
+  - vg polyline fixture (third node pressing an edge -> --from-layout yields
+    a vg polyline): handle rendering; while dragging an endpoint node the
+    polyline cross-checks frame by frame against the preview routing
+    independently recomputed in Python (proving recomputation, not pinning);
+    while dragging the obstacle node all vertices move;
+  - handle drag -> user pinning -> export carries waypoints -> CLI
+    --from-layout recompute (kind=waypoints + via read back identical +
+    identical-pinning geometry fail=0);
+  - arc-graph drag: all Bezier vertices follow.
 
-playwright 不可用时 SKIP（exit 2，同 rendercheck 口径）；可用时 exit 0/1。
-用法：python tests/probe_interactive.py [demo-2d.html 路径（缺省自建）]
+SKIP (exit 2, same caliber as rendercheck) when playwright is unavailable;
+otherwise exit 0/1. Usage: python tests/probe_interactive.py
+[demo-2d.html path (built by default)]
 """
 import json
 import math
@@ -30,7 +37,7 @@ import tempfile
 try:
     from playwright.sync_api import sync_playwright
 except Exception:
-    print("SKIP  probe_interactive: playwright 不可用（可选层）")
+    print("SKIP  probe_interactive: playwright unavailable (optional layer)")
     sys.exit(2)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,11 +46,14 @@ PY = sys.executable
 
 
 def _pin_local_stdraw():
-    """ref-scrubbed 本树自证（同 probe_drag_follow）：脚本模式 sys.path[0]=tests/ 时
-    in-process import 命中 site-packages editable 安装（指向共享主树），渲染用本树、
-    对拍用主树——两树不同步时对拍失真。剥离 editable 钩子，强制从本树加载。"""
+    """ref-scrubbed same-tree self-check (same as probe_drag_follow): when running
+    in script mode with sys.path[0]=tests/, the in-process import hits the
+    site-packages editable install (pointing at the shared main tree), so
+    rendering uses this tree while the cross-check uses the main tree -- out
+    of sync, the cross-check distorts. Strip the editable hooks and force
+    loading from this tree."""
     if not os.path.isfile(os.path.join(ROOT, "stdraw", "__init__.py")):
-        print("SKIP  probe_interactive: 未找到本树 stdraw 包: %s" % ROOT)
+        print("SKIP  probe_interactive: stdraw package not found in this tree: %s" % ROOT)
         sys.exit(2)
     for f in [m for m in sys.meta_path
               if "__editable__" in str(getattr(m, "__module__", ""))]:
@@ -55,7 +65,7 @@ def _pin_local_stdraw():
     import stdraw
     if os.path.realpath(os.path.dirname(stdraw.__file__)) != \
             os.path.realpath(os.path.join(ROOT, "stdraw")):
-        print("SKIP  probe_interactive: stdraw 未从本树加载: %s"
+        print("SKIP  probe_interactive: stdraw not loaded from this tree: %s"
               % stdraw.__file__)
         sys.exit(2)
 
@@ -81,9 +91,9 @@ def load(p):
         return json.load(f)
 
 
-# ── ref-scrubbed 对拍基准：与 _interactive_js 预览布线同数学口径（Python 侧）──
+# -- ref-scrubbed cross-check baseline: same math caliber as the _interactive_js preview routing (Python side) --
 def _expected_preview_route(nodes_px, a, b):
-    """nodes_px: {id: (x,y,hw,hh)}（半宽半高）。返回预期折线或 None（兜底）。"""
+    """nodes_px: {id: (x,y,hw,hh)} (half width/height). Returns the expected polyline, or None (fallback)."""
     from stdraw.routing import border_point
     from stdraw.visibility import seg_rect_distance, shortest_path, _shortcut
     A, B = nodes_px[a], nodes_px[b]
@@ -150,7 +160,7 @@ def main():
             out = os.path.join(tmp, "out")
             r = run_cli(["layout", EX, "--outdir", out, "--skip-3d"])
             if r.returncode != 0:
-                print("FAIL 自建 demo 失败:", r.stderr[-300:])
+                print("FAIL self-built demo failed:", r.stderr[-300:])
                 return 1
             demo = os.path.join(out, "demo-2d.html")
 
@@ -159,8 +169,8 @@ def main():
                 browser = p.chromium.launch(channel="msedge", headless=True)
             except Exception:
                 browser = p.chromium.launch(headless=True)
-            # ref-scrubbed：环形排布后 svg 渲染高 ~1140px，视口必须装得下，
-            # 否则节点屏幕坐标在视口外、pointer 事件落空（9/12 FAIL 根因）
+            # ref-scrubbed: after ring placement the rendered svg is ~1140px tall; the viewport must hold it,
+            # otherwise node screen coordinates sit outside the viewport and pointer events miss (root cause of 9/12 FAIL)
             ctx = browser.new_context(viewport={"width": 1600, "height": 1500},
                                 accept_downloads=True, has_touch=True)
             pg = ctx.new_page()
@@ -173,7 +183,7 @@ def main():
             chk("interactive layer loaded", bool(m0), f"metrics={m0}")
             toolbar0 = pg.evaluate(
                 "document.getElementById('stdraw-metrics').textContent")
-            chk("toolbar metrics visible", "交叉" in toolbar0, toolbar0)
+            chk("toolbar metrics visible", "crossings" in toolbar0, toolbar0)
 
             cx, cy = _node_center(pg, "rate")
             pos0 = pg.evaluate("window.__stdrawNodePos('rate')")
@@ -189,8 +199,8 @@ def main():
                              ".getAttribute('transform')")
             d0 = pg.evaluate("document.querySelector('[data-edge=\\'0\\'] path')"
                              ".getAttribute('d')")
-            # ref-scrubbed：R/B 文字徽标已移除（回路极性改由边着色表达）——
-            # 探针改为核验拖拽后边着色/虚线保留（静态 stroke 属性不随重布线丢）
+            # ref-scrubbed: R/B letter badges removed (loop polarity now expressed by edge coloring) --
+            # the probe now verifies edge coloring/dash survive the drag (static stroke attributes are not lost on reroute)
             stroke0 = pg.evaluate(
                 "document.querySelector('[data-edge=\\'0\\'] path')"
                 ".getAttribute('stroke')")
@@ -210,7 +220,7 @@ def main():
                 f"stroke {stroke0!r} -> {stroke1!r}, data-pol absent={no_pol}")
             chk("metrics changed after drag", m1 != m0, f"{m0} -> {m1}")
 
-            # 触摸可用性（hasTouch 环境 tap 不报错）
+            # touch usability (tap raises no error in a hasTouch context)
             tb = pg.locator('[data-node="adopters"]').bounding_box()
             pg.touchscreen.tap(tb["x"] + tb["width"] / 2, tb["y"] + tb["height"] / 2)
             pg.wait_for_timeout(100)
@@ -237,11 +247,11 @@ def main():
             pos2 = pg.evaluate("window.__stdrawNodePos('rate')")
             chk("reset restores initial layout", pos2 == pos0, f"{pos2} vs {pos0}")
 
-            # ══ ref-scrubbed：vg 折线跟随 + 折点把手 + waypoints 全链 ══
+            # == ref-scrubbed: vg polyline follow + bend handles + full waypoints chain ==
             out_a = os.path.join(tmp, "auto")
             run_cli(["layout", EX, "--outdir", out_a, "--skip-3d"])
             lay = load(os.path.join(out_a, "layout.json"))
-            # 夹具：直线/弧边 (a,b) + 第三节点 c 压线段中点 → CLI 产出 vg
+            # fixture: a straight/arc edge (a,b) + third node c pressed onto the segment midpoint -> CLI yields vg
             found = None
             for e0 in lay["edges"]:
                 if e0["route"]["kind"] not in ("line", "arc"):
@@ -267,11 +277,11 @@ def main():
                     vg = [(i, x) for i, x in enumerate(lay_m["edges"])
                           if x["route"]["kind"] == "vg"]
                     if vg:
-                        # ref-scrubbed：对拍配对必须用 vg 边自身的端点——v0.6.x
-                        # 布线下被阻塞的目标边可能改走 poly（折角类型代价
-                        # vg+120 > poly+40，路由择优），首个 vg 辗转落到别的
-                        # 边上（实测 (rate,adopters)）；且 c 不得是 vg 边端点
-                        # （blocker 腿要拖的是障碍，不是端点）。
+                        # ref-scrubbed: the cross-check pairing must use the vg edge's own endpoints -- under
+                        # v0.6.x layouts the blocked target edge may switch to poly (bend-kind cost
+                        # vg+120 > poly+40, router picks the better), so the first vg can land on a different
+                        # edge (observed (rate,adopters)); also c must not be a vg edge endpoint
+                        # (the blocker leg drags the obstacle, not an endpoint).
                         for i_vg, x_vg in vg:
                             va, vb = x_vg["a"], x_vg["b"]
                             if c not in (va, vb):
@@ -297,9 +307,9 @@ def main():
                            for q in via) for h in hs),
                    f"{len(hs)} handles vs {len(via) - 2} corners")
 
-                # 拖端点节点：逐帧与 Python 复算对拍（重算而非钉死的数学证明）。
-                # 注意初始 pts 是 CLI dense 几何（含 fillet 弧采样），从第一次
-                # pointermove 起 JS 才切换为预览布线折线——对拍从首帧 move 开始。
+                # Drag the endpoint node: cross-check frame by frame against the Python recompute (proof of
+                # recomputation, not pinning). The initial pts are CLI dense geometry (incl. fillet arc samples); JS
+                # switches to the preview-routing polyline only from the first pointermove -- checks start there.
                 acx, acy = _node_center(pg, a)
                 pg.mouse.move(acx, acy)
                 pg.mouse.down()
@@ -331,8 +341,8 @@ def main():
                    _routes_match(last, _expected_preview_route(npx, a, b)),
                    f"n={len(last)}")
 
-                # 拖障碍节点：主断言=重算对拍；残留同位点必须恰为未移动障碍的
-                # 膨胀角点（±0.15px）——几何上合法的静止，而非钉死的旧 waypoint
+                # Drag the obstacle node: main assertion = recomputation cross-check; any residual same-position
+                # points must be exactly inflated corners of unmoved obstacles (+/-0.15px) -- geometrically legal stillness, not a pinned stale waypoint
                 pg.click("#stdraw-reset")
                 pg.wait_for_timeout(120)
                 base2 = pg.evaluate(f"window.__stdrawEdgePts({EIDX})")
@@ -343,7 +353,7 @@ def main():
                 ex2 = _expected_preview_route(npx2, a, b)
                 corners_ok = True
                 stuck_detail = []
-                # 只查中间顶点：端点锚只随端点节点走（障碍拖动中不动是合法的）
+                # check only interior vertices: endpoint anchors follow their endpoint nodes (not moving during an obstacle drag is legal)
                 for q in last2[1:-1]:
                     if min(math.hypot(q[0] - r[0], q[1] - r[1])
                            for r in base2) >= 1.0:
@@ -366,13 +376,13 @@ def main():
                    f"n={len(last2)} recompute={_routes_match(last2, ex2)} "
                    f"stale={stuck_detail[:3]}")
 
-                # 把手拖动 → 锚定 → 导出 → CLI 复算（恒等锚定 fail=0）
+                # handle drag -> pinning -> export -> CLI recompute (identical pinning, fail=0)
                 pg.click("#stdraw-reset")
                 pg.wait_for_timeout(120)
                 hs = [h for h in pg.evaluate("window.__stdrawHandles()")
                       if h[0] == EIDX]
                 chk("handles restorable after reset", len(hs) >= 1, str(hs[:2]))
-                # 恒等锚定：按下即松手（waypoints = 原角点，几何不变）
+                # identical pinning: press then release immediately (waypoints = original corners, geometry unchanged)
                 sx, sy = _to_screen(pg, hs[0][2], hs[0][3])
                 pg.mouse.move(sx, sy)
                 pg.mouse.down()
@@ -404,14 +414,14 @@ def main():
                    f"rc={r_wp.returncode} fail={geo_wp['fail']} "
                    f"kind={e_wp['route']['kind']} via={got} want={want}")
 
-                # 重置清锚定、把手恢复
+                # reset clears pins and restores handles
                 pg.click("#stdraw-reset")
                 pg.wait_for_timeout(120)
                 chk("reset clears pins and restores handles",
                    pg.evaluate("window.__stdrawPinned()") == [] and
                    len(pg.evaluate("window.__stdrawHandles()")) >= 1)
 
-            # ══ 弧线图：贝塞尔全顶点跟随（arcFollow）══
+            # == arc graph: all Bezier vertices follow (arcFollow) ==
             out_arc = os.path.join(tmp, "arc")
             r_arc = run_cli(["layout", EX, "--outdir", out_arc, "--skip-3d",
                              "--linestyle", "arc"])

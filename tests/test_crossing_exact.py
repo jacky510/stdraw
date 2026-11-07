@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""WS2：精确交叉数层测试（经典图真值 + brute-force 交叉验证 + 确定性 + 降级）。
+"""WS2: exact crossing-number layer tests (classic ground truths + brute-force cross-check + determinism + degradation).
 
-已知真值（文献，均为主流教科书/维基百科可核验口径）：
-  cr(K5)=1、cr(K3,3)=1（Kuratowski 基本事实）
-  cr(K6)=3（Guy 1960 公式 ⌊6/2⌋⌊5/2⌋⌊4/2⌋⌊3/2⌋/4 = 3；Saaty 1964 证明该
-      公式对 n≤10 给出最优——是已证明真值。Wikipedia "Crossing number
-      (graph theory)" §Complete graphs：公式值 1,3,9,… 对应 p=5,6,7,…）
-  cr(Petersen)=2（Wikipedia "Petersen graph" §Embeddings 原文
-      "The Petersen graph has crossing number 2"；并明示最常见的五角星
-      画法有 5 处交叉但并非最优画法——「Petersen=5」是知名误读）
-  可平面图 = 0（平面性 witness）
-  细分不改变交叉数（homeomorphism invariance）
-  ⚠ 常见误读对照：「K6=15」是 K6 的边数 |E|=C(6,2)=15，不是交叉数。
+Known ground truths (literature; all verifiable via mainstream textbooks/Wikipedia):
+  cr(K5)=1, cr(K3,3)=1 (Kuratowski basic facts)
+  cr(K6)=3 (Guy 1960 formula floor(6/2)*floor(5/2)*floor(4/2)*floor(3/2)/4 = 3;
+      Saaty 1964 proved this formula optimal for n<=10 -- a proven truth.
+      Wikipedia "Crossing number (graph theory)" S Complete graphs: formula
+      values 1,3,9,... correspond to p=5,6,7,...)
+  cr(Petersen)=2 (Wikipedia "Petersen graph" S Embeddings states verbatim
+      "The Petersen graph has crossing number 2"; it also notes the most
+      common five-pointed-star drawing has 5 crossings but is not optimal --
+      "Petersen=5" is a well-known misreading)
+  planar graph = 0 (planarity witness)
+  subdivision does not change the crossing number (homeomorphism invariance)
+  WARNING common misreading: "K6=15" is K6's edge count |E|=C(6,2)=15, not
+  its crossing number.
 
-环境自报：main() 开头打印解释器版本与 ortools 可用性——proven/lb/coverage
-证据必须连同该环境行一起引用（无 ortools 时全线 proven=False/lb=0/
-coverage=partial 是诚实降级特征，见 docs/crossing-exact.md §9）。
+Environment self-report: main() prints the interpreter version and ortools
+availability up front -- proven/lb/coverage evidence must be cited together
+with that environment line (without ortools, proven=False/lb=0/coverage=partial
+across the board is the honest-degradation signature, see
+docs/crossing-exact.md S9).
 """
 import itertools
 import json
@@ -42,13 +47,14 @@ def mk(n, edge_pairs, name=""):
 
 
 def _planarizable(edges, cross_pairs):
-    """交叉对集合（边对列表）→ 路径级平面化图 → 平面性。一条边可被多条
-    交叉对共享（链式细分）。"""
+    """Set of crossing pairs (list of edge pairs) -> path-level planarized
+    graph -> planarity. One edge may be shared by multiple crossing pairs
+    (chained subdivision)."""
     g = nx.Graph()
     g.add_nodes_from(set(x for e in edges for x in e))
     for a, b in edges:
         g.add_edge(a, b)
-    splits = {}       # 边 idx → [a, X1, ..., b] 链段端点序列
+    splits = {}       # edge idx -> [a, X1, ..., b] chain-segment endpoint sequence
     xc = 0
     for ei, ej in cross_pairs:
         X = f"X{xc}"
@@ -63,7 +69,7 @@ def _planarizable(edges, cross_pairs):
                 g.add_edge(a, X)
                 g.add_edge(X, b)
             else:
-                # 插到链中段（与前一交叉点之间）
+                # insert into a mid-chain segment (between it and the previous crossing point)
                 mid = chain[-2]
                 g.remove_edge(mid, chain[-1])
                 g.add_edge(mid, X)
@@ -73,8 +79,8 @@ def _planarizable(edges, cross_pairs):
 
 
 def brute_cr(graph, max_cross=2):
-    """独立真值：枚举 ≤max_cross 个交叉对做平面化判定。
-    返回 (cr 或 None, complete)。"""
+    """Independent ground truth: enumerate up to max_cross crossing pairs and
+    test planarization. Returns (cr or None, complete)."""
     edges, _ = cx.undirected_edges(graph)
     g0 = nx.Graph()
     g0.add_nodes_from(graph.node_ids())
@@ -110,8 +116,8 @@ def main():
         env_line = (f"python {sys.version.split()[0]} | ortools NOT available "
                     f"-> honest degradation expected (proven=False, lb=0, "
                     f"coverage=partial)")
-    print(f"== 0. 环境: {env_line}")
-    print("   文献真值: K5=1, K3,3=1, Petersen=2, K4=0, K3,3-subdiv=1, "
+    print(f"== 0. Environment: {env_line}")
+    print("   literature ground truth: K5=1, K3,3=1, Petersen=2, K4=0, K3,3-subdiv=1, "
           "K6=3 (Guy/Saaty n<=10)")
     petersen = [(1, 2), (2, 3), (3, 4), (4, 5), (5, 1)]
     petersen += [(i + 1, 6 + i) for i in range(5)]
@@ -128,18 +134,18 @@ def main():
         ("K3,3-subdiv", mk(7, k33sub, "K33sub"), 1),
         ("K6", mk(6, list(itertools.combinations(range(1, 7), 2)), "K6"), 3),
     ]
-    print("== A. 经典图真值 ==")
+    print("== A. classic graph ground truth ==")
     for name, g, expect in classics:
         r = cx.crossing_exact(g)
         ok = r["crossing_number"] == expect and r["proven_optimal"]
         if not ok:
-            failures.append(f"{name}: cr={r['crossing_number']}(期望{expect}) "
+            failures.append(f"{name}: cr={r['crossing_number']}(expected {expect}) "
                             f"proven={r['proven_optimal']}")
         print(f"{'OK ' if ok else 'FAIL'} {name}: cr={r['crossing_number']} "
               f"proven={r['proven_optimal']} lb={r['lb']} gap={r['gap']} "
               f"coverage={r['coverage']}")
 
-    print("== B. 随机图 brute-force 交叉验证（cr≤2 全枚举）==")
+    print("== B. random graph brute-force cross-check (full enumeration for cr<=2) ==")
     rng = random.Random(20261105)
     for seed in range(8):
         g = _rand_graph(rng, seed)
@@ -154,20 +160,20 @@ def main():
                   f"engine={r['crossing_number']} brute={truth} "
                   f"proven={r['proven_optimal']}")
         else:
-            print(f"--  random-{seed}: brute 不完备(cr>2), "
+            print(f"--  random-{seed}: brute not exhaustive (cr>2), "
                   f"engine={r['crossing_number']} gap={r['gap']}")
 
-    print("== C. 确定性（两次运行逐字节一致）==")
+    print("== C. determinism (two runs byte-identical) ==")
     g = mk(10, petersen, "Petersen")
     j1 = json.dumps(cx.crossing_exact(g), sort_keys=True, ensure_ascii=False)
     j2 = json.dumps(cx.crossing_exact(g), sort_keys=True, ensure_ascii=False)
     if j1 != j2:
-        failures.append("Petersen 两次运行不一致")
-        print("FAIL 确定性")
+        failures.append("Petersen: two runs differ")
+        print("FAIL determinism")
     else:
-        print("OK  确定性（逐字节一致）")
+        print("OK  determinism (byte-identical)")
 
-    print("== D. 无 ortools 优雅降级 ==")
+    print("== D. graceful degradation without ortools ==")
     saved = {k: v for k, v in sys.modules.items() if "ortools" in k}
     for k in saved:
         del sys.modules[k]
@@ -185,18 +191,18 @@ def main():
         builtins.__import__ = real_import
         sys.modules.update(saved)
     if r["proven_optimal"] or r["coverage"] != "partial":
-        failures.append(f"降级路径: proven={r['proven_optimal']} "
+        failures.append(f"degradation path: proven={r['proven_optimal']} "
                         f"coverage={r['coverage']}")
-        print("FAIL 降级: 应 exact=False 且 coverage=partial")
+        print("FAIL degradation: expected exact=False and coverage=partial")
     else:
-        print(f"OK  降级: cr={r['crossing_number']} proven=False "
-              f"coverage=partial（如实标注）")
+        print(f"OK  degradation: cr={r['crossing_number']} proven=False "
+              f"coverage=partial (honestly labeled)")
 
-    # == E. 桥/割点面三角化回归（ref-scrubbed）==
-    # 贪心可平面子图 U 含桥/割点时，面游走顶点重复，旧 Triangulation 直接扇形
-    # 三角化 → AssertionError「侧 x 相邻三角形数 1 != 2」（random-n20-i00 实测
-    # 1.3s 崩）。回归用例 n8-m13-seed55：触发条件存在 + 旧侧计数必 !=2 + 修复后
-    # （割点口袋拆分 _split_face）crossing_exact 优雅返回。
+    # == E. bridge/cut-vertex face triangulation regression (ref-scrubbed) ==
+    # With bridges/cut vertices in greedy planar subgraph U, face walks repeat
+    # vertices and old Triangulation fan-triangulates -> AssertionError "side x
+    # adjacent triangles 1 != 2" (random-n20-i00 crash at 1.3s). Case n8-m13-seed55:
+    # trigger present + old count necessarily != 2 + post-fix (_split_face) crossing_exact returns gracefully.
     g55 = nx.gnm_random_graph(8, 13, seed=55)
     reg = mk(8, [(a + 1, b + 1) for a, b in sorted(g55.edges())], "reg-s55")
     cores, _red = cx.safe_reduce(reg)
@@ -208,18 +214,18 @@ def main():
     rep = [f for f in faces if len(set(f)) != len(f)]
     e_ok = bool(rep)
     if not e_ok:
-        failures.append("reg-s55: 触发条件消失（面无重复顶点）——回归用例失效")
-    print(f"{'OK ' if e_ok else 'FAIL'} reg-s55: UB 嵌入含重复顶点面 x{len(rep)} "
-          f"(桥/割点口袋触发条件在位)")
+        failures.append("reg-s55: trigger condition gone (no face with repeated vertices) -- regression case void")
+    print(f"{'OK ' if e_ok else 'FAIL'} reg-s55: UB embedding has repeated-vertex faces x{len(rep)} "
+          f"(bridge/cut-vertex pocket trigger condition in place)")
     r = cx.crossing_exact(reg)
     ok2 = (isinstance(r.get("crossing_number"), int)
            and r.get("coverage") in ("full", "partial", "planar", "trivial"))
     if not ok2:
-        failures.append(f"reg-s55: crossing_exact 未优雅返回 cr={r.get('crossing_number')} "
+        failures.append(f"reg-s55: crossing_exact did not return gracefully cr={r.get('crossing_number')} "
                         f"coverage={r.get('coverage')}")
     print(f"{'OK ' if ok2 else 'FAIL'} reg-s55: cr={r['crossing_number']} "
           f"proven={r['proven_optimal']} coverage={r['coverage']} "
-          f"(ref-scrubbed 修复后零崩溃)")
+          f"(zero crashes after the ref-scrubbed fix)")
 
     if failures:
         print("\nFAILURES:")

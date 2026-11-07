@@ -1,12 +1,12 @@
-# stdraw runner：单文件 × 单形态 → raw JSON（orchestrator 逐形态调用并用 subprocess
-# 超时控预算；超时被杀时 orchestrator 落 DNF JSON）。可重入（已存在跳过）。
+# stdraw runner: single file × single form -> raw JSON (the orchestrator invokes it per form and controls the budget
+# via a subprocess timeout; on a timeout kill the orchestrator writes a DNF JSON). Re-enterable (existing outputs skipped).
 #
-# 形态：
-#   ortho       构造法（ortho-v1；不可平面 → not_planar_skip 如实记录）
-#   auto        auto-v2（CP-SAT 定位 + WS3 数学布线 + polish 精化）
-#   auto-exact  auto-v2 布局 + WS2 精确交叉数层 cr(G)（exactness 块）
+# Forms:
+#   ortho       constructive (ortho-v1; non-planar -> not_planar_skip, honestly recorded)
+#   auto        auto-v2 (CP-SAT placement + WS3 mathematical routing + polish refinement)
+#   auto-exact  auto-v2 layout + WS2 exact crossing-number layer cr(G) (exactness block)
 #
-# 用法：python run_stdraw.py <file.cld> <rawdir> <form>
+# Usage: python run_stdraw.py <file.cld> <rawdir> <form>
 import json
 import os
 import sys
@@ -23,7 +23,7 @@ from eval_core import evaluate, box_size        # noqa: E402
 
 
 def to_scene(v4):
-    """layout.json v4 → 统一 nodes/routes。"""
+    """layout.json v4 -> unified nodes/routes."""
     ch = v4["meta"].get("cardH", 44)
     nodes = {v: (p["x"], p["y"], p.get("w", 140), ch) for v, p in v4["nodes"].items()}
     routes = {}

@@ -3,3 +3,4 @@ __pycache__/
 stdraw-out/
 out*/
 *.egg-info/
+.pytest_cache/

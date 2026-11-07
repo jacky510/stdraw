@@ -1,8 +1,8 @@
-# 生成脚本：随机稀疏图族（固定种子，可复现）
-# 用法：python gen_random.py [--outdir ../corpus/random] [--manifest ../manifest.json]
-# 规则：n ∈ {10,20,30,50} × 各 20 张；seed = 4200 + n*100 + i（写进文件头与清单）；
-#       边数 m = round(1.6*n)（CLD 典型稀疏密度）；标签 N01…（等宽短标签，各工具框宽一致）；
-#       极性随机 +/-（仅渲染语义，不影响几何）；清单附可平面/不可平面分层（networkx）。
+# Generator script: random sparse graph family (fixed seeds, reproducible)
+# Usage: python gen_random.py [--outdir ../corpus/random] [--manifest ../manifest.json]
+# Rules: n in {10,20,30,50} × 20 graphs each; seed = 4200 + n*100 + i (written into the file header and the manifest);
+#        edge count m = round(1.6*n) (typical sparse CLD density); labels N01... (fixed-width short labels, identical box widths across tools);
+#        random +/- polarity (rendering semantics only, no geometric effect); the manifest carries a planar/non-planar split (networkx).
 import argparse
 import json
 import os

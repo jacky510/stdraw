@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""WS2：槽位放置层 + 规律性度量测试。
+"""WS2: slot placement layer + regularity metric tests.
 
-cycle 图 → 正 k 边形槽位：交叉 0、正多边形偏差 ≈0（24px 量化容差）；
-chain 图 → 共线槽位：直线度 = 1；
-general 图 → CP-SAT 分层槽位：行内净距硬约束成立、确定性两次一致。
-无 ortools 时 cycle/chain 构造分支仍可用，general 返回 None（诚实降级）。
+cycle graph -> regular k-gon slots: 0 crossings, regular-polygon deviation ~0
+(24px quantization tolerance);
+chain graph -> collinear slots: straightness = 1;
+general graph -> CP-SAT layered slots: in-row clearance hard constraint holds,
+deterministic across two runs.
+Without ortools the cycle/chain constructive branches still work and general
+returns None (honest degradation).
 """
 import itertools
 import math
@@ -52,12 +55,12 @@ def count_crossings(g, x, y):
 def main():
     failures = []
 
-    # A. cycle：正五边形
+    # A. cycle: regular pentagon
     cyc = [(i + 1, (i + 1) % 5 + 1) for i in range(5)]
     g = mk(5, cyc, "C5")
     res = placement.place(g, {v: 96 for v in g.node_ids()})
     if res is None:
-        failures.append("cycle: place() 返回 None")
+        failures.append("cycle: place() returned None")
         print("FAIL cycle: place() None")
     else:
         x, y = res["x"], res["y"]
@@ -74,12 +77,12 @@ def main():
               f"deviation={report['cycle_polygon_deviation']} "
               f"structure={report['structure']} dominant={report['dominant']}")
 
-    # B. chain：共线
+    # B. chain: collinear
     chn = [(i + 1, i + 2) for i in range(4)]
     g = mk(5, chn, "P5")
     res = placement.place(g, {v: 96 for v in g.node_ids()})
     if res is None:
-        failures.append("chain: place() 返回 None")
+        failures.append("chain: place() returned None")
         print("FAIL chain: place() None")
     else:
         x, y = res["x"], res["y"]
@@ -93,7 +96,7 @@ def main():
         print(f"{'OK ' if ok else 'FAIL'} chain P5: straightness={s:.3f} "
               f"crossings={crossings}")
 
-    # C. general：CP-SAT 分层槽位（若可用）
+    # C. general: CP-SAT layered slots (if available)
     if placement.has_solver():
         edges = [(1, 3), (2, 4), (3, 5), (4, 6), (5, 1), (6, 2), (1, 6), (3, 4)]
         g = mk(6, edges, "general6")
@@ -102,11 +105,11 @@ def main():
         r1 = placement.place(g, widths, rows=rows)
         r2 = placement.place(g, widths, rows=rows)
         if r1 is None:
-            failures.append("general: place() 返回 None")
-            print("FAIL general: place() None（模型不可行或异常）")
+            failures.append("general: place() returned None")
+            print("FAIL general: place() None (model infeasible or exception)")
         else:
             det = (r1["x"] == r2["x"] and r1["y"] == r2["y"])
-            # 行内净距复核（槽位 24px 尺度）
+            # in-row clearance recheck (24px slot scale)
             row_of = {v: i for i, vs in enumerate(rows) for v in vs}
             gaps_ok = True
             for vs in rows:
@@ -119,7 +122,7 @@ def main():
             print(f"{'OK ' if ok else 'FAIL'} general6: engine={r1['engine']} "
                   f"status={r1.get('status')} deterministic={det} gaps_ok={gaps_ok}")
     else:
-        print("SKIP general: ortools 不可用（cycle/chain 构造分支仍验证）")
+        print("SKIP general: ortools unavailable (cycle/chain constructive branches still verified)")
 
     if failures:
         print("\nFAILURES:")

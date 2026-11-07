@@ -32,9 +32,9 @@ classifiers = [
 dependencies = ["networkx>=3.0"]
 
 [project.optional-dependencies]
-solver = ["ortools>=9.10"]          # auto-v2 定位精化（可选；未装优雅降级为构造法）
-measure = ["pillow>=10.0"]          # 框界真值度量（可选；未装退保守解析式）
-render-check = ["playwright>=1.40"] # CI 侧 DOM 实测框界（可选层）
+solver = ["ortools>=9.10"]          # auto-v2 placement refinement (optional; degrades gracefully to the constructive method when absent)
+measure = ["pillow>=10.0"]          # true box-bound measurement (optional; falls back to conservative analytic estimates when absent)
+render-check = ["playwright>=1.40"] # CI-side DOM box-bound measurement (optional layer)
 
 [project.scripts]
 stdraw = "stdraw.__main__:main"

@@ -1,4 +1,4 @@
-# 校验经典语料：每张图 parse + lint 审计（闭合性/极性奇偶），问题必须为 0 才入基准集
+# Validate the classic corpus: every graph gets parse + lint audit (closure/polarity parity); zero problems required to enter the benchmark set
 import glob
 import os
 import sys
