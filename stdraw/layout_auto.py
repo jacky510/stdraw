@@ -42,6 +42,19 @@ class AutoConfig:
     # Default None = historical behavior (pad-4 baseline) byte-for-byte;
     # opt in for long ticker/price value strings via CLI --value-pad.
     value_pad_extra: float = None
+    # v0.7.11 deterministic layout constraints (comb-bilateral; both default
+    # None = engine-decided order/side byte-for-byte, the deterministic
+    # initial-render contract is untouched):
+    # - column_order: explicit node-id list fixing the source-column internal
+    #   order (top -> bottom). Hard constraint applied at component level:
+    #   components are ordered by the best (smallest) rank of their members,
+    #   intra-component DFS order is preserved (pendant trees stay contiguous),
+    #   unlisted column nodes keep engine order after the listed ones.
+    # - hub_side: {node_id: "left"|"right"} for the comb's bilateral hubs;
+    #   a single explicit side is enough to fix the assignment, contradicting
+    #   specs degrade deterministically (first left wins, then first right).
+    column_order: list = None
+    hub_side: dict = None
     target_w: int = 1280
     target_h: int = 680
     aspect_min: float = 1.5

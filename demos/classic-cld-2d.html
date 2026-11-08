@@ -52,7 +52,7 @@ var edges = D.edges.map(function (e) {
           pts: pts, base: pts.map(cp), d0: null};
 });
 edges.forEach(function (e, i) {
-  var g = svg.querySelector('[data-edge="' + i + '"]');
+  var g = visG(i);
   if (g) {
     var p0 = g.querySelectorAll('path')[0];
     if (p0) {
@@ -115,13 +115,48 @@ edges.forEach(function (e, i) {
   bindEdgeHover(i, h);
   hitLayer.appendChild(h);
 });
+// ── v0.7.11 edge-element resolution: visible edges are `g[data-edge]`
+// groups (render.py); hit paths are `path.stdraw-hit[data-edge]` inside
+// #stdraw-hits, which sits at svg.firstChild — so a bare attribute-selector
+// lookup on the data-edge attribute resolves to the HIT path first
+// (document order). updateEdge then queried `path` CHILDREN of a path
+// element (always empty) and the visible line never redrew: internal state
+// re-anchored, DOM stale, zero exceptions (2026-11-08 8777/现网 regression,
+// ref-scrubbed). Always resolve the visible group / hit path explicitly.
+function visG(i) { return svg.querySelector('g[data-edge="' + i + '"]'); }
+function hitP(i) { return hitLayer.querySelector('.stdraw-hit[data-edge="' + i + '"]'); }
+// ── v0.7.11 per-edge failure isolation (fail-visible, never abort the round):
+// one edge whose reroute/updateEdge throws (degenerate geometry after card
+// growth: coincident anchors, infeasible route) must not kill the remaining
+// edges of a re-anchor pass — they would stay on stale anchors (jacky's Edge
+// mixed floating-arrow outage, ref-scrubbed). Degrade that edge visibly (red
+// dashed stroke) + console WARN, keep going, and self-heal the marker on the
+// edge's next successful pass.
+function markDegraded(i, what, err) {
+  try { console.warn('[stdraw] edge #' + i + ' ' + what + ' failed: ' +
+        (err && err.message ? err.message : err)); } catch (e0) {}
+  var g = visG(i);
+  if (g) g.classList.add('stdraw-degraded');
+  var h = hitP(i);
+  if (h) h.classList.add('stdraw-degraded');
+}
+function clearDegraded(i) {
+  var g = visG(i);
+  if (g) g.classList.remove('stdraw-degraded');
+  var h = hitP(i);
+  if (h) h.classList.remove('stdraw-degraded');
+}
+function safeRerouteUpdate(i, what) {
+  try { reroute(i); updateEdge(i); clearDegraded(i); return true; }
+  catch (err) { markDegraded(i, what || 'reroute/update', err); return false; }
+}
 function hlEdge(i, on) {
-  var g = svg.querySelector('[data-edge="' + i + '"]');
+  var g = visG(i);
   if (g) { if (on) g.classList.add('hl'); else g.classList.remove('hl'); }
 }
 function updateEdge(i) {
-  var e = edges[i], g = svg.querySelector('[data-edge="' + i + '"]');
-  var h = hitLayer.querySelector('.stdraw-hit[data-edge="' + i + '"]');
+  var e = edges[i], g = visG(i);
+  var h = hitP(i);
   if (h) h.setAttribute('d', edgeD(e.pts));
   if (!g) return;
   var paths = g.querySelectorAll('path');
@@ -305,6 +340,9 @@ function previewRoute(i) {
 }
 function arcFollow(i) {
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
+  // v0.7.11 defensive: an arc edge missing its frozen control state (partial
+  // restore paths) must degrade to a straight line, not throw mid-round.
+  if (!e.ctrl0 || !e.pa0 || !e.pb0) { forcedStraight(i); return; }
   var pa = anchor(A, [B.x, B.y]);
   var pb = anchor(B, [A.x, A.y]);
   var ctrl = [e.ctrl0[0] + ((pa[0] - e.pa0[0]) + (pb[0] - e.pb0[0])) / 2,
@@ -370,6 +408,12 @@ function reanchorFree(i) {
   e.corners = null;
 }
 function reroute(i) {
+  // v0.7.11 fault-injection hook (probe-only, never set by UI code): lets the
+  // DOM-truth regression probe force a single-edge router failure to prove the
+  // per-edge isolation + fail-visible degradation (ref-scrubbed acceptance).
+  if (edges[i] && edges[i]._probeThrow) {
+    throw new Error('probe-injected router failure (edge #' + i + ')');
+  }
   var st = styles[i] || 'auto';
   if (st === 'free') { reanchorFree(i); return; }   // user fold points: re-anchor endpoints only
   if (pinned[i]) { reanchor(i); return; }           // user-anchored: re-anchor endpoints only, keep waypoints
@@ -377,6 +421,15 @@ function reroute(i) {
   if (st === 'arc') { forcedArc(i); return; }
   if (edges[i].arc) { arcFollow(i); return; }
   previewRoute(i);
+  // v0.7.11 defensive final guard (degenerate geometry after card growth:
+  // extreme wide/flat cards, coincident anchors, infeasible route): any
+  // non-finite coordinate that slipped through a router path degrades this
+  // edge to a straight border-to-border line instead of poisoning e.pts
+  // (downstream edgeD/updateEdge/metrics would throw and abort the round).
+  var pts = edges[i].pts;
+  for (var k = 0; k < pts.length; k++) {
+    if (!isFinite(pts[k][0]) || !isFinite(pts[k][1])) { forcedStraight(i); return; }
+  }
 }
 
 // ── Bend handles (vg polylines / user-anchored edges) ──
@@ -414,6 +467,11 @@ styleEl.textContent = '#stdraw-handles circle.stdraw-wp{fill:#fff;stroke:#475569
   // clicks. rgba(...,0.01) is visually imperceptible (+<=2.5/255 composite).
   '#stdraw-svg path.stdraw-hit{fill:none;stroke:rgba(255,255,255,0.01);stroke-width:12;cursor:pointer;pointer-events:stroke}' +
   '#stdraw-svg [data-edge].hl > path:not(.stdraw-hit){stroke-width:2.4}' +
+  // v0.7.11 per-edge degradation marker (fail-visible): a single edge whose
+  // re-route threw keeps its last geometry but is drawn red + dashed so the
+  // failure is visible instead of silently floating.
+  '#stdraw-svg g[data-edge].stdraw-degraded > path:not(.stdraw-hit){stroke:#dc2626;stroke-dasharray:6 4}' +
+  '#stdraw-svg path.stdraw-hit.stdraw-degraded{stroke:rgba(220,38,38,0.01)}' +
   '.stdraw-tip{position:absolute;z-index:9;background:#1f2937;color:#fff;' +
   'font:12px/1.4 sans-serif;padding:3px 8px;border-radius:4px;pointer-events:none}';
 document.head.appendChild(styleEl);
@@ -590,6 +648,9 @@ function refreshMetrics() {
 function syncDomGeometry() {
   var touched = false;
   svg.querySelectorAll('[data-node]').forEach(function (g) {
+    // v0.7.11 per-node isolation: a measurement failure on one card must not
+    // abort the growth pass for the remaining cards.
+    try {
     var id = g.getAttribute('data-node'), n = nodes[id];
     if (!n || !n.g) return;
     var rect = n.g.querySelector('rect');
@@ -632,11 +693,24 @@ function syncDomGeometry() {
       try { texts[texts.length - 1].setAttribute('y', (n.by + needH / 2 - 7).toFixed(1)); } catch (e3) {}
     }
     touched = true;
+    } catch (errN) {
+      try { console.warn('[stdraw] node #' + g.getAttribute('data-node') +
+            ' geometry sync failed: ' + (errN && errN.message ? errN.message : errN)); } catch (e4) {}
+    }
   });
   if (touched) {
-    edges.forEach(function (e, i) { reroute(i); updateEdge(i); });
-    rebuildHandles();
-    refreshMetrics();
+    // v0.7.11 per-edge isolation: a single edge throwing must never abort the
+    // re-anchor round (stale anchors on all subsequent edges = the mixed
+    // floating-arrow state jacky saw in Edge). Fail-visible per edge instead.
+    edges.forEach(function (e, i) { safeRerouteUpdate(i, 'sync re-anchor'); });
+    try { rebuildHandles(); } catch (errH) {
+      try { console.warn('[stdraw] rebuildHandles failed: ' +
+            (errH && errH.message ? errH.message : errH)); } catch (e5) {}
+    }
+    try { refreshMetrics(); } catch (errM) {
+      try { console.warn('[stdraw] refreshMetrics failed: ' +
+            (errM && errM.message ? errM.message : errM)); } catch (e6) {}
+    }
   }
   return touched;
 }
@@ -682,8 +756,7 @@ function setStyle(i, st) {
     styles[i] = st;
   }
   if (st === 'free' && !freeWps[i]) freeWps[i] = [];
-  reroute(i);
-  updateEdge(i);
+  safeRerouteUpdate(i, 'style change');
   rebuildHandles();
   refreshMetrics();
   fireLayoutChanged();
@@ -1137,7 +1210,7 @@ function onMove(ev) {
   n.x = nx; n.y = ny;
   drag.g.setAttribute('transform', 'translate(' + (nx - n.bx).toFixed(1) + ' ' + (ny - n.by).toFixed(1) + ')');
   var touched = {};
-  incidentMap[drag.id].forEach(function (i) { touched[i] = 1; reroute(i); updateEdge(i); });
+  incidentMap[drag.id].forEach(function (i) { touched[i] = 1; safeRerouteUpdate(i, 'drag re-anchor'); });
   // Other edges: (1) pressed by the moving node (1px margin) -> re-route;
   // (2) currently polyline-shaped (detour / dense vg geometry) -> obstacles
   // changed so recompute (incl. stale detours invalidated when an obstacle is
@@ -1153,7 +1226,7 @@ function onMove(ev) {
         if (distRect(s[k][0], s[k][1], nx, ny, hw, hh) <= 0) { need = true; break; }
       }
     }
-    if (need) { reroute(j); updateEdge(j); }
+    if (need) { safeRerouteUpdate(j, 'drag reroute'); }
   });
   rebuildHandles();
   if (!rafPending) {
@@ -1296,9 +1369,11 @@ function reset() {
     if (n.g) n.g.removeAttribute('transform');
   });
   edges.forEach(function (e, i) {
+    // v0.7.11 per-edge isolation on the restore path as well
+    try {
     e.pts = e.base.map(cp);
     e.corners = e.via ? e.via.map(cp) : null;
-    var g = svg.querySelector('[data-edge="' + i + '"]');
+    var g = visG(i);
     if (!g) return;
     var paths = g.querySelectorAll('path');
     // Original rendering (vg path_d incl. fillet arcs) restored from the initial d strings
@@ -1309,8 +1384,10 @@ function reset() {
       var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
       paths[1].setAttribute('transform', 'translate(' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
     }
-    var h = hitLayer.querySelector('.stdraw-hit[data-edge="' + i + '"]');
+    var h = hitP(i);
     if (h) h.setAttribute('d', edgeD(e.pts));
+    clearDegraded(i);
+    } catch (errR) { markDegraded(i, 'reset', errR); }
   });
   Object.keys(polGroups).forEach(function (i) {
     polGroups[i].g.setAttribute('transform', polGroups[i].t);
@@ -1366,7 +1443,7 @@ window.__stdrawApplyLayout = function (spec) {
       .slice(0, MAX_FREE_PTS);
     if (!styles[i]) styles[i] = 'free';
   });
-  edges.forEach(function (e, i) { reroute(i); updateEdge(i); });
+  edges.forEach(function (e, i) { safeRerouteUpdate(i, 'applyLayout re-anchor'); });
   rebuildHandles();
   refreshMetrics();
   fireLayoutChanged();
@@ -1428,6 +1505,13 @@ window.__stdrawFloating = function () {
           cx: +floatC.getAttribute('cx'), cy: +floatC.getAttribute('cy')};
 };
 window.__stdrawSegDraggable = function (i) { return segDraggable(i); };
+// v0.7.11 fault-injection hook for the DOM-truth probe (ref-scrubbed): force a
+// single edge's reroute to throw so the probe can assert per-edge isolation +
+// the visible degradation marker; pass false to clear (self-heal check).
+window.__stdrawProbeBreakEdge = function (i, on) {
+  if (edges[i]) edges[i]._probeThrow = !!on;
+  return true;
+};
 window.__stdrawDragState = function () {
   if (!drag) return null;
   var keys = [];

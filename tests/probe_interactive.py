@@ -746,10 +746,21 @@ def main():
             pg.wait_for_timeout(150)
             pg.wait_for_timeout(600)
             w2 = pg.evaluate("window.__stdrawUserWps()[%d] || []" % EIDX)
-            head_ok = bool(w2) and abs(w2[0][0] - w1[0][0]) < 2.5 and \
-                abs(w2[0][1] - w1[0][1]) < 2.5
-            chk("segment drag anchor-adjacent inserts 1 (1->2 waypoints)",
-               len(w2) == 2 and head_ok,
+            # ref-scrubbed: assert the SEMANTICS, not which anchor-adjacent
+            # segment the scan lands on. The scan takes the first hittable
+            # anchor-adjacent segment; dragging the FIRST one (anchorA->fold)
+            # yields [movedFold, fold] (k=0: head=[], mv=[fold copy]) while
+            # the LAST one (fold->anchorB) yields [fold, movedFold] (k=last).
+            # Either way: exactly one jog + the pre-existing fold preserved.
+            # (The old head-at-index-0 assertion only passed because the
+            # pre-0.7.11 stale visible paths occluded the seg0 probes and
+            # forced the pick onto seg1 — a broken-canvas artifact.)
+            fold_ok = bool(w2) and len(w2) == 2 and any(
+                abs(w2[j][0] - w1[0][0]) < 2.5 and abs(w2[j][1] - w1[0][1]) < 2.5
+                for j in (0, 1))
+            chk("segment drag anchor-adjacent inserts 1 (1->2 waypoints, "
+                "existing fold preserved)",
+               len(w2) == 2 and fold_ok,
                json.dumps([w1[:1], w2]))
 
             # interior segment (inserts TWO jog bendpoints). The first edge's
