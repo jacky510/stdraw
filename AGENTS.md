@@ -264,6 +264,15 @@ models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
   mode, e.g. ring/column) + report metrics loop_cohesion_spread (loop
   cohesion), center_offset_x, line_kind_counts, ring_spacing_cv /
   ring_template_deviation (ring calibers);
+- **visual_crossings (reported metric, not a hard gate)**: pairwise polyline
+  intersection over ALL delivered edge pairs, INCLUDING pairs sharing an
+  endpoint (fan pairs) — the blind spot the graph-theory `crossings` caliber
+  exempts: fan lines from the same box can visibly cross mid-air while
+  `crossings` reports 0 (ref-scrubbed; strict intersection excludes mere
+  endpoint touch, so anchor meetings never count). Companion fields:
+  `fan_visual_crossings` (the fan-pair subset) and
+  `visual_crossing_details` (edge pair + intersection coordinates, capped
+  at 10). v1 ortho certificates stay byte-compatible and do not carry it;
 - **gates (hard gates, switched by `placement` mode)**: as measured on
   `demos/classic-certificate.json` (spine-wing mode), 11 gates
   **11/11 passed** — box_press_zero / edge_box_clear_ge_16 / anchors_smooth /
@@ -272,7 +281,9 @@ models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
   routing_consistent (the gate key set switches with the placement mode; the
   measured JSON is authoritative);
 - **reports (report items, not hard gates)**: `crossings_zero` (soft target:
-  <= 2 crossings allowed when placement regularity holds) and
+  <= 2 crossings allowed when placement regularity holds),
+  `visual_crossings_zero` (visual caliber incl. fan pairs — reported, not
+  vetoing; hard-gating awaits a legacy-number decision) and
   `row_align_ge_060`; grading semantics are unaffected;
 - **grade**:
 

@@ -401,6 +401,36 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                     continue
                 break
 
+    # 1a. Visual crossings (reported metric, NOT a hard gate): pairwise
+    # polyline intersection over ALL delivered edge pairs, INCLUDING pairs
+    # sharing an endpoint (fan pairs). The graph-theory caliber above exempts
+    # shared-endpoint pairs, which misses fan lines visibly crossing mid-air
+    # under the same box (ref-scrubbed blind spot: classic-cld showed an X under
+    # the adopter box while crossings=0). Repo principle: honest grading —
+    # never masquerade as zero crossings. Strict seg_cross already excludes
+    # mere endpoint touch, so edges that only meet at their anchors add
+    # nothing here; only real mid-air intersections count.
+    visual_crossings = []
+    for i in range(len(edges)):
+        for j in range(i + 1, len(edges)):
+            ei, ej = edges[i], edges[j]
+            shared = ({ei["a"], ei["b"]} & {ej["a"], ej["b"]})
+            hit = None
+            for s1 in zip(polys[i][:-1], polys[i][1:]):
+                for s2 in zip(polys[j][:-1], polys[j][1:]):
+                    if _rc_seg_cross(s1[0], s1[1], s2[0], s2[1]):
+                        hit = (s1, s2)
+                        break
+                else:
+                    continue
+                break
+            if hit is not None:
+                visual_crossings.append({
+                    "edges": [f"{ei['a']}->{ei['b']}",
+                              f"{ej['a']}->{ej['b']}"],
+                    "at": _interpolate(hit[0], hit[1]),
+                    "fan_pair": bool(shared)})
+
     # 1b. Mutual-pair separation (F1): minimum two-line distance for
     # bidirectional edge pairs (counted per "edge pair"; None when no mutual pair)
     pair_infos = []
@@ -715,6 +745,10 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     metrics = {
         "crossings": len(crossings),
         "crossing_details": crossings[:10],
+        "visual_crossings": len(visual_crossings),
+        "fan_visual_crossings": sum(1 for v in visual_crossings
+                                    if v["fan_pair"]),
+        "visual_crossing_details": visual_crossings[:10],
         "box_press_1px": len(press),
         "routing_router_pairs": router_pairs,
         "press_details": press[:10],
@@ -875,6 +909,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     g_pass = sum(1 for v in g.values() if v)
     reports = {
         "crossings_zero": metrics["crossings"] == 0,
+        "visual_crossings_zero": metrics["visual_crossings"] == 0,
+        "visual_crossings_note": ("report item, not a hard gate: all-edge-pair "
+                                  "visual intersection count including "
+                                  "shared-endpoint (fan) pairs — the blind "
+                                  "spot the graph-theory crossings caliber "
+                                  "exempts (ref-scrubbed); hard-gating awaits "
+                                  "a legacy-number decision"),
         "crossings_note": ("soft target: <=2 crossings allowed when placement "
                            "regularity holds (product call: some line "
                            "intersection is acceptable; order and elegance "
