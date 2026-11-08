@@ -175,7 +175,8 @@ def main():
                                 accept_downloads=True, has_touch=True)
             pg = ctx.new_page()
             errors = []
-            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.on("pageerror",
+                 lambda e: errors.append(getattr(e, "stack", "") or str(e)))
             pg.goto("file://" + demo.replace("\\", "/"))
             pg.wait_for_timeout(300)
 
@@ -613,6 +614,299 @@ def main():
                 chk("reset clears pins and restores handles",
                    pg.evaluate("window.__stdrawPinned()") == [] and
                    len(pg.evaluate("window.__stdrawHandles()")) >= 1)
+
+            # == ref-scrubbed: segment drag / floating bendpoint / merge lifecycle ==
+            # CDP real mouse only (pointerType mouse via Playwright input).
+            # UX caliber: drawio/bpmn-io segment-move + .djs-bendpoint.floating.
+            # On the dense demo the node layer paints ABOVE the 12px hit band,
+            # so every press/hover point is picked by scanning the polyline
+            # with elementFromPoint (real hit path) -- never assumed from
+            # geometry alone.
+            JS_PICK = """([i, interiorOnly]) => {
+              const svg = document.getElementById('stdraw-svg');
+              const pts = window.__stdrawEdgePts(i);
+              if (!pts || pts.length < 2) return null;
+              const r = svg.getBoundingClientRect();
+              const VB = svg.viewBox.baseVal;
+              const toC = (vx, vy) => [r.x + (vx - VB.x) / VB.width * r.width,
+                                       r.y + (vy - VB.y) / VB.height * r.height];
+              const hitEdge = (cx, cy) => {
+                const el = document.elementFromPoint(cx, cy);
+                const g = el && el.closest && el.closest('[data-edge]');
+                // must be THIS edge's interaction layer: demo edge bands overlap
+                return !!(g && g.getAttribute('data-edge') === String(i));
+              };
+              const segs = pts.length - 1;
+              let midHit = null, offHit = null;
+              for (let s = 0; s < segs; s++) {
+                if (interiorOnly && (s === 0 || s === segs - 1)) continue;
+                const mx = (pts[s][0] + pts[s + 1][0]) / 2;
+                const my = (pts[s][1] + pts[s + 1][1]) / 2;
+                const [cx, cy] = toC(mx, my);
+                if (!midHit && hitEdge(cx, cy)) midHit = {x: mx, y: my, seg: s};
+                if (!offHit) {
+                  const px = pts[s][0] + (pts[s + 1][0] - pts[s][0]) * 0.3;
+                  const py = pts[s][1] + (pts[s + 1][1] - pts[s][1]) * 0.3;
+                  const [cx2, cy2] = toC(px, py);
+                  if (hitEdge(cx2, cy2) && Math.hypot(px - mx, py - my) > 8)
+                    offHit = {x: px, y: py, seg: s};
+                }
+                if (midHit && offHit) break;
+              }
+              return (midHit && offHit) ? {mid: midHit, off: offHit} : null;
+            }"""
+            picked = None
+            ek0 = None
+            n_edges = pg.evaluate("window.__stdrawEdgePts().length")
+            for cand in range(n_edges):
+                pg.evaluate("window.__stdrawApplyLayout({nodes:{}, waypoints:{}})")
+                key = pg.evaluate(
+                    "(function(){var d=JSON.parse(document.getElementById("
+                    "'stdraw-data').textContent);var e=d.edges[%d];"
+                    "return e.a + '->' + e.b;})()" % cand)
+                if pg.evaluate("window.__stdrawArcFlag(%d)" % cand):
+                    continue
+                p = pg.evaluate(JS_PICK, [cand])
+                if p:
+                    picked, ek0, EIDX = p, key, cand
+                    break
+            chk("interaction edge picked via real elementFromPoint scan "
+                "(arc-flagged edges skipped)",
+               picked is not None and ek0 is not None,
+               "edges=%d picked=%s key=%s" % (n_edges, picked, ek0))
+            pg.wait_for_timeout(650)   # clear the 450ms manual-dblclick window
+            # -- floating bendpoint on the PRISTINE (auto) edge: preview-only --
+            hx, hy = _to_screen(pg, picked["mid"]["x"], picked["mid"]["y"])
+            pg.mouse.move(hx, hy)
+            pg.wait_for_timeout(60)
+            pg.mouse.move(hx + 1, hy)   # jiggle: guarantee a fresh mousemove
+            pg.wait_for_timeout(120)
+            fl = pg.evaluate("window.__stdrawFloating()")
+            dirty = pg.evaluate("JSON.stringify([window.__stdrawUserWps(),"
+                                "window.__stdrawPinned(),window.__stdrawStyles()])")
+            chk("floating handle parks at hovered segment mid",
+               fl and fl.get("edge") == EIDX and
+               abs(fl.get("cx") - picked["mid"]["x"]) < 2.5 and
+               abs(fl.get("cy") - picked["mid"]["y"]) < 2.5, fl)
+            chk("hover writes NO user state (no waypoints/pins/styles)",
+               json.loads(dirty) == [{}, [], []], dirty)
+            pg.mouse.move(10, 10)
+            pg.wait_for_timeout(350)
+            chk("floating handle hides off-edge",
+               pg.evaluate("window.__stdrawFloating()") is None)
+
+            # floating drag-away >=4px: adopt geometry + create exactly one point
+            pg.mouse.move(hx, hy)
+            pg.wait_for_timeout(100)
+            pg.mouse.down()
+            pg.wait_for_timeout(40)
+            for t in (0.25, 0.5, 0.75, 1.0):
+                pg.mouse.move(hx, hy - 55 * t)
+                pg.wait_for_timeout(20)
+            pg.mouse.up()
+            pg.wait_for_timeout(150)
+            pg.wait_for_timeout(600)   # clear dblclick window
+            w1 = pg.evaluate("window.__stdrawUserWps()[%d] || []" % EIDX)
+            chk("floating drag-away adopts geometry + creates exactly one "
+                "fold point (auto -> free)",
+               pg.evaluate("window.__stdrawEdgeStyle(%d)" % EIDX) == "free" and
+               len(w1) == 1, json.dumps(w1))
+
+            # segment drag on the anchor-adjacent segment (inserts ONE jog)
+            # re-pick: the fold point created above re-routed the edge, so the
+            # previous coordinates may now sit under a card
+            picked1 = pg.evaluate(JS_PICK, [EIDX, False])
+            chk("fresh hittable point for anchor-adjacent segment drag",
+               picked1 is not None, json.dumps(picked1))
+            pts1 = pg.evaluate("window.__stdrawEdgePts(%d)" % EIDX)
+            if picked1 is None:
+                chk("segment drag anchor-adjacent inserts 1 (1->2 waypoints)",
+                    False, "no hittable point on the target edge after adopt")
+                chk("segment cursor reflects orientation on the hit path",
+                    False, "no hittable point")
+            base = picked1["off"] if picked1 else pts1[0]
+            d30 = [base["x"], base["y"]] if picked1 else [base[0], base[1]]
+            sx, sy = _to_screen(pg, d30[0], d30[1])
+            pg.mouse.move(sx, sy)
+            pg.wait_for_timeout(60)
+            pg.mouse.move(sx + 1, sy)   # jiggle: first move after a drag is
+            pg.wait_for_timeout(100)    # swallowed (measured); force a fresh one
+            cur = pg.evaluate(
+                "([x, y]) => { const el = document.elementFromPoint(x, y);"
+                " return el && el.style ? el.style.cursor : null; }",
+                [sx + 1, sy])
+            chk("segment cursor reflects orientation on the hit path",
+               cur in ("ns-resize", "ew-resize"), cur)
+            pg.mouse.down()
+            pg.wait_for_timeout(40)
+            for t in (0.25, 0.5, 0.75, 1.0):
+                pg.mouse.move(sx, sy - 30 * t)
+                pg.wait_for_timeout(20)
+            pg.mouse.up()
+            pg.wait_for_timeout(150)
+            pg.wait_for_timeout(600)
+            w2 = pg.evaluate("window.__stdrawUserWps()[%d] || []" % EIDX)
+            head_ok = bool(w2) and abs(w2[0][0] - w1[0][0]) < 2.5 and \
+                abs(w2[0][1] - w1[0][1]) < 2.5
+            chk("segment drag anchor-adjacent inserts 1 (1->2 waypoints)",
+               len(w2) == 2 and head_ok,
+               json.dumps([w1[:1], w2]))
+
+            # interior segment (inserts TWO jog bendpoints). The first edge's
+            # interior segments are too short/covered on the dense demo, so
+            # pick a dedicated edge with a hittable interior point.
+            picked2 = None
+            ek2 = None
+            E2 = None
+            for cand in range(n_edges):
+                if pg.evaluate("window.__stdrawArcFlag(%d)" % cand):
+                    continue
+                key2 = pg.evaluate(
+                    "(function(){var d=JSON.parse(document.getElementById("
+                    "'stdraw-data').textContent);var e=d.edges[%d];"
+                    "return e.a + '->' + e.b;})()" % cand)
+                pg.evaluate("window.__stdrawApplyLayout({nodes:{}, waypoints:"
+                            "{'" + key2 + "': [[300,150],[450,150],[600,150]]}})")
+                pg.wait_for_timeout(120)
+                p2i = pg.evaluate(JS_PICK, [cand, True])
+                if p2i and p2i["off"]["seg"] not in (0, None):
+                    picked2, ek2, E2 = p2i, key2, cand
+                    break
+            chk("fresh hittable point for interior segment drag",
+               picked2 is not None and picked2["off"]["seg"] not in (0, None),
+               json.dumps({"picked": picked2, "edge": E2, "key": ek2}))
+            sx, sy = _to_screen(pg, picked2["off"]["x"], picked2["off"]["y"]) if picked2 else (10, 10)
+            pg.mouse.move(sx, sy)
+            pg.wait_for_timeout(60)
+            pg.mouse.move(sx + 1, sy)   # jiggle (see above)
+            pg.wait_for_timeout(100)
+            pg.mouse.down()
+            pg.wait_for_timeout(40)
+            for t in (0.25, 0.5, 0.75, 1.0):
+                pg.mouse.move(sx + 24 * t, sy)
+                pg.wait_for_timeout(20)
+            pg.mouse.up()
+            pg.wait_for_timeout(150)
+            if picked2 is None:
+                chk("segment drag interior inserts 2 (3->5 waypoints)",
+                    False, "no hittable interior segment")
+                chk("export carries the drag-built waypoints",
+                    False, "skipped")
+            else:
+                w3 = pg.evaluate(
+                    "window.__stdrawUserWps()[%d] || []" % E2)
+                chk("segment drag interior inserts 2 (3->5 waypoints)",
+                    len(w3) == 5, json.dumps(w3))
+                exp_json = json.loads(pg.evaluate("window.__stdrawExportJSON()"))
+                e0 = [x for x in exp_json.get("edges", [])
+                      if x["a"] + "->" + x["b"] == ek2]
+                chk("export carries the drag-built waypoints",
+                    bool(e0) and e0[0].get("style") == "free" and
+                    len(e0[0].get("waypoints", [])) == 5, e0)
+
+            # drag-back-to-line merge (finalized deletion semantics): pull a
+            # real fold-point handle (hittable per elementFromPoint) onto the
+            # polyline through its neighbors
+            JS_HANDLE = """([i]) => {
+              const svg = document.getElementById('stdraw-svg');
+              const r = svg.getBoundingClientRect();
+              const VB = svg.viewBox.baseVal;
+              const toC = (vx, vy) => [r.x + (vx - VB.x) / VB.width * r.width,
+                                       r.y + (vy - VB.y) / VB.height * r.height];
+              const out = [];
+              document.querySelectorAll('.stdraw-wp[data-free="1"]')
+                .forEach(function (c) {
+                  if (+c.getAttribute('data-edge') !== i) return;
+                  const cx = +c.getAttribute('cx'), cy = +c.getAttribute('cy');
+                  const [sx, sy] = toC(cx, cy);
+                  const el = document.elementFromPoint(sx, sy);
+                  if (el && el.classList && el.classList.contains('stdraw-wp'))
+                    out.push({wp: +c.getAttribute('data-wp'), x: cx, y: cy});
+                });
+              return out;
+            }"""
+            ok_b = pg.evaluate(
+                "window.__stdrawApplyLayout({nodes:{}, waypoints:{'%s': "
+                "[[300,150],[450,150],[600,150],[750,150]]}})" % ek0)
+            pg.wait_for_timeout(650)
+
+            def _proj(p, a, b2):
+                vx, vy = b2[0] - a[0], b2[1] - a[1]
+                L2 = vx * vx + vy * vy
+                t = 0 if L2 < 1e-12 else max(0.0, min(1.0,
+                    ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / L2))
+                return [a[0] + t * vx, a[1] + t * vy]
+
+            def _dist_to_rest(p, rest):
+                return min(math.hypot(p[0] - _proj(p, rest[k], rest[k + 1])[0],
+                                      p[1] - _proj(p, rest[k], rest[k + 1])[1])
+                           for k in range(len(rest) - 1))
+
+            handle = pg.evaluate(JS_HANDLE, [EIDX])
+            pts3 = pg.evaluate("window.__stdrawEdgePts(%d)" % EIDX)
+            h0 = None
+            for h in handle:
+                rest = pts3[:h["wp"]] + pts3[h["wp"] + 1:]
+                if _dist_to_rest([h["x"], h["y"]], rest) <= 6:
+                    h0 = h
+                    break
+            chk("hittable fold-point handle available for merge",
+               ok_b and h0 is not None, json.dumps(handle))
+            w4 = []
+            if h0 is not None:
+                idx = h0["wp"]
+                pts3 = pg.evaluate("window.__stdrawEdgePts(%d)" % EIDX)
+                rest = pts3[:idx] + pts3[idx + 1:]
+                if _dist_to_rest([h0["x"], h0["y"]], rest) < 3:
+                    # already on the line: park 4px off first (still a real
+                    # drag), staying within MERGE_TOL=6 of the rest path
+                    target = [h0["x"] + 4, h0["y"] + 4]
+                else:
+                    best = None
+                    for k in range(len(rest) - 1):
+                        q = _proj([h0["x"], h0["y"]], rest[k], rest[k + 1])
+                        d = math.hypot(q[0] - h0["x"], q[1] - h0["y"])
+                        if best is None or d < best[0]:
+                            best = (d, q)
+                    target = best[1]
+                    if math.hypot(target[0] - h0["x"], target[1] - h0["y"]) < 3:
+                        target = [h0["x"] + 4, h0["y"] + 4]
+                sx, sy = _to_screen(pg, h0["x"], h0["y"])
+                tx, ty = _to_screen(pg, target[0], target[1])
+                pg.mouse.move(sx, sy)
+                pg.wait_for_timeout(100)
+                pg.mouse.down()
+                pg.wait_for_timeout(40)
+                for t in (0.25, 0.5, 0.75, 1.0):
+                    pg.mouse.move(sx + (tx - sx) * t, sy + (ty - sy) * t)
+                    pg.wait_for_timeout(20)
+                pg.mouse.up()
+                pg.wait_for_timeout(150)
+                w4 = pg.evaluate("window.__stdrawUserWps()[%d] || []" % EIDX)
+            chk("drag-back-to-line merges (4->3 waypoints)", len(w4) == 3,
+               json.dumps(w4))
+
+            # legacy free-mode click-insert survives the parked preview
+            ok_c = pg.evaluate(
+                "window.__stdrawApplyLayout({nodes:{}, waypoints:{'%s': "
+                "[[400, 150]]}})" % ek0)
+            pg.wait_for_timeout(650)
+            p2 = pg.evaluate(JS_PICK, [EIDX])
+            if p2 is None:
+                chk("parked-handle click on a free edge inserts (legacy path "
+                    "preserved)", False, "no hittable point after re-seed")
+            mx, my = _to_screen(pg, p2["mid"]["x"], p2["mid"]["y"]) if p2 else (10, 10)
+            pg.mouse.move(mx, my)
+            pg.wait_for_timeout(60)
+            pg.mouse.move(mx + 1, my)   # jiggle: preview parks at mid
+            pg.wait_for_timeout(150)
+            fl2 = pg.evaluate("window.__stdrawFloating()")
+            pg.mouse.click(mx, my)      # press + release without drag
+            pg.wait_for_timeout(200)
+            w5 = pg.evaluate("window.__stdrawUserWps()[%d] || []" % EIDX)
+            chk("parked-handle click on a free edge inserts (legacy path "
+                "preserved)", ok_c and fl2 is not None and len(w5) == 2,
+               [fl2, json.dumps(w5)])
 
             # == arc graph: all Bezier vertices follow (arcFollow) ==
             out_arc = os.path.join(tmp, "arc")

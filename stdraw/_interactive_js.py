@@ -32,9 +32,33 @@
 #     honestly (red when a hard gate fails — no leniency);
 #   - v0.7.7 free fold points: in free mode click the line to insert a
 #     handle (exact WYSIWYG polyline, no smoothing; endpoints re-anchored
-#     on the box borders facing the first/last fold point); at most 3 user
-#     fold points per edge — at the cap a click selects the nearest handle
-#     with the tooltip "max 3 points per edge";
+#     on the box borders facing the first/last fold point); at most
+#     MAX_FREE_PTS user fold points per edge — at the cap a click selects
+#     the nearest handle with a "max N points per edge" tooltip;
+#   - segment drag (drawio/bpmn-io .djs-segment-dragger caliber): on edges
+#     with explicit user geometry (free mode with fold points / user-
+#     anchored pinned polylines) dragging a segment translates the whole
+#     segment; jog bendpoints are created automatically at the dragged
+#     segment's pre-drag endpoints on first movement (anchor-adjacent
+#     segments insert one, interior segments insert two — the anchors
+#     themselves re-anchor on the box borders). Cursor reflects the segment
+#     orientation (ns-resize on horizontal, ew-resize on vertical).
+#     Auto-layout edges and straight lines are NOT affected: they keep live
+#     re-routing (deterministic contract untouched);
+#   - floating bendpoints (bpmn-io .djs-bendpoint.floating caliber): a
+#     semi-transparent handle parks at the MIDDLE of the hovered segment
+#     (mid-parking, not cursor-following — a cursor-following handle would
+#     intercept every pointerdown and make segment drag unreachable).
+#     Preview-only: hovering never writes user state. Dragging it >=4px
+#     away adopts the edge's current geometry as user fold points (free
+#     mode) and creates exactly one fold point; a plain click is a no-op;
+#   - fold-point lifecycle: a fold point released within 6px (svg units)
+#     of the polyline through its neighboring points merges back into the
+#     line (removed; pinned edges whose interior empties fall back to
+#     auto). Deletion semantics finalized = drag-back-to-line merge.
+#     Legacy paths (double-click style cycle / free click-insert / handle
+#     drag) unchanged. Drag preview: the live re-route + release-persist
+#     model is kept — no ghost layer added (documented no-op);
 #   - v0.7.7 persistence: "Export layout" writes edges[].style (+ fold
 #     points as waypoints); window.__stdrawApplyLayout({nodes, edge_styles,
 #     waypoints}) restores a layout programmatically; every drag release /
@@ -96,7 +120,10 @@ edges.forEach(function (e, i) {
   var g = svg.querySelector('[data-edge="' + i + '"]');
   if (g) {
     var p0 = g.querySelectorAll('path')[0];
-    if (p0) e.d0 = p0.getAttribute('d');
+    if (p0) {
+      e.d0 = p0.getAttribute('d');
+      bindEdgeHover(i, p0);   // visible stroke sits on top of the hit band
+    }
   }
 });
 var polGroups = {};
@@ -112,6 +139,35 @@ function edgeD(pts) {
   return 'M ' + pts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ');
 }
 // ── v0.7.7 per-edge hover hit zones (>=10px, pointer cursor, highlight) ──
+function bindEdgeHover(i, el) {
+  // Hover wiring shared by the hit path AND the visible line: in the real
+  // render the visible stroke sits on top of the 12px hit band, so edge
+  // hover events must be bound to both (the ±0.8px sliver on the visible
+  // line targets the visible path; the rest of the band targets the hit
+  // path). Derived state: highlight + floating bendpoint preview +
+  // segment-orientation cursor.
+  el.addEventListener('mouseenter', function () { hlEdge(i, true); });
+  el.addEventListener('mouseleave', function () {
+    hlEdge(i, false);
+    // NOTE: the inline segment cursor is deliberately NOT cleared here.
+    // Showing the floating handle under a stationary cursor makes the
+    // browser fire mouseleave right after mousemove (hover recompute);
+    // clearing there would wipe the just-set ns/ew-resize cursor. The
+    // cursor self-corrects on the next mousemove over any edge segment.
+    // Preview visibility is decided by the elementFromPoint interval
+    // below, not by boundary events (measured timing-dependent headless).
+  });
+  el.addEventListener('mousemove', function (ev) {
+    var p = svgPoint(ev);
+    if (!p) return;
+    lastFloatPos = [ev.clientX, ev.clientY];
+    showFloat(i, p);
+    if (segDraggable(i)) {
+      var sd = segAt(edges[i].pts, p);
+      if (sd) el.style.cursor = orientCursor(edges[i].pts, sd.k);
+    }
+  });
+}
 var SVGNS_EARLY = 'http://www.w3.org/2000/svg';
 var hitLayer = document.createElementNS(SVGNS_EARLY, 'g');
 hitLayer.id = 'stdraw-hits';
@@ -121,8 +177,7 @@ edges.forEach(function (e, i) {
   h.setAttribute('class', 'stdraw-hit');
   h.setAttribute('data-edge', i);
   h.setAttribute('d', edgeD(e.pts));
-  h.addEventListener('mouseenter', function () { hlEdge(i, true); });
-  h.addEventListener('mouseleave', function () { hlEdge(i, false); });
+  bindEdgeHover(i, h);
   hitLayer.appendChild(h);
 });
 function hlEdge(i, on) {
@@ -394,14 +449,25 @@ var pinned = {};          // edgeIdx -> true (user dragged a handle = waypoints 
 // v0.7.7 per-edge style cycle: edgeIdx -> 'auto' | 'straight' | 'arc' | 'free'
 // (auto = engine default routing; free = exact polyline on user fold points)
 var styles = {};
-var freeWps = {};         // edgeIdx -> [[x,y], ...] user fold points (free mode, max 3)
-var MAX_FREE_PTS = 3;     // per-edge user fold-point cap
+var freeWps = {};         // edgeIdx -> [[x,y], ...] user fold points (free mode, max MAX_FREE_PTS)
+// Segment-drag re-review (2026-11-08): an interior segment drag inserts TWO
+// jog bendpoints per gesture and a realistic orthogonal detour (e.g. jogging
+// around two cards on 8777 P5) needs 4-6 points; drawio/bpmn-io set no hard
+// cap at all. 8 = headroom for two segment-drags on one edge while keeping
+// metrics/metrics sampling and export/applyLayout truncation sane.
+var MAX_FREE_PTS = 8;     // per-edge user fold-point cap (creation-time only)
 var NS = 'http://www.w3.org/2000/svg';
 var styleEl = document.createElement('style');
 styleEl.textContent = '#stdraw-handles circle.stdraw-wp{fill:#fff;stroke:#475569;' +
   'stroke-width:1.4;cursor:move;pointer-events:all}' +
   '#stdraw-handles circle.stdraw-wp:hover{stroke:#dc2626;fill:#fef2f2}' +
   '#stdraw-handles circle.stdraw-wp.sel{stroke:#dc2626;fill:#fef2f2}' +
+  // Floating bendpoints (bpmn-io .djs-bendpoint.floating): preview-only
+  // handle; creating it never touches user state, so it is safe to render
+  // on hover and discard on leave.
+  '#stdraw-handles circle.stdraw-wp.floating{fill:#94a3b8;stroke:#475569;' +
+  'stroke-width:1.4;cursor:move;pointer-events:all;opacity:0.45}' +
+  '#stdraw-handles circle.stdraw-wp.floating:hover{opacity:0.85}' +
   // Edge hit paths: the stroke MUST be painted (alpha > 0) for Chromium's
   // pointer-events:stroke to hit-test it -- stroke:transparent is treated as
   // unpainted and the hit path never resolves under the cursor (2026-11-08
@@ -735,13 +801,12 @@ function selectNearestFreeHandle(i, p) {
   });
   if (bestH) bestH.classList.add('sel');
 }
-function insertFreePoint(i, p, ev) {
+function insertWaypointAt(i, p) {
+  // Shared fold-point creation (free click-insert + floating-bendpoint
+  // conversion): projected onto the nearest segment, rounded to 0.5.
+  // Returns the inserted freeWps index, or null at the MAX_FREE_PTS cap.
   var wps = freeWps[i] = freeWps[i] || [];
-  if (wps.length >= MAX_FREE_PTS) {
-    selectNearestFreeHandle(i, p);
-    showTip('max ' + MAX_FREE_PTS + ' points per edge', ev);
-    return;
-  }
+  if (wps.length >= MAX_FREE_PTS) return null;
   var pts = edges[i].pts;
   var best = null;
   for (var s = 0; s < pts.length - 1; s++) {
@@ -751,11 +816,183 @@ function insertFreePoint(i, p, ev) {
   }
   var wi = Math.min(best[1], wps.length);
   wps.splice(wi, 0, [Math.round(best[2][0] * 2) / 2, Math.round(best[2][1] * 2) / 2]);
+  return wi;
+}
+function insertFreePoint(i, p, ev) {
+  var wi = insertWaypointAt(i, p);
+  if (wi === null) {
+    selectNearestFreeHandle(i, p);
+    showTip('max ' + MAX_FREE_PTS + ' points per edge', ev);
+    return;
+  }
   reanchorFree(i);
   updateEdge(i);
   rebuildHandles();
   refreshMetrics();
   fireLayoutChanged();
+}
+// ── segment drag + floating bendpoints (drawio/bpmn-io caliber) ──
+var MERGE_TOL = 6;        // svg-unit merge tolerance (fold point dropped back onto the line)
+function segDraggable(i) {
+  // Segment drag applies only to edges with explicit user geometry: free
+  // mode with fold points, or user-anchored pinned polylines. Straight
+  // lines and auto-layout edges keep live re-routing; arcs have no
+  // polyline segments.
+  if (edges[i].arc) return false;
+  if ((styles[i] || 'auto') === 'free') return !!(freeWps[i] && freeWps[i].length);
+  return !!pinned[i];
+}
+function segAt(pts, p) {
+  // svgPoint() returns an SVGPoint object (.x/.y), array callers pass
+  // [x, y] — normalize to [x, y] here so every caller is safe
+  if (p && typeof p.x === 'number') p = [p.x, p.y];
+  var best = null;
+  for (var s = 0; s < pts.length - 1; s++) {
+    var q = projectOnSeg(p, pts[s], pts[s + 1]);
+    var d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (best === null || d < best[0]) best = [d, s, q];
+  }
+  return best === null ? null : {k: best[1], proj: best[2], dist: best[0]};
+}
+function orientCursor(pts, k) {
+  // diagram-js segment-dragger convention: horizontal segments move
+  // vertically (ns-resize), vertical segments move horizontally
+  // (ew-resize).
+  var a = pts[k], b = pts[k + 1];
+  return Math.abs(b[1] - a[1]) <= Math.abs(b[0] - a[0]) ? 'ns-resize' : 'ew-resize';
+}
+function segDragPlan(i, k) {
+  // drawio segment-move semantics: the dragged segment translates; jog
+  // bendpoints are created at its pre-drag endpoints. Segments adjacent to
+  // an edge anchor insert ONE bendpoint (the anchor side re-anchors on the
+  // box border instead — same caliber as CLI --from-layout), interior
+  // segments insert TWO. head/tail = user waypoints that stay put;
+  // mv = the moving points (copies of the dragged segment's waypoint
+  // endpoints); added = bendpoints created (mv.length).
+  var e = edges[i], pts = e.pts;
+  var isFree = (styles[i] || 'auto') === 'free';
+  var W = isFree ? (freeWps[i] || []) : pts.slice(1, -1);
+  var head, tail, mv;
+  if (k === 0) { head = []; tail = W.map(cp); mv = [cp(pts[1])]; }
+  else if (k === pts.length - 2) { head = W.map(cp); tail = []; mv = [cp(pts[k])]; }
+  else {
+    head = W.slice(0, k).map(cp); tail = W.slice(k).map(cp);
+    mv = [cp(pts[k]), cp(pts[k + 1])];
+  }
+  return {head: head, tail: tail, mv: mv, added: mv.length};
+}
+function applyUserWps(i, wps) {
+  // Write the effective user waypoints back: free mode via freeWps +
+  // reanchorFree; pinned via the same anchor-first/last caliber.
+  var e = edges[i];
+  if ((styles[i] || 'auto') === 'free') { freeWps[i] = wps; reanchorFree(i); return; }
+  if (!wps.length) {
+    var A = nodes[e.a], B = nodes[e.b];
+    e.pts = [anchor(A, [B.x, B.y]), anchor(B, [A.x, A.y])];
+    return;
+  }
+  e.pts = [anchor(nodes[e.a], wps[0])].concat(wps.map(cp))
+           .concat([anchor(nodes[e.b], wps[wps.length - 1])]);
+}
+function effectiveWps(i) {
+  if ((styles[i] || 'auto') === 'free') return (freeWps[i] || []).map(cp);
+  return pinned[i] ? edges[i].pts.slice(1, -1).map(cp) : [];
+}
+function adoptFreeAndInsert(i, pos) {
+  // Floating-bendpoint drag-away: adopt the edge's current geometry as
+  // user fold points (free mode) and insert exactly one fold point at the
+  // grab position. Returns the inserted freeWps index, or false at the cap
+  // (in which case NOTHING is written — preview stays dirty-free).
+  var e = edges[i], st = styles[i] || 'auto';
+  var cur = (st === 'free') ? (freeWps[i] || [])
+          : (pinned[i] ? e.pts.slice(1, -1)
+          : (e.corners && e.corners.length >= 3 ? e.corners.slice(1, -1) : []));
+  if (cur.length + 1 > MAX_FREE_PTS) return false;
+  if (st !== 'free') {
+    styles[i] = 'free';
+    delete pinned[i];
+    freeWps[i] = cur.map(function (q) {
+      return [Math.round(q[0] * 2) / 2, Math.round(q[1] * 2) / 2];
+    });
+  }
+  var wi = insertWaypointAt(i, pos);
+  if (wi === null) return false;
+  reanchorFree(i);
+  return wi;
+}
+function removeWaypoint(i, idx) {
+  // Merge-back deletion: drop the fold point, then rebuild. Pinned edges
+  // whose interior empties fall back to auto (no empty-pin residue).
+  var e = edges[i];
+  if ((styles[i] || 'auto') === 'free') {
+    if (freeWps[i]) freeWps[i].splice(idx - 1, 1);
+    reanchorFree(i);
+  } else {
+    e.pts.splice(idx, 1);
+    if (e.pts.length <= 2) { delete pinned[i]; reroute(i); }
+  }
+  updateEdge(i);
+  rebuildHandles();
+  refreshMetrics();
+}
+// Floating bendpoint handle: a single preview element in its own layer
+// (rebuildHandles clears #stdraw-handles; the floating preview must
+// survive every rebuild). Hover-only — never written into user state.
+var floatLayer = document.createElementNS(NS, 'g');
+floatLayer.id = 'stdraw-float';
+svg.appendChild(floatLayer);
+var floatC = null;
+// Last cursor client position seen over an edge (drives the deterministic
+// floating-preview visibility check below)
+var lastFloatPos = null, lastCursor = null;
+function edgeFloatable(i) { return !edges[i].arc; }
+function floatHandle() {
+  if (floatC) return floatC;
+  floatC = document.createElementNS(NS, 'circle');
+  floatC.setAttribute('r', '4');
+  floatC.setAttribute('class', 'stdraw-wp floating');
+  floatC.setAttribute('data-float', '1');
+  floatC.style.display = 'none';
+  floatLayer.appendChild(floatC);
+  return floatC;
+}
+// Deterministic floating-preview lifecycle: boundary events (mouseenter/
+// mouseleave between the line and the handle) fire in a timing-dependent
+// order when the handle appears directly under a stationary cursor, so
+// visibility is decided by polling elementFromPoint at the last cursor
+// position — over the edge or the handle keeps the preview, anywhere else
+// hides it. Pure DOM geometry, no timers-on-events races.
+window.addEventListener('mousemove', function (ev) { lastCursor = [ev.clientX, ev.clientY]; });
+setInterval(function () {
+  if (!floatC || floatC.style.display === 'none' || !lastCursor) return;
+  // Probe the CURRENT cursor position (window-tracked; the parked handle
+  // position would self-lock). Exclude the handle itself from the probe
+  // via pointer-events:none — no visual flicker.
+  var pe = floatC.style.pointerEvents;
+  floatC.style.pointerEvents = 'none';
+  var el = document.elementFromPoint(lastCursor[0], lastCursor[1]);
+  floatC.style.pointerEvents = pe;
+  if (el && el.closest && el.closest('[data-edge]')) return;
+  hideFloat();
+}, 120);
+function showFloat(i, p) {
+  if (drag || !edgeFloatable(i)) { hideFloat(); return; }
+  var sd = segAt(edges[i].pts, p);
+  if (!sd) { hideFloat(); return; }
+  // bpmn-io .djs-bendpoint.floating parks the handle at the MIDDLE of the
+  // hovered segment, NOT under the cursor: a cursor-following handle would
+  // intercept every pointerdown on the line and make segment drag
+  // unreachable. Mid-segment parking splits the intents cleanly — press at
+  // mid = create fold point (drag away), press elsewhere = segment drag.
+  var a = edges[i].pts[sd.k], b2 = edges[i].pts[sd.k + 1];
+  var c = floatHandle();
+  c.setAttribute('cx', ((a[0] + b2[0]) / 2).toFixed(1));
+  c.setAttribute('cy', ((a[1] + b2[1]) / 2).toFixed(1));
+  c.setAttribute('data-edge', i);
+  c.style.display = '';
+}
+function hideFloat() {
+  if (floatC) floatC.style.display = 'none';
 }
 function svgPoint(ev) {
   var m = svg.getScreenCTM();
@@ -766,6 +1003,47 @@ function svgPoint(ev) {
 }
 function onDown(ev) {
   var t = ev.target;
+  // Floating bendpoint: preview-only until dragged >=4px (conversion in
+  // onMove); a plain click writes nothing.
+  var hf = t && t.closest ? t.closest('.stdraw-wp[data-float="1"]') : null;
+  if (hf) {
+    var fEi = +hf.getAttribute('data-edge');
+    if (!edges[fEi]) return;
+    // The floating handle sits exactly under the cursor (it follows the
+    // hover point), so a double-click whose second press lands on the edge
+    // resolves here — it must participate in the manual dblclick detection
+    // or the style cycle dies whenever the preview is visible (same
+    // caliber as the free-handle branch below).
+    if (edgeDblClickCheck(fEi)) {
+      ev.preventDefault();
+      return;
+    }
+    var fp = svgPoint(ev);
+    if (!fp) return;
+    if ((styles[fEi] || 'auto') === 'free') {
+      // Legacy free-mode click-insert: the parked preview must NOT swallow
+      // it. On free edges the press delegates to the standard insert flow
+      // (click = insert, drag = segment move); floating adoption stays
+      // exclusive to edges without explicit user geometry.
+      drag = {insert: true, edge: fEi, start: [fp.x, fp.y], ev: ev};
+      if (freeWps[fEi] && freeWps[fEi].length) {
+        var sdF = segAt(edges[fEi].pts, fp);
+        if (sdF) drag.segPrep = sdF.k;
+      }
+      hideFloat();
+      ev.preventDefault();
+      ev.stopPropagation();
+      return;
+    }
+    var fsd = segAt(edges[fEi].pts, fp);
+    drag = {floatDrag: true, edge: fEi, start: [fp.x, fp.y],
+            proj: fsd ? fsd.proj : [fp.x, fp.y], ev: ev};
+    try { hf.setPointerCapture(ev.pointerId); } catch (e0) {}
+    hideFloat();
+    ev.preventDefault();
+    ev.stopPropagation();
+    return;
+  }
   var h = t && t.closest ? t.closest('.stdraw-wp') : null;
   if (h) {
     var ei = +h.getAttribute('data-edge'), wi = +h.getAttribute('data-wp');
@@ -813,7 +1091,25 @@ function onDown(ev) {
         var p1 = svgPoint(ev);
         if (p1) {
           drag = {insert: true, edge: ei2, start: [p1.x, p1.y], ev: ev};
+          // explicit geometry: arm the segment-drag conversion (first
+          // movement >=4px turns this click-insert into a segment drag)
+          if (freeWps[ei2] && freeWps[ei2].length) {
+            var sd0 = segAt(edges[ei2].pts, p1);
+            if (sd0) drag.segPrep = sd0.k;
+          }
           ev.preventDefault();
+        }
+      } else if (segDraggable(ei2)) {
+        // pinned (user-anchored) polyline: pointerdown arms a segment drag;
+        // a click without movement writes nothing
+        var p2 = svgPoint(ev);
+        if (p2) {
+          var sd1 = segAt(edges[ei2].pts, p2);
+          if (sd1) {
+            drag = {seg: true, edge: ei2, plan: segDragPlan(ei2, sd1.k),
+                    start: [p2.x, p2.y], ev: ev};
+            ev.preventDefault();
+          }
         }
       }
     }
@@ -823,6 +1119,58 @@ function onMove(ev) {
   if (!drag) return;
   var p = svgPoint(ev);
   if (!p) return;
+  if (drag.floatDrag) {
+    // floating bendpoint: preview until the pointer moves >=4px, then
+    // adopt the edge geometry + create exactly one fold point and hand
+    // over to the standard fold-point drag; below the threshold = no-op
+    if (!drag.converted) {
+      var mf = Math.hypot(p.x - drag.start[0], p.y - drag.start[1]);
+      if (mf < 4) return;
+      var fi = drag.edge;
+      var wi = adoptFreeAndInsert(fi, drag.proj);
+      if (wi === false) {
+        showTip('max ' + MAX_FREE_PTS + ' points per edge', drag.ev || ev);
+        drag = null;
+        return;
+      }
+      drag = {wp: true, free: true, edge: fi, idx: wi + 1, start: drag.start,
+              ox: freeWps[fi][wi][0], oy: freeWps[fi][wi][1], g: null};
+      rebuildHandles();
+      return;
+    }
+  }
+  if (drag.insert && drag.segPrep !== undefined) {
+    // click-insert upgrades to a segment drag on first real movement
+    var mi = Math.hypot(p.x - drag.start[0], p.y - drag.start[1]);
+    if (mi >= 4) {
+      var ci = drag.edge;
+      var plan = segDragPlan(ci, drag.segPrep);
+      if ((freeWps[ci] || []).length + plan.added > MAX_FREE_PTS) {
+        showTip('max ' + MAX_FREE_PTS + ' points per edge', drag.ev || ev);
+        drag = null;
+        return;
+      }
+      drag = {seg: true, edge: ci, plan: plan, start: drag.start, ev: drag.ev};
+    }
+  }
+  if (drag.seg) {
+    // whole-segment translation: static head/tail waypoints stay, the
+    // moving copies of the dragged segment's endpoints follow the pointer
+    var pl = drag.plan;
+    var dx = p.x - drag.start[0], dy = p.y - drag.start[1];
+    var mvPts = pl.mv.map(function (q) {
+      return [Math.max(4, Math.min(VB[2] - 4, q[0] + dx)),
+              Math.max(4, Math.min(VB[3] - 4, q[1] + dy))];
+    });
+    applyUserWps(drag.edge, pl.head.concat(mvPts, pl.tail));
+    updateEdge(drag.edge);
+    rebuildHandles();
+    if (!rafPending) {
+      rafPending = true;
+      requestAnimationFrame(function () { rafPending = false; refreshMetrics(); });
+    }
+    return;
+  }
   if (drag.wp) {
     var e = edges[drag.edge];
     var wx = drag.ox + (p.x - drag.start[0]);
@@ -837,6 +1185,13 @@ function onMove(ev) {
       rafPending = true;
       requestAnimationFrame(function () { rafPending = false; refreshMetrics(); });
     }
+    return;
+  }
+  if (drag.insert) {
+    // Armed click-insert (free mode, fold points may be empty): movement is
+    // neither an insert (that is decided on release, <4px) nor a drag —
+    // fall-through here would hit the node branch with drag.id undefined
+    // (latent TypeError, exposed by the segment-drag interaction paths).
     return;
   }
   var n = nodes[drag.id];
@@ -873,6 +1228,8 @@ function onMove(ev) {
 }
 function onUp(ev) {
   if (!drag) return;
+  // floating bendpoint click (no drag): preview only, nothing persisted
+  if (drag.floatDrag) { drag = null; hideFloat(); return; }
   if (drag.insert) {
     var pe = svgPoint(ev);
     var moved = pe ? Math.hypot(pe.x - drag.start[0], pe.y - drag.start[1]) : 1e9;
@@ -882,8 +1239,44 @@ function onUp(ev) {
     drag = null;
     return;
   }
-  if (drag.wp) {
+  if (drag.seg) {
+    // finalize the segment drag: round the waypoints to the same 0.5
+    // caliber as fold-point insertion, then persist via layoutchanged
+    var se = drag;
     drag = null;
+    var fw = effectiveWps(se.edge).map(function (q) {
+      return [Math.round(q[0] * 2) / 2, Math.round(q[1] * 2) / 2];
+    });
+    applyUserWps(se.edge, fw);
+    updateEdge(se.edge);
+    rebuildHandles();
+    refreshMarkers();
+    refreshMetrics();
+    fireLayoutChanged();
+    return;
+  }
+  if (drag.wp) {
+    // merge-back deletion (finalized lifecycle semantics): a fold point
+    // released within MERGE_TOL of the polyline through its neighbors is
+    // removed instead of persisted (only after a real drag >=4px, so a
+    // plain handle click never deletes)
+    var eiU = drag.edge;
+    var peU = svgPoint(ev);
+    var movedU = peU ? Math.hypot(peU.x - drag.start[0], peU.y - drag.start[1]) : 1e9;
+    var posU = drag.free ? (freeWps[eiU] || [])[drag.idx - 1]
+                         : (edges[eiU] ? edges[eiU].pts[drag.idx] : null);
+    var merged = false;
+    if (posU && movedU >= 4) {
+      var restU = edges[eiU].pts.slice(0, drag.idx)
+                    .concat(edges[eiU].pts.slice(drag.idx + 1));
+      if (ptPolyDist(posU[0], posU[1], restU) <= MERGE_TOL) {
+        removeWaypoint(eiU, drag.idx);
+        showTip('fold point merged', ev);
+        merged = true;
+      }
+    }
+    drag = null;
+    if (merged) { refreshMarkers(); fireLayoutChanged(); return; }
     rebuildHandles();
     refreshMarkers();
     refreshMetrics();
@@ -1084,6 +1477,29 @@ window.__stdrawHandles = function () {
   });
   return out;
 };
+// Segment-drag / floating-bendpoint probe hooks: effective user waypoints
+// per edge (free or pinned interior) + floating preview handle state.
+window.__stdrawUserWps = function () {
+  var out = {};
+  edges.forEach(function (e, i) {
+    var w = effectiveWps(i);
+    if (w.length) out[i] = w;
+  });
+  return out;
+};
+window.__stdrawFloating = function () {
+  if (!floatC || floatC.style.display === 'none') return null;
+  return {edge: +floatC.getAttribute('data-edge'),
+          cx: +floatC.getAttribute('cx'), cy: +floatC.getAttribute('cy')};
+};
+window.__stdrawSegDraggable = function (i) { return segDraggable(i); };
+window.__stdrawDragState = function () {
+  if (!drag) return null;
+  var keys = [];
+  for (var k in drag) keys.push(k);
+  return {keys: keys, edge: drag.edge, free: drag.free};
+};
+window.__stdrawArcFlag = function (i) { return !!edges[i].arc; };
 // v0.7.9 probe/integration hooks: per-card rendered geometry + manual re-anchor
 window.__stdrawNodeGeom = function (v) {
   return v ? {x: nodes[v].x, y: nodes[v].y, w: nodes[v].w, h: nodes[v].h}
