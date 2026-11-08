@@ -275,8 +275,10 @@ def main():
                   const cx = r.x + (vx - VB.x) / VB.width * r.width;
                   const cy = r.y + (vy - VB.y) / VB.height * r.height;
                   const el = document.elementFromPoint(cx, cy);
+                  const eg = el && el.closest && el.closest('[data-edge]');
                   out.push({t: t, off: off,
-                    inEdge: !!(el && el.closest && el.closest('[data-edge]')),
+                    inEdge: !!eg,
+                    edgeIdx: eg ? +eg.getAttribute('data-edge') : null,
                     isHit: !!(el && el.classList &&
                               el.classList.contains('stdraw-hit')),
                     tag: el ? el.tagName + '.' + (el.getAttribute('class') || '')
@@ -344,12 +346,20 @@ def main():
                 "(transparent outcome recorded, see detail)",
                 dt.get("painted") is True and dt.get("all") is True
                 and dt.get("restored") is True, str(dt))
-            # pick a probe edge: on-line hit + open canvas at the midpoint
+            # pick a probe edge: on-line hit + open canvas at the midpoint.
+            # ref-scrubbed: since v0.7.11 the visible `g[data-edge]` line paints
+            # ABOVE the 12px hit band (bindEdgeHover wires hover to BOTH), so
+            # an on-line elementFromPoint legitimately resolves to the SAME
+            # edge's visible path instead of the .stdraw-hit path itself.
+            # Accept either -- both go through real hit-testing (dispatch
+            # bypass proves nothing); requiring .stdraw-hit verbatim went
+            # stale and red on v0.7.11.
             E = None
             for i, pts in per_edge.items():
                 if pts and all(p["inEdge"] for p in pts):
                     mid = [p for p in pts if p["t"] == 0.5 and p["off"] == 0]
-                    if mid and mid[0]["isHit"]:
+                    if mid and (mid[0]["isHit"] or
+                                mid[0].get("edgeIdx") == i):
                         E = i
                         break
             chk("probe edge selected via real hit", E is not None,
@@ -690,6 +700,28 @@ def main():
                abs(fl.get("cy") - picked["mid"]["y"]) < 2.5, fl)
             chk("hover writes NO user state (no waypoints/pins/styles)",
                json.loads(dirty) == [{}, [], []], dirty)
+            # ref-scrubbed: style-attachment gate. The floating rules were once
+            # prefixed with #stdraw-handles while the preview mounts in
+            # #stdraw-float -- every rule silently detached and the handle
+            # rendered as a black opaque dot (user-visible on 8777). Computed
+            # style is the only DOM-visible proof the selector still matches;
+            # geometry checks above cannot see it.
+            fst = pg.evaluate(
+                "() => { const c = document"
+                ".querySelector('circle.stdraw-wp.floating');"
+                " if (!c) return null; const s = getComputedStyle(c);"
+                " return {opacity: s.opacity, cursor: s.cursor,"
+                " fill: s.fill, layer: c.parentNode && c.parentNode.id,"
+                " display: s.display}; }")
+            chk("floating handle style attaches: computed opacity 0.45 "
+                "(selector not mis-layered)",
+               bool(fst) and fst.get("opacity") in ("0.45", "0.85") and
+               fst.get("display") == "inline", fst)
+            # 0.85 = the parked handle sits under the stationary cursor, so
+            # the :hover rule legitimately wins; either value proves the
+            # rule ATTACHED. A mis-layered selector computes opacity "1".
+            chk("floating handle cursor is move (not auto/default)",
+               bool(fst) and fst.get("cursor") == "move", fst)
             pg.mouse.move(10, 10)
             pg.wait_for_timeout(350)
             chk("floating handle hides off-edge",
@@ -711,6 +743,13 @@ def main():
                 "fold point (auto -> free)",
                pg.evaluate("window.__stdrawEdgeStyle(%d)" % EIDX) == "free" and
                len(w1) == 1, json.dumps(w1))
+            # ref-scrubbed cursor audit: the adopted fold-point handle lives in
+            # #stdraw-handles and must carry the base rule's move cursor.
+            hcur = pg.evaluate(
+                "() => { const c = document"
+                ".querySelector('#stdraw-handles circle.stdraw-wp');"
+                " if (!c) return null; return getComputedStyle(c).cursor; }")
+            chk("adopted fold-point handle cursor is move", hcur == "move", hcur)
 
             # segment drag on the anchor-adjacent segment (inserts ONE jog)
             # re-pick: the fold point created above re-routed the edge, so the
