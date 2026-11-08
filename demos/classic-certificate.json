@@ -12,6 +12,9 @@
  "metrics": {
   "crossings": 0,
   "crossing_details": [],
+  "visual_crossings": 0,
+  "fan_visual_crossings": 0,
+  "visual_crossing_details": [],
   "box_press_1px": 0,
   "routing_router_pairs": 0,
   "press_details": [],
@@ -77,6 +80,8 @@
  "gates_passed": "11/11",
  "reports": {
   "crossings_zero": true,
+  "visual_crossings_zero": true,
+  "visual_crossings_note": "report item, not a hard gate: all-edge-pair visual intersection count including shared-endpoint (fan) pairs — the blind spot the graph-theory crossings caliber exempts (ref-scrubbed); hard-gating awaits a legacy-number decision",
   "crossings_note": "soft target: <=2 crossings allowed when placement regularity holds (product call: some line intersection is acceptable; order and elegance come first); grading caliber unchanged (best = all hard gates + 0 crossings)",
   "row_align_ge_060": true,
   "row_align_note": "report item: row alignment is no longer a veto (hand-pulled samples show row_align delta ~= 0)"
