@@ -40,6 +40,10 @@ Mainstream diagram tools stop at "crossing minimization" heuristics, and **none 
 - **Quality certificates**: every deliverable ships with quantified metrics (crossings / box-over-line / clearance / alignment / CV / anchors), verified on the delivered coordinates;
 - **Determinism**: same input → same output, byte-identical (CP-SAT pinned to a single worker + fixed seed); diagrams are safe to commit with clean diffs.
 
+### Recommended scale (≤ 10 nodes, honest boundary)
+
+**Recommended: no more than 10 nodes** — the measured boundary for "CP-SAT proves optimality + full `_polish` refinement + all hard quality gates passing" (classic CLD small-graph domain, n10 ≈ 45–60 s per figure). Up to 12 nodes can trigger the ring-cycle layout (loop-dominated small graphs). n=20–30 do render after the WS5 fix (random sparse family: 20/20 at n20 and n30), but placement degrades from "proven optimal" to "best incumbent within a deterministic budget", box-over-line / clearance are no longer guaranteed at 0, and runtime stays 2–3 orders of magnitude above baselines; n≥50 is not recommended (19/20 at n50; the ortho recipe honestly skips non-planar inputs). Numbers per [benchmarks/REPORT.md](benchmarks/REPORT.md) §4/§5 (Chinese).
+
 ## Gallery
 
 All images are real renderings produced by the current engine (v0.7.10) from the in-repo corpus — no mock-ups, no stale artifacts (click through to each demo).
