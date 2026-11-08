@@ -273,6 +273,19 @@ models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
   `fan_visual_crossings` (the fan-pair subset) and
   `visual_crossing_details` (edge pair + intersection coordinates, capped
   at 10). v1 ortho certificates stay byte-compatible and do not carry it;
+- **mutual-pair lens arrows (channel caliber, not a certificate gate)**:
+  bidirectional edge pairs are routed as a lens (two Q arcs bowing outward
+  from the same anchor pair) and the arrowhead is drawn along the ARRIVAL
+  tangent -- so the arrival deviation from the border normal is what carries
+  the visible quality (a lens whose arrows stab the border at 20-30 deg reads
+  as "twisted", even when every hard gate passes: the anchor-angle gate
+  measures the angle to the border TANGENT, not the normal). The engine
+  re-derives both arcs' control points to the fullest lens that meets
+  `stdraw.routing.ARRIVAL_TARGET_DEG` (10 deg) and falls back to the previous
+  geometry when the chord tilt makes the target unreachable (measured:
+  soil-erosion 21 deg, induced-demand 20 deg). It is a routing-channel
+  target, NOT a certificate gate -- hard-gating awaits an owner decision
+  (ref-scrubbed);
 - **gates (hard gates, switched by `placement` mode)**: as measured on
   `demos/classic-certificate.json` (spine-wing mode), 11 gates
   **11/11 passed** — box_press_zero / edge_box_clear_ge_16 / anchors_smooth /
