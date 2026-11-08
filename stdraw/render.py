@@ -192,7 +192,10 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     parts.append('</svg>')
     # ── Interactive layer: toolbar + embedded data + script ──
     # Zero dependencies, zero network; without dragging the initial geometry is
-    # byte-identical to the static rendering (the script only attaches listeners).
+    # byte-identical to the static rendering (the script only attaches
+    # listeners; the v0.7.9 font-environment sync is a strict no-op whenever
+    # the rendered text fits the planned cards, which the engine's
+    # conservative text-metrics padding guarantees in matching environments).
     payload = {
         "name": graph_name,
         "viewBox": [0, 0, W, H],
