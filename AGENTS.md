@@ -264,15 +264,22 @@ models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
   mode, e.g. ring/column) + report metrics loop_cohesion_spread (loop
   cohesion), center_offset_x, line_kind_counts, ring_spacing_cv /
   ring_template_deviation (ring calibers);
-- **visual_crossings (reported metric, not a hard gate)**: pairwise polyline
-  intersection over ALL delivered edge pairs, INCLUDING pairs sharing an
-  endpoint (fan pairs) — the blind spot the graph-theory `crossings` caliber
-  exempts: fan lines from the same box can visibly cross mid-air while
-  `crossings` reports 0 (ref-scrubbed; strict intersection excludes mere
-  endpoint touch, so anchor meetings never count). Companion fields:
-  `fan_visual_crossings` (the fan-pair subset) and
+- **visual_crossings (hard gate since v0.7.12, `visual_crossings_zero`)**:
+  pairwise polyline intersection over ALL delivered edge pairs, INCLUDING
+  pairs sharing an endpoint (fan pairs) — the blind spot the graph-theory
+  `crossings` caliber exempts: fan lines from the same box can visibly cross
+  mid-air while `crossings` reports 0 (ref-scrubbed; strict intersection
+  excludes mere endpoint touch, so anchor meetings never count).
+  Companion fields: `fan_visual_crossings` (the fan-pair subset) and
   `visual_crossing_details` (edge pair + intersection coordinates, capped
-  at 10). v1 ortho certificates stay byte-compatible and do not carry it;
+  at 10). Introduced as a reported metric in ref-scrubbed ("hard-gating
+  awaits a legacy-number decision"); the 3 legacy fan-X figures
+  (population-logistic / renewable-resource / shifting-the-burden) were
+  fixed in ref-scrubbed (entry-side slot ordering + occupied-slot give-way +
+  bowtie shared-side monotone slots) and the report item became a
+  mode-independent hard gate folded into the grading `hard_ok` — a drawing
+  with a fan X can no longer grade best. v1 ortho certificates stay
+  byte-compatible and do not carry it;
 - **mutual-pair lens arrows (channel caliber, not a certificate gate)**:
   bidirectional edge pairs are routed as a lens (two Q arcs bowing outward
   from the same anchor pair) and the arrowhead is drawn along the ARRIVAL
@@ -287,17 +294,18 @@ models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
   target, NOT a certificate gate -- hard-gating awaits an owner decision
   (ref-scrubbed);
 - **gates (hard gates, switched by `placement` mode)**: as measured on
-  `demos/classic-certificate.json` (spine-wing mode), 11 gates
-  **11/11 passed** — box_press_zero / edge_box_clear_ge_16 / anchors_smooth /
+  `demos/classic-certificate.json` (spine-wing mode), 12 gates
+  **12/12 passed** — box_press_zero / edge_box_clear_ge_16 / anchors_smooth /
   min_gap_ge_16 / cv_le_035 / spine_axis_le_2px / midline_adherence_le_2px /
   symmetry_mirror_le_2px / mutual_pairs_separated / lines_no_coincidence /
-  routing_consistent (the gate key set switches with the placement mode; the
-  measured JSON is authoritative);
+  visual_crossings_zero / routing_consistent (the gate key set switches with
+  the placement mode; `visual_crossings_zero` is present in every mode since
+  v0.7.12; the measured JSON is authoritative);
 - **reports (report items, not hard gates)**: `crossings_zero` (soft target:
-  <= 2 crossings allowed when placement regularity holds),
-  `visual_crossings_zero` (visual caliber incl. fan pairs — reported, not
-  vetoing; hard-gating awaits a legacy-number decision) and
-  `row_align_ge_060`; grading semantics are unaffected;
+  <= 2 crossings allowed when placement regularity holds) and
+  `row_align_ge_060`; `visual_crossings_zero` moved from reports to the
+  hard-gate set in v0.7.12 (grading: a fan-X drawing grades `second` at
+  most, not `best`);
 - **grade**:
 
 | grade | semantics |
@@ -401,9 +409,29 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.7.10** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.7.12** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
+
+- **v0.7.12 version closure** (implementation card ref-scrubbed): **fan
+  crossings eliminated + visual_crossings hard-gated** — entry-side (target
+  end) fan slots order by the approach-point projection when the other-box
+  azimuths tie (population-logistic births box X), single-slidable fans
+  give way to frozen/arc anchors occupying the same border side with
+  give-way-only semantics, no-conflict single-entry fans stay byte-untouched
+  (renewable-resource harvest T-junction), and bowtie shared-side mutual
+  slots are azimuth-monotone across both rings (shifting-the-burden problem
+  box X; spread >= PAIR_T sides reproduce the per-ring assignment
+  byte-for-byte). `visual_crossings_zero` joined the hard-gate set in every
+  placement mode and the grading `hard_ok`; cert panel row + AGENTS schema
+  synced; 23-input sweep: exactly the 3 figures changed (grade best->best,
+  visual_crossings 1->0), the other 20 byte-identical; pytest 102/102 +
+  ci_checks green; certificate digest byte-identical pre/post bump.
+- **v0.7.11** (ref-scrubbed / 14bd041; entry backfilled — no version-section
+  entry was written at bump time): visible-edge redraw fix, per-edge
+  fail-visible isolation, deterministic comb constraints.
+- **v0.7.9** (ref-scrubbed / 5a3db81; entry backfilled): font-environment
+  robustness — post-render DOM geometry re-anchor.
 
 - **v0.7.10 version closure** (fix landed in ref-scrubbed / 25acc80, closure
   card ref-scrubbed): **interactive-layer edge hit CSS fix** — `.stdraw-hit`

@@ -49,12 +49,14 @@ class TestVisualCrossings(unittest.TestCase):
         # consistency: without fan crossings, visual == graph-theory caliber
         self.assertEqual(m["visual_crossings"], m["crossings"])
 
-    def test_report_item_present_not_a_gate(self):
+    def test_visual_zero_is_hard_gate(self):
+        # ref-scrubbed: the "awaits a legacy-number decision" report item is
+        # settled -- visual_crossings_zero joined the hard-gate set in every
+        # placement mode (the 3-figure fan-X sweep closed the legacy counts).
         cert = _cert_for(EXAMPLE)
-        self.assertIn("visual_crossings_zero", cert["reports"])
-        self.assertTrue(cert["reports"]["visual_crossings_zero"])
-        # must NOT leak into the hard-gate set
-        self.assertNotIn("visual_crossings_zero", cert["gates"])
+        self.assertNotIn("visual_crossings_zero", cert["reports"])
+        self.assertIn("visual_crossings_zero", cert["gates"])
+        self.assertTrue(cert["gates"]["visual_crossings_zero"])
 
     def test_synthetic_fan_crossing_counted(self):
         # Hand-built fan: two edges from the same source whose straight
@@ -84,6 +86,10 @@ class TestVisualCrossings(unittest.TestCase):
         d = m["visual_crossing_details"][0]
         self.assertTrue(d["fan_pair"])
         self.assertEqual(d["edges"], ["a->b", "a->c"])
+        # ref-scrubbed hard gate: the fan X must veto the certificate -- gate
+        # False and the grade honest (was "best" before the gate existed)
+        self.assertFalse(cert["gates"]["visual_crossings_zero"])
+        self.assertNotIn(cert["grade"], ("best", "second"))
 
     def test_endpoint_touch_not_counted(self):
         # Two edges from the same source fanning out WITHOUT crossing (their
@@ -125,6 +131,40 @@ class TestVisualCrossings(unittest.TestCase):
         self.assertEqual(m["crossings"], 1)
         self.assertEqual(m["visual_crossings"], 1)
         self.assertFalse(m["visual_crossing_details"][0]["fan_pair"])
+
+
+class TestFanXFixes(unittest.TestCase):
+    """ref-scrubbed: the 3 legacy fan-X figures must stay 0 under the engine."""
+
+    def _assert_clean(self, rel):
+        cert = _cert_for(os.path.join(ROOT, rel))
+        m = cert["metrics"]
+        self.assertEqual(m["visual_crossings"], 0, rel)
+        self.assertEqual(m["fan_visual_crossings"], 0, rel)
+        self.assertEqual(m["crossings"], 0, rel)
+        self.assertTrue(cert["gates"]["visual_crossings_zero"], rel)
+        self.assertEqual(cert["grade"], "best", rel)
+
+    def test_population_logistic_births_fan(self):
+        # births box: detour poly + direct line on the top border; the
+        # approach-projection tie-break orders the slots by the direction
+        # the lines actually come from
+        self._assert_clean(os.path.join("benchmarks", "corpus", "classic",
+                                        "population-logistic.cld"))
+
+    def test_renewable_resource_harvest_tjunction(self):
+        # harvest box: frozen lens-arc anchor occupies the left-border
+        # midpoint; the detour poly gives way instead of T-junctioning into
+        # the arc's arrival
+        self._assert_clean(os.path.join("benchmarks", "corpus", "classic",
+                                        "renewable-resource.cld"))
+
+    def test_shifting_the_burden_shared_side_order(self):
+        # problem box: the shared side's mutual-pair slots are azimuth-
+        # monotone across both rings (upper-ring incoming above lower-ring
+        # outgoing)
+        self._assert_clean(os.path.join("benchmarks", "corpus", "classic",
+                                        "shifting-the-burden.cld"))
 
 
 if __name__ == "__main__":

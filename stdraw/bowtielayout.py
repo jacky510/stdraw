@@ -207,6 +207,37 @@ def place_bowtie_vertex(plan, widths, card_h, cfg, edges):
         s = -1 if any(endv in seq for _k, seq in loops[:1]) else 1
         spread = 7 if side_mutual[side] else 14
         spoke_anchor[endv] = [side * ws / 2, s * spread]
+    # ref-scrubbed: on a side hosting BOTH rings' mutual pairs, the per-ring
+    # slot pairs interleave when spread < PAIR_T (upper pair = {-spread-12,
+    # -spread+12}, lower pair = {spread-12, spread+12}; for spread 7 the
+    # merged slot order is -19, -5, +5, +19 while the per-ring assignment
+    # put the upper ring's incoming line at +5 BELOW the lower ring's
+    # outgoing line at -5 -- an incoming line landing below an outgoing line
+    # that travels into the same half-plane crosses it mid-air at the shared
+    # border; measured on shifting-the-burden problem box, visual_crossings
+    # 1 -> 0 after this fix). Assign the merged slot offsets sorted ascending
+    # in (upper-ring U, upper-ring L, lower-ring U, lower-ring L) order; for
+    # spread >= PAIR_T sides the sorted merge reproduces the per-ring
+    # assignment byte-for-byte (the pairs do not interleave), so non-mutual
+    # bowtie figures keep their delivered geometry (eroding-goals /
+    # wage-price-spiral sweep-verified byte-identical).
+    pair_slots = {}
+    _pside_endvs = {}
+    for endv, dirs in spoke_dirs.items():
+        if len(dirs) == 2:
+            _side = -1 if pos[endv] < 0 else 1
+            _pside_endvs.setdefault(_side, []).append(endv)
+    for _side, _endvs in _pside_endvs.items():
+        if len(_endvs) != 2:
+            continue
+        _spread = 7 if side_mutual[_side] else 14
+        _offs = sorted([-_spread - PAIR_T, -_spread + PAIR_T,
+                        _spread - PAIR_T, _spread + PAIR_T])
+        _up = (_endvs[0] if any(_endvs[0] in seq for _k, seq in loops[:1])
+               else _endvs[1])
+        _low = _endvs[1] if _up == _endvs[0] else _endvs[0]
+        pair_slots[_up] = (_offs[0], _offs[1])
+        pair_slots[_low] = (_offs[2], _offs[3])
     hh3 = card_h / 2 - 3
     for endv, dirs in spoke_dirs.items():
         if not dirs:
@@ -225,8 +256,12 @@ def place_bowtie_vertex(plan, widths, card_h, cfg, edges):
             # far-end pairing keeps the gap monotone; same rule for both rings -> up/down and left/right mirrored.
             leftward = dirs[0] if pos[dirs[0][0]] > pos[dirs[0][1]] else dirs[1]
             backward = dirs[1] if leftward == dirs[0] else dirs[0]
-            sa_u = [base_sa[0], max(-hh3, min(hh3, base_sa[1] - PAIR_T))]
-            sa_l = [base_sa[0], max(-hh3, min(hh3, base_sa[1] + PAIR_T))]
+            if endv in pair_slots:
+                _ou, _ol = pair_slots[endv]
+            else:
+                _ou, _ol = base_sa[1] - PAIR_T, base_sa[1] + PAIR_T
+            sa_u = [base_sa[0], max(-hh3, min(hh3, _ou))]
+            sa_l = [base_sa[0], max(-hh3, min(hh3, _ol))]
             on_x = abs(abs(base_cb[0] - nb[0]) - nb[2] / 2) <= \
                 abs(abs(base_cb[1] - nb[1]) - nb[3] / 2)
             if on_x:

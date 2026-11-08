@@ -241,7 +241,7 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         placement = cert.get("placement")
         metric_rows = (
             f'<tr><td>Crossings (soft target · report item)</td><td>{m["crossings"]}</td></tr>'
-            f'<tr><td>Visual crossings (report item · incl. fan pairs)</td><td>{m.get("visual_crossings")}</td></tr>'
+            f'<tr><td>Visual crossings (hard gate · incl. fan pairs)</td><td>{m.get("visual_crossings")}</td></tr>'
             f'<tr><td>Box press (1px margin)</td><td>{m["box_press_1px"]}</td></tr>'
             f'<tr><td>Min edge-box clearance</td><td>{m["edge_box_min_clear"]}</td></tr>'
             f'<tr><td>Anchor violations</td><td>{m["anchor_violations"]}</td></tr>'
@@ -289,9 +289,6 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
             rep_html = (f'<h4>Report items (non-vetoing)</h4><table>'
                         f'<tr><td>0 crossings</td><td class="{_cls(rep.get("crossings_zero"))}">'
                         f'{_mark(rep.get("crossings_zero"))}</td></tr>'
-                        f'<tr><td>0 visual crossings (incl. fan pairs)</td>'
-                        f'<td class="{_cls(rep.get("visual_crossings_zero"))}">'
-                        f'{_mark(rep.get("visual_crossings_zero"))}</td></tr>'
                         f'<tr><td>Row alignment &ge;0.60</td>'
                         f'<td class="{_cls(rep.get("row_align_ge_060"))}">'
                         f'{_mark(rep.get("row_align_ge_060"))}</td></tr></table>')
