@@ -6,7 +6,7 @@
 
 *Text DSL in → diagram with a quality certificate out. Honest grades, never fake "zero crossings" claims.*
 
-English | [Chinese](README_zh-CN.md)
+English | [中文](README_zh-CN.md)
 
 </div>
 

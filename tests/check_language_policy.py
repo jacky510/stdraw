@@ -54,6 +54,13 @@ DEMO_LABEL_WHITELIST = [
     "市场饱和", "拥挤制约", "症状缓解", "根本治理", "饮鸩止渴",
 ]
 
+# Language-switch link labels (README.md -> README_zh-CN.md, ref-scrubbed):
+# the Chinese entry link is labelled in Chinese by design (users who cannot
+# read English must be able to recognize it); the zh face keeps "English".
+LANGUAGE_SWITCH_LABELS = [
+    "中文",
+]
+
 # zh-face: English allowed verbatim lines (nav notes).
 ZH_LINE_WHITELIST = [
     "> Engineering doc, maintained in Chinese — English overview: README.md",
@@ -94,7 +101,8 @@ def check_en_text_file(rel):
     if rel.endswith(".md"):
         text = re.sub(r"```.*?```", " ", text, flags=re.S)
     # whitelist known model labels (longest first so no label eats another)
-    for w in sorted(DEMO_LABEL_WHITELIST, key=len, reverse=True):
+    for w in sorted(DEMO_LABEL_WHITELIST + LANGUAGE_SWITCH_LABELS,
+                    key=len, reverse=True):
         text = text.replace(w, " ")
     for m in CJK.finditer(text):
         line = text.count("\n", 0, m.start()) + 1
