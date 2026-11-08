@@ -92,6 +92,13 @@ def main(argv=None):
                     help="extra per-side padding px for the value (second) text line "
                          "(default: historical baseline; raise it when long ticker/price "
                          "value strings overflow the planned card width)")
+    ap.add_argument("--column-order", default=None, metavar="V1,V2,...",
+                    help="v0.7.11 deterministic constraint (comb layouts): explicit "
+                         "source-column internal order, top->bottom, as a hard "
+                         "constraint (components keep their internal DFS order)")
+    ap.add_argument("--hub-side", default=None, metavar="NODE=left|right,...",
+                    help="v0.7.11 deterministic constraint (comb layouts): explicit "
+                         "hub side assignment, e.g. wdc=left,stx=right")
     ap.add_argument("--name", default="", help="graph name (default: the DSL graph name)")
     ap.add_argument("--exact", action="store_true",
                     help="WS2 exact crossing-number layer: B&B squeeze computes cr(G) and writes the "
@@ -203,6 +210,16 @@ def main(argv=None):
             cfg.pitch = a.pitch
         if a.value_pad is not None:
             cfg.value_pad_extra = a.value_pad
+        if a.column_order:
+            cfg.column_order = [v.strip() for v in a.column_order.split(",") if v.strip()]
+        if a.hub_side:
+            cfg.hub_side = {}
+            for _part in a.hub_side.split(","):
+                if "=" in _part:
+                    _k, _v = _part.split("=", 1)
+                    _v = _v.strip().lower()
+                    if _v in ("left", "right"):
+                        cfg.hub_side[_k.strip()] = _v
         if a.from_layout:
             # Manual layout: same routing + certificate pipeline; hard-gate
             # caliber unchanged, graded honestly

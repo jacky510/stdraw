@@ -389,11 +389,52 @@ def place_comb(plan, widths, card_h, cfg):
     k = len(col)
     pitch = cfg.pitch
     top = cfg.top
+    # v0.7.11 deterministic constraint #1 (P1, 8777 HDD chain): explicit
+    # source-column internal order. Components stay contiguous (a pendant
+    # tree never splits); the relative order of LISTED nodes is the hard
+    # constraint (component level AND inside a component), everything
+    # unlisted keeps engine order after the listed ones.
+    col_order = getattr(cfg, "column_order", None)
+    if col_order:
+        comps = plan.get("components") or {}
+        rank = {v: i for i, v in enumerate(col_order)}
+        engine_rank = {v: i for i, v in enumerate(col)}
+        def _comp_key(root):
+            members = comps.get(root) or [root]
+            rs = [rank[v] for v in members if v in rank]
+            return (min(rs) if rs else len(col_order), engine_rank[root])
+        ordered: list = []
+        for root in sorted(comps.keys(), key=_comp_key):
+            members = comps[root]
+            # within a component the LISTED nodes' relative order is also a
+            # hard constraint (e.g. a pendant listed after its source root):
+            # sort by rank first, engine DFS order as the tiebreak
+            engine_pos = {v: i for i, v in enumerate(members)}
+            members_sorted = sorted(members,
+                                    key=lambda v: (rank.get(v, len(col_order)
+                                                            + engine_pos[v]),
+                                                   engine_pos[v]))
+            ordered.extend(members_sorted)
+        seen = set(ordered)
+        ordered.extend(v for v in col if v not in seen)
+        col = ordered
     axis_x = int(round((cfg.margin + max(widths[v] for v in col) / 2.0) / 2) * 2)
     y = {v: top + i * pitch for i, v in enumerate(col)}
     hub_y_raw = top + (k - 1) * pitch / 2.0
     hub_y = int(round(hub_y_raw / 2) * 2)
     hl, hr = plan["hubs"]
+    # v0.7.11 deterministic constraint #2 (P1): explicit hub side assignment.
+    # One explicit side is enough to fix the bilateral assignment; a
+    # contradicting spec degrades deterministically (first left wins, then
+    # first right) instead of raising — the fan-clearance gates downstream
+    # still hold the geometry honest.
+    _side = getattr(cfg, "hub_side", None) or {}
+    _want = {v: s for v, s in _side.items()
+             if s in ("left", "right") and v in (hl, hr)}
+    _lefts = [v for v in (hl, hr) if _want.get(v) == "left"]
+    _rights = [v for v in (hl, hr) if _want.get(v) == "right"]
+    if (_lefts and _lefts[0] != hl) or (not _lefts and _rights and _rights[0] != hr):
+        hl, hr = hr, hl
     hub_w = max(widths[hl], widths[hr])
     wmax = max(widths[v] for v in col)
     hub_dx = max(HUB_DX_MIN,
@@ -461,6 +502,13 @@ def place_comb(plan, widths, card_h, cfg):
             "m": plan["m"],
         },
     }
+    # v0.7.11 constraint provenance — only stamped when a constraint was
+    # actually applied, so unconstrained layouts stay byte-identical to the
+    # pre-0.7.11 deterministic contract (baselines/digests untouched).
+    if col_order:
+        meta["comb"]["column_order"] = list(col_order)
+    if _want:
+        meta["comb"]["hub_side"] = {hl: "left", hr: "right"}
     if constructed:
         # tier-1 (wide-card) fan: certificate-caliber note only — the gate
         # set and semantics are unchanged (hub_edges_straight still reads
