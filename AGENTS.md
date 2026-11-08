@@ -377,9 +377,28 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.7.7** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.7.8** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
+
+- **v0.7.8 version closure** (implementation card ref-scrubbed, closure
+  card ref-scrubbed): **comb-bilateral wide-card tier-1 facing-border fan** —
+  double-ticker wide cards (the 8777 caliber: xval 330px / wafer 292px) made
+  the tier-0 global fan widening angle-infeasible: measured across the
+  widening bracket, widening anti-correlates with the horizontal-border
+  departure angle (19.9 -> 8.1 deg, every bracket failure angle-bound), so
+  the comb honestly fell back to layered/uncertified; tier 1 instead anchors
+  hub edges on the facing vertical borders (center-line border crossing
+  anchors with in-band clamp), spreads hub-side slots in source-row order at
+  >= 8px spacing (a non-crossing condition backed by an analytic seg_cross
+  pairwise self-check — the first draft's alphabetical tie-break inverted the
+  slot order into a same-hub visual crossing the certificate's
+  shared-endpoint exemption could not see), delivers via the
+  constructed-route injection channel, and the trial gate re-runs the
+  unified hard gates on the result; certificate meta.comb.fan=facing-border
+  marker, gate set unchanged; regression fixture tests/data/hdd-wide-tickers.cld
+  joined the CI AUTO_EXAMPLES (grade best, 11/11 gates) + 7 unit tests;
+  20-graph corpus sweep byte-identical vs f86f1d3 (tier-0 path untouched);
 
 - **v0.7.7 version closure** (implementation card ref-scrubbed, closure
   card ref-scrubbed): **comb-bilateral placement mode** — K_{m,2}-type
