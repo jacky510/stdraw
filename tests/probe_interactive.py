@@ -247,6 +247,199 @@ def main():
             pos2 = pg.evaluate("window.__stdrawNodePos('rate')")
             chk("reset restores initial layout", pos2 == pos0, f"{pos2} vs {pos0}")
 
+            # == ref-scrubbed hit gate: edge interactions via REAL hit-testing ==
+            # 2026-11-08 8777 incident: .stdraw-hit shipped stroke:transparent +
+            # pointer-events:stroke; Chromium treats an unpainted stroke as
+            # unhittable, so every edge interaction (double-click style cycle /
+            # free-point insert / edge drag) was dead on real machines while
+            # synthetic dispatchEvent probes stayed green (dispatch bypasses
+            # hit-testing = false positive). These gates go through the real
+            # hit path only: elementFromPoint along each edge + CDP real-mouse
+            # (pointerType mouse) input. Synthetic events prove nothing here.
+            JS_HIT_PROBE = """([i]) => {
+              const svg = document.getElementById('stdraw-svg');
+              const r = svg.getBoundingClientRect();
+              const VB = svg.viewBox.baseVal;
+              const h = svg.querySelector('.stdraw-hit[data-edge="' + i + '"]');
+              if (!h) return null;
+              const len = h.getTotalLength();
+              const out = [];
+              for (const t of [0.1, 0.3, 0.5, 0.7, 0.9]) {
+                const p = h.getPointAtLength(t * len);
+                const p2 = h.getPointAtLength(Math.min(len, t * len + 1.5));
+                let nx = -(p2.y - p.y), ny = p2.x - p.x;
+                const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+                for (const off of [0, 4, -4]) {
+                  const vx = p.x + nx * off, vy = p.y + ny * off;
+                  const cx = r.x + (vx - VB.x) / VB.width * r.width;
+                  const cy = r.y + (vy - VB.y) / VB.height * r.height;
+                  const el = document.elementFromPoint(cx, cy);
+                  out.push({t: t, off: off,
+                    inEdge: !!(el && el.closest && el.closest('[data-edge]')),
+                    isHit: !!(el && el.classList &&
+                              el.classList.contains('stdraw-hit')),
+                    tag: el ? el.tagName + '.' + (el.getAttribute('class') || '')
+                            : String(el)});
+                }
+              }
+              return out;
+            }"""
+            n_edges_hit = pg.evaluate(
+                "document.querySelectorAll('.stdraw-hit').length")
+            per_edge = {i: pg.evaluate(JS_HIT_PROBE, [i])
+                        for i in range(min(n_edges_hit, 6))}
+            bad = {i: [p for p in (pts or []) if not p["inEdge"]]
+                   for i, pts in per_edge.items()}
+            chk("elementFromPoint on/beside every sampled edge point "
+                "resolves into the edge interaction layer",
+                n_edges_hit > 0 and all(not v for v in bad.values()),
+                f"edges_probed={len(per_edge)} miss={ {k: len(v) for k, v in bad.items() if v} }")
+            hit_only = {i: [p for p in (pts or [])
+                            if p["off"] and not p["isHit"]]
+                        for i, pts in per_edge.items()}
+            chk("off-line band points resolve to the hit path itself",
+                n_edges_hit > 0 and all(not v for v in hit_only.values()),
+                f"miss={ {k: len(v) for k, v in hit_only.items() if v} }")
+            # paintedness self-calibration: the shipped stroke must be painted
+            # (alpha > 0) and pointer-events:all must also hit. NOTE (measured
+            # 2026-11-08, Edge 157.0.4341.42 headless = the user's own Edge
+            # install): current Chromium hit-tests pointer-events:stroke
+            # regardless of paint (stroke:none / transparent all hit), so a
+            # hard "transparent FAIL" assertion is environment-dependent and
+            # would go red on modern builds -- the painted stroke is kept
+            # because older Chromium builds gate `stroke` hit-testing on
+            # paintedness (diagram-js ships painted white hit strokes for the
+            # same reason). We assert what must hold everywhere: painted PASS
+            # + all PASS + CSS restore PASS; the transparent outcome is
+            # recorded in the detail string only.
+            dt = pg.evaluate("""() => {
+              const svg = document.getElementById('stdraw-svg');
+              const h = svg.querySelector('.stdraw-hit');
+              const r = svg.getBoundingClientRect();
+              const VB = svg.viewBox.baseVal;
+              const p = h.getPointAtLength(0.5 * h.getTotalLength());
+              const p2 = h.getPointAtLength(
+                Math.min(h.getTotalLength(), 0.5 * h.getTotalLength() + 1.5));
+              let nx = -(p2.y - p.y), ny = p2.x - p.x;
+              const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+              const vx = p.x + nx * 4, vy = p.y + ny * 4;
+              const cx = r.x + (vx - VB.x) / VB.width * r.width;
+              const cy = r.y + (vy - VB.y) / VB.height * r.height;
+              const hitAt = () => {
+                const el = document.elementFromPoint(cx, cy);
+                return !!(el && el.classList &&
+                          el.classList.contains('stdraw-hit'));
+              };
+              const out = {};
+              h.style.stroke = 'transparent'; out.transparent = hitAt();
+              h.style.stroke = 'rgba(255,255,255,0.01)'; out.painted = hitAt();
+              h.style.stroke = 'transparent';
+              h.style.pointerEvents = 'all'; out.all = hitAt();
+              h.style.stroke = ''; h.style.pointerEvents = '';
+              out.restored = hitAt();
+              return out;
+            }""")
+            chk("hit self-check: painted PASS / all PASS / CSS restore PASS "
+                "(transparent outcome recorded, see detail)",
+                dt.get("painted") is True and dt.get("all") is True
+                and dt.get("restored") is True, str(dt))
+            # pick a probe edge: on-line hit + open canvas at the midpoint
+            E = None
+            for i, pts in per_edge.items():
+                if pts and all(p["inEdge"] for p in pts):
+                    mid = [p for p in pts if p["t"] == 0.5 and p["off"] == 0]
+                    if mid and mid[0]["isHit"]:
+                        E = i
+                        break
+            chk("probe edge selected via real hit", E is not None,
+                f"per_edge on-line isHit={[k for k, v in per_edge.items() if v and any(p['isHit'] and p['off'] == 0 for p in v)]}")
+            if E is not None:
+                # fresh midpoint per input: switching the style re-renders the
+                # edge (straight chord -> arc sagitta moves the curve away from
+                # the old midpoint), so each real-mouse input must re-aim at
+                # the CURRENT hit-path geometry, like a user following the line
+                def _edge_mid_screen(pg, eidx):
+                    mid = pg.evaluate(
+                        "([i]) => { const svg=document.getElementById('stdraw-svg');"
+                        " const h=svg.querySelector('.stdraw-hit[data-edge=\\\"'+i+'\\\"]');"
+                        " const p=h.getPointAtLength(0.5*h.getTotalLength());"
+                        " return [p.x, p.y]; }", [eidx])
+                    return _to_screen(pg, mid[0], mid[1])
+                sx, sy = _edge_mid_screen(pg, E)
+                st0 = pg.evaluate(f"window.__stdrawEdgeStyle({E})")
+                cycle = [st0]
+                for _ in range(3):
+                    pg.mouse.dblclick(sx, sy)
+                    pg.wait_for_timeout(120)
+                    sx, sy = _edge_mid_screen(pg, E)
+                    cycle.append(pg.evaluate(f"window.__stdrawEdgeStyle({E})"))
+                chk("CDP real-mouse double-click on edge cycles style "
+                    "auto->straight->arc->free",
+                    cycle == ["auto", "straight", "arc", "free"],
+                    f"edge {E}: {'->'.join(cycle)}")
+                # free mode: single click on the edge inserts a fold point
+                sx, sy = _edge_mid_screen(pg, E)
+                pg.mouse.click(sx, sy)
+                pg.wait_for_timeout(200)
+                wps = pg.evaluate(f"window.__stdrawFreePoints({E})")
+                n_free_handles = pg.evaluate(
+                    "document.querySelectorAll('.stdraw-wp[data-free=\"1\"]').length")
+                chk("free-mode click inserts fold point + free handle appears",
+                    len(wps) == 1 and n_free_handles == 1,
+                    f"wps={wps} freeHandles={n_free_handles}")
+                if len(wps) == 1:
+                    pg.wait_for_timeout(600)  # > 450ms dblclick window
+                    hx, hy = _to_screen(pg, wps[0][0], wps[0][1])
+                    pg.mouse.move(hx, hy)
+                    pg.mouse.down()
+                    pg.mouse.move(hx + 30, hy + 20, steps=4)
+                    pg.wait_for_timeout(40)
+                    pg.mouse.up()
+                    pg.wait_for_timeout(200)
+                    wps2 = pg.evaluate(f"window.__stdrawFreePoints({E})")
+                    chk("fold-point handle draggable (waypoint follows mouse)",
+                        len(wps2) == 1 and
+                        abs(wps2[0][0] - wps[0][0]) > 15 and
+                        abs(wps2[0][1] - wps[0][1]) > 10,
+                        f"{wps} -> {wps2}")
+                    exp = json.loads(
+                        pg.evaluate("window.__stdrawExportJSON()"))
+                    e_entries = [e for e in exp.get("edges", [])]
+                    wp_entry = [e for e in e_entries if e.get("waypoints")]
+                    chk("export layout carries waypoints for the free edge",
+                        bool(wp_entry) and
+                        any(any(abs(p[0] - wps2[0][0]) < 2 and
+                                abs(p[1] - wps2[0][1]) < 2
+                                for p in e["waypoints"])
+                            for e in wp_entry),
+                        f"edges={str(e_entries)[:200]}")
+                    wp_free = os.path.join(tmp, "wp-free.json")
+                    with open(wp_free, "w", encoding="utf-8") as f:
+                        json.dump(exp, f, ensure_ascii=False)
+                    out_free = os.path.join(tmp, "wp-free")
+                    r_free = run_cli(["layout", EX, "--outdir", out_free,
+                                      "--skip-3d", "--from-layout", wp_free])
+                    geo_free = (load(os.path.join(out_free,
+                                                  "geometry_report.json"))
+                                if r_free.returncode == 0 else {"fail": -1})
+                    # The pipeline must consume the exported free-edge layout.
+                    # Outcome is honestly graded: rc=0 = gates pass; rc=1 =
+                    # hard-gate fail on the user-dragged waypoint (the CLI
+                    # exits 1 when geometry_report fail>0 -- honest boundary,
+                    # by design). A crash / schema refusal is the only failure.
+                    ok_rc = r_free.returncode in (0, 1)
+                    honest = (r_free.returncode == 0 and
+                              geo_free["fail"] == 0) or \
+                             (r_free.returncode == 1 and
+                              "uncertified" in r_free.stdout)
+                    chk("exported free-edge layout replays through the CLI "
+                        "pipeline (persistence chain closes; honest grade "
+                        "on user-dragged waypoint accepted)",
+                        ok_rc and honest,
+                        f"rc={r_free.returncode} fail={geo_free['fail']} "
+                        f"err={r_free.stderr[-200:]!r} "
+                        f"out={r_free.stdout[-300:]!r}")
+
             # == ref-scrubbed: vg polyline follow + bend handles + full waypoints chain ==
             out_a = os.path.join(tmp, "auto")
             run_cli(["layout", EX, "--outdir", out_a, "--skip-3d"])
