@@ -266,3 +266,24 @@ id 顺序）驱动；同构图的对应节点同色 → 对应槽位。已验证
 | symmetric | 镜像轴误差 ≤2px |
 | bowtie-vertex | 镜像轴误差 ≤2px（共享节点居轴心 + 上下环镜像） |
 | layered | 行距恒等 + 24px 列吸附 ≥60%（简单图） |
+
+## 方框标准锚点集（16 点，ref-scrubbed，交互层专用）
+
+- **口径**：每框 16 个离散标准连接点 = 4 边中点 + 4 角点 + 每边 2 个黄金
+  分割点（0.382/0.618）= 16 点对称口径（jacky 2026-11-08 口述「边中点 4 +
+  角 4 + 黄金分割点」的对称化落卡；单边 1 个黄金点破坏对称，不采用）。
+- **内缩**：全部 16 点落在边框**内缩 3px** 的矩形上（复用 fan 槽位的
+  `half − 3` 内缩口径，`stdraw/anchors.py:ANCHOR_INSET`）；角点永远不在
+  几何角尖上（渲染圆角 rx=7 之外），黄金点方向按顺时针固定
+  （g1 = 0.382，g2 = 0.618；顶边左→右、右边上→下、底边右→左、左边下→上）。
+- **正本**：`stdraw/anchors.py`（纯函数库，静态布局/布线管线**不 import**，
+  自动布线锚点规划口径不变 → 21 输入 sweep byte-identical）；交互层
+  `_interactive_js.stdAnchors` 镜像同一公式（live 卡片几何），probe 逐点
+  对拍 JS vs Python（≤0.02px）。
+- **交互语义**：hover 方框显示 16 锚点（工具栏可关）；边端点（起点+箭头
+  端）可单独拖动，松手吸附到**端点所属框**的最近标准锚点（并列取
+  ANCHOR_IDS 序靠前者）；点击可见锚点 = 显式指派（最近落点端点胜出）。
+- **user-anchored 重投影**：显式指派（拖拽吸附/点击/`__stdrawApplyLayout`
+  `edge_anchors`）后，节点拖动只把端点**重投影到同一锚位**（按 live 几何
+  重算坐标），不漂移；导出 layout 的 `edges[].anchors {src,dst}` 随
+  Export layout 语义走（viewer 回放恢复；CLI `--from-layout` 暂不消费该键）。
