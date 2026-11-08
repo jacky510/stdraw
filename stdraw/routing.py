@@ -54,6 +54,7 @@ ROUND_GUARD = 0.15     # conservative margin for delivery rounding (0.1px): bord
 COINCIDE_THR = 1.0          # distance <1px counts as adherence (same source as the certificate accounting)
 COINCIDE_SPAN = 8.0         # accumulated adherence must exceed 8px to count as "visual coincidence" (endpoint meeting exempted)
 FAN_STEP = 18.0             # uniform spread step for multiple anchors on the same node side (ref-scrubbed rule 3)
+MIN_FROZEN_ANCHOR_SEP = 8.0  # ref-scrubbed: fan slots must clear frozen anchors on the same side by at least this (px)
 REANCHOR_STEP = 4.0         # ref-scrubbed midband_reanchor ladder-clamping step
 
 EPS = 1e-9
@@ -958,7 +959,34 @@ class Router:
                 edge rechecks the hard gates (press/clearance/anchor angle/no crossing increase/mutual separation >= 4px); on any violation
                 the whole node falls back to border-midpoint anchors (deterministic: fixed traversal order + fixed step, no RNG).
                 frozen edges (constructed routes / user waypoints) are untouched.
+
+                ref-scrubbed: frozen edges' anchors on the same node side OCCUPY their
+                position. A fan whose middle slot lands on a frozen anchor produced a
+                V-shaped co-point at the border midpoint (classic-cld: the frozen spine
+                rate->adopters leaves rate's top-border midpoint while the 3-slot fan
+                held word->rate on the same midpoint; same pattern at adopters' bottom).
+                On conflict the whole fan gives way: deterministic candidate shifts
+                (+FAN_STEP/2 preferred, then -FAN_STEP/2, then whole steps), each
+                candidate band-scaled as a whole (slot order and equal spacing
+                preserved) and rechecked against the same hard gates; a candidate that
+                still lands within MIN_FROZEN_ANCHOR_SEP of a frozen anchor is skipped.
+                No frozen anchors / no conflict -> byte-for-byte the previous behavior.
         """
+        # ref-scrubbed: index the frozen edges' anchors by (node, side) so the
+        # fan slot assignment below can treat them as occupied positions.
+        # Stored as (anchor point, other-endpoint node id) so the group loop
+        # can also check azimuth monotonicity across the frozen anchors.
+        frozen_side = {}
+        for i2 in sorted(routes.keys()):
+            if i2 not in frozen:
+                continue
+            pts2 = routes[i2]["points"]
+            a2, b2 = self.edges[i2]
+            for end2, p2 in (("a", pts2[0]), ("b", pts2[-1])):
+                v2 = a2 if end2 == "a" else b2
+                other2 = b2 if end2 == "a" else a2
+                frozen_side.setdefault((v2, self._side_of(v2, p2)),
+                                       []).append((tuple(p2), other2))
         groups = {}
         for i in sorted(routes.keys()):
             if i in frozen:
@@ -992,44 +1020,101 @@ class Router:
                 return (oy - cy) if vertical else (ox - cx), i2
             ents = sorted(entries, key=_azi_key)
             k = len(ents)
-            offs = [(t2 - (k - 1) / 2.0) * FAN_STEP for t2 in range(k)]
             # ref-scrubbed: keep the fan inside the ref-scrubbed mid-band
             # (+/- 1/4 of the owning box dimension, the CI in-band gate):
             # when the fan half-span exceeds the band, scale the whole fan
             # uniformly into it (monotone slot order and equal spacing are
             # preserved, no stacking; deterministic).
             band = (hh if vertical else hw) / 2.0
-            half_span = (k - 1) / 2.0 * FAN_STEP
-            if half_span > band:
-                offs = [o * band / half_span for o in offs]
+            # ref-scrubbed: frozen anchors on this same node side occupy their
+            # tangent offset; the fan must not land on them (V co-point).
+            frozen_offs = []
+            for _pf, _of in frozen_side.get((v, side), ()):
+                frozen_offs.append((_pf[1] - cy) if vertical
+                                   else (_pf[0] - cx))
+            _frozen_az = []
+            for _pf, _of in frozen_side.get((v, side), ()):
+                ox2, oy2, _ow2, _oh2 = self.N[_of]
+                _frozen_az.append(((oy2 - cy) if vertical else (ox2 - cx),
+                                   (_pf[1] - cy) if vertical
+                                   else (_pf[0] - cx)))
+
+            def _offs_for(shift):
+                raw = [(t2 - (k - 1) / 2.0) * FAN_STEP + shift
+                       for t2 in range(k)]
+                half_span = max(abs(o) for o in raw)
+                if half_span > band:
+                    raw = [o * band / half_span for o in raw]
+                return raw
+
+            def _frozen_conflict(offs):
+                # (a) clearance: no slot within MIN_FROZEN_ANCHOR_SEP of a
+                # frozen anchor (kills the V co-point);
+                # (b) azimuth monotonicity ACROSS the frozen anchors (the
+                # ref-scrubbed rule extended): slots that would move to the
+                # opposite side of a frozen anchor from their target box
+                # produce a line crossing that edge (its shared-endpoint
+                # exemption hides it from _edge_stats), so merged
+                # (position, other-box azimuth) must stay monotone.
+                for o in offs:
+                    for f in frozen_offs:
+                        if abs(o - f) < MIN_FROZEN_ANCHOR_SEP:
+                            return True
+                merged = [(o, az) for o, az in
+                          zip(offs, [(_azi_key(e)[0]) for e in ents])]
+                merged += [(f, az) for az, f in _frozen_az]
+                merged.sort()
+                for m1, m2 in zip(merged, merged[1:]):
+                    if m2[1] < m1[1] - 1e-9:
+                        return True
+                return False
+
+            # candidate give-way shifts, deterministic: centered first, then
+            # half-steps (right preferred), then whole steps. Shift 0 with no
+            # frozen anchors / no conflict reproduces the previous offs
+            # exactly (byte-for-byte zero drift for unaffected figures).
+            cand_shifts = [0.0]
+            if frozen_offs and _frozen_conflict(_offs_for(0.0)):
+                cand_shifts += [FAN_STEP / 2.0, -FAN_STEP / 2.0,
+                                FAN_STEP, -FAN_STEP,
+                                1.5 * FAN_STEP, -1.5 * FAN_STEP]
             before = {i2: [list(p) for p in routes[i2]["points"]]
                       for i2, _e, _p in ents}
             stats_before = {i2: self._edge_stats(i2, routes)
                             for i2, _e, _p in ents}
-            for (i2, end, _p), off in zip(ents, offs):
-                pts2 = routes[i2]["points"]
-                idx = 0 if end == "a" else len(pts2) - 1
-                if vertical:
-                    pts2[idx] = [pts2[idx][0],
-                                 max(cy - half_len, min(cy + half_len,
-                                                        cy + off))]
-                else:
-                    pts2[idx] = [max(cx - half_len, min(cx + half_len,
-                                                        cx + off)),
-                                 pts2[idx][1]]
-            ok = True
-            for i2, _e, _p in ents:
-                pr, clr, ang, cross, msep = self._edge_stats(i2, routes)
-                pr0, clr0, ang0, cross0, msep0 = stats_before[i2]
-                if pr > pr0 or cross > cross0:
-                    ok = False
-                if clr is not None and clr < self.cl - 1e-6:
-                    ok = False
-                if ang < ANCHOR_MIN_DEG:
-                    ok = False
-                if msep is not None and msep < 4.0:
-                    ok = False
-                if not ok:
+            ok = False
+            for shift in cand_shifts:
+                offs = _offs_for(shift)
+                if _frozen_conflict(offs):
+                    continue
+                for i2, pts_b in before.items():
+                    routes[i2]["points"] = [list(p) for p in pts_b]
+                for (i2, end, _p), off in zip(ents, offs):
+                    pts2 = routes[i2]["points"]
+                    idx = 0 if end == "a" else len(pts2) - 1
+                    if vertical:
+                        pts2[idx] = [pts2[idx][0],
+                                     max(cy - half_len, min(cy + half_len,
+                                                            cy + off))]
+                    else:
+                        pts2[idx] = [max(cx - half_len, min(cx + half_len,
+                                                            cx + off)),
+                                     pts2[idx][1]]
+                ok = True
+                for i2, _e, _p in ents:
+                    pr, clr, ang, cross, msep = self._edge_stats(i2, routes)
+                    pr0, clr0, ang0, cross0, msep0 = stats_before[i2]
+                    if pr > pr0 or cross > cross0:
+                        ok = False
+                    if clr is not None and clr < self.cl - 1e-6:
+                        ok = False
+                    if ang < ANCHOR_MIN_DEG:
+                        ok = False
+                    if msep is not None and msep < 4.0:
+                        ok = False
+                    if not ok:
+                        break
+                if ok:
                     break
             if not ok:
                 for i2, pts_b in before.items():
