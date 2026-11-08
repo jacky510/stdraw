@@ -80,6 +80,17 @@
 #     window.__stdrawSyncDomGeometry();
 #   - "Reset" restores the initial layout (incl. original path_d rendering,
 #     handle removal, style + fold-point clearing).
+#   - ref-scrubbed standard anchors + endpoint drag: hover a box shows its 16
+#     standard anchors (stdraw/anchors.py caliber, toggleable); every edge's
+#     start/arrow endpoint is individually draggable (topmost #stdraw-eps hit
+#     circles beat the segment hit band), releasing snaps to the nearest
+#     standard anchor of the endpoint's own box, and clicking a visible
+#     anchor explicitly assigns it (nearest incident endpoint). Explicit
+#     designations (userAnchored) travel with the export (edges[].anchors)
+#     and __stdrawApplyLayout edge_anchors; afterwards node drags only
+#     RE-PROJECT the endpoint onto the SAME anchor position (never drift).
+#     The static layout / auto-routing path is untouched (no default-path
+#     behavior change; the 21-input sweep stays byte-identical).
 # Determinism: the generated HTML contains no timestamps/random numbers;
 # without dragging the initial geometry is pixel-identical to the static render.
 _INTERACTIVE_JS = r"""(function () {
@@ -95,6 +106,16 @@ D.nodes.forEach(function (n) { nodes[n.id] = {x: n.x, y: n.y, w: n.w, h: cardH, 
 svg.querySelectorAll('[data-node]').forEach(function (g) {
   var id = g.getAttribute('data-node');
   if (nodes[id]) nodes[id].g = g;
+  // ref-scrubbed: hovering a box shows its 16 standard anchors (toggleable).
+  // The anchor dots layer is pointer-events:none — the dots never steal the
+  // cursor, so hovering stays on the node group and the dots cannot flicker.
+  g.addEventListener('mouseenter', function () {
+    hoverNode = g.getAttribute('data-node');
+    renderAnchors();
+  });
+  g.addEventListener('mouseleave', function () {
+    if (hoverNode === g.getAttribute('data-node')) { hoverNode = null; renderAnchors(); }
+  });
 });
 function quad(p0, c, p1, n) {
   var out = [];
@@ -231,6 +252,7 @@ function updateEdge(i) {
     var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
     paths[1].setAttribute('transform', 'translate(' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
   }
+  updateEndpointHandles(i);   // ref-scrubbed: endpoint handles track every redraw
 }
 function borderPoint(c, hw, hh, toward) {
   // Connector delivery caliber: ray-determined border exit -> the anchor is
@@ -258,12 +280,73 @@ function borderPoint(c, hw, hh, toward) {
 // user actually sees.
 function nHH(n) { return (n.h || cardH) / 2; }
 function anchor(n, toward) { return borderPoint([n.x, n.y], n.w / 2, nHH(n), toward); }
+// ── ref-scrubbed standard per-box anchor set (16 points) ──
+// Mirror of stdraw/anchors.py (authoritative Python caliber; the probe
+// cross-checks JS vs Python equality). All 16 points sit on the border
+// rectangle inset by ANCHOR_INSET (the routing fan-slot -3 inner-offset
+// caliber): 4 edge midpoints + 4 corner points (never the geometric tip /
+// the rounded rx=7 frame corner) + 2 golden-section points per edge
+// (0.382 / 0.618, clockwise g1/g2 direction — see anchors.py docstring).
+var ANCHOR_INSET = 3.0, GOLDEN1 = 0.382, GOLDEN2 = 0.618;
+var ANCHOR_IDS = ['n', 'e', 's', 'w',
+                  'ne', 'se', 'sw', 'nw',
+                  'n-g1', 'n-g2', 'e-g1', 'e-g2',
+                  's-g1', 's-g2', 'w-g1', 'w-g2'];
+function stdAnchors(n) {
+  var a = n.w / 2 - ANCHOR_INSET, b = nHH(n) - ANCHOR_INSET;
+  var cx = n.x, cy = n.y;
+  function r6(v) { return Math.round(v * 1e6) / 1e6; }
+  return [['n', cx, cy - b], ['e', cx + a, cy], ['s', cx, cy + b], ['w', cx - a, cy],
+          ['ne', cx + a, cy - b], ['se', cx + a, cy + b],
+          ['sw', cx - a, cy + b], ['nw', cx - a, cy - b],
+          ['n-g1', cx - a + 2 * a * GOLDEN1, cy - b],
+          ['n-g2', cx - a + 2 * a * GOLDEN2, cy - b],
+          ['e-g1', cx + a, cy - b + 2 * b * GOLDEN1],
+          ['e-g2', cx + a, cy - b + 2 * b * GOLDEN2],
+          ['s-g1', cx + a - 2 * a * GOLDEN1, cy + b],
+          ['s-g2', cx + a - 2 * a * GOLDEN2, cy + b],
+          ['w-g1', cx - a, cy + b - 2 * b * GOLDEN1],
+          ['w-g2', cx - a, cy + b - 2 * b * GOLDEN2]
+         ].map(function (p) { return [p[0], r6(p[1]), r6(p[2])]; });
+}
+function nearestAnchorId(v, px, py) {
+  var n = nodes[v];
+  if (!n) return null;
+  var pts = stdAnchors(n), best = null;
+  for (var k = 0; k < pts.length; k++) {
+    var d = Math.hypot(pts[k][1] - px, pts[k][2] - py);
+    if (best === null || d < best[0] - 1e-9) best = [d, pts[k][0]];
+  }
+  return best ? best[1] : null;
+}
+// userAnchored: edgeIdx -> {0: aid | 1: aid} — explicitly designated
+// standard anchors (endpoint drag release / anchor click / applyLayout).
+// user-anchored semantics: after designation, node drags only RE-PROJECT
+// the endpoint onto the SAME anchor position (live geometry), never drift.
+var userAnchored = {};
+function userAnchorPt(i, end) {
+  var ua = userAnchored[i];
+  if (!ua || !ua[end]) return null;
+  var e = edges[i];
+  var n = nodes[end === 0 ? e.a : e.b];
+  if (!n) return null;
+  var pts = stdAnchors(n);
+  for (var k = 0; k < pts.length; k++) {
+    if (pts[k][0] === ua[end]) return [pts[k][1], pts[k][2]];
+  }
+  delete ua[end];              // stale designation: fall back gracefully
+  return null;
+}
+function endPt(i, end, fallback) {
+  var p = userAnchorPt(i, end);
+  return p || fallback;
+}
 function reanchor(i) {
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
   var pts = e.pts.map(cp);
   var inner = pts.length > 2;
-  pts[0] = anchor(A, inner ? pts[1] : [B.x, B.y]);
-  pts[pts.length - 1] = anchor(B, inner ? pts[pts.length - 2] : [A.x, A.y]);
+  pts[0] = endPt(i, 0, anchor(A, inner ? pts[1] : [B.x, B.y]));
+  pts[pts.length - 1] = endPt(i, 1, anchor(B, inner ? pts[pts.length - 2] : [A.x, A.y]));
   e.pts = pts;
 }
 
@@ -391,8 +474,8 @@ function previewRoute(i) {
   // smoothing and mutual-pair separation — the certificate remains
   // authoritative via CLI recomputation).
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
-  var pa = anchor(A, [B.x, B.y]);
-  var pb = anchor(B, [A.x, A.y]);
+  var pa = endPt(i, 0, anchor(A, [B.x, B.y]));
+  var pb = endPt(i, 1, anchor(B, [A.x, A.y]));
   var rects = rectsFor(e.a, e.b);
   if (visible(pa, pb, rects, CL)) { e.pts = [pa, pb]; e.corners = null; return; }
   var path = vgShortest(pa, pb, rects, VG_C);
@@ -408,8 +491,8 @@ function arcFollow(i) {
   // v0.7.11 defensive: an arc edge missing its frozen control state (partial
   // restore paths) must degrade to a straight line, not throw mid-round.
   if (!e.ctrl0 || !e.pa0 || !e.pb0) { forcedStraight(i); return; }
-  var pa = anchor(A, [B.x, B.y]);
-  var pb = anchor(B, [A.x, A.y]);
+  var pa = endPt(i, 0, anchor(A, [B.x, B.y]));
+  var pb = endPt(i, 1, anchor(B, [A.x, A.y]));
   var ctrl = [e.ctrl0[0] + ((pa[0] - e.pa0[0]) + (pb[0] - e.pb0[0])) / 2,
               e.ctrl0[1] + ((pa[1] - e.pa0[1]) + (pb[1] - e.pb0[1])) / 2];
   e.pts = quad(pa, ctrl, pb, 12);
@@ -419,8 +502,8 @@ function arcFollow(i) {
 // the Python replay in layout_auto._manual_edge_styles/_forced_arc_route) ──
 function forcedStraight(i) {
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
-  var pa = anchor(A, [B.x, B.y]);
-  var pb = anchor(B, [A.x, A.y]);
+  var pa = endPt(i, 0, anchor(A, [B.x, B.y]));
+  var pb = endPt(i, 1, anchor(B, [A.x, A.y]));
   e.pts = [pa, pb];
   e.corners = null;
 }
@@ -435,8 +518,8 @@ function forcedArc(i) {
   // side = the sign whose sampled arc keeps more distance from unrelated
   // boxes (deterministic tie -> +1). Same rule as the Python replay.
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
-  var pa = anchor(A, [B.x, B.y]);
-  var pb = anchor(B, [A.x, A.y]);
+  var pa = endPt(i, 0, anchor(A, [B.x, B.y]));
+  var pb = endPt(i, 1, anchor(B, [A.x, A.y]));
   var vx = pb[0] - pa[0], vy = pb[1] - pa[1], d = Math.hypot(vx, vy);
   var k = adaptiveArcK(d), n = Math.max(d, 1e-6);
   var ux = -vy / n, uy = vx / n;
@@ -466,9 +549,9 @@ function reanchorFree(i) {
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
   var wps = freeWps[i];
   if (!wps || !wps.length) { forcedStraight(i); return; }
-  var pts = [anchor(A, wps[0])];
+  var pts = [endPt(i, 0, anchor(A, wps[0]))];
   pts = pts.concat(wps.map(cp));
-  pts.push(anchor(B, wps[wps.length - 1]));
+  pts.push(endPt(i, 1, anchor(B, wps[wps.length - 1])));
   e.pts = pts;
   e.corners = null;
 }
@@ -543,6 +626,21 @@ styleEl.textContent = '#stdraw-handles circle.stdraw-wp{fill:#fff;stroke:#475569
   // failure is visible instead of silently floating.
   '#stdraw-svg g[data-edge].stdraw-degraded > path:not(.stdraw-hit){stroke:#dc2626;stroke-dasharray:6 4}' +
   '#stdraw-svg path.stdraw-hit.stdraw-degraded{stroke:rgba(220,38,38,0.01)}' +
+  // ref-scrubbed: standard-anchor dots (hover preview). pointer-events:none —
+  // the dots never intercept the cursor (click-to-assign is resolved by the
+  // svg pointerdown handler against the LIVE anchor coordinates instead, so
+  // hovering a dot keeps the node hover alive and the dots cannot flicker).
+  '#stdraw-anchors{pointer-events:none}' +
+  '#stdraw-anchors circle.stdraw-anchor{fill:#fff;stroke:#0284c7;stroke-width:1.1;opacity:0.9}' +
+  '#stdraw-anchors circle.stdraw-anchor.pinned{fill:#0284c7;stroke:#075985}' +
+  '#stdraw-anchors circle.stdraw-anchor.near{fill:#fbbf24;stroke:#d97706}' +
+  // ref-scrubbed: per-edge ENDPOINT drag handles. The 9px invisible hit circle
+  // sits in the TOPMOST layer (#stdraw-eps appended last), so an endpoint
+  // press always resolves to the endpoint drag BEFORE the 12px segment hit
+  // band (drag-line = whole-segment translation) can claim it — endpoint
+  // hit priority is structural (DOM order), pinned by the probe.
+  '#stdraw-eps circle.stdraw-ep{fill:#fff;stroke:#0284c7;stroke-width:1.6;cursor:move;pointer-events:all}' +
+  '#stdraw-eps circle.stdraw-eps-hit{fill:rgba(255,255,255,0);stroke:none;cursor:move;pointer-events:all}' +
   '.stdraw-tip{position:absolute;z-index:9;background:#1f2937;color:#fff;' +
   'font:12px/1.4 sans-serif;padding:3px 8px;border-radius:4px;pointer-events:none}';
 document.head.appendChild(styleEl);
@@ -606,9 +704,9 @@ function pinEdge(i) {
   if (via.length < 1) return;
   var A = nodes[e.a], B = nodes[e.b];
   // Same caliber as CLI --from-layout: anchor = box border facing the first/last waypoint
-  var pts = [anchor(A, via[0])];
+  var pts = [endPt(i, 0, anchor(A, via[0]))];
   pts = pts.concat(via);
-  pts.push(anchor(B, via[via.length - 1]));
+  pts.push(endPt(i, 1, anchor(B, via[via.length - 1])));
   e.pts = pts;
   e.corners = pts.map(cp);
   pinned[i] = true;
@@ -967,11 +1065,11 @@ function applyUserWps(i, wps) {
   if ((styles[i] || 'auto') === 'free') { freeWps[i] = wps; reanchorFree(i); return; }
   if (!wps.length) {
     var A = nodes[e.a], B = nodes[e.b];
-    e.pts = [anchor(A, [B.x, B.y]), anchor(B, [A.x, A.y])];
+    e.pts = [endPt(i, 0, anchor(A, [B.x, B.y])), endPt(i, 1, anchor(B, [A.x, A.y]))];
     return;
   }
-  e.pts = [anchor(nodes[e.a], wps[0])].concat(wps.map(cp))
-           .concat([anchor(nodes[e.b], wps[wps.length - 1])]);
+  e.pts = [endPt(i, 0, anchor(nodes[e.a], wps[0]))].concat(wps.map(cp))
+           .concat([endPt(i, 1, anchor(nodes[e.b], wps[wps.length - 1]))]);
 }
 function effectiveWps(i) {
   if ((styles[i] || 'auto') === 'free') return (freeWps[i] || []).map(cp);
@@ -1073,6 +1171,141 @@ function showFloat(i, p) {
 function hideFloat() {
   if (floatC) floatC.style.display = 'none';
 }
+// ══ ref-scrubbed: standard-anchor overlay + per-edge endpoint drag ══
+// Anchor dots: hover a box -> its 16 standard anchors appear (toggleable via
+// #stdraw-anchors-toggle; dots layer is pointer-events:none, click-to-assign
+// is resolved against the LIVE anchor coordinates in onDown). Endpoint drag:
+// every edge renders two endpoint handles in the topmost #stdraw-eps layer;
+// release snaps to the nearest standard anchor of the endpoint's own box and
+// records the explicit designation in userAnchored (re-projection caliber:
+// node drags afterwards only re-project the endpoint onto the SAME anchor).
+var anchorLayer = document.createElementNS(NS, 'g');
+anchorLayer.id = 'stdraw-anchors';
+svg.appendChild(anchorLayer);
+var anchorToggle = true, hoverNode = null;
+var ANCHOR_CLICK_TOL = 10;   // px: a press within this distance of a visible
+                             // standard anchor is an explicit assignment
+function setAnchorToggle(on) {
+  anchorToggle = !!on;
+  var b = document.getElementById('stdraw-anchors-toggle');
+  if (b) b.textContent = 'Anchors: ' + (anchorToggle ? 'on' : 'off');
+  renderAnchors();
+}
+function renderAnchors() {
+  while (anchorLayer.firstChild) anchorLayer.removeChild(anchorLayer.firstChild);
+  if (!anchorToggle || !hoverNode || !nodes[hoverNode]) return;
+  var pinnedAids = {};
+  edges.forEach(function (e, i) {
+    var ua = userAnchored[i];
+    if (!ua) return;
+    if (ua[0] && e.a === hoverNode) pinnedAids[ua[0]] = true;
+    if (ua[1] && e.b === hoverNode) pinnedAids[ua[1]] = true;
+  });
+  stdAnchors(nodes[hoverNode]).forEach(function (p) {
+    var c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', p[1].toFixed(1));
+    c.setAttribute('cy', p[2].toFixed(1));
+    c.setAttribute('r', pinnedAids[p[0]] ? '4.5' : '3');
+    c.setAttribute('class', 'stdraw-anchor' + (pinnedAids[p[0]] ? ' pinned' : ''));
+    c.setAttribute('data-node', hoverNode);
+    c.setAttribute('data-aid', p[0]);
+    anchorLayer.appendChild(c);
+  });
+}
+function markNearAnchor(v, x, y) {
+  // live snap feedback while dragging an endpoint (works with the dots
+  // hidden too: the ring is drawn unconditionally)
+  renderAnchors();
+  var aid = nearestAnchorId(v, x, y);
+  if (!aid || !nodes[v]) return;
+  stdAnchors(nodes[v]).forEach(function (p) {
+    if (p[0] !== aid) return;
+    var c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', p[1].toFixed(1));
+    c.setAttribute('cy', p[2].toFixed(1));
+    c.setAttribute('r', '6');
+    c.setAttribute('class', 'stdraw-anchor near');
+    c.setAttribute('data-node', v);
+    c.setAttribute('data-aid', p[0]);
+    anchorLayer.appendChild(c);
+  });
+}
+var epsLayer = document.createElementNS(NS, 'g');
+epsLayer.id = 'stdraw-eps';
+svg.appendChild(epsLayer);   // appended LAST: endpoint hit priority over the
+                             // 12px segment hit band is structural (DOM order)
+var epEls = {};              // edgeIdx -> {0: [hit, vis], 1: [hit, vis]}
+function ensureEpEls(i) {
+  if (epEls[i]) return;
+  var rec = {};
+  [0, 1].forEach(function (end) {
+    [true, false].forEach(function (isHit) {
+      var c = document.createElementNS(NS, 'circle');
+      c.setAttribute('r', isHit ? '9' : '3.5');
+      c.setAttribute('class', isHit ? 'stdraw-eps-hit' : 'stdraw-ep');
+      c.setAttribute('data-edge', i);
+      c.setAttribute('data-end', end);
+      epsLayer.appendChild(c);
+      rec[end] = rec[end] || [];
+      rec[end].push(c);
+    });
+  });
+  epEls[i] = rec;
+}
+function updateEndpointHandles(i) {
+  if (!edges[i]) return;
+  ensureEpEls(i);
+  var e = edges[i];
+  if (e.pts.length < 2) return;
+  [[0, e.pts[0]], [1, e.pts[e.pts.length - 1]]].forEach(function (pe) {
+    epEls[i][pe[0]].forEach(function (c) {
+      c.setAttribute('cx', pe[1][0].toFixed(1));
+      c.setAttribute('cy', pe[1][1].toFixed(1));
+    });
+  });
+}
+function rebuildAllEndpointHandles() {
+  edges.forEach(function (e, i) { updateEndpointHandles(i); });
+}
+edges.forEach(function (e, i) { ensureEpEls(i); });
+function arcEpPts(e, end, pt) {
+  // endpoint moved on an arc: re-derive the sampled Bezier from the frozen
+  // control state, translating ctrl in lockstep with the endpoint delta
+  // (tangent-preserving; same caliber as arcFollow's mean translation)
+  if (!(e.arc && e.ctrl0 && e.pa0 && e.pb0)) return null;
+  var from = end === 0 ? e.pa0 : e.pb0;
+  var other = end === 0 ? e.pb0 : e.pa0;
+  var ctrl = [e.ctrl0[0] + (pt[0] - from[0]), e.ctrl0[1] + (pt[1] - from[1])];
+  var pa = end === 0 ? pt : other;
+  var pb = end === 0 ? other : pt;
+  return quad(pa, ctrl, pb, 12);
+}
+function clampVB(x, y) {
+  return [Math.max(4, Math.min(VB[2] - 4, x)), Math.max(4, Math.min(VB[3] - 4, y))];
+}
+function assignAnchor(v, aid, ax, ay) {
+  // Explicit designation (anchor click): the clicked standard anchor goes to
+  // the incident edge endpoint nearest to it (deterministic single winner;
+  // only endpoints of box v are candidates).
+  var best = null;
+  edges.forEach(function (e, i) {
+    if (e.a !== v && e.b !== v) return;
+    var end = e.a === v ? 0 : 1;
+    var p = e.pts[end === 0 ? 0 : e.pts.length - 1];
+    var d = Math.hypot(p[0] - ax, p[1] - ay);
+    if (best === null || d < best[0] - 1e-9) best = [d, i, end];
+  });
+  if (!best) { showTip('no edge attached to this box'); return; }
+  var i2 = best[1], end2 = best[2];
+  userAnchored[i2] = userAnchored[i2] || {};
+  userAnchored[i2][end2] = aid;
+  edges[i2].pts[end2 === 0 ? 0 : edges[i2].pts.length - 1] = [ax, ay];
+  updateEdge(i2);
+  updateEndpointHandles(i2);
+  renderAnchors();
+  refreshMetrics();
+  fireLayoutChanged();
+}
 function svgPoint(ev) {
   var m = svg.getScreenCTM();
   if (!m) return null;
@@ -1082,6 +1315,43 @@ function svgPoint(ev) {
 }
 function onDown(ev) {
   var t = ev.target;
+  // ── ref-scrubbed endpoint drag: the topmost #stdraw-eps hit circles claim
+  // the press BEFORE the edge hit band (drag-line = segment translation) and
+  // before the floating preview. Hit priority is structural + asserted by
+  // the probe (drag state keys contain 'ep').
+  var he = t && t.closest ? t.closest('.stdraw-eps-hit, .stdraw-ep') : null;
+  if (he) {
+    var eiE = +he.getAttribute('data-edge'), endE = +he.getAttribute('data-end');
+    if (edges[eiE]) {
+      var peE = svgPoint(ev);
+      if (peE) {
+        drag = {ep: true, edge: eiE, end: endE, start: [peE.x, peE.y], ev: ev};
+        try { he.setPointerCapture(ev.pointerId); } catch (eE0) {}
+        ev.preventDefault();
+        ev.stopPropagation();
+        return;
+      }
+    }
+  }
+  // ── ref-scrubbed anchor click-to-assign: while a box's anchors are shown, a
+  // press within ANCHOR_CLICK_TOL of one of its standard anchors explicitly
+  // assigns that anchor (nearest incident endpoint wins, deterministic).
+  if (hoverNode && anchorToggle && nodes[hoverNode]) {
+    var pa2 = svgPoint(ev);
+    if (pa2) {
+      var apts = stdAnchors(nodes[hoverNode]), hitA = null;
+      for (var ka = 0; ka < apts.length; ka++) {
+        var da = Math.hypot(apts[ka][1] - pa2.x, apts[ka][2] - pa2.y);
+        if (da <= ANCHOR_CLICK_TOL) { hitA = apts[ka]; break; }
+      }
+      if (hitA) {
+        assignAnchor(hoverNode, hitA[0], hitA[1], hitA[2]);
+        ev.preventDefault();
+        ev.stopPropagation();
+        return;
+      }
+    }
+  }
   // Floating bendpoint: preview-only until dragged >=4px (conversion in
   // onMove); a plain click writes nothing.
   var hf = t && t.closest ? t.closest('.stdraw-wp[data-float="1"]') : null;
@@ -1198,6 +1468,22 @@ function onMove(ev) {
   if (!drag) return;
   var p = svgPoint(ev);
   if (!p) return;
+  if (drag.ep) {
+    // ref-scrubbed endpoint drag: the endpoint follows the pointer (clamped to
+    // the viewBox); the nearest standard anchor of the endpoint's own box is
+    // highlighted live; the snap itself happens on release.
+    var eE = edges[drag.edge];
+    var ptE = clampVB(p.x, p.y);
+    var arcPts = arcEpPts(eE, drag.end, ptE);
+    if (arcPts) {
+      eE.pts = arcPts;
+    } else {
+      eE.pts[drag.end === 0 ? 0 : eE.pts.length - 1] = ptE;
+    }
+    markNearAnchor(drag.end === 0 ? eE.a : eE.b, ptE[0], ptE[1]);
+    updateEdge(drag.edge);
+    return;
+  }
   if (drag.floatDrag) {
     // floating bendpoint: preview until the pointer moves >=4px, then
     // adopt the edge geometry + create exactly one fold point and hand
@@ -1282,6 +1568,7 @@ function onMove(ev) {
   drag.g.setAttribute('transform', 'translate(' + (nx - n.bx).toFixed(1) + ' ' + (ny - n.by).toFixed(1) + ')');
   var touched = {};
   incidentMap[drag.id].forEach(function (i) { touched[i] = 1; safeRerouteUpdate(i, 'drag re-anchor'); });
+  renderAnchors();   // ref-scrubbed: anchor dots + pinned markers follow the moved box
   // Other edges: (1) pressed by the moving node (1px margin) -> re-route;
   // (2) currently polyline-shaped (detour / dense vg geometry) -> obstacles
   // changed so recompute (incl. stale detours invalidated when an obstacle is
@@ -1307,6 +1594,37 @@ function onMove(ev) {
 }
 function onUp(ev) {
   if (!drag) return;
+  if (drag.ep) {
+    // ref-scrubbed endpoint release: snap to the nearest standard anchor of the
+    // endpoint's OWN box (deterministic tie -> lower ANCHOR_IDS index) and
+    // record the explicit designation; subsequent node drags only re-project
+    // this endpoint onto the SAME anchor position.
+    var eiU = drag.edge, endU = drag.end;
+    var eU = edges[eiU];
+    var peU = svgPoint(ev);
+    var vU = endU === 0 ? eU.a : eU.b;
+    var xU, yU;
+    if (peU) { var cU = clampVB(peU.x, peU.y); xU = cU[0]; yU = cU[1]; }
+    else { var qU = eU.pts[endU === 0 ? 0 : eU.pts.length - 1]; xU = qU[0]; yU = qU[1]; }
+    var aidU = nearestAnchorId(vU, xU, yU);
+    var coordU = null;
+    if (aidU) stdAnchors(nodes[vU]).forEach(function (q) {
+      if (q[0] === aidU) coordU = [q[1], q[2]];
+    });
+    if (aidU && coordU) {
+      userAnchored[eiU] = userAnchored[eiU] || {};
+      userAnchored[eiU][endU] = aidU;
+      var arcU = arcEpPts(eU, endU, coordU);
+      if (arcU) eU.pts = arcU;
+      else eU.pts[endU === 0 ? 0 : eU.pts.length - 1] = coordU;
+    }
+    drag = null;
+    updateEdge(eiU);
+    renderAnchors();
+    refreshMetrics();
+    fireLayoutChanged();
+    return;
+  }
   // floating bendpoint click (no drag): preview only, nothing persisted
   if (drag.floatDrag) { drag = null; hideFloat(); return; }
   if (drag.insert) {
@@ -1366,6 +1684,7 @@ function onUp(ev) {
   var id = drag.id;
   drag = null;
   incidentMap[id].forEach(function (i) { reroute(i); updateEdge(i); });
+  renderAnchors();   // ref-scrubbed: pinned-anchor dot markers refresh on release
   rebuildHandles();
   refreshMarkers();
   refreshMetrics();
@@ -1397,9 +1716,18 @@ function buildLayout() {
         return [Math.round(p[0]), Math.round(p[1])];
       });
     }
-    if (st !== 'auto' || (wps && wps.length)) {
+    var ua = userAnchored[i];
+    var hasUa = !!(ua && (ua[0] || ua[1]));
+    if (st !== 'auto' || (wps && wps.length) || hasUa) {
       var it = {a: e.a, b: e.b, style: st};
       if (wps && wps.length) it.waypoints = wps;
+      // ref-scrubbed: explicit standard-anchor designations travel with the
+      // export (viewer round-trip via __stdrawApplyLayout edge_anchors)
+      if (hasUa) {
+        it.anchors = {};
+        if (ua[0]) it.anchors.src = ua[0];
+        if (ua[1]) it.anchors.dst = ua[1];
+      }
       es.push(it);
     }
   });
@@ -1434,6 +1762,7 @@ function reset() {
   pinned = {};
   styles = {};          // v0.7.7: reset clears pins + forced styles -> auto
   freeWps = {};
+  userAnchored = {};    // ref-scrubbed: reset also clears explicit anchor designations
   Object.keys(nodes).forEach(function (v) {
     var n = nodes[v];
     n.x = n.bx; n.y = n.by;
@@ -1465,6 +1794,8 @@ function reset() {
   });
   syncDomGeometry();   // v0.7.9: keep cards/anchors in sync after restore (no-op when in sync)
   rebuildHandles();
+  rebuildAllEndpointHandles();   // ref-scrubbed
+  renderAnchors();               // ref-scrubbed: clear stale dots / pinned markers
   refreshMetrics();
   fireLayoutChanged();
 }
@@ -1497,6 +1828,7 @@ window.__stdrawApplyLayout = function (spec) {
   }
   styles = {};
   freeWps = {};
+  userAnchored = {};
   var ess = spec.edge_styles || {};
   Object.keys(ess).forEach(function (k) {
     var i = edgeIdxByKey(k);
@@ -1514,7 +1846,19 @@ window.__stdrawApplyLayout = function (spec) {
       .slice(0, MAX_FREE_PTS);
     if (!styles[i]) styles[i] = 'free';
   });
+  // ref-scrubbed: restore explicit standard-anchor designations (applied before
+  // the re-anchor round so the re-projection caliber sees them)
+  var uas = spec.edge_anchors || {};
+  Object.keys(uas).forEach(function (k) {
+    var i = edgeIdxByKey(k);
+    if (i === null || !uas[k] || typeof uas[k] !== 'object') return;
+    var rec = {};
+    if (ANCHOR_IDS.indexOf(uas[k].src) >= 0) rec[0] = uas[k].src;
+    if (ANCHOR_IDS.indexOf(uas[k].dst) >= 0) rec[1] = uas[k].dst;
+    if (rec[0] !== undefined || rec[1] !== undefined) userAnchored[i] = rec;
+  });
   edges.forEach(function (e, i) { safeRerouteUpdate(i, 'applyLayout re-anchor'); });
+  rebuildAllEndpointHandles();
   rebuildHandles();
   refreshMetrics();
   fireLayoutChanged();
@@ -1590,6 +1934,41 @@ window.__stdrawDragState = function () {
   return {keys: keys, edge: drag.edge, free: drag.free};
 };
 window.__stdrawArcFlag = function (i) { return !!edges[i].arc; };
+// ── ref-scrubbed probe/integration hooks ──
+window.__stdrawAnchors = function (v) {
+  return nodes[v] ? stdAnchors(nodes[v]) : null;
+};
+window.__stdrawUserAnchors = function () {
+  return JSON.parse(JSON.stringify(userAnchored));
+};
+window.__stdrawSetAnchor = function (i, end, aid) {
+  if (!edges[i] || ANCHOR_IDS.indexOf(aid) < 0 || (end !== 0 && end !== 1)) return false;
+  userAnchored[i] = userAnchored[i] || {};
+  userAnchored[i][end] = aid;
+  safeRerouteUpdate(i, 'set anchor');
+  updateEdge(i);
+  renderAnchors();
+  refreshMetrics();
+  fireLayoutChanged();
+  return true;
+};
+window.__stdrawAnchorDots = function () {
+  var out = [];
+  anchorLayer.querySelectorAll('circle.stdraw-anchor').forEach(function (c) {
+    out.push([c.getAttribute('data-node'), c.getAttribute('data-aid'),
+              +c.getAttribute('cx'), +c.getAttribute('cy')]);
+  });
+  return out;
+};
+window.__stdrawAnchorToggleState = function () { return !!anchorToggle; };
+window.__stdrawEndpointHandles = function () {
+  var out = [];
+  epsLayer.querySelectorAll('circle.stdraw-ep').forEach(function (c) {
+    out.push([+c.getAttribute('data-edge'), +c.getAttribute('data-end'),
+              +c.getAttribute('cx'), +c.getAttribute('cy')]);
+  });
+  return out;
+};
 // v0.7.9 probe/integration hooks: per-card rendered geometry + manual re-anchor
 window.__stdrawNodeGeom = function (v) {
   return v ? {x: nodes[v].x, y: nodes[v].y, w: nodes[v].w, h: nodes[v].h}
@@ -1602,7 +1981,13 @@ var btnE = document.getElementById('stdraw-export');
 var btnR = document.getElementById('stdraw-reset');
 if (btnE) btnE.addEventListener('click', exportLayout);
 if (btnR) btnR.addEventListener('click', reset);
+var btnA = document.getElementById('stdraw-anchors-toggle');
+if (btnA) {
+  btnA.textContent = 'Anchors: on';
+  btnA.addEventListener('click', function () { setAnchorToggle(!anchorToggle); });
+}
 rebuildHandles();
+rebuildAllEndpointHandles();   // ref-scrubbed: initial endpoint handle placement
 refreshMetrics();
 // v0.7.9 initial font-environment sync: run now (the script sits after the
 // SVG in the DOM, so layout is available) and again on window load (late

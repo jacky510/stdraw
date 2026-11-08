@@ -127,7 +127,7 @@ def _nodes_px_from_page(pg, lay):
 
 
 def _node_center(pg, vid):
-    loc = pg.locator(f'[data-node="{vid}"]')
+    loc = pg.locator(f'g[data-node="{vid}"]')
     loc.scroll_into_view_if_needed()
     bb = loc.bounding_box()
     return bb["x"] + bb["width"] / 2, bb["y"] + bb["height"] / 2
@@ -191,7 +191,12 @@ def main():
             _drag(pg, cx, cy, 45, 25, steps=3, settle=0)
             mid_toolbar = pg.evaluate(
                 "document.getElementById('stdraw-metrics').textContent")
-            _drag(pg, cx, cy, 70, 55, steps=5, settle=0)
+            # ref-scrubbed: the second drag re-measures the LIVE center — the
+            # first drag moved the box, so the stale screen point now sits on
+            # its south border where the new endpoint drag handles (topmost
+            # layer, by design) would claim the press instead of the card.
+            cx2, cy2 = _node_center(pg, "rate")
+            _drag(pg, cx2, cy2, 70, 55, steps=5, settle=0)
             pg.wait_for_timeout(200)
 
             pos1 = pg.evaluate("window.__stdrawNodePos('rate')")
@@ -222,7 +227,7 @@ def main():
             chk("metrics changed after drag", m1 != m0, f"{m0} -> {m1}")
 
             # touch usability (tap raises no error in a hasTouch context)
-            tb = pg.locator('[data-node="adopters"]').bounding_box()
+            tb = pg.locator('g[data-node="adopters"]').bounding_box()
             pg.touchscreen.tap(tb["x"] + tb["width"] / 2, tb["y"] + tb["height"] / 2)
             pg.wait_for_timeout(100)
             chk("touch events processed without error", not errors, errors)
@@ -298,7 +303,12 @@ def main():
                 n_edges_hit > 0 and all(not v for v in bad.values()),
                 f"edges_probed={len(per_edge)} miss={ {k: len(v) for k, v in bad.items() if v} }")
             hit_only = {i: [p for p in (pts or [])
-                            if p["off"] and not p["isHit"]]
+                            if p["off"] and not p["isHit"]
+                            # ref-scrubbed: resolving into an endpoint drag
+                            # handle (.stdraw-eps-*) near an edge endpoint is
+                            # the DESIGNED priority (endpoint beats the 12px
+                            # segment band), not a miss.
+                            and ".stdraw-eps" not in p["tag"]]
                         for i, pts in per_edge.items()}
             chk("off-line band points resolve to the hit path itself",
                 n_edges_hit > 0 and all(not v for v in hit_only.values()),
@@ -957,6 +967,211 @@ def main():
             chk("parked-handle click on a free edge inserts (legacy path "
                 "preserved)", ok_c and fl2 is not None and len(w5) == 2,
                [fl2, json.dumps(w5)])
+
+            # ══ ref-scrubbed: 16 standard anchors + endpoint drag/snap/assign ══
+            # Fresh page load: the sections above intentionally leave pins /
+            # free fold points / seeded layouts behind; the anchor probes need
+            # the pristine engine-default geometry.
+            from stdraw.anchors import nearest_anchor as _py_nearest
+            from stdraw.anchors import standard_anchors as _py_anchors
+            pg.goto("file://" + demo.replace("\\", "/"))
+            pg.wait_for_timeout(400)
+            lay_a = json.loads(pg.evaluate(
+                "document.getElementById('stdraw-data').textContent"))
+            vid_a = lay_a["nodes"][0]["id"]
+
+            # A1. hover shows the 16 standard anchor dots
+            pg.locator(f'g[data-node="{vid_a}"]').hover()
+            pg.wait_for_timeout(100)
+            dots = pg.evaluate("window.__stdrawAnchorDots()")
+            chk("hover shows 16 standard anchor dots",
+                len(dots) == 16 and all(d[0] == vid_a for d in dots),
+                f"node={vid_a} dots={len(dots)}")
+
+            # A2. JS anchor coordinates == stdraw.anchors Python caliber
+            # (live geometry — h already synced to the rendered card)
+            geom_a = pg.evaluate(f"window.__stdrawNodeGeom('{vid_a}')")
+            js_a = pg.evaluate(f"window.__stdrawAnchors('{vid_a}')")
+            py_a = _py_anchors(geom_a["x"], geom_a["y"],
+                               geom_a["w"] / 2.0, geom_a["h"] / 2.0)
+            mism = [[j[0], j[1], j[2], p[1], p[2]]
+                    for j, p in zip(js_a, py_a)
+                    if j[0] != p[0]
+                    or abs(j[1] - p[1]) > 0.02 or abs(j[2] - p[2]) > 0.02]
+            chk("JS anchor coords == stdraw.anchors caliber (16/16)",
+                len(js_a) == 16 and not mism, f"mismatch={mism[:3]}")
+            chk("anchor dots carry the fixed ANCHOR_IDS order",
+                [d[1] for d in dots] == [p[0] for p in py_a],
+                f"dots={[d[1] for d in dots]}")
+
+            # A3. the toggle hides / restores the dots (asserted under an
+            # ACTIVE hover — dots vanishing because the hover was lost would
+            # prove nothing)
+            pg.click("#stdraw-anchors-toggle")
+            pg.locator(f'g[data-node="{vid_a}"]').hover()
+            pg.wait_for_timeout(80)
+            dots_off = pg.evaluate("window.__stdrawAnchorDots()")
+            off_state = pg.evaluate("window.__stdrawAnchorToggleState()")
+            chk("anchor toggle off hides dots under active hover",
+                len(dots_off) == 0 and off_state is False,
+                f"dots={len(dots_off)} state={off_state}")
+            pg.click("#stdraw-anchors-toggle")
+            pg.locator(f'g[data-node="{vid_a}"]').hover()
+            pg.wait_for_timeout(80)
+            dots_on = pg.evaluate("window.__stdrawAnchorDots()")
+            chk("anchor toggle on restores dots under active hover",
+                len(dots_on) == 16 and
+                pg.evaluate("window.__stdrawAnchorToggleState()") is True,
+                f"dots={len(dots_on)}")
+
+            # B. endpoint drag -> release snaps to the NEAREST standard anchor
+            #    (expected winner computed independently in Python). The
+            #    target handle must sit at a position no sibling endpoint-
+            #    handle hit circle (r=9) covers: uniqueness threshold must
+            #    exceed the hit radius, not just the handle spacing. Sibling
+            #    edges legitimately share anchor neighborhoods and the
+            #    topmost (later-created) handle would claim the press — that
+            #    overlap priority is by design, so the probe picks a lone
+            #    endpoint.
+            eps0 = pg.evaluate("window.__stdrawEndpointHandles()")
+            tgt = None
+            for h in eps0:
+                if all(math.hypot(h[2] - q[2], h[3] - q[3]) > 11
+                       for q in eps0 if q is not h):
+                    tgt = h
+                    break
+            self_chk = tgt is not None
+            ei_t, end_t = (tgt[0], tgt[1]) if tgt else (0, 0)
+            edge_a = lay_a["edges"][ei_t]
+            geom_e0 = pg.evaluate(
+                f"window.__stdrawNodeGeom('{edge_a['a'] if end_t == 0 else edge_a['b']}')")
+            # release 12px below-left of the start endpoint: the Python
+            # nearest-anchor caliber must predict the snapped anchor id
+            rel_vx, rel_vy = tgt[2] - 12.0, tgt[3] + 12.0
+            exp_aid, exp_x, exp_y = _py_nearest(
+                geom_e0["x"], geom_e0["y"], geom_e0["w"] / 2.0,
+                geom_e0["h"] / 2.0, rel_vx, rel_vy)
+            sx0, sy0 = _to_screen(pg, tgt[2], tgt[3])
+            rx0, ry0 = _to_screen(pg, rel_vx, rel_vy)
+            _drag(pg, sx0, sy0, rx0 - sx0, ry0 - sy0, steps=4, settle=30)
+            ua = pg.evaluate("window.__stdrawUserAnchors()")
+            pts0 = pg.evaluate(f"window.__stdrawEdgePts({ei_t})")
+            got_pt = pts0[0] if end_t == 0 else pts0[-1]
+            snap_ok = (self_chk
+                       and ua.get(str(ei_t), {}).get(str(end_t)) == exp_aid
+                       and abs(got_pt[0] - exp_x) <= 0.05
+                       and abs(got_pt[1] - exp_y) <= 0.05)
+            chk("endpoint drag release snaps to the nearest anchor "
+                "(coordinate-level)",
+                snap_ok, f"edge={ei_t} end={end_t} "
+                         f"expected={exp_aid}@({exp_x:.1f},{exp_y:.1f}) "
+                         f"got={ua.get(str(ei_t), {}).get(str(end_t))}"
+                         f"@{got_pt}")
+
+            # B2. the export carries the explicit designation
+            exported_anchors = pg.evaluate(
+                "JSON.parse(window.__stdrawExportJSON())")
+            ea = [e for e in exported_anchors.get("edges", [])
+                  if e["a"] == edge_a["a"] and e["b"] == edge_a["b"]]
+            exp_side = "src" if end_t == 0 else "dst"
+            chk("export carries edges[].anchors designation",
+                bool(ea) and
+                ea[0].get("anchors", {}).get(exp_side) == exp_aid,
+                json.dumps(ea[:1]))
+
+            # C. explicit anchor designation -> node drag re-projects the
+            #    endpoint onto the SAME anchor (coordinate-level, no drift)
+            ok_set = pg.evaluate(f"window.__stdrawSetAnchor({ei_t}, 1, 'e-g1')")
+            pg.wait_for_timeout(120)
+            geom_b = pg.evaluate(f"window.__stdrawNodeGeom('{edge_a['b']}')")
+            exp_b = [p for p in _py_anchors(
+                geom_b["x"], geom_b["y"], geom_b["w"] / 2.0,
+                geom_b["h"] / 2.0) if p[0] == "e-g1"][0]
+            pts1 = pg.evaluate(f"window.__stdrawEdgePts({ei_t})")
+            set_ok = abs(pts1[-1][0] - exp_b[1]) <= 0.05 and \
+                abs(pts1[-1][1] - exp_b[2]) <= 0.05
+            bcx, bcy = _node_center(pg, edge_a["b"])
+            _drag(pg, bcx, bcy, 64, 48, steps=4, settle=30)
+            geom_b2 = pg.evaluate(f"window.__stdrawNodeGeom('{edge_a['b']}')")
+            exp_b2 = [p for p in _py_anchors(
+                geom_b2["x"], geom_b2["y"], geom_b2["w"] / 2.0,
+                geom_b2["h"] / 2.0) if p[0] == "e-g1"][0]
+            pts2 = pg.evaluate(f"window.__stdrawEdgePts({ei_t})")
+            ua2 = pg.evaluate("window.__stdrawUserAnchors()")
+            repro_ok = (abs(pts2[-1][0] - exp_b2[1]) <= 0.6 and
+                        abs(pts2[-1][1] - exp_b2[2]) <= 0.6 and
+                        ua2.get(str(ei_t), {}).get("1") == "e-g1" and
+                        math.hypot(geom_b2["x"] - geom_b["x"],
+                                   geom_b2["y"] - geom_b["y"]) > 20)
+            chk("explicit anchor: node drag re-projects endpoint onto the "
+                "SAME anchor (coordinate-level)",
+                ok_set and set_ok and repro_ok,
+                f"before={pts1[-1]} exp={exp_b[1:]} after={pts2[-1]} "
+                f"exp'={exp_b2[1:]} ua={ua2.get('0')}")
+
+            # D. endpoint hit priority: press on an endpoint handle resolves
+            #    to the endpoint drag ('ep' in drag-state keys) even though
+            #    the same point sits inside the 12px segment hit band
+            eps_all = pg.evaluate("window.__stdrawEndpointHandles()")
+            h_target = [h for h in eps_all if h[0] != 0][0]
+            hx, hy = _to_screen(pg, h_target[2], h_target[3])
+            pg.mouse.move(hx, hy)
+            pg.mouse.down()
+            pg.wait_for_timeout(60)
+            ds = pg.evaluate("window.__stdrawDragState()")
+            pg.mouse.up()
+            pg.wait_for_timeout(80)
+            chk("endpoint press claims the drag before the segment band",
+                ds is not None and "ep" in ds.get("keys", [])
+                and ds.get("edge") == h_target[0], json.dumps(ds))
+
+            # D2. a plain segment press (>=30px away from every endpoint
+            #     handle) does NOT arm an endpoint drag
+            all_pts = pg.evaluate("window.__stdrawEdgePts()")
+            seg_p = None
+            for ei, epts in enumerate(all_pts):
+                if len(epts) >= 2:
+                    mid = [(epts[0][0] + epts[-1][0]) / 2,
+                           (epts[0][1] + epts[-1][1]) / 2]
+                    if all(math.hypot(mid[0] - q[2], mid[1] - q[3]) > 30
+                           for q in eps_all):
+                        seg_p = (ei, mid)
+                        break
+            ds2 = None
+            if seg_p:
+                smx, smy = _to_screen(pg, seg_p[1][0], seg_p[1][1])
+                pg.mouse.move(smx, smy)
+                pg.mouse.down()
+                pg.wait_for_timeout(60)
+                ds2 = pg.evaluate("window.__stdrawDragState()")
+                pg.mouse.up()
+                pg.wait_for_timeout(80)
+            chk("segment press away from endpoints never arms endpoint drag",
+                seg_p is not None and
+                (ds2 is None or "ep" not in ds2.get("keys", [])),
+                f"edge={seg_p[0] if seg_p else None} state={json.dumps(ds2)}")
+
+            # E. applyLayout round-trip restores the designations
+            ok_apply = pg.evaluate(
+                "window.__stdrawApplyLayout({nodes: {}, edge_anchors: "
+                "{'%s->%s': {src: 'n', dst: 'w-g2'}}})" % (edge_a["a"],
+                                                           edge_a["b"]))
+            pg.wait_for_timeout(150)
+            ua3 = pg.evaluate("window.__stdrawUserAnchors()")
+            pts3 = pg.evaluate(f"window.__stdrawEdgePts({ei_t})")
+            geom_b3 = pg.evaluate(f"window.__stdrawNodeGeom('{edge_a['b']}')")
+            exp_b3 = [p for p in _py_anchors(
+                geom_b3["x"], geom_b3["y"], geom_b3["w"] / 2.0,
+                geom_b3["h"] / 2.0) if p[0] == "w-g2"][0]
+            chk("applyLayout edge_anchors round-trip restores designations",
+                bool(ok_apply) and ua3.get(str(ei_t), {}).get("0") == "n"
+                and ua3.get(str(ei_t), {}).get("1") == "w-g2"
+                and abs(pts3[-1][0] - exp_b3[1]) <= 0.05
+                and abs(pts3[-1][1] - exp_b3[2]) <= 0.05,
+                f"ua={ua3.get(str(ei_t))} dst={pts3[-1]} exp={exp_b3[1:]}")
+            # clean state for the following sections
+            pg.evaluate("window.__stdrawApplyLayout({nodes: {}})")
+            pg.wait_for_timeout(120)
 
             # == arc graph: all Bezier vertices follow (arcFollow) ==
             out_arc = os.path.join(tmp, "arc")
