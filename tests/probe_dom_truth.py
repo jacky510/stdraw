@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """DOM-truth interactive gate (ref-scrubbed, v0.7.11).
 
-2026-11-08 8777/现网 regression: updateEdge resolved edges via a bare
+2026-11-08 8777/production regression: updateEdge resolved edges via a bare
 `svg.querySelector('[data-edge=i]')`, which matches the HIT path first
 (#stdraw-hits sits at svg.firstChild and hit paths carry data-edge) — the
 visible line never redrew after drags/applyLayout while internal state
