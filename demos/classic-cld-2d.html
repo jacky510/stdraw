@@ -121,7 +121,7 @@ edges.forEach(function (e, i) {
 // lookup on the data-edge attribute resolves to the HIT path first
 // (document order). updateEdge then queried `path` CHILDREN of a path
 // element (always empty) and the visible line never redrew: internal state
-// re-anchored, DOM stale, zero exceptions (2026-11-08 8777/现网 regression,
+// re-anchored, DOM stale, zero exceptions (2026-11-08 8777/production regression,
 // ref-scrubbed). Always resolve the visible group / hit path explicitly.
 function visG(i) { return svg.querySelector('g[data-edge="' + i + '"]'); }
 function hitP(i) { return hitLayer.querySelector('.stdraw-hit[data-edge="' + i + '"]'); }
