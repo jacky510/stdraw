@@ -1322,6 +1322,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # byte-for-byte unchanged (structural zero drift).
     if engine == "spine-construct":
         routes = router.mutual_straight_reroute(routes, frozen=_frozen)
+    # ref-scrubbed: mutual-pair lens arrival channel -- flip the pair's shared
+    # arc bulge when that turns both arrows into near-normal arrivals
+    # (gate-guarded; untouched routes returned byte-for-byte otherwise).
+    routes = router.mutual_arrival_flip(routes, frozen=_frozen)
     router_pairs = router.final_crossing_pairs(routes)
 
     # ref-scrubbed R/B loop coloring: edge -> the set of declared-loop kinds it belongs to (deterministic rules in docs/layout-modes.md):
