@@ -21,12 +21,12 @@
   "edge_box_min_clear": 29.5,
   "anchor_violations": 0,
   "anchor_details": [],
-  "avg_edge_length": 158.8,
+  "avg_edge_length": 157.9,
   "row_align_rate": 0.625,
   "min_card_gap": 35.0,
   "spacing_cv": 0.128,
   "column_snap24_rate": null,
-  "mutual_pair_min_sep": 7.3,
+  "mutual_pair_min_sep": 12.0,
   "mutual_pair_details": [
    {
     "pair": [
@@ -37,7 +37,7 @@
    {
     "pair": [
      "crowding<->fundamental",
-     7.3
+     12.0
     ]
    }
   ],

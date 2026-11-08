@@ -54,6 +54,7 @@ ROUND_GUARD = 0.15     # conservative margin for delivery rounding (0.1px): bord
 COINCIDE_THR = 1.0          # distance <1px counts as adherence (same source as the certificate accounting)
 COINCIDE_SPAN = 8.0         # accumulated adherence must exceed 8px to count as "visual coincidence" (endpoint meeting exempted)
 FAN_STEP = 18.0             # uniform spread step for multiple anchors on the same node side (ref-scrubbed rule 3)
+ARRIVAL_TARGET_DEG = 10.0   # ref-scrubbed: mutual-lens arrow-normal target (card-suggested; hard-gating pending owner decision)
 MIN_FROZEN_ANCHOR_SEP = 8.0  # ref-scrubbed: fan slots must clear frozen anchors on the same side by at least this (px)
 REANCHOR_STEP = 4.0         # ref-scrubbed midband_reanchor ladder-clamping step
 
@@ -987,9 +988,29 @@ class Router:
                 other2 = b2 if end2 == "a" else a2
                 frozen_side.setdefault((v2, self._side_of(v2, p2)),
                                        []).append((tuple(p2), other2))
+        # ref-scrubbed: arc-kind routes are NOT slot-slidable. Sliding only the
+        # anchor endpoint of a smooth Q-arc leaves the curve (and its ctrl
+        # point) shaped for the OLD anchor -- measured on classic-cld
+        # crowding<->fundamental: the anchor slid 519.3->508.0 while the arc
+        # body stayed, departure skew 5.3->33.4 deg, and the mutual pair's
+        # two lines converged 12.0->7.3px (the lens "twisted arrow" defect).
+        # Arc anchors therefore OCCUPY their position (same accounting as
+        # frozen anchors below: MIN_FROZEN_ANCHOR_SEP clearance + merged
+        # azimuth monotonicity) and the fan spreads only the
+        # implicitly-reshaping routes (straight lines) around them.
+        for i2 in sorted(routes.keys()):
+            if i2 in frozen or routes[i2].get("kind") != "arc":
+                continue
+            pts2 = routes[i2]["points"]
+            a2, b2 = self.edges[i2]
+            for end2, p2 in (("a", pts2[0]), ("b", pts2[-1])):
+                v2 = a2 if end2 == "a" else b2
+                other2 = b2 if end2 == "a" else a2
+                frozen_side.setdefault((v2, self._side_of(v2, p2)),
+                                       []).append((tuple(p2), other2))
         groups = {}
         for i in sorted(routes.keys()):
-            if i in frozen:
+            if i in frozen or routes[i].get("kind") == "arc":
                 continue
             pts = routes[i]["points"]
             a, b = self.edges[i]
@@ -1498,6 +1519,157 @@ class Router:
                 if j is not None and j not in frozen and j not in handled:
                     if self._reroute_pair_band(routes, i, j):
                         handled.add(j)
+        return routes
+
+    def mutual_arrival_flip(self, routes, frozen=()):
+        """ref-scrubbed: mutual-lens arrow-normal channel (spine-construct scope).
+
+        A Q-arc lens between vertically stacked but horizontally offset boxes
+        has end tangents that trade off with the bulge: on classic-cld
+        crowding<->fundamental the delivered lens (bulge 16.3px, ctrl at 0.5
+        of the chord) made BOTH arrows arrive 24.1 deg off the border normal
+        -- the "twisted arrow" look. Arrows are drawn along the arrival
+        tangent, so the arrival deviation is the defect carrier.
+
+        Feasibility (measured on this pair, chord tilt 8.6 deg): both ends
+        <= ARRIVAL_TARGET_DEG requires a slim lens (bulge ~1-2px, ctrl at
+        ~0.3 of the chord) -- the fat lens is geometrically incompatible with
+        near-normal arrows on a tilted chord. This channel re-derives both
+        arcs' ctrl from an (alpha along chord, outward bulge B) ladder,
+        searching for the FULLEST lens that meets the arrival target
+        (largest B first among meeting candidates); if none meets the
+        target, the min-max-deviation candidate wins. Strict-improvement +
+        hard-gate guarded (press / clearance / crossings / mutual separation
+        no-regression / anchor angles / own-box); anchors are untouched, so
+        the fan_spread occupied-slot accounting stays consistent. Routes are
+        returned untouched (byte-for-byte) when no candidate improves.
+        """
+        SideNorm = {"t": (0.0, -1.0), "b": (0.0, 1.0),
+                    "r": (1.0, 0.0), "l": (-1.0, 0.0)}
+
+        def _devs(inf, a, b):
+            ctrl = inf.get("ctrl")
+            if ctrl is None:
+                return None
+            pts = inf["points"]
+            p0, p1 = pts[0], pts[-1]
+            n0 = SideNorm[self._side_of(a, p0)]
+            n1 = SideNorm[self._side_of(b, p1)]
+
+            def _d(v, n):
+                n_ = math.hypot(v[0], v[1])
+                if n_ < 1e-9:
+                    return None
+                c = abs(v[0] * n[0] + v[1] * n[1]) / n_
+                return math.degrees(math.acos(max(0.0, min(1.0, c))))
+
+            dep = _d((ctrl[0] - p0[0], ctrl[1] - p0[1]), n0)
+            arr = _d((p1[0] - ctrl[0], p1[1] - ctrl[1]), n1)
+            if dep is None or arr is None:
+                return None
+            return dep, arr
+
+        ALPHAS = (0.3, 0.4, 0.5, 0.6, 0.7)
+        BULGES = (6.0, 5.0, 4.0, 3.0, 2.5, 2.0, 1.5, 1.0)
+
+        for key in sorted(self.mutual):
+            i1 = self.eidx.get((key[0], key[1]))
+            i2 = self.eidx.get((key[1], key[0]))
+            if i1 is None or i2 is None or i1 in frozen or i2 in frozen:
+                continue
+            inf1, inf2 = routes.get(i1), routes.get(i2)
+            if not inf1 or not inf2:
+                continue
+            if inf1.get("kind") != "arc" or inf2.get("kind") != "arc":
+                continue
+            if inf1.get("ctrl") is None or inf2.get("ctrl") is None:
+                continue
+            geo = []
+            ok_geo = True
+            for i in (i1, i2):
+                inf = routes[i]
+                pts = inf["points"]
+                dx, dy = pts[-1][0] - pts[0][0], pts[-1][1] - pts[0][1]
+                L = math.hypot(dx, dy)
+                if L < 1e-9:
+                    ok_geo = False
+                    break
+                ux, uy = dx / L, dy / L
+                px, py = -uy, ux
+                mid = (pts[0][0] + dx / 2.0, pts[0][1] + dy / 2.0)
+                b_sign = ((inf["ctrl"][0] - mid[0]) * px
+                          + (inf["ctrl"][1] - mid[1]) * py)
+                geo.append((pts[0], dx, dy, (px, py),
+                            1.0 if b_sign >= 0 else -1.0, abs(b_sign)))
+            if not ok_geo:
+                continue
+            cur1 = _devs(inf1, *self.edges[i1])
+            cur2 = _devs(inf2, *self.edges[i2])
+            if cur1 is None or cur2 is None:
+                continue
+            cur_all = cur1 + cur2
+            cur_m = (max(cur_all), max(cur1[1], cur2[1]))
+            cands = []
+            for alpha in ALPHAS:
+                for B in BULGES:
+                    c1 = (geo[0][0][0] + alpha * geo[0][1]
+                          + geo[0][4] * B * geo[0][3][0],
+                          geo[0][0][1] + alpha * geo[0][2]
+                          + geo[0][4] * B * geo[0][3][1])
+                    c2 = (geo[1][0][0] + alpha * geo[1][1]
+                          + geo[1][4] * B * geo[1][3][0],
+                          geo[1][0][1] + alpha * geo[1][2]
+                          + geo[1][4] * B * geo[1][3][1])
+                    t1 = _devs({"ctrl": c1, "points": inf1["points"]},
+                               *self.edges[i1])
+                    t2 = _devs({"ctrl": c2, "points": inf2["points"]},
+                               *self.edges[i2])
+                    if t1 is None or t2 is None:
+                        continue
+                    all_d = t1 + t2
+                    m = (max(all_d), max(t1[1], t2[1]))
+                    meets = m[0] <= ARRIVAL_TARGET_DEG + 1e-9
+                    cands.append(((0 if meets else 1, -B, m[0], m[1]),
+                                  alpha, B, m))
+            cands.sort(key=lambda c: c[0])
+            stats_before = {i: self._edge_stats(i, routes)
+                            for i in (i1, i2)}
+            sep_floor = max(4.0, min(stats_before[i1][4]
+                                     if stats_before[i1][4] is not None
+                                     else 4.0,
+                                     stats_before[i2][4]
+                                     if stats_before[i2][4] is not None
+                                     else 4.0) - 0.05)
+            for _rk, alpha, B, m in cands:
+                if not (m[0] < cur_m[0] - 1e-9
+                        and m[1] < cur_m[1] - 1e-9):
+                    continue
+                saved = {i: (routes[i]["points"], routes[i].get("ctrl"))
+                         for i in (i1, i2)}
+                for i, g in ((i1, geo[0]), (i2, geo[1])):
+                    inf = routes[i]
+                    cx = g[0][0] + alpha * g[1] + g[4] * B * g[3][0]
+                    cy = g[0][1] + alpha * g[2] + g[4] * B * g[3][1]
+                    inf["points"] = quad_points(inf["points"][0],
+                                                [cx, cy], inf["points"][-1])
+                    inf["ctrl"] = [cx, cy]
+                ok = True
+                for i in (i1, i2):
+                    pr, clr, ang, cross, msep = self._edge_stats(i, routes)
+                    pr0, clr0, ang0, cross0, msep0 = stats_before[i]
+                    ok = (pr <= pr0 and cross <= cross0
+                          and (clr is None or clr >= self.cl - 1e-6)
+                          and ang >= ANCHOR_MIN_DEG
+                          and (msep is None or msep >= sep_floor)
+                          and self._own_box_ok(i, routes))
+                    if not ok:
+                        break
+                if ok:
+                    break
+                for i, (pts_b, ctrl_b) in saved.items():
+                    routes[i]["points"] = pts_b
+                    if ctrl_b is not None:
+                        routes[i]["ctrl"] = ctrl_b
         return routes
 
     # -- main entry --
