@@ -377,10 +377,28 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.7.8** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.7.10** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
 
+- **v0.7.10 version closure** (fix landed in ref-scrubbed / 25acc80, closure
+  card ref-scrubbed): **interactive-layer edge hit CSS fix** — `.stdraw-hit`
+  hit-paths carried `stroke: transparent` under `pointer-events: stroke`,
+  which is unhittable on Chromium builds that gate hit-testing on painted
+  pixels; the stroke is now painted near-transparent
+  (`rgba(255,255,255,0.01)`, the diagram-js approach). `pointer-events: all`
+  is deliberately NOT used: with `fill: none` SVG implicitly closes the
+  polygon, so the edge would swallow clicks in the empty region between its
+  endpoints. The real-hit gate is regression-guarded: `probe_interactive.py`
+  gains a hit gate (elementFromPoint sampling at multiple points along each
+  edge + CDP real-mouse double-click style cycling / waypoint insertion /
+  drag / export replay, 33/33 green) and `tests/test_hit_gate.py` adds 4
+  deterministic unit tests. Honest defect-tree note: on current Chromium
+  builds (Edge 157 verified) hit testing does NOT follow painted pixels —
+  the transparent-stroke failure does not reproduce there; the painted
+  stroke is kept as a defense for older builds. Certificate summary
+  cross-checked: the version string never enters output bytes
+  (demos/classic-certificate.json byte-identical pre/post bump).
 - **v0.7.8 version closure** (implementation card ref-scrubbed, closure
   card ref-scrubbed): **comb-bilateral wide-card tier-1 facing-border fan** —
   double-ticker wide cards (the 8777 caliber: xval 330px / wafer 292px) made
