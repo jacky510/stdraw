@@ -947,10 +947,14 @@ class Router:
         return (press, min_clr, ang_min, cross, msep)
 
     def fan_spread(self, routes, frozen=()):
-        """Same node side with >= 2 anchors: sort by incidence angle and spread symmetrically on both sides of the midpoint along the border tangent.
+        """Same node side with >= 2 anchors: sort by the other endpoint's azimuth and spread symmetrically on both sides of the midpoint along the border tangent.
 
                 2026-11-06 connection-point accounting hard rule 3 (jacky): multiple outgoing lines on the same node must not pile up at the
-                same border midpoint -- spread uniformly with step FAN_STEP, clamped inside the border at +/-(half-3). After spreading, every
+                same border midpoint -- spread uniformly with step FAN_STEP, clamped inside the border at +/-(half-3).
+                2026-11-09 ref-scrubbed (jacky): slot ORDER is azimuth-monotone -- on t/b borders by the other box center's horizontal
+                offset, on r/l borders by its vertical offset -- so anchor order along the border always matches the targets'
+                left/right (top/bottom) positions (the former incidence-angle key could invert neighbours and produce a
+                visible X crossing, classic-cld adopters box). After spreading, every
                 edge rechecks the hard gates (press/clearance/anchor angle/no crossing increase/mutual separation >= 4px); on any violation
                 the whole node falls back to border-midpoint anchors (deterministic: fixed traversal order + fixed step, no RNG).
                 frozen edges (constructed routes / user waypoints) are untouched.
@@ -972,15 +976,32 @@ class Router:
             vertical = side in ("r", "l")
             half_len = (hh if vertical else hw) - 3
 
-            def _in_angle(ent):
+            def _azi_key(ent):
+                # ref-scrubbed: slot order must be monotone with the other
+                # endpoint's azimuth (not the route segment's incidence
+                # angle): on a horizontal border (t/b) sort by the other
+                # box center's horizontal offset, on a vertical border
+                # (r/l) by its vertical offset, ascending = left-to-right /
+                # top-to-bottom slot order. The incidence-angle key could
+                # invert left/right neighbours (classic-cld adopters box:
+                # word vs potential anchors swapped -> visible X crossing
+                # under the box). Tie-break by edge index (deterministic).
                 i2, end, _p = ent
-                pts2 = routes[i2]["points"]
-                k0, k1 = (0, 1) if end == "a" else (len(pts2) - 1, len(pts2) - 2)
-                return math.atan2(pts2[k1][1] - pts2[k0][1],
-                                  pts2[k1][0] - pts2[k0][0])
-            ents = sorted(entries, key=_in_angle)
+                a2, b2 = self.edges[i2]
+                ox, oy, _ow, _oh = self.N[b2 if end == "a" else a2]
+                return (oy - cy) if vertical else (ox - cx), i2
+            ents = sorted(entries, key=_azi_key)
             k = len(ents)
             offs = [(t2 - (k - 1) / 2.0) * FAN_STEP for t2 in range(k)]
+            # ref-scrubbed: keep the fan inside the ref-scrubbed mid-band
+            # (+/- 1/4 of the owning box dimension, the CI in-band gate):
+            # when the fan half-span exceeds the band, scale the whole fan
+            # uniformly into it (monotone slot order and equal spacing are
+            # preserved, no stacking; deterministic).
+            band = (hh if vertical else hw) / 2.0
+            half_span = (k - 1) / 2.0 * FAN_STEP
+            if half_span > band:
+                offs = [o * band / half_span for o in offs]
             before = {i2: [list(p) for p in routes[i2]["points"]]
                       for i2, _e, _p in ents}
             stats_before = {i2: self._edge_stats(i2, routes)
