@@ -62,14 +62,16 @@ RANDOM_SAMPLES = [
 HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
               "min_gap_ge_16", "cv_le_035", "pitch_uniform",
               "column_snap24_ge_060",
-              "mutual_pairs_separated", "lines_no_coincidence")
+              "mutual_pairs_separated", "lines_no_coincidence",
+                      "visual_crossings_zero")
 # ref-scrubbed ring placement (placement=ring-cycle): regularity gates switch
 # to ring criteria (row alignment / column snap don't apply to rings; never
 # misjudge a ring under row criteria)
 RING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "min_gap_ge_16", "ring_spacing_cv_le_005",
                    "ring_template_fit_le_005", "mutual_pairs_separated",
-                   "lines_no_coincidence")
+                   "lines_no_coincidence",
+                      "visual_crossings_zero")
 # ref-scrubbed column/symmetric placement: regularity gate switches by mode
 # (main-chain column axis alignment + uniform row pitch / mirror-axis
 # error). Crossings (crossings_zero) and row alignment (row_align_ge_060)
@@ -78,10 +80,12 @@ RING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
 COLUMN_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                      "min_gap_ge_16", "cv_le_035", "column_axis_aligned",
                      "spine_pitch_uniform", "mutual_pairs_separated",
-                     "lines_no_coincidence")
+                     "lines_no_coincidence",
+                      "visual_crossings_zero")
 SYM_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                   "min_gap_ge_16", "cv_le_035", "symmetry_mirror_le_2px",
-                  "mutual_pairs_separated", "lines_no_coincidence")
+                  "mutual_pairs_separated", "lines_no_coincidence",
+                      "visual_crossings_zero")
 # ref-scrubbed (aesthetics v3) bowtie shared vertex: regularity gate = mirror-axis error (same criteria as symmetric)
 BOWTIE_HARD_GATES = SYM_HARD_GATES
 # ref-scrubbed (v0.7.1) column + wing slots: column x alignment + midline adherence + mirror (equivalent gates)
@@ -89,7 +93,8 @@ SPINE_WING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16",
                          "anchors_smooth", "min_gap_ge_16", "cv_le_035",
                          "spine_axis_le_2px", "midline_adherence_le_2px",
                          "symmetry_mirror_le_2px", "mutual_pairs_separated",
-                         "lines_no_coincidence")
+                         "lines_no_coincidence",
+                      "visual_crossings_zero")
 # v0.7.7 comb-bilateral (K_{m,2} hubs): column axis + pitch + hub symmetry +
 # all-straight hub fan (CV not applicable as a gate: hub wings are
 # structurally far from the column)
@@ -97,7 +102,8 @@ COMB_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "min_gap_ge_16", "column_axis_aligned",
                    "column_pitch_uniform", "hub_symmetry_le_2px",
                    "hub_edges_straight", "mutual_pairs_separated",
-                   "lines_no_coincidence")
+                   "lines_no_coincidence",
+                      "visual_crossings_zero")
 
 
 def _hard_gates_for(cert):

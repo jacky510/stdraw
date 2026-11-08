@@ -1019,7 +1019,16 @@ class Router:
                 groups.setdefault((v, self._side_of(v, p)), []).append(
                     (i, end, tuple(p)))
         for (v, side), entries in sorted(groups.items()):
-            if len(entries) < 2:
+            # ref-scrubbed: single-entry groups join when frozen/arc anchors
+            # occupy the same (node, side) -- the occupied-slot accounting
+            # (clearance >= MIN_FROZEN_ANCHOR_SEP + merged azimuth
+            # monotonicity) must also cover the 1-slidable + N-frozen case
+            # (renewable-resource harvest box: the frozen lens arc and the
+            # detour poly both landed on the border midpoint -> the poly's
+            # final segment ran into the arc's arrival, a T-junction the
+            # shared-endpoint exemption hides from the old caliber). Groups
+            # with no frozen anchors on their side keep the >= 2 rule.
+            if len(entries) < 2 and not frozen_side.get((v, side)):
                 continue
             cx, cy, hw, hh = self.N[v]
             vertical = side in ("r", "l")
@@ -1038,7 +1047,21 @@ class Router:
                 i2, end, _p = ent
                 a2, b2 = self.edges[i2]
                 ox, oy, _ow, _oh = self.N[b2 if end == "a" else a2]
-                return (oy - cy) if vertical else (ox - cx), i2
+                # ref-scrubbed: entry-side (target-end) tie-break -- when two
+                # fan members' other-box azimuths tie (both boxes centered on
+                # the border axis), the box-center key cannot order them and
+                # the index tie-break inverted neighbours whose ROUTES
+                # approach from opposite sides (population-logistic births
+                # box: the detour poly arrives from the right, the direct
+                # line from straight above -> visible X). Secondary key = the
+                # approach point's projection (the polyline point just before
+                # the anchor): for straight lines this is the other border
+                # anchor (azimuth-consistent), for detour routes it is the
+                # last via -- the direction the line actually comes from.
+                pts2 = routes[i2]["points"]
+                ap = pts2[1] if end == "a" else pts2[-2]
+                proj = (ap[1] - cy) if vertical else (ap[0] - cx)
+                return ((oy - cy) if vertical else (ox - cx)), proj, i2
             ents = sorted(entries, key=_azi_key)
             k = len(ents)
             # ref-scrubbed: keep the fan inside the ref-scrubbed mid-band
@@ -1060,7 +1083,19 @@ class Router:
                                    (_pf[1] - cy) if vertical
                                    else (_pf[0] - cx)))
 
+            # its slot base is the CURRENT anchor position (not the border
+            # midpoint): with no frozen conflict it must reproduce the
+            # incoming position byte-for-byte (offs == [base] restores it),
+            # and on conflict the candidate ladder shifts it off the frozen
+            # anchor while staying clamped inside the border.
+            k1_base = 0.0
+            if k == 1:
+                _p0 = ents[0][2]
+                k1_base = (_p0[1] - cy) if vertical else (_p0[0] - cx)
+
             def _offs_for(shift):
+                if k == 1:
+                    return [max(-half_len, min(half_len, k1_base + shift))]
                 raw = [(t2 - (k - 1) / 2.0) * FAN_STEP + shift
                        for t2 in range(k)]
                 half_span = max(abs(o) for o in raw)
@@ -1090,6 +1125,16 @@ class Router:
                         return True
                 return False
 
+            # ref-scrubbed: a single-slidable-entry fan is give-way-only --
+            # and with NO frozen conflict at the current slot it is skipped
+            # entirely: rewriting the anchor through offs == [base] would
+            # flip the coordinate's int/float JSON face (limits-to-growth
+            # word->rate measured: geometry identical, layout.json bytes
+            # drifted). Only a real conflict enters the candidate ladder.
+            if (k == 1
+                    and not (frozen_offs
+                             and _frozen_conflict(_offs_for(0.0)))):
+                continue
             # candidate give-way shifts, deterministic: centered first, then
             # half-steps (right preferred), then whole steps. Shift 0 with no
             # frozen anchors / no conflict reproduces the previous offs

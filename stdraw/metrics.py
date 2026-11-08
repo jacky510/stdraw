@@ -901,6 +901,15 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             # Hard gate: line-line visual coincidence pairs = 0
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
+    # ref-scrubbed: visual crossings (all-edge-pair caliber incl.
+    # shared-endpoint fan pairs) is a HARD gate in every placement mode --
+    # the 3-figure fan-X sweep (population-logistic / renewable-resource /
+    # shifting-the-burden) closed the last legacy nonzero counts, so the
+    # "awaits a legacy-number decision" report item becomes an assertion.
+    # hard_ok below folds it in: a drawing with a fan X can no longer
+    # grade best (honest grading: the certificate must see what the eye
+    # sees).
+    g["visual_crossings_zero"] = metrics["visual_crossings"] == 0
     if routing_consistent is not None:
         g["routing_consistent"] = routing_consistent
     if gates:
@@ -909,13 +918,6 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     g_pass = sum(1 for v in g.values() if v)
     reports = {
         "crossings_zero": metrics["crossings"] == 0,
-        "visual_crossings_zero": metrics["visual_crossings"] == 0,
-        "visual_crossings_note": ("report item, not a hard gate: all-edge-pair "
-                                  "visual intersection count including "
-                                  "shared-endpoint (fan) pairs — the blind "
-                                  "spot the graph-theory crossings caliber "
-                                  "exempts (ref-scrubbed); hard-gating awaits "
-                                  "a legacy-number decision"),
         "crossings_note": ("soft target: <=2 crossings allowed when placement "
                            "regularity holds (product call: some line "
                            "intersection is acceptable; order and elegance "
@@ -955,6 +957,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"] and
                    g["pitch_uniform"])
+    hard_ok = hard_ok and g["visual_crossings_zero"]
     dual_ok = routing_consistent is not False   # dual-accounting mismatch -> refuse the certificate
     if metrics["crossings"] == 0 and hard_ok and dual_ok:
         grade = "best"
