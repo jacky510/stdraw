@@ -518,9 +518,15 @@ styleEl.textContent = '#stdraw-handles circle.stdraw-wp{fill:#fff;stroke:#475569
   // Floating bendpoints (bpmn-io .djs-bendpoint.floating): preview-only
   // handle; creating it never touches user state, so it is safe to render
   // on hover and discard on leave.
-  '#stdraw-handles circle.stdraw-wp.floating{fill:#94a3b8;stroke:#475569;' +
+  // NOTE (ref-scrubbed): the floating preview mounts in the #stdraw-float
+  // layer (floatLayer below), NOT #stdraw-handles -- rebuildHandles clears
+  // #stdraw-handles on every gesture and would kill the preview. Prefixing
+  // these rules with a layer id silently detached them (handle rendered as
+  // a black opaque dot on 8777). Keep the selector layer-agnostic: the
+  // probe pins computed opacity so a re-layering regression turns red.
+  'circle.stdraw-wp.floating{fill:#94a3b8;stroke:#475569;' +
   'stroke-width:1.4;cursor:move;pointer-events:all;opacity:0.45}' +
-  '#stdraw-handles circle.stdraw-wp.floating:hover{opacity:0.85}' +
+  'circle.stdraw-wp.floating:hover{opacity:0.85}' +
   // Edge hit paths: the stroke MUST be painted (alpha > 0) for Chromium's
   // pointer-events:stroke to hit-test it -- stroke:transparent is treated as
   // unpainted and the hit path never resolves under the cursor (2026-11-08
