@@ -402,7 +402,16 @@ styleEl.textContent = '#stdraw-handles circle.stdraw-wp{fill:#fff;stroke:#475569
   'stroke-width:1.4;cursor:move;pointer-events:all}' +
   '#stdraw-handles circle.stdraw-wp:hover{stroke:#dc2626;fill:#fef2f2}' +
   '#stdraw-handles circle.stdraw-wp.sel{stroke:#dc2626;fill:#fef2f2}' +
-  '#stdraw-svg path.stdraw-hit{fill:none;stroke:transparent;stroke-width:12;cursor:pointer;pointer-events:stroke}' +
+  // Edge hit paths: the stroke MUST be painted (alpha > 0) for Chromium's
+  // pointer-events:stroke to hit-test it -- stroke:transparent is treated as
+  // unpainted and the hit path never resolves under the cursor (2026-11-08
+  // 8777 regression: all edge interactions dead while node drags worked).
+  // Same caliber as diagram-js InteractionEvents createHitStyle (painted
+  // near-transparent hit stroke, production-proven). Do NOT switch to
+  // pointer-events:all: with fill:none the implicit-closed fill polygon of
+  // an open polyline would hit-test its interior and steal empty-canvas
+  // clicks. rgba(...,0.01) is visually imperceptible (+<=2.5/255 composite).
+  '#stdraw-svg path.stdraw-hit{fill:none;stroke:rgba(255,255,255,0.01);stroke-width:12;cursor:pointer;pointer-events:stroke}' +
   '#stdraw-svg [data-edge].hl > path:not(.stdraw-hit){stroke-width:2.4}' +
   '.stdraw-tip{position:absolute;z-index:9;background:#1f2937;color:#fff;' +
   'font:12px/1.4 sans-serif;padding:3px 8px;border-radius:4px;pointer-events:none}';
