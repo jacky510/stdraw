@@ -45,6 +45,15 @@
 #     crossings / 1px card presses / card gap / CV / row alignment);
 #   - full metric refresh on release + deterministic replay of R/B polarity
 #     markers (same caliber as render._polarity_marker);
+#   - v0.7.9 font-environment robustness: after render, the ACTUAL DOM text
+#     geometry is measured (getComputedTextLength/getBBox) per card; when the
+#     rendered text overflows the planned card rect the rect is grown (never
+#     shrunk) to fit and every edge re-anchors on the new border -- when the
+#     browser inflates DOM text (minimum font size / user font scale, which
+#     the engine-side text metrics cannot see) lines still hug the rendered
+#     frame at 0px. No-op when measured geometry matches the plan (initial
+#     render stays pixel-identical to the static rendering); public hook:
+#     window.__stdrawSyncDomGeometry();
 #   - "Reset" restores the initial layout (incl. original path_d rendering,
 #     handle removal, style + fold-point clearing).
 # Determinism: the generated HTML contains no timestamps/random numbers;
@@ -58,7 +67,7 @@ var svg = document.getElementById('stdraw-svg');
 var VB = D.viewBox, cardH = D.cardH;
 var CL = 16, VG_C = 17.5, VEPS = 1e-6;   // same caliber as routing.CLEARANCE / +VG_PAD
 var nodes = {};
-D.nodes.forEach(function (n) { nodes[n.id] = {x: n.x, y: n.y, w: n.w, bx: n.x, by: n.y, g: null}; });
+D.nodes.forEach(function (n) { nodes[n.id] = {x: n.x, y: n.y, w: n.w, h: cardH, bx: n.x, by: n.y, g: null}; });
 svg.querySelectorAll('[data-node]').forEach(function (g) {
   var id = g.getAttribute('data-node');
   if (nodes[id]) nodes[id].g = g;
@@ -153,12 +162,18 @@ function borderPoint(c, hw, hh, toward) {
   var limX = hw / 2;
   return [c[0] + Math.max(-limX, Math.min(limX, px - c[0])), py];
 }
+// v0.7.9 per-card height: every border/obstacle/metrics site below uses the
+// node's own h (synced to the rendered DOM geometry by syncDomGeometry)
+// instead of the global planned cardH, so anchors always match the frame the
+// user actually sees.
+function nHH(n) { return (n.h || cardH) / 2; }
+function anchor(n, toward) { return borderPoint([n.x, n.y], n.w / 2, nHH(n), toward); }
 function reanchor(i) {
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
   var pts = e.pts.map(cp);
   var inner = pts.length > 2;
-  pts[0] = borderPoint([A.x, A.y], A.w / 2, cardH / 2, inner ? pts[1] : [B.x, B.y]);
-  pts[pts.length - 1] = borderPoint([B.x, B.y], B.w / 2, cardH / 2, inner ? pts[pts.length - 2] : [A.x, A.y]);
+  pts[0] = anchor(A, inner ? pts[1] : [B.x, B.y]);
+  pts[pts.length - 1] = anchor(B, inner ? pts[pts.length - 2] : [A.x, A.y]);
   e.pts = pts;
 }
 
@@ -276,7 +291,7 @@ function rectsFor(a, b) {
   Object.keys(nodes).forEach(function (v) {
     if (v === a || v === b) return;
     var n = nodes[v];
-    out.push([n.x, n.y, n.w / 2, cardH / 2]);
+    out.push([n.x, n.y, n.w / 2, nHH(n)]);
   });
   return out;
 }
@@ -286,8 +301,8 @@ function previewRoute(i) {
   // smoothing and mutual-pair separation — the certificate remains
   // authoritative via CLI recomputation).
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
-  var pa = borderPoint([A.x, A.y], A.w / 2, cardH / 2, [B.x, B.y]);
-  var pb = borderPoint([B.x, B.y], B.w / 2, cardH / 2, [A.x, A.y]);
+  var pa = anchor(A, [B.x, B.y]);
+  var pb = anchor(B, [A.x, A.y]);
   var rects = rectsFor(e.a, e.b);
   if (visible(pa, pb, rects, CL)) { e.pts = [pa, pb]; e.corners = null; return; }
   var path = vgShortest(pa, pb, rects, VG_C);
@@ -300,8 +315,8 @@ function previewRoute(i) {
 }
 function arcFollow(i) {
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
-  var pa = borderPoint([A.x, A.y], A.w / 2, cardH / 2, [B.x, B.y]);
-  var pb = borderPoint([B.x, B.y], B.w / 2, cardH / 2, [A.x, A.y]);
+  var pa = anchor(A, [B.x, B.y]);
+  var pb = anchor(B, [A.x, A.y]);
   var ctrl = [e.ctrl0[0] + ((pa[0] - e.pa0[0]) + (pb[0] - e.pb0[0])) / 2,
               e.ctrl0[1] + ((pa[1] - e.pa0[1]) + (pb[1] - e.pb0[1])) / 2];
   e.pts = quad(pa, ctrl, pb, 12);
@@ -311,8 +326,8 @@ function arcFollow(i) {
 // the Python replay in layout_auto._manual_edge_styles/_forced_arc_route) ──
 function forcedStraight(i) {
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
-  var pa = borderPoint([A.x, A.y], A.w / 2, cardH / 2, [B.x, B.y]);
-  var pb = borderPoint([B.x, B.y], B.w / 2, cardH / 2, [A.x, A.y]);
+  var pa = anchor(A, [B.x, B.y]);
+  var pb = anchor(B, [A.x, A.y]);
   e.pts = [pa, pb];
   e.corners = null;
 }
@@ -327,8 +342,8 @@ function forcedArc(i) {
   // side = the sign whose sampled arc keeps more distance from unrelated
   // boxes (deterministic tie -> +1). Same rule as the Python replay.
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
-  var pa = borderPoint([A.x, A.y], A.w / 2, cardH / 2, [B.x, B.y]);
-  var pb = borderPoint([B.x, B.y], B.w / 2, cardH / 2, [A.x, A.y]);
+  var pa = anchor(A, [B.x, B.y]);
+  var pb = anchor(B, [A.x, A.y]);
   var vx = pb[0] - pa[0], vy = pb[1] - pa[1], d = Math.hypot(vx, vy);
   var k = adaptiveArcK(d), n = Math.max(d, 1e-6);
   var ux = -vy / n, uy = vx / n;
@@ -342,7 +357,7 @@ function forcedArc(i) {
       if (v === e.a || v === e.b) return;
       var nn = nodes[v];
       for (var q = 0; q < pts.length; q++) {
-        var dd = distRect(pts[q][0], pts[q][1], nn.x, nn.y, nn.w / 2, cardH / 2);
+        var dd = distRect(pts[q][0], pts[q][1], nn.x, nn.y, nn.w / 2, nHH(nn));
         mclr = (mclr === null) ? dd : Math.min(mclr, dd);
       }
     });
@@ -358,9 +373,9 @@ function reanchorFree(i) {
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
   var wps = freeWps[i];
   if (!wps || !wps.length) { forcedStraight(i); return; }
-  var pts = [borderPoint([A.x, A.y], A.w / 2, cardH / 2, wps[0])];
+  var pts = [anchor(A, wps[0])];
   pts = pts.concat(wps.map(cp));
-  pts.push(borderPoint([B.x, B.y], B.w / 2, cardH / 2, wps[wps.length - 1]));
+  pts.push(anchor(B, wps[wps.length - 1]));
   e.pts = pts;
   e.corners = null;
 }
@@ -452,9 +467,9 @@ function pinEdge(i) {
   if (via.length < 1) return;
   var A = nodes[e.a], B = nodes[e.b];
   // Same caliber as CLI --from-layout: anchor = box border facing the first/last waypoint
-  var pts = [borderPoint([A.x, A.y], A.w / 2, cardH / 2, via[0])];
+  var pts = [anchor(A, via[0])];
   pts = pts.concat(via);
-  pts.push(borderPoint([B.x, B.y], B.w / 2, cardH / 2, via[via.length - 1]));
+  pts.push(anchor(B, via[via.length - 1]));
   e.pts = pts;
   e.corners = pts.map(cp);
   pinned[i] = true;
@@ -505,7 +520,7 @@ function metrics() {
       if (v === e.a || v === e.b) return;
       var n = nodes[v];
       for (var k = 0; k < pts.length; k++) {
-        if (distRect(pts[k][0], pts[k][1], n.x, n.y, n.w / 2 + 1, cardH / 2 + 1) <= 0) { press++; break; }
+        if (distRect(pts[k][0], pts[k][1], n.x, n.y, n.w / 2 + 1, nHH(n) + 1) <= 0) { press++; break; }
       }
     });
   });
@@ -516,7 +531,7 @@ function metrics() {
       if (a === b) continue;
       var nb = nodes[ids[b]];
       var dgx = Math.abs(na.x - nb.x) - (na.w + nb.w) / 2;
-      var dgy = Math.abs(na.y - nb.y) - cardH;
+      var dgy = Math.abs(na.y - nb.y) - nHH(na) - nHH(nb);
       var gg = Math.hypot(Math.max(dgx, 0), Math.max(dgy, 0));
       if (gg < minGap) minGap = gg;
       var dc = Math.hypot(na.x - nb.x, na.y - nb.y);
@@ -545,6 +560,75 @@ function refreshMetrics() {
     ' · card gap ' + m.minGap + 'px · CV ' + m.cv + ' · row align ' + m.row;
   // honest hard-gate coloring (no leniency): red when a gate clearly fails
   el.style.color = (m.press > 0 || m.crossings > 2 || m.minGap < 16) ? '#dc2626' : '';
+}
+// ── v0.7.9 font-environment robustness: post-render DOM geometry re-anchor ──
+// The planned card geometry is produced by the engine-side text metrics layer
+// (PIL measurement at generation time) and cannot see browser font settings.
+// When the browser inflates the DOM text (minimum font size / user font
+// scale), the rendered label overflows the planned rect while the edges stay
+// anchored to the planned border -> floating arrows (jacky's Edge outage,
+// ref-scrubbed). Here the ACTUAL rendered text is measured per card
+// (getComputedTextLength + getBBox), the rect is grown (never shrunk) to fit
+// with the same conservative padding discipline as textmetrics.py
+// (>=12px per side + 6% stretch margin), the node geometry every router /
+// metrics path consumes is updated, and all edges re-anchor + re-route on the
+// new borders at 0px. Determinism: when the measured geometry fits inside the
+// plan the function is a strict no-op (the initial render stays pixel-
+// identical to the static rendering; the byte-frozen delivery contract is
+// untouched). Deterministic given the rendered geometry: fixed traversal
+// order, no RNG, no timestamps.
+function syncDomGeometry() {
+  var touched = false;
+  svg.querySelectorAll('[data-node]').forEach(function (g) {
+    var id = g.getAttribute('data-node'), n = nodes[id];
+    if (!n || !n.g) return;
+    var rect = n.g.querySelector('rect');
+    if (!rect) return;
+    var mw = 0, top = Infinity, bot = -Infinity, texts = g.querySelectorAll('text');
+    texts.forEach(function (t) {
+      var w = 0;
+      try { w = t.getComputedTextLength(); } catch (e1) {}
+      try {
+        var bb = t.getBBox();
+        if (bb.width > w) w = bb.width;
+        if (bb.y < top) top = bb.y;
+        if (bb.y + bb.height > bot) bot = bb.y + bb.height;
+      } catch (e2) {}
+      if (w > mw) mw = w;
+    });
+    if (!(mw > 0)) return;
+    // Grow-only + overflow-driven: the planned geometry (engine-side PIL text
+    // metrics + conservative padding) is authoritative when the rendered text
+    // already fits inside it (any blanket re-padding here would drift the
+    // deterministic initial render -- measured, not assumed).
+    var needW = n.w, needH = n.h;
+    var wNeed = Math.ceil(mw * 1.06 + 24);   // textmetrics.py: >=12px/side + 6% stretch
+    if (wNeed > needW + 0.5) needW = wNeed;
+    if (top < bot && (top < n.by - n.h / 2 - 0.5 || bot > n.by + n.h / 2 + 0.5)) {
+      // vertical text escape: fit the union with the plan's padding discipline
+      var hNeed = Math.ceil((bot - top) * 1.06 + 14);
+      if (hNeed > needH) needH = hNeed;
+    }
+    if (needW <= n.w + 0.5 && needH <= n.h + 0.5) return;   // fits: strict no-op
+    var grewH = needH > n.h + 0.5;
+    n.w = needW; n.h = needH;
+    rect.setAttribute('x', (n.bx - needW / 2).toFixed(1));
+    rect.setAttribute('y', (n.by - needH / 2).toFixed(1));
+    rect.setAttribute('width', String(needW));
+    rect.setAttribute('height', String(needH));
+    // keep the secondary (value) line pinned to the new bottom inset when the
+    // card grew taller (the label stays centered on the card middle)
+    if (grewH && texts.length >= 2) {
+      try { texts[texts.length - 1].setAttribute('y', (n.by + needH / 2 - 7).toFixed(1)); } catch (e3) {}
+    }
+    touched = true;
+  });
+  if (touched) {
+    edges.forEach(function (e, i) { reroute(i); updateEdge(i); });
+    rebuildHandles();
+    refreshMetrics();
+  }
+  return touched;
 }
 function polyPointAt(pts, t) {
   var segs = [], total = 0, i;
@@ -750,7 +834,7 @@ function onMove(ev) {
   var nx = drag.ox + (p.x - drag.start[0]);
   var ny = drag.oy + (p.y - drag.start[1]);
   nx = Math.max(n.w / 2 + 2, Math.min(VB[2] - n.w / 2 - 2, nx));
-  ny = Math.max(cardH / 2 + 2, Math.min(VB[3] - cardH / 2 - 2, ny));
+  ny = Math.max(nHH(n) + 2, Math.min(VB[3] - nHH(n) - 2, ny));
   n.x = nx; n.y = ny;
   drag.g.setAttribute('transform', 'translate(' + (nx - n.bx).toFixed(1) + ' ' + (ny - n.by).toFixed(1) + ')');
   var touched = {};
@@ -760,7 +844,7 @@ function onMove(ev) {
   // changed so recompute (incl. stale detours invalidated when an obstacle is
   // dragged away). Preview caliber; user-anchored edges excepted (waypoints
   // preserved, endpoints re-anchored only).
-  var hw = n.w / 2 + 1, hh = cardH / 2 + 1;
+  var hw = n.w / 2 + 1, hh = nHH(n) + 1;
   edges.forEach(function (e2, j) {
     if (touched[j] || pinned[j] || e2.a === drag.id || e2.b === drag.id) return;
     var need = e2.pts.length > 2;
@@ -894,6 +978,7 @@ function reset() {
   Object.keys(polGroups).forEach(function (i) {
     polGroups[i].g.setAttribute('transform', polGroups[i].t);
   });
+  syncDomGeometry();   // v0.7.9: keep cards/anchors in sync after restore (no-op when in sync)
   rebuildHandles();
   refreshMetrics();
   fireLayoutChanged();
@@ -990,11 +1075,26 @@ window.__stdrawHandles = function () {
   });
   return out;
 };
+// v0.7.9 probe/integration hooks: per-card rendered geometry + manual re-anchor
+window.__stdrawNodeGeom = function (v) {
+  return v ? {x: nodes[v].x, y: nodes[v].y, w: nodes[v].w, h: nodes[v].h}
+           : Object.keys(nodes).map(function (k) {
+               return [k, nodes[k].x, nodes[k].y, nodes[k].w, nodes[k].h];
+             });
+};
+window.__stdrawSyncDomGeometry = syncDomGeometry;
 var btnE = document.getElementById('stdraw-export');
 var btnR = document.getElementById('stdraw-reset');
 if (btnE) btnE.addEventListener('click', exportLayout);
 if (btnR) btnR.addEventListener('click', reset);
 rebuildHandles();
 refreshMetrics();
+// v0.7.9 initial font-environment sync: run now (the script sits after the
+// SVG in the DOM, so layout is available) and again on window load (late
+// font/measure settling). Both calls are strict no-ops when the rendered
+// text fits the planned cards, so the deterministic initial render is
+// untouched in matching environments.
+syncDomGeometry();
+window.addEventListener('load', function () { syncDomGeometry(); });
 })();
 """
