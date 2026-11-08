@@ -1522,7 +1522,7 @@ class Router:
         return routes
 
     def mutual_arrival_flip(self, routes, frozen=()):
-        """ref-scrubbed: mutual-lens arrow-normal channel (spine-construct scope).
+        """ref-scrubbed: mutual-lens arrow-normal channel (engine-wide).
 
         A Q-arc lens between vertically stacked but horizontally offset boxes
         has end tangents that trade off with the bulge: on classic-cld
