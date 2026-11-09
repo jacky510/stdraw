@@ -1113,8 +1113,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         deg0 = []
         engine, pos_meta = "manual", {}
     else:
-        # ②'' layout aesthetics v2 (ref-scrubbed, jacky's 2026-11-05 direction for the whole graph): mode priority = bowtie-pair symmetry
-        #  (the learning-flywheel family) -> column (long chains / few loops, main ring <=4) -> ring (loop-dominant small graphs, ref-scrubbed)
+        # ②'' layout aesthetics v2 (ref-scrubbed, jacky's 2026-11-05 direction for the whole graph): mode priority =
+        #  symmetric (shared-edge bowtie, the learning-flywheel family) -> bowtie-vertex (two loops sharing one node)
+        #  -> spine-wing (hub pair + wings) -> comb-bilateral (bilateral hubs, tier 2 via the salience rule)
+        #  -> column (long chains / few loops, main ring <=4) -> ring (loop-dominant small graphs, ref-scrubbed)
         #  -> the existing layered path.
         #  Every new mode carries a trial gate: silent fallback when the gate fails, and the fallback path is byte-for-byte unchanged.
         def _rule_hit(name, tier, det_ok, plan, det_why, trial_why=None):
