@@ -429,3 +429,89 @@ geometrically equivalent (mirror images).
   drift; exported layout's `edges[].anchors {src,dst}` follows the Export
   layout semantics (viewer replay; CLI `--from-layout` does not consume that
   key yet).
+
+## Delivery-layer default snapping to the 16 standard anchors (ref-scrubbed, `Router.anchor_snap`)
+
+jacky 2026-11-09: "the connection points are still not the 16 standard ones I
+defined" — the 16-anchor caliber is upgraded from interactive-only to the
+**default attachment caliber**: on the auto recipe every engine (constructed /
+waypoint frozen edges included) must deliver every edge endpoint (start +
+arrow end) on one of the owning box's 16 standard anchors; the certificate
+gains the `anchors_standard` hard gate (membership tol 0.75px, in the grade
+conjunction).
+
+- **Algorithm path (gate-checked nearest-anchor assignment, not blind
+  post-hoc snapping)**: (1) occupancy — endpoints already exactly on an
+  anchor claim it per (box, anchor) (two endpoints never share one anchor
+  point, so no V co-points); (2) per edge (deterministic order) each endpoint
+  enumerates the 16 candidates **nearest first** (ties take the ANCHOR_IDS
+  order) and a candidate is applied only if the full delivery hard-gate set
+  holds: press no-worse / zero new crossings vs any other edge / clearance
+  (CI-raw >= 16, i.e. router inflated >= 15) / departure angle >= 20 deg
+  (router AND certificate-side classification must both pass — corner anchors
+  can classify differently per side; population-logistic nw measured router
+  50.2 deg vs certificate 0.0 deg) / mutual separation >= 4px / own-box arc
+  intrusion no worse (6px attachment-zone sampling exemption, same source as
+  metrics/check). (3) fixpoint sweeps (<= 4): earlier snaps update the shared
+  geometry, later edges re-check against the **already-snapped state** —
+  sequential-joint solving; the mover's own gates already counted its
+  crossings.
+- **Router-shape coupling**: straight endpoints move directly; arc endpoints
+  snap + ctrl translates in lockstep then rescales around the new chord
+  midpoint via `ARC_CTRL_SCALE_LADDER` (1.0 -> 0.45/1.6, detour side kept,
+  gates re-checked — long tangent detour arcs such as bullwhip's east arc
+  meet the departure-angle gate via this ladder); vg polyline endpoints +
+  adjacent via translate together (first segment stays collinear, departure
+  direction kept) + rigid fillet move + re-densification from corners +
+  fillets; poly/wrap translate their vias the same way; waypoints move
+  endpoints only (user vias untouched).
+- **Relation to existing calibers**: the ±1/4 in-band ratio (ref-scrubbed /
+  ref-scrubbed midpoint-preference proxy gate) is **superseded with cause** —
+  ci_checks `BASELINE_BAND` lock table and the test_layout_modes band-ratio
+  lock are re-baselined to the 16-anchor membership hard gate (in-band ratio
+  stays as a report item; measured after snapping: classic-cld 18/26,
+  brand-flywheel 8/16, urban-migration 8/16, limits-to-growth 9/14; classic
+  corpus corner-anchor hits are constantly 0); fan_spread / midband_reanchor
+  / mutual channels unchanged (they run first, anchor_snap finishes).
+- **Validation (21-input sweep, per-graph before/after byte diff on the
+  card)**: 21/21 crossings 0, grade best, visual_crossings_zero True,
+  anchors_standard True, 0 off-anchor endpoints; deterministic (two runs
+  byte-identical, ci_checks layer B).
+
+### Density-threshold probe mode (ref-scrubbed closure, jacky 2026-11-09 ruling "C+B")
+
+Random dense sampling measured: n10-i05 (E/N = 1.60) fails three gates after
+snapping — visual_crossings 2 -> 4 (2 fan pairs + 2 normal pairs), 1 endpoint
+with no feasible anchor (N03->N08 poly), line-line coincidence. Meanwhile the
+classic flagship classic-cld (E/N = 13/8 = 1.62) snaps clean across the
+21-graph sweep, and the failing case's max degree (4) is LOWER than
+classic-cld's (7) — **no static scalar density threshold can both pass
+classic-cld and block random n10**. The landed caliber:
+
+- **Threshold**: `ANCHOR_SNAP_DENSE_E_OVER_N = 1.6` (E/N >= 1.6, i.e. average
+  degree >= 3.2) switches snap into **probe mode**; below the threshold the
+  snap stays unconditional.
+- **Probe**: run the full snap on a working copy, then re-evaluate three hard
+  gates (plain crossing pairs via `final_crossing_pairs` / line-line
+  coincidence pairs / endpoint anchor membership — any unanchored endpoint
+  fails); **keep the snapped routes only at zero regressions, otherwise
+  revert to the pre-snap routes as a whole** (invariant: a dense graph is
+  either fully anchored or fully reverted — no half-snapped state).
+- **Honest downgrade**: on revert the certificate records
+  `gates.anchors_standard_deferred = {density_en, reason[],
+  moved_before_revert}` and the `anchors_standard` gate **stays measured
+  False** (no gate fudging, grade semantics untouched — deferred dense graphs
+  honestly grade uncertified/second; this is exactly the downgrade path
+  jacky approved); the layout meta always carries `anchor_snap_deferred`
+  (null = snapped). Reverted routes skip the post-snap
+  `mutual_arrival_flip(enhanced_gates=True)` (the pre-snap flip already ran;
+  re-flipping unsnapped routes would perturb the honest pre-snap state).
+- **ci_checks assertion (B2 random layer)**: a dense graph (E/N >= 1.6) must
+  either pass the membership gate (probe kept) or carry a deferred record
+  with a non-empty measured reason; a below-threshold graph may never carry
+  a deferral (no downgrade excuse for sparse graphs).
+- **Known limitation (follow-up card)**: fan-pair visual-crossing deltas are
+  not yet part of the probe's regression set (measured n10-i05 reverts via
+  the unanchored-endpoint trigger; a fan-only regression has not been
+  observed) — the dense-snap specialization card (coincidence gate + chained
+  crossing tracing) owns this.

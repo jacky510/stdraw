@@ -252,6 +252,34 @@ def main():
             if (m.get("edge_box_min_clear") or 0) < 16:
                 failures.append(f"random {ex}: edge_box_min_clear="
                                 f"{m.get('edge_box_min_clear')} < 16")
+            # ref-scrubbed finalize (jacky 2026-11-09 ruling "C+B"): density-
+            # gated snap caliber.  A dense graph (E/N >= 1.6) must either
+            # deliver every endpoint on the 16-anchor set (snap probe kept,
+            # zero gate regressions) or carry an anchors_standard_deferred
+            # record with a measured reason; the membership gate stays
+            # measured either way (no fudging).  A below-threshold graph has
+            # no deferral excuse: anchors_standard must be True outright.
+            try:
+                with open(os.path.join(out1, "layout.json"), encoding="utf-8") as f:
+                    _lay = json.load(f)
+                _dens = len(_lay["edges"]) / max(len(_lay["nodes"]), 1)
+            except Exception as _e:
+                failures.append(f"random {ex}: layout.json unreadable: {_e}")
+                continue
+            _gates = cert.get("gates", {})
+            _astd = _gates.get("anchors_standard")
+            _defer = _gates.get("anchors_standard_deferred")
+            if _defer is not None:
+                if not _defer.get("reason"):
+                    failures.append(f"random {ex}: deferral record without a measured reason")
+                if _dens < 1.6:
+                    failures.append(f"random {ex}: deferral on a below-threshold "
+                                    f"graph (E/N={_dens:.2f} < 1.6)")
+                print(f"OK  random {ex}: snap DEFERRED (dense E/N={_dens:.2f}, "
+                      f"reason={'; '.join(_defer.get('reason', []))}) -- honest downgrade")
+            elif not _astd:
+                failures.append(f"random {ex}: anchors_standard fails with no "
+                                f"deferral record (E/N={_dens:.2f})")
             # Determinism (ref-scrubbed: loops_audit.json added to the byte-identical determinism list)
             for fn in ("layout.json", "demo-2d.html", "loops_audit.json"):
                 with open(os.path.join(out1, fn), "rb") as a, \
