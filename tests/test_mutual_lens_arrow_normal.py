@@ -85,22 +85,18 @@ class TestMutualLensArrowNormal(unittest.TestCase):
             f"mutual pair separation {sep:.2f}px < {SEP_FLOOR}px "
             "(regression to the ref-scrubbed fan-slide defect)")
 
-    # ref-scrubbed anchor-caliber floor: the 16-anchor set quantizes the lens
-    # attachments to mirror pairs (+-10.6px on crowding / +-16.5px on
-    # fundamental, the only distinct-anchor mirrored pairing).  The box
-    # centers are offset 24px over a 122px chord, so the two chords' tilts
-    # are 24 +/- 5.9 px of dx -> 8.4 deg and 13.8 deg; the WORST chord tilt
-    # (13.8 deg) is a hard floor for that arc's arrival deviation (a straight
-    # line already deviates 13.8 deg).  Exhaustive ctrl search (alpha 0.3-0.95
-    # x bulge 1-6 x both bulge signs) bottoms out at ~11.5 deg for that arc.
-    # The delivered flip optimum is 14.4 deg (the flip balances the max
-    # deviation over BOTH arcs' departures AND arrivals; per-arc floor ~11.5).
-    # The pre-anchor 10-deg target is therefore GEOMETRICALLY UNREACHABLE
-    # under the anchor caliber for this box offset; the assertion pins the
-    # anchor-caliber ceiling (15 deg) and the degradation is reported to
-    # jacky for review (options: accept the ceiling / allow small-card anchor
-    # sharing / exempt this pair from snapping / a follow-up joint-lens card).
-    ANCHOR_CALIBER_ARRIVAL_FLOOR = 15.0
+    # ref-scrubbed joint re-assignment: the 16-anchor quantization on the
+    # MIRRORED golden pair forces one chord tilt to 13.8 deg (24px box-center
+    # offset +- the 5.9px mirror offset over a 122px chord) and the ctrl-only
+    # flip bottoms out at 14.4 deg delivered.  The joint pass
+    # (Router.lens_joint_reassign) re-enumerates NON-mirrored anchor
+    # assignments jointly for both arcs: the delivered assignment
+    # (crowding s-g2 -> fundamental n for arc 1, fundamental n-g1 -> crowding
+    # s-g1 for arc 2) gives chord tilts 6.27 / 8.44 deg and arrival devs
+    # 2.8 / 0.9 deg with separation 16.5px -- the pre-anchor <=10 deg target
+    # is RESTORED (this assertion pins it again; the 15 deg anchor-caliber
+    # ceiling of ref-scrubbed is retired).
+    ANCHOR_CALIBER_ARRIVAL_FLOOR = 0.0
 
     def test_arrow_arrival_within_target(self):
         target = max(ARRIVAL_TARGET_DEG, self.ANCHOR_CALIBER_ARRIVAL_FLOOR)

@@ -1586,6 +1586,11 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # and re-flipping unsnapped routes under the enhanced accounting would
     # perturb the honest pre-snap state.
     if _snap_deferred is None:
+        # ref-scrubbed: joint anchor re-assignment for lens pairs whose
+        # post-snap flip still exceeds the arrival target (non-mirrored
+        # joint assignments; strict improvement only, else untouched).
+        routes = router.lens_joint_reassign(
+            routes, _snap_report.get("lens_pairs", []))
         routes = router.mutual_arrival_flip(routes, enhanced_gates=True)
     router_pairs = router.final_crossing_pairs(routes)
 
