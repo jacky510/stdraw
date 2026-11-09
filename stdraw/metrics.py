@@ -19,6 +19,8 @@ import json
 import math
 from typing import Dict, List, Optional
 
+from . import __version__ as _PKG_VERSION
+
 EPS = 1e-9
 ROW_EPS = 4          # visual same-row test: y difference <= 4px counts as one row
 INFLATE = 4          # card-piercing caliber: card box outward inflation px
@@ -1036,7 +1038,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                       "never poses as a finished product")
 
     out = {
-        "tool": "stdraw", "version": "0.7.1", "layer": layer,
+        "tool": "stdraw", "version": _PKG_VERSION, "layer": layer,
         "graph": graph_name,
         "n": len(ids), "m": len(edges),
         "coords": "delivered/rounded",
