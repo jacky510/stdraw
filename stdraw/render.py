@@ -225,7 +225,7 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         'recomputed on preview geometry; the certificate is '
         'authoritative via CLI --from-layout</span>'
         '<span id="stdraw-metrics">…</span>'
-        '<button id="stdraw-anchors-toggle" type="button">Anchors: on</button>'
+        '<button id="stdraw-anchors-toggle" type="button">Anchors: off</button>'
         '<button id="stdraw-export" type="button">Export layout</button>'
         '<button id="stdraw-reset" type="button">Reset</button>'
         '</div>')

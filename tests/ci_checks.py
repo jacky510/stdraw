@@ -63,6 +63,7 @@ HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
               "min_gap_ge_16", "cv_le_035", "pitch_uniform",
               "column_snap24_ge_060",
               "mutual_pairs_separated", "lines_no_coincidence",
+                      "anchors_standard",
                       "visual_crossings_zero")
 # ref-scrubbed ring placement (placement=ring-cycle): regularity gates switch
 # to ring criteria (row alignment / column snap don't apply to rings; never
@@ -71,6 +72,7 @@ RING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "min_gap_ge_16", "ring_spacing_cv_le_005",
                    "ring_template_fit_le_005", "mutual_pairs_separated",
                    "lines_no_coincidence",
+                      "anchors_standard",
                       "visual_crossings_zero")
 # ref-scrubbed column/symmetric placement: regularity gate switches by mode
 # (main-chain column axis alignment + uniform row pitch / mirror-axis
@@ -81,10 +83,12 @@ COLUMN_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                      "min_gap_ge_16", "cv_le_035", "column_axis_aligned",
                      "spine_pitch_uniform", "mutual_pairs_separated",
                      "lines_no_coincidence",
+                      "anchors_standard",
                       "visual_crossings_zero")
 SYM_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                   "min_gap_ge_16", "cv_le_035", "symmetry_mirror_le_2px",
                   "mutual_pairs_separated", "lines_no_coincidence",
+                      "anchors_standard",
                       "visual_crossings_zero")
 # ref-scrubbed (aesthetics v3) bowtie shared vertex: regularity gate = mirror-axis error (same criteria as symmetric)
 BOWTIE_HARD_GATES = SYM_HARD_GATES
@@ -94,6 +98,7 @@ SPINE_WING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16",
                          "spine_axis_le_2px", "midline_adherence_le_2px",
                          "symmetry_mirror_le_2px", "mutual_pairs_separated",
                          "lines_no_coincidence",
+                      "anchors_standard",
                       "visual_crossings_zero")
 # v0.7.7 comb-bilateral (K_{m,2} hubs): column axis + pitch + hub symmetry +
 # all-straight hub fan (CV not applicable as a gate: hub wings are
@@ -103,6 +108,7 @@ COMB_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "column_pitch_uniform", "hub_symmetry_le_2px",
                    "hub_edges_straight", "mutual_pairs_separated",
                    "lines_no_coincidence",
+                      "anchors_standard",
                       "visual_crossings_zero")
 
 
@@ -555,23 +561,41 @@ def main():
                             band_in += 1
                         elif len(worst) < 3:
                             worst.append(f"{e['a']}->{e['b']}:{side}")
+            # ref-scrubbed re-baseline: the +/-1/4 in-band ratio was the PROXY
+            # for "prefer midpoints, avoid corners" under the v0.7.2 caliber.
+            # The default attachment caliber is now the 16 standard anchor set
+            # (anchors.py); the hard gate = every delivered endpoint is a
+            # member of its box's 16-anchor set (certificate anchors_standard
+            # is the per-run gate; this corpus sweep re-asserts it file-by-
+            # file).  The in-band ratio stays REPORT-ONLY as honest evidence
+            # (measured post-snap ratios recorded in the card).
+            from stdraw.anchors import standard_anchors as _sa
             eng = lay.get("meta", {}).get("engine", "")
             ratio = band_in / total if total else 1.0
-            floor = BASELINE_BAND.get(name, 1.0)
-            if corner > 0:
-                failures.append(f"corpus {name}: anchor corner hits {corner} "
-                                f"(criteria: must be 0)")
-            elif ratio < floor - 1e-9:
-                failures.append(f"corpus {name}: anchor in-band {band_in}/{total} "
-                                f"({ratio:.0%}) < v0.7.2 baseline {floor:.0%} "
-                                f"{worst}")
+            viol = 0
+            for e in lay["edges"]:
+                rt = e["route"]
+                for side, idx in (("a", 0), ("b", len(rt["points"]) - 1)):
+                    nd = lay["nodes"][e[side]]
+                    p = rt["points"][idx]
+                    pts16 = _sa(nd["x"], nd["y"], nd["w"] / 2.0, ch / 2.0)
+                    if not any(abs(ax - p[0]) <= 0.75 and
+                               abs(ay - p[1]) <= 0.75
+                               for _aid, ax, ay in pts16):
+                        viol += 1
+            if viol > 0:
+                failures.append(f"corpus {name}: {viol} endpoint(s) off the "
+                                f"16 standard anchor set (ref-scrubbed caliber)")
             else:
                 n_anchor_ok += 1
-                print(f"OK  anchor criteria {name}: engine={eng} in-band {band_in}/{total}"
-                      f" ({ratio:.0%}) corners {corner}")
+                print(f"OK  anchor criteria {name}: engine={eng} "
+                      f"standard-anchor membership 100% "
+                      f"(in-band report-only {band_in}/{total} = {ratio:.0%}, "
+                      f"corners {corner})")
         if n_anchor_ok == 19:
-            print("OK  anchor criteria hard gate: 19/19 corners=0, in-band ratios meet the bar "
-                  "(spine-wing=100%, others locked to baseline)")
+            print("OK  anchor criteria hard gate: 19/19 endpoints all on the "
+                  "16 standard anchor set (ref-scrubbed; in-band ratio is "
+                  "report-only since the band was the old proxy caliber)")
 
         # H3. R/B coloring criteria: wage R1 amber / B1 sky blue / multi-loop mixed-color neutral + polarity data retained
         out_w = os.path.join(tmp, "H-wage")

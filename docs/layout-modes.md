@@ -285,7 +285,7 @@ id 顺序）驱动；同构图的对应节点同色 → 对应槽位。已验证
 | bowtie-vertex | 镜像轴误差 ≤2px（共享节点居轴心 + 上下环镜像） |
 | layered | 行距恒等 + 24px 列吸附 ≥60%（简单图） |
 
-## 方框标准锚点集（16 点，ref-scrubbed，交互层专用）
+## 方框标准锚点集（16 点，ref-scrubbed；ref-scrubbed 起为**缺省吸附口径**）
 
 - **口径**：每框 16 个离散标准连接点 = 4 边中点 + 4 角点 + 每边 2 个黄金
   分割点（0.382/0.618）= 16 点对称口径（jacky 2026-11-08 口述「边中点 4 +
@@ -294,10 +294,16 @@ id 顺序）驱动；同构图的对应节点同色 → 对应槽位。已验证
   `half − 3` 内缩口径，`stdraw/anchors.py:ANCHOR_INSET`）；角点永远不在
   几何角尖上（渲染圆角 rx=7 之外），黄金点方向按顺时针固定
   （g1 = 0.382，g2 = 0.618；顶边左→右、右边上→下、底边右→左、左边下→上）。
-- **正本**：`stdraw/anchors.py`（纯函数库，静态布局/布线管线**不 import**，
-  自动布线锚点规划口径不变 → 21 输入 sweep byte-identical）；交互层
+- **正本**：`stdraw/anchors.py`（纯函数库）；交互层
   `_interactive_js.stdAnchors` 镜像同一公式（live 卡片几何），probe 逐点
-  对拍 JS vs Python（≤0.02px）。
+  对拍 JS vs Python（≤0.02px）。ref-scrubbed 当时只落交互层（「静态管线
+  不 import → sweep byte-identical」约束）；**ref-scrubbed（jacky 2026-11-09
+  「连接点还不是我定过的 16 个标准连接点」）起该口径升级为缺省吸附口径**，
+  交付层新增 `Router.anchor_snap`（见下节），静态管线自此 import 本库。
+- **视觉去噪（ref-scrubbed）**：缺省渲染（2D 静态 PNG / demo HTML 初始态 /
+  3D）**不显示锚点圆点与端点把手圆圈**；交互层锚点圆点 hover 才显示且
+  **缺省关闭**（工具栏开关保留，probe hook `__stdrawSetAnchorToggle`）；
+  端点把手圆圈缺省隐藏，边 hover 或端点拖拽中才淡入（`.stdraw-ep.vis`）。
 - **交互语义**：hover 方框显示 16 锚点（工具栏可关）；边端点（起点+箭头
   端）可单独拖动，松手吸附到**端点所属框**的最近标准锚点（并列取
   ANCHOR_IDS 序靠前者）；点击可见锚点 = 显式指派（最近落点端点胜出）。
@@ -305,3 +311,36 @@ id 顺序）驱动；同构图的对应节点同色 → 对应槽位。已验证
   `edge_anchors`）后，节点拖动只把端点**重投影到同一锚位**（按 live 几何
   重算坐标），不漂移；导出 layout 的 `edges[].anchors {src,dst}` 随
   Export layout 语义走（viewer 回放恢复；CLI `--from-layout` 暂不消费该键）。
+
+## 交付层默认吸附 16 标准锚点集（ref-scrubbed，`Router.anchor_snap`）
+
+jacky 2026-11-09：「连接点还不是我之前定过的 16 个标准连接点」——16 锚点集
+从交互层口径升级为**缺省吸附口径**：auto 配方每一引擎（含构造/waypoint 冻结
+边）交付前，所有边端点（起点+箭头端）必须落在端点所属方框的 16 标准锚点
+之一；证书新增 `anchors_standard` 硬门（成员判定 tol 0.75px，进 grade 合取）。
+
+- **算法路径（门径最近锚分配，非布线后硬吸附）**：① 占用登记——已在锚上的
+  端点按 (框, 锚) 占用（同锚不共点，杜绝 V 形共点）；② 逐边（确定性序）
+  每端点按**距离最近优先**（并列取 ANCHOR_IDS 序）枚举 16 锚候选，候选仅当
+  全套交付硬门成立才落锚：press 不增 / 对任何他边**零新增交叉** / 净距
+  （CI raw 口径 ≥16，即 router 膨胀口径 ≥15）/ 出发角 ≥20°（router 与
+  **证书双侧分类口径都**须过——角锚点两侧分类可不一致，population-logistic
+  nw 实测 router 50.2° vs 证书 0.0°）/ 互环分离 ≥4px / 自家框弧身侵入不增
+  （贴附区 6px 内采样豁免，与 metrics/check 同源同口径）。③ 扫描循环至
+  不动点（≤4 轮）：先落锚的边更新共享几何，后处理的边对着**已吸附状态**
+  复核——顺序联合求解，移动方自己的门已计入其移动造成的交叉。
+- **路由器形状联动**：直线端点直移；弧线端点落锚 + ctrl 随端点位移平移后
+  按 `ARC_CTRL_SCALE_LADDER`（1.0→0.45/1.6）绕新弦中点缩放重定形（保绕行
+  侧，门径复检）——长切向大弧（bullwhip 东绕弧）靠此档满足离切角硬门；
+  vg 折线端点+相邻折点同向量平移（首段共线、出发方向保持）+ 对应圆角刚移
+  + 按 corners+fillets 重稠密化；poly/wrap 同折点平移；waypoints 只移端点
+  （不动用户折点）。
+- **与既有口径的关系**：±1/4 带内比（ref-scrubbed/ref-scrubbed 的中点偏好
+  代理门）被本口径**有据取代**——ci_checks `BASELINE_BAND` 锁表与
+  test_layout_modes 带内比例锁改为 16 锚成员硬门，带内比降为报告项
+  （吸附后实测：classic-cld 18/26、brand-flywheel 8/16、urban-migration
+  8/16、limits-to-growth 9/14 等，classic 语料转角锚命中恒 0）；fan_spread /
+  midband_reanchor / mutual 通道照旧（先跑，anchor_snap 收尾兜底）。
+- **验证（21 图 sweep，吸附前 vs 后逐图字节对比见卡）**：21/21 crossings 0、
+  grade best、visual_crossings_zero True、anchors_standard True、端点成员
+  违例 0；确定性两次运行字节一致（ci_checks 层 B）。

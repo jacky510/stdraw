@@ -354,8 +354,16 @@ def auto_geometry_report(layout: dict) -> dict:
         for v in (e["a"], e["b"]):
             p = nodes[v]
             hw, hh = CW[v] / 2, CARD_H / 2
+            # ref-scrubbed: standard anchors sit INSET 3px inside the border, so
+            # samples within 6px of an endpoint (the attachment zone, before
+            # the departure clears the 1px-inflated margin) are exempt -- same
+            # accounting as Router._own_press / metrics own-box gate; the
+            # check still catches positive-length traversal inside the box.
+            q0, q1 = pts[0], pts[-1]
             if any(dist_point_rect(px, py, p["x"], p["y"], hw + PRESS_MARGIN,
-                                   hh + PRESS_MARGIN) <= 0 for (px, py) in dense[1:-1]):
+                                   hh + PRESS_MARGIN) <= 0 for (px, py) in dense[1:-1]
+                   if ((px - q0[0]) ** 2 + (py - q0[1]) ** 2) > 36.0 and
+                   ((px - q1[0]) ** 2 + (py - q1[1]) ** 2) > 36.0):
                 bad2.append((f"{e['a']}->{e['b']}", v, "own"))
     chk("2. box press = 0 (any angle, incl. 1px margin)", not bad2, str(bad2[:5]))
 

@@ -12,8 +12,11 @@ Hard-gate geometric accounting (v0.2 quality rework):
 All candidates are enumerated in fixed order and picked by fixed scoring -- no RNG, same graph yields same output.
 """
 import math
+import os
+import sys
 
 from . import visibility as _vis
+from .anchors import standard_anchors as _std_anchors
 
 CLEARANCE = 16          # minimum edge-box clearance (v0.2 hard-gate accounting)
 PRESS_MARGIN = 1        # box-press detection margin px
@@ -57,6 +60,14 @@ FAN_STEP = 18.0             # uniform spread step for multiple anchors on the sa
 ARRIVAL_TARGET_DEG = 10.0   # ref-scrubbed: mutual-lens arrow-normal target (card-suggested; hard-gating pending owner decision)
 MIN_FROZEN_ANCHOR_SEP = 8.0  # ref-scrubbed: fan slots must clear frozen anchors on the same side by at least this (px)
 REANCHOR_STEP = 4.0         # ref-scrubbed midband_reanchor ladder-clamping step
+ARC_CTRL_SCALE_LADDER = (1.0, 0.85, 1.15, 0.7, 1.3, 0.55, 1.45, 0.45, 1.6)
+# ref-scrubbed anchor_snap: after snapping an arc endpoint, the departure angle
+# vs the border tangent (>= ANCHOR_MIN_DEG) cannot always be met by ctrl
+# lockstep translation alone (a long-tangent detour arc keeps its near-tangent
+# departure).  The ladder rescales the ctrl offset around the new chord
+# midpoint (preserving the detour side; gates recheck press/crossing/clearance)
+# so the arc re-fits its shape to the anchored chord.  1.0 first = zero-shape-
+# change preference.
 
 EPS = 1e-9
 
@@ -1566,7 +1577,7 @@ class Router:
                         handled.add(j)
         return routes
 
-    def mutual_arrival_flip(self, routes, frozen=()):
+    def mutual_arrival_flip(self, routes, frozen=(), enhanced_gates=False):
         """ref-scrubbed: mutual-lens arrow-normal channel (engine-wide).
 
         A Q-arc lens between vertically stacked but horizontally offset boxes
@@ -1588,6 +1599,15 @@ class Router:
         no-regression / anchor angles / own-box); anchors are untouched, so
         the fan_spread occupied-slot accounting stays consistent. Routes are
         returned untouched (byte-for-byte) when no candidate improves.
+
+        ref-scrubbed enhanced_gates=True (the post-anchor_snap second call):
+        the gate accounting switches to the anchor-snap calibers --
+        clearance at the CI raw accounting (>= CLEARANCE - PRESS_MARGIN on
+        the inflated measure) and own-box intrusion comparative via
+        _own_press (inset-3px anchors put attachment-zone samples inside the
+        1px-inflated margin by construction, so the absolute _own_box_ok
+        gate can never pass and would veto every candidate).  The first
+        (pre-snap) call keeps the legacy gates byte-for-byte.
         """
         SideNorm = {"t": (0.0, -1.0), "b": (0.0, 1.0),
                     "r": (1.0, 0.0), "l": (-1.0, 0.0)}
@@ -1616,6 +1636,14 @@ class Router:
 
         ALPHAS = (0.3, 0.4, 0.5, 0.6, 0.7)
         BULGES = (6.0, 5.0, 4.0, 3.0, 2.5, 2.0, 1.5, 1.0)
+        if enhanced_gates:
+            # ref-scrubbed: on the anchored mirror chords the box-center offset
+            # (crowding/fundamental: 24px over 122px) puts one chord's tilt at
+            # ~13.8 deg, so the arrival target (<=10 deg) is unreachable in
+            # the fat-lens domain; the high-alpha tiers (ctrl near the arrival
+            # end) let the flip re-fit the pair into a slim near-parallel
+            # double line that meets the target on BOTH arrows.
+            ALPHAS = ALPHAS + (0.8, 0.9, 0.95)
 
         for key in sorted(self.mutual):
             i1 = self.eidx.get((key[0], key[1]))
@@ -1676,19 +1704,39 @@ class Router:
                     meets = m[0] <= ARRIVAL_TARGET_DEG + 1e-9
                     cands.append(((0 if meets else 1, -B, m[0], m[1]),
                                   alpha, B, m))
-            cands.sort(key=lambda c: c[0])
+            cands.sort(key=lambda c: (c[0][0], c[0][2], -c[0][1])
+                       if enhanced_gates else c[0])
+            if os.environ.get("STDRAW_SNAP_DEBUG"):
+                print(f"  [flipdbg] pair={key} cur_m={cur_m} ncands={len(cands)} "
+                      f"best_meet={next((c[0] for c in cands if c[0][0] == 0), None)}",
+                      file=sys.stderr)
             stats_before = {i: self._edge_stats(i, routes)
                             for i in (i1, i2)}
+            own_before = ({i: self._own_press(i, routes) for i in (i1, i2)}
+                          if enhanced_gates else None)
             sep_floor = max(4.0, min(stats_before[i1][4]
                                      if stats_before[i1][4] is not None
                                      else 4.0,
                                      stats_before[i2][4]
                                      if stats_before[i2][4] is not None
                                      else 4.0) - 0.05)
+            if enhanced_gates:
+                # ref-scrubbed: post-snap the joint lens pass delivers a wide
+                # mirrored attachment (separation ~21px); locking the floor to
+                # that would veto every slim re-fit candidate -- the arrival
+                # target needs a SLIM lens on the anchored chord.  The lens
+                # floor returns to the ref-scrubbed caliber (>= 12px).
+                sep_floor = max(12.0, min(sep_floor, 12.0))
             for _rk, alpha, B, m in cands:
-                if not (m[0] < cur_m[0] - 1e-9
-                        and m[1] < cur_m[1] - 1e-9):
-                    continue
+                if not enhanced_gates:
+                    # legacy strict improvement (pre-snap path, zero drift)
+                    if not (m[0] < cur_m[0] - 1e-9
+                            and m[1] < cur_m[1] - 1e-9):
+                        continue
+                # ref-scrubbed enhanced: no strict-improvement path dependence --
+                # every candidate is gate-checked against the pre-flip state
+                # (stats_before) below and the search naturally stops at the
+                # best-scoring candidate via the sorted order + ok break.
                 saved = {i: (routes[i]["points"], routes[i].get("ctrl"))
                          for i in (i1, i2)}
                 for i, g in ((i1, geo[0]), (i2, geo[1])):
@@ -1703,10 +1751,19 @@ class Router:
                     pr, clr, ang, cross, msep = self._edge_stats(i, routes)
                     pr0, clr0, ang0, cross0, msep0 = stats_before[i]
                     ok = (pr <= pr0 and cross <= cross0
-                          and (clr is None or clr >= self.cl - 1e-6)
+                          and (clr is None or
+                               clr >= (self.cl - 1e-6 if not enhanced_gates
+                                       else self.cl - PRESS_MARGIN - 1e-6))
                           and ang >= ANCHOR_MIN_DEG
                           and (msep is None or msep >= sep_floor)
-                          and self._own_box_ok(i, routes))
+                          and (self._own_box_ok(i, routes) if not enhanced_gates
+                               else self._own_press(i, routes) <= own_before[i]))
+                    if os.environ.get("STDRAW_SNAP_DEBUG"):
+                        print(f"  [flipdbg] {i} alpha={alpha} B={B} ok={ok} "
+                              f"pr={pr}<={pr0} clr={clr} ang={ang:.1f} "
+                              f"msep={msep}>={sep_floor:.1f} "
+                              f"own={self._own_press(i, routes)}"
+                              f"<={own_before[i] if own_before else '?'}", file=sys.stderr)
                     if not ok:
                         break
                 if ok:
@@ -1716,6 +1773,809 @@ class Router:
                     if ctrl_b is not None:
                         routes[i]["ctrl"] = ctrl_b
         return routes
+
+    # -- ref-scrubbed: default endpoint snapping to the 16 standard anchors --
+    ANCHOR_SNAP_TOL = 0.51    # px: an endpoint within this of an anchor IS on that anchor (delivery rounds to 0.1px)
+
+    def _box_anchors(self, v):
+        """The 16 standard anchors of node v's box (anchors.py caliber; cached per layout)."""
+        cache = getattr(self, "_anchor_cache", None)
+        if cache is None:
+            cache = self._anchor_cache = {}
+        if v not in cache:
+            cx, cy, hw, hh = self.N[v]
+            cache[v] = _std_anchors(cx, cy, hw, hh)
+        return cache[v]
+
+    def _anchor_at(self, v, p):
+        """Anchor id if endpoint p already sits on one of v's 16 standard anchors, else None.
+
+            Deterministic tie-break: none needed -- the anchors are mutually
+            far apart (>= ~18px), far beyond ANCHOR_SNAP_TOL.
+        """
+        for aid, ax, ay in self._box_anchors(v):
+            if abs(ax - p[0]) <= self.ANCHOR_SNAP_TOL and \
+                    abs(ay - p[1]) <= self.ANCHOR_SNAP_TOL:
+                return aid
+        return None
+
+    def _own_press(self, i, routes):
+        """Body-intrusion count of edge i against its OWN boxes (0 = clean).
+
+            Comparative gate basis for anchor_snap: (a) several delivered
+            vg/detour routes legitimately hug their own box border, so the
+            ABSOLUTE own-box gate of _own_box_ok can never pass for them --
+            the anchor move is accepted only when it does not ADD own-box
+            intrusion vs the delivered state; (b) samples within 6px of an
+            endpoint are excluded -- the attachment zone always grazes the
+            inflated border by construction (the anchor sits ON the border,
+            inset 3px), what the gate must catch is the arc/polyline BODY
+            stabbing into the box, not the attachment stub.
+        """
+        pts = routes[i]["points"]
+        a, b = self.edges[i]
+        p0, p1 = pts[0], pts[-1]
+        samples = [s for s in sample_polyline(pts)[1:-1]
+                   if math.hypot(s[0] - p0[0], s[1] - p0[1]) > 6.0 and
+                   math.hypot(s[0] - p1[0], s[1] - p1[1]) > 6.0]
+        n = 0
+        for v in (a, b):
+            cx, cy, hw, hh = self.N[v]
+            for (px, py) in samples:
+                if dist_point_rect(px, py, cx, cy, hw + PRESS_MARGIN,
+                                   hh + PRESS_MARGIN) <= ROUND_GUARD:
+                    n += 1
+                    break
+        return n
+
+    def _cert_angle_ok(self, i, routes):
+        """Anchor smoothness re-checked in the CERTIFICATE's border-side
+        classification caliber (metrics._anchor_tangent_angle).
+
+            At CORNER anchors the two accountings can classify the border side
+            differently (metrics: the smaller |Δ| wins; router _anchor_angle:
+            its own rule) -- measured on population-logistic population->births
+            nw: router 50.2 deg vs certificate 0.0 deg.  A snap candidate is
+            feasible only when BOTH accountings pass (the delivered gate is
+            the certificate's).
+        """
+        pts = routes[i]["points"]
+        for v, idx, nidx in ((self.edges[i][0], 0, 1),
+                             (self.edges[i][1], len(pts) - 1, len(pts) - 2)):
+            cx, cy, hw, hh = self.N[v]
+            a0 = pts[idx]
+            on_x = abs(abs(a0[0] - cx) - hw) <= abs(abs(a0[1] - cy) - hh)
+            tx, ty = (0.0, 1.0) if on_x else (1.0, 0.0)
+            dx, dy = pts[nidx][0] - a0[0], pts[nidx][1] - a0[1]
+            n = math.hypot(dx, dy)
+            if n < 1e-9:
+                return False
+            c = abs(dx * tx + dy * ty) / n
+            ang = math.degrees(math.acos(max(0.0, min(1.0, c))))
+            if ang < ANCHOR_MIN_DEG:
+                return False
+        return True
+
+    def _sibling_cross(self, i, routes):
+        """Mid-air intersection count between edge i and edges SHARING an
+        endpoint with it (fan pairs).
+
+            Router._edge_stats exempts shared-endpoint pairs (graph-theory
+            caliber), which misses fan lines visibly crossing mid-air under
+            the same box (ref-scrubbed blind spot) -- the certificate's
+            visual_crossings_zero gate counts them (metrics accounting:
+            strict seg_cross over the dense points, endpoint touch exempt).
+            The snap gate uses the same accounting so a candidate that folds
+            a fan into an X is rejected.
+        """
+        a, b = self.edges[i]
+        pts = routes[i]["points"]
+        s1 = list(zip(pts[:-1], pts[1:]))
+        n = 0
+        for j, o in routes.items():
+            if j == i:
+                continue
+            ea, eb = self.edges[j]
+            if not ({a, b} & {ea, eb}):
+                continue
+            opts = o["points"]
+            s2 = list(zip(opts[:-1], opts[1:]))
+            hit = False
+            for q1 in s1:
+                for q2 in s2:
+                    if seg_cross(q1[0], q1[1], q2[0], q2[1]):
+                        hit = True
+                        break
+                if hit:
+                    break
+            if hit:
+                n += 1
+        return n
+
+    LENS_OFFSET_PAIRS = "golden-first"   # ref-scrubbed: golden mirror pair before corner pair
+
+    def _lens_pair_joint_snap(self, routes, occ, report):
+        """Mutual-pair lens arcs: JOINT symmetric anchoring (ref-scrubbed).
+
+            Per-endpoint nearest-first snapping breaks the lens geometry: the
+            two arcs' attachments on a shared box stop being mirrored, the
+            chord tilts and the arrows twist (classic-cld crowding<->fundamental
+            measured: arrival 11.8 deg > target 10, separation 10.5 < 12).
+            This pre-pass assigns BOTH arcs of a mutual arc pair to the SAME
+            mirrored anchor-offset pair per box (golden mirror pair first,
+            corner mirror pair as fallback), preserving the lens symmetry and
+            keeping the chord tilt small.  Deterministic: fixed pair ladder,
+            fixed sign assignment (arc with the lower current offset takes the
+            lower anchor).  Gates match the delivery accounting on BOTH arcs
+            (press / crossings / clearance at CI accounting / departure angles
+            in both calibers / mutual separation >= 12px lens floor / own-box
+            body intrusion / fan-sibling mid-air crossings).
+        """
+        for key in sorted(self.mutual):
+            i1 = self.eidx.get((key[0], key[1]))
+            i2 = self.eidx.get((key[1], key[0]))
+            if i1 is None or i2 is None or i1 == i2:
+                continue
+            if i1 not in routes or i2 not in routes:
+                continue
+            r1, r2 = routes[i1], routes[i2]
+            if r1.get("kind") != "arc" or r2.get("kind") != "arc":
+                continue
+            if r1.get("ctrl") is None or r2.get("ctrl") is None:
+                continue
+            # ends: (edge_idx, end_idx, box) for each arc on each box
+            ends = []
+            for i, v in ((i1, key[0]), (i1, key[1]), (i2, key[0]), (i2, key[1])):
+                e = self.edges[i]
+                ends.append((i, 0 if e[0] == v else 1, v))
+            pidx = {}   # (edge_idx, box) -> point index (0 or len-1; arcs are dense)
+            for i, end, v in ends:
+                pidx[(i, v)] = 0 if end == 0 else len(routes[i]["points"]) - 1
+            # both arcs must attach on the SAME border side per box (facing
+            # borders; otherwise the lens pre-pass does not apply)
+            s1 = self._side_of(ends[0][2], routes[i1]["points"][pidx[(i1, key[0])]])
+            s2 = self._side_of(ends[1][2], routes[i1]["points"][pidx[(i1, key[1])]])
+            s3 = self._side_of(ends[2][2], routes[i2]["points"][pidx[(i2, key[0])]])
+            s4 = self._side_of(ends[3][2], routes[i2]["points"][pidx[(i2, key[1])]])
+            if os.environ.get("STDRAW_SNAP_DEBUG"):
+                print(f"  [lensdbg] {key} s={s1}/{s2} vs {s3}/{s4} "
+                      f"N0={self.N.get(key[0])} N1={self.N.get(key[1])} "
+                      f"e{self.edges[i1]} e{self.edges[i2]} "
+                      f"p1={routes[i1]['points'][pidx[(i1, key[0])]]} "
+                      f"p3={routes[i2]['points'][pidx[(i2, key[0])]]}",
+                      file=sys.stderr)
+            if s1 != s3 or s2 != s4:
+                continue
+            sep_ok_floor = 12.0
+            before_sep = min_pair_dist(
+                sample_polyline(r1["points"], step=4),
+                sample_polyline(r2["points"], step=4))
+            if before_sep is None:
+                continue
+            sep_ok_floor = max(sep_ok_floor, before_sep - 0.05)
+            # local occupancy: OTHER edges' endpoints already exactly on an
+            # anchor keep their claim (the pair's own 4 ends are excluded --
+            # they are what this pass re-assigns)
+            occ_local = {}
+            for j in sorted(routes):
+                if j in (i1, i2):
+                    continue
+                pj = routes[j]["points"]
+                for end, v, p in ((0, self.edges[j][0], pj[0]),
+                                  (1, self.edges[j][1], pj[-1])):
+                    aid = self._anchor_at(v, p)
+                    if aid is not None:
+                        occ_local.setdefault((v, aid), set()).add((j, end))
+            saved = {i: ([list(p) for p in routes[i]["points"]],
+                         list(routes[i]["ctrl"]))
+                     for i in (i1, i2)}
+            before_stats = {i: self._edge_stats(i, routes) for i in (i1, i2)}
+            before_own = {i: self._own_press(i, routes) for i in (i1, i2)}
+            before_sib = {i: self._sibling_cross(i, routes) for i in (i1, i2)}
+            # mirrored offset pairs per box: golden pair first, corner pair last
+            box_pairs = {}
+            ok_plan = True
+            for v, s in ((key[0], s1), (key[1], s2)):
+                cx, cy, hw, hh = self.N[v]
+                ancs = self._box_anchors(v)
+                horiz = s in ("t", "b")
+                # border coordinate of the chosen side (anchors of OTHER sides
+                # share the tangential axis -- filter by the border coordinate)
+                bcoord = (cy + (hh - 3.0) if s == "b" else
+                          cy - (hh - 3.0) if s == "t" else
+                          cx + (hw - 3.0) if s == "r" else
+                          cx - (hw - 3.0))
+                low = high = None
+                lows, highs = [], []
+                for aid, ax, ay in ancs:
+                    bc = ay if horiz else ax   # t/b borders share y; r/l share x
+                    if abs(bc - bcoord) > 0.01:
+                        continue      # anchor on a different border side
+                    off = (ax - cx) if horiz else (ay - cy)
+                    if abs(off) < 1e-6:
+                        continue      # midpoint: cannot host two arcs
+                    (lows if off < 0 else highs).append((abs(off), aid))
+                # golden mirror pair first: smallest |tangential offset|
+                # (deterministic tie -> ANCHOR_IDS order); corners only remain
+                # when no golden pair exists on this border
+                if lows and highs:
+                    low = min(lows)[1]
+                    high = min(highs)[1]
+                if low is None or high is None:
+                    ok_plan = False
+                    break
+                box_pairs[v] = (low, high)
+            if not ok_plan:
+                if os.environ.get("STDRAW_SNAP_DEBUG"):
+                    print(f"  [lensdbg] {key} ok_plan=False", file=sys.stderr)
+                continue
+            # which arc is "low" per current offsets on box key[0]
+            cx0, cy0, hw0, hh0 = self.N[key[0]]
+            horiz0 = s1 in ("t", "b")
+            p_a = routes[i1]["points"][pidx[(i1, key[0])]]
+            p_b = routes[i2]["points"][pidx[(i2, key[0])]]
+            off_a = (p_a[0] - cx0) if horiz0 else (p_a[1] - cy0)
+            off_b = (p_b[0] - cx0) if horiz0 else (p_b[1] - cy0)
+            arc_low, arc_high = ((i1, i2) if off_a <= off_b else (i2, i1))
+            end_of = {(i1, key[0]): ends[0][1], (i1, key[1]): ends[1][1],
+                      (i2, key[0]): ends[2][1], (i2, key[1]): ends[3][1]}
+            golden = True
+            while True:
+                lo1, hi1 = box_pairs[key[0]] if golden else \
+                    self._corner_pair(key[0], s1)
+                lo2, hi2 = box_pairs[key[1]] if golden else \
+                    self._corner_pair(key[1], s2)
+                if lo1 is None or lo2 is None:
+                    break
+                assign = [(arc_low, key[0], end_of[(arc_low, key[0])], lo1),
+                          (arc_low, key[1], end_of[(arc_low, key[1])], lo2),
+                          (arc_high, key[0], end_of[(arc_high, key[0])], hi1),
+                          (arc_high, key[1], end_of[(arc_high, key[1])], hi2)]
+                # occupancy: mirrored pair must be free for this pair
+                if any(occ_local.get((v, aid)) for _i, v, _e, aid in assign):
+                    if golden:
+                        golden = False
+                        continue
+                    break
+                # apply: endpoint + ctrl lockstep per arc, then a ctrl-rescale
+                # ladder around the new chord midpoint (same caliber as the
+                # per-endpoint snap): the lockstep-translated arc body may dip
+                # into its own box (own-press gate) -- the ladder re-fits the
+                # bulge until the gates pass (the post-snap arrival flip then
+                # restores the arrow-normal caliber).
+                ladder = []
+                for f in ARC_CTRL_SCALE_LADDER:
+                    geo = {}
+                    for i in (i1, i2):
+                        pts = [list(q) for q in saved[i][0]]
+                        ctrl = list(saved[i][1])
+                        p0, p1 = list(pts[0]), list(pts[-1])
+                        for _i, v, end, aid in assign:
+                            if _i != i:
+                                continue
+                            idx = 0 if end == 0 else len(pts) - 1
+                            cand = next(q for q in self._box_anchors(v)
+                                        if q[0] == aid)
+                            if end == 0:
+                                p0 = [cand[1], cand[2]]
+                            else:
+                                p1 = [cand[1], cand[2]]
+                        mid = [(p0[0] + p1[0]) / 2.0, (p0[1] + p1[1]) / 2.0]
+                        # translated ctrl = original ctrl + endpoint deltas
+                        tctrl = [ctrl[0] + (p0[0] - saved[i][0][0][0])
+                                 + (p1[0] - saved[i][0][-1][0]),
+                                 ctrl[1] + (p0[1] - saved[i][0][0][1])
+                                 + (p1[1] - saved[i][0][-1][1])]
+                        fctrl = [mid[0] + (tctrl[0] - mid[0]) * f,
+                                 mid[1] + (tctrl[1] - mid[1]) * f]
+                        geo[i] = ([list(q) for q in quad_points(p0, fctrl, p1)],
+                                  fctrl)
+                    ladder.append(geo)
+                ok = False
+                seen = []
+                for geo in ladder:
+                    for i in (i1, i2):
+                        routes[i]["points"] = geo[i][0]
+                        routes[i]["ctrl"] = geo[i][1]
+                    sep = min_pair_dist(
+                        sample_polyline(routes[i1]["points"], step=4),
+                        sample_polyline(routes[i2]["points"], step=4))
+                    if sep is None or sep < sep_ok_floor:
+                        continue
+                    ok = True
+                    for i in (i1, i2):
+                        st = self._edge_stats(i, routes)
+                        st0 = before_stats[i]
+                        if (st[0] > st0[0] or st[3] > st0[3] or
+                                (st[1] is not None and
+                                 st[1] < self.cl - PRESS_MARGIN - 1e-6) or
+                                st[2] < ANCHOR_MIN_DEG or
+                                self._own_press(i, routes) > before_own[i] or
+                                self._sibling_cross(i, routes) > before_sib[i] or
+                                not self._cert_angle_ok(i, routes)):
+                            if os.environ.get("STDRAW_SNAP_DEBUG"):
+                                seen.append(
+                                    f"e{i}:own{self._own_press(i, routes)}"
+                                    f"/sib{self._sibling_cross(i, routes)}"
+                                    f"/cert{self._cert_angle_ok(i, routes)}"
+                                    f"/clr{None if st[1] is None else round(st[1],1)}"
+                                    f"/ang{round(st[2],1)}")
+                            ok = False
+                            break
+                    if ok:
+                        break
+                if os.environ.get("STDRAW_SNAP_DEBUG"):
+                    print(f"  [lensdbg] {key} golden={golden} ok={ok} sep={sep} "
+                          f"floor={sep_ok_floor:.2f} "
+                          f"own1={self._own_press(i1, routes)}<={before_own[i1]} "
+                          f"own2={self._own_press(i2, routes)}<={before_own[i2]} "
+                          f"sib1={self._sibling_cross(i1, routes)}<={before_sib[i1]} "
+                          f"sib2={self._sibling_cross(i2, routes)}<={before_sib[i2]} "
+                          f"cert1={self._cert_angle_ok(i1, routes)} "
+                          f"cert2={self._cert_angle_ok(i2, routes)} "
+                          f"assign={assign} rejects={seen}", file=sys.stderr)
+                if ok:
+                    for _i, v, end, aid in assign:
+                        occ.setdefault((v, aid), set()).add(
+                            (_i, 0 if end_of[(_i, v)] == 0 else 1))
+                    report["moved"] += 4
+                    if os.environ.get("STDRAW_SNAP_DEBUG"):
+                        print(f"  [lensdbg] {key} APPLIED golden={golden} "
+                              f"assign={assign}", file=sys.stderr)
+                    break
+                for i in (i1, i2):
+                    routes[i]["points"] = [list(q) for q in saved[i][0]]
+                    routes[i]["ctrl"] = list(saved[i][1])
+                if golden:
+                    golden = False    # next: corner mirror pair
+                    continue
+                break
+
+    def _off_of(self, v, horiz, ancs, aid):
+        cx, cy, hw, hh = self.N[v]
+        for a, ax, ay in ancs:
+            if a == aid:
+                return (ax - cx) if horiz else (ay - cy)
+        return 0.0
+
+    def _corner_pair(self, v, s):
+        """Low/high corner anchor ids on border side s of box v (or (None, None))."""
+        cx, cy, hw, hh = self.N[v]
+        horiz = s in ("t", "b")
+        ancs = self._box_anchors(v)
+        low = high = None
+        best_lo = best_hi = None
+        for aid, ax, ay in ancs:
+            off = (ax - cx) if horiz else (ay - cy)
+            is_corner = abs(abs(off) - ((hw if horiz else hh) - 3.0)) < 1e-6
+            if not is_corner:
+                continue
+            if off < 0:
+                low = aid
+            else:
+                high = aid
+        return low, high
+
+    def anchor_snap(self, routes, max_sweeps=4):
+        """Delivery-layer endpoint snapping to the 16 standard per-box anchor set (card ref-scrubbed).
+
+        jacky 2026-11-09: the 16 standard connection points (ref-scrubbed) must
+        be the DEFAULT attachment caliber of every rendered edge endpoint --
+        not only the interactive layer.  Algorithm path (joint selection, not
+        blind post-hoc snapping):
+
+          1. Occupancy: every endpoint already exactly on an anchor claims it
+             (per (node, anchor) occupancy -- two endpoints never share one
+             anchor point, so no V co-points can be created by this pass).
+          2. Sweep loop (deterministic edge order, fixed candidate ladder):
+             each off-anchor endpoint evaluates the 16 anchors NEAREST FIRST
+             (tie-break = fixed ANCHOR_IDS order).  A candidate is applied
+             only if the full delivery hard-gate set holds against the
+             CURRENT routes (press no-worse / no new crossing vs any other
+             edge / clearance >= CLEARANCE / departure angle >= ANCHOR_MIN_DEG
+             / mutual separation >= 4px / own-box interior clean).  Arcs
+             translate their ctrl in lockstep with the endpoint displacement
+             and re-discretize the Bezier (same caliber as midband_reanchor
+             tier 1).  Every applied move updates the shared geometry, so a
+             later neighbour's gates see the already-snapped state -- the
+             assignment is sequential-joint, crossings cannot be introduced
+             by a move the mover's own gate did not count.
+          3. Sweeps repeat (max max_sweeps) until no endpoint changes: an
+             endpoint that failed against a neighbour's pre-snap geometry may
+             become feasible after that neighbour settles.
+
+        Endpoints for which no anchor passes the gates stay untouched and
+        are reported in the returned report (honest degradation; the
+        certificate's anchors_standard gate counts them).  Deterministic:
+        fixed order + fixed ladder, no RNG.
+        """
+        occ = {}
+        report = {"anchored": 0, "moved": 0, "failures": []}
+        # ref-scrubbed: the mutual-lens joint pass runs FIRST -- the generic
+        # per-endpoint pass would grab the nearest anchors for the lens ends
+        # independently and break the mirror symmetry.  Its occupancy only
+        # counts OTHER edges' endpoints that already sit exactly on an anchor
+        # (the rest of the graph is re-anchored afterwards, occupancy claims
+        # from the joint pass are honoured in the main registration below).
+        self._lens_pair_joint_snap(routes, occ, report)
+        for i in sorted(routes):
+            a, b = self.edges[i]
+            pts = routes[i]["points"]
+            for end, v, p in ((0, a, pts[0]), (1, b, pts[-1])):
+                aid = self._anchor_at(v, p)
+                if aid is not None:
+                    occ.setdefault((v, aid), set()).add((i, end))
+                    report["anchored"] += 1
+        for _sweep in range(max_sweeps):
+            changed = False
+            for i in sorted(routes):
+                a, b = self.edges[i]
+                for end, v in ((0, a), (1, b)):
+                    idx = 0 if end == 0 else len(routes[i]["points"]) - 1
+                    p = routes[i]["points"][idx]
+                    if self._anchor_at(v, p) is not None:
+                        continue
+                    before_pts = [list(q) for q in routes[i]["points"]]
+                    before_ctrl = (list(routes[i]["ctrl"])
+                                   if routes[i].get("ctrl") is not None else None)
+                    before_vg = ([list(q) for q in routes[i]["vg_corners"]],
+                                 [dict(f) for f in routes[i]["vg_fillets"]]) \
+                        if routes[i].get("kind") == "vg" else None
+                    before = self._edge_stats(i, routes)
+                    own_before = self._own_press(i, routes)
+                    sib_before = self._sibling_cross(i, routes)
+                    applied = False
+                    cands = sorted(self._box_anchors(v),
+                                   key=lambda q: (math.hypot(q[1] - p[0],
+                                                             q[2] - p[1]), q[0]))
+                    for aid, ax, ay in cands:
+                        if occ.get((v, aid)):
+                            continue  # occupied by another edge endpoint
+                        dxa, dya = ax - before_pts[idx][0], ay - before_pts[idx][1]
+                        geo_cands = []   # [(dense_points, ctrl_or_None), ...]
+                        if before_ctrl is not None:
+                            # arc: endpoint to the anchor; ctrl first translates
+                            # in lockstep with the endpoint displacements (this
+                            # end + the possibly-already-snapped other end),
+                            # then a ladder rescales the ctrl offset around the
+                            # new chord midpoint so the departure angle
+                            # (>= ANCHOR_MIN_DEG) can be met on long-tangent
+                            # detour arcs; Bezier re-discretized per tier
+                            oidx = len(before_pts) - 1 - idx
+                            dox = routes[i]["points"][oidx][0] - before_pts[oidx][0]
+                            doy = routes[i]["points"][oidx][1] - before_pts[oidx][1]
+                            cs = [before_ctrl[0] + dxa + dox,
+                                  before_ctrl[1] + dya + doy]
+                            if idx == 0:
+                                p0, p1 = [ax, ay], list(routes[i]["points"][-1])
+                            else:
+                                p0, p1 = list(routes[i]["points"][0]), [ax, ay]
+                            mid = [(p0[0] + p1[0]) / 2.0, (p0[1] + p1[1]) / 2.0]
+                            for f in ARC_CTRL_SCALE_LADDER:
+                                ctrl = [mid[0] + (cs[0] - mid[0]) * f,
+                                        mid[1] + (cs[1] - mid[1]) * f]
+                                geo_cands.append(([list(q) for q in
+                                                   quad_points(p0, ctrl, p1)],
+                                                  ctrl))
+                        else:
+                            new_pts = [list(q) for q in before_pts]
+                            if routes[i].get("kind") == "vg":
+                                # vg: move the endpoint corner AND translate the
+                                # adjacent interior corner by the same delta (the
+                                # first stub segment stays collinear, departure
+                                # direction preserved), then RE-DERIVE every
+                                # fillet from the new corners -- rigidly shifting
+                                # a fillet keeps it tangent to the shifted
+                                # segment but breaks tangency against the
+                                # unshifted continuation (random-n10-i05 G1 7.2
+                                # deg measured); smooth_corners is deterministic,
+                                # unmoved corners reproduce their original fillet
+                                corners = [list(q) for q in routes[i]["vg_corners"]]
+                                # NOTE: idx indexes the DENSE points; corners is
+                                # the raw corner list (dense >= corners when
+                                # fillets re-sample arcs) -> corner index from
+                                # the END side, not from idx
+                                cidx = 0 if idx == 0 else len(corners) - 1
+                                jj1 = 1 if cidx == 0 else len(corners) - 2
+                                corners[cidx] = [ax, ay]
+                                if len(corners) > 2:
+                                    corners[jj1] = [corners[jj1][0] + dxa,
+                                                    corners[jj1][1] + dya]
+                                rects_vg = [n for vv, n in self.N.items()
+                                            if vv not in (a, b)]
+                                fillets, _cp = _vis.smooth_corners(
+                                    corners, rects_vg, self.cl + VG_PAD)
+                                new_pts = [[px, py] for px, py in
+                                           _vis.dense_geometry(corners, fillets)]
+                                routes[i]["vg_corners"] = corners
+                                routes[i]["vg_fillets"] = fillets
+                            elif routes[i].get("kind") in ("poly", "wrap") \
+                                    and len(new_pts) > 2:
+                                # poly/wrap: translate the adjacent via by the
+                                # same delta (departure direction preserved; the
+                                # gates recheck the shifted run)
+                                j1 = 1 if idx == 0 else len(new_pts) - 2
+                                new_pts[j1] = [new_pts[j1][0] + dxa,
+                                               new_pts[j1][1] + dya]
+                                new_pts[idx] = [ax, ay]
+                            else:
+                                new_pts[idx] = [ax, ay]
+                            geo_cands.append((new_pts, None))
+                        for new_pts, new_ctrl in geo_cands:
+                            routes[i]["points"] = new_pts
+                            if new_ctrl is not None:
+                                routes[i]["ctrl"] = new_ctrl
+                            after = self._edge_stats(i, routes)
+                            # clearance at the CI/certificate accounting (raw
+                            # border rect >= CLEARANCE): the router's
+                            # _edge_stats measures to the 1px-inflated rect, so
+                            # the inflated threshold is CLEARANCE - 1 -- the
+                            # certificate (raw >= 16) stays authoritative and
+                            # anchor feasibility is not lost to the margin
+                            # convention (population-logistic n-g2: inflated
+                            # 15.79 = raw 16.79).
+                            ok = (after[0] <= before[0] and after[3] <= before[3] and
+                                  (after[1] is None or
+                                   after[1] >= self.cl - PRESS_MARGIN - 1e-6) and
+                                  after[2] >= ANCHOR_MIN_DEG and
+                                  (after[4] is None or after[4] >= 4.0) and
+                                  self._own_press(i, routes) <= own_before and
+                                  self._sibling_cross(i, routes) <= sib_before and
+                                  self._cert_angle_ok(i, routes))
+                            if os.environ.get("STDRAW_SNAP_DEBUG"):
+                                _c = dict(p=after[0] <= before[0],
+                                          x=after[3] <= before[3],
+                                          cl=(after[1] is None or after[1] >= self.cl - PRESS_MARGIN - 1e-6),
+                                          an=after[2] >= ANCHOR_MIN_DEG,
+                                          ms=(after[4] is None or after[4] >= 4.0),
+                                          ow=self._own_press(i, routes) <= own_before,
+                                          sb=self._sibling_cross(i, routes) <= sib_before,
+                                          ct=self._cert_angle_ok(i, routes))
+                                print(f"  [snapdbg] {a}->{b} end={end} "
+                                      f"anchor={aid} press {after[0]}<={before[0]} "
+                                      f"clr {after[1]} ang {after[2]:.1f} "
+                                      f"cross {after[3]}<={before[3]} "
+                                      f"msep {after[4]} own {self._own_press(i, routes)}"
+                                      f"<={own_before} sib {self._sibling_cross(i, routes)}"
+                                      f"<={sib_before} occ {bool(occ.get((v, aid)))} "
+                                      f"cert {self._cert_angle_ok(i, routes)} "
+                                      f"comp {_c} "
+                                      f"-> {'OK' if ok else 'REJECT'}",
+                                      file=sys.stderr)
+                            if ok:
+                                occ.setdefault((v, aid), set()).add((i, end))
+                                report["moved"] += 1
+                                changed = True
+                                applied = True
+                                break
+                            routes[i]["points"] = before_pts
+                            if before_ctrl is not None:
+                                routes[i]["ctrl"] = list(before_ctrl)
+                            if before_vg is not None:
+                                routes[i]["vg_corners"] = [list(q) for q in before_vg[0]]
+                                routes[i]["vg_fillets"] = [dict(f) for f in before_vg[1]]
+                        if applied:
+                            break
+                    if not applied:
+                        report["failures"].append(
+                            {"edge": f"{a}->{b}", "end": "a" if end == 0 else "b"})
+            if not changed:
+                break
+        self._snap_retry_conflicts(routes, occ, report)
+        report["failures"] = sorted({(f["edge"], f["end"])
+                                     for f in report["failures"]})
+        report["failures"] = [{"edge": e, "end": n} for e, n in report["failures"]]
+        return report
+
+    def _snap_retry_conflicts(self, routes, occ, report):
+        """Post-sweep repair: for an endpoint that failed all 16 anchors
+        because earlier-snapped sibling edges occupy/blocked its feasible
+        anchors (wide-comb hub fans measured: hoya->stx end b), let the
+        CONFLICTING sibling give way to its next-nearest feasible anchor and
+        retry the failed endpoint.  Deterministic: failures in sorted order;
+        for each, blocker siblings in sorted order x blocker alternative
+        anchors nearest-first x the failed endpoint's full nearest-first
+        ladder; committed only when BOTH endpoints pass the full delivery
+        hard-gate set (same accounting as the sweeps).  One bounded round.
+        """
+        eidx = {(e, n): None for e in []}  # placeholder no-op
+        for fail in list(report["failures"]):
+            target = None
+            for i in sorted(routes):
+                a, b = self.edges[i]
+                if f"{a}->{b}" == fail["edge"]:
+                    target = (i, 0 if fail["end"] == "a" else 1)
+                    break
+            if target is None:
+                continue
+            i, end = target
+            v = self.edges[i][end]
+            idx = 0 if end == 0 else len(routes[i]["points"]) - 1
+            p = routes[i]["points"][idx]
+            if self._anchor_at(v, p) is not None:
+                continue    # a later sweep already resolved it
+            before_pts = [list(q) for q in routes[i]["points"]]
+            before_ctrl = (list(routes[i]["ctrl"])
+                           if routes[i].get("ctrl") is not None else None)
+            before_vg = ([list(q) for q in routes[i]["vg_corners"]],
+                         [dict(f) for f in routes[i]["vg_fillets"]]) \
+                if routes[i].get("kind") == "vg" else None
+            before = self._edge_stats(i, routes)
+            own_before = self._own_press(i, routes)
+            sib_before = self._sibling_cross(i, routes)
+            done = False
+            for j in sorted(routes):
+                if j == i or done:
+                    continue
+                ja, jb = self.edges[j]
+                if v not in (ja, jb):
+                    continue
+                jend = 0 if ja == v else 1
+                jidx = 0 if jend == 0 else len(routes[j]["points"]) - 1
+                jp = routes[j]["points"][jidx]
+                jaid = self._anchor_at(v, jp)
+                if jaid is None:
+                    continue    # j's end on this box is not the blocker
+                jsaved_pts = [list(q) for q in routes[j]["points"]]
+                jsaved_ctrl = (list(routes[j]["ctrl"])
+                               if routes[j].get("ctrl") is not None else None)
+                jbefore = self._edge_stats(j, routes)
+                jown_before = self._own_press(j, routes)
+                jsib_before = self._sibling_cross(j, routes)
+                jocc_key = (v, jaid)
+                claimants = occ.get(jocc_key, set())
+                occ.pop(jocc_key, None)     # release j's claim for the retry
+                cands_i = sorted(self._box_anchors(v),
+                                 key=lambda q: (math.hypot(q[1] - p[0],
+                                                           q[2] - p[1]), q[0]))
+                for aid, ax, ay in cands_i:
+                    if occ.get((v, aid)):
+                        continue
+                    # -- the blocker gives way FIRST: its next-nearest
+                    #    feasible alternative on this box (gate-checked); if
+                    #    no alternative passes, this anchor stays unavailable
+                    jp0 = routes[j]["points"][jidx]
+                    jbefore_pts = [list(q) for q in routes[j]["points"]]
+                    jbefore_ctrl = jsaved_ctrl
+                    jbefore_vg = ([list(q) for q in routes[j]["vg_corners"]],
+                                  [dict(f) for f in routes[j]["vg_fillets"]]) \
+                        if routes[j].get("kind") == "vg" else None
+                    jbs = self._edge_stats(j, routes)
+                    jownb = self._own_press(j, routes)
+                    jsibb = self._sibling_cross(j, routes)
+                    jalt = None
+                    jcands = sorted(
+                        (q for q in self._box_anchors(v) if q[0] != aid),
+                        key=lambda q: (math.hypot(q[1] - jp0[0],
+                                                  q[2] - jp0[1]), q[0]))
+                    for jaid2, jax, jay in jcands:
+                        if occ.get((v, jaid2)) or (v, jaid2) == jocc_key:
+                            continue
+                        jidx2 = 0 if jend == 0 else len(routes[j]["points"]) - 1
+                        jdxa = jax - jbefore_pts[jidx2][0]
+                        jdya = jay - jbefore_pts[jidx2][1]
+                        jnp = [list(q) for q in jbefore_pts]
+                        if routes[j].get("kind") in ("poly", "wrap") \
+                                and len(jnp) > 2:
+                            jj1 = 1 if jidx2 == 0 else len(jnp) - 2
+                            jnp[jj1] = [jnp[jj1][0] + jdxa, jnp[jj1][1] + jdya]
+                        jnp[jidx2] = [jax, jay]
+                        routes[j]["points"] = jnp
+                        jst = self._edge_stats(j, routes)
+                        ok_j = (jst[0] <= jbs[0] and jst[3] <= jbs[3] and
+                                (jst[1] is None or
+                                 jst[1] >= self.cl - PRESS_MARGIN - 1e-6) and
+                                jst[2] >= ANCHOR_MIN_DEG and
+                                (jst[4] is None or jst[4] >= 4.0) and
+                                self._own_press(j, routes) <= jownb and
+                                self._sibling_cross(j, routes) <= jsibb and
+                                self._cert_angle_ok(j, routes))
+                        if ok_j:
+                            jalt = (jaid2, [list(q) for q in jnp])
+                            break
+                        routes[j]["points"] = jbefore_pts
+                        if jbefore_ctrl is not None:
+                            routes[j]["ctrl"] = list(jbefore_ctrl)
+                        if jbefore_vg is not None:
+                            routes[j]["vg_corners"] = [list(q) for q in jbefore_vg[0]]
+                            routes[j]["vg_fillets"] = [dict(f) for f in jbefore_vg[1]]
+                    if jalt is None:
+                        continue
+                    # -- retry the failed endpoint at aid --
+                    dxa, dya = ax - before_pts[idx][0], ay - before_pts[idx][1]
+                    geo_cands = []
+                    if before_ctrl is not None:
+                        oidx = len(before_pts) - 1 - idx
+                        dox = routes[i]["points"][oidx][0] - before_pts[oidx][0]
+                        doy = routes[i]["points"][oidx][1] - before_pts[oidx][1]
+                        cs = [before_ctrl[0] + dxa + dox,
+                              before_ctrl[1] + dya + doy]
+                        if idx == 0:
+                            q0, q1 = [ax, ay], list(routes[i]["points"][-1])
+                        else:
+                            q0, q1 = list(routes[i]["points"][0]), [ax, ay]
+                        mid = [(q0[0] + q1[0]) / 2.0, (q0[1] + q1[1]) / 2.0]
+                        for f in ARC_CTRL_SCALE_LADDER:
+                            ctrl = [mid[0] + (cs[0] - mid[0]) * f,
+                                    mid[1] + (cs[1] - mid[1]) * f]
+                            geo_cands.append(([list(q) for q in
+                                               quad_points(q0, ctrl, q1)],
+                                              ctrl))
+                    else:
+                        np_ = [list(q) for q in before_pts]
+                        if routes[i].get("kind") == "vg":
+                            corners = [list(q) for q in routes[i]["vg_corners"]]
+                            # idx indexes DENSE points; corners is the raw
+                            # corner list -> corner index from the END side
+                            cidx = 0 if idx == 0 else len(corners) - 1
+                            jj1 = 1 if cidx == 0 else len(corners) - 2
+                            corners[cidx] = [ax, ay]
+                            if len(corners) > 2:
+                                corners[jj1] = [corners[jj1][0] + dxa,
+                                                corners[jj1][1] + dya]
+                            # re-derive fillets from the new corners (rigid
+                            # fillet shift breaks G1 vs the unshifted
+                            # continuation -- same caliber as the sweeps)
+                            rects_vg = [n for vv, n in self.N.items()
+                                        if vv not in self.edges[i]]
+                            fillets, _cp = _vis.smooth_corners(
+                                corners, rects_vg, self.cl + VG_PAD)
+                            np_ = [[px, py] for px, py in
+                                   _vis.dense_geometry(corners, fillets)]
+                            routes[i]["vg_corners"] = corners
+                            routes[i]["vg_fillets"] = fillets
+                        elif routes[i].get("kind") in ("poly", "wrap") \
+                                and len(np_) > 2:
+                            jj1 = 1 if idx == 0 else len(np_) - 2
+                            np_[jj1] = [np_[jj1][0] + dxa, np_[jj1][1] + dya]
+                            np_[idx] = [ax, ay]
+                        else:
+                            np_[idx] = [ax, ay]
+                        geo_cands.append((np_, None))
+                    applied_i = False
+                    for new_pts, new_ctrl in geo_cands:
+                        routes[i]["points"] = new_pts
+                        if new_ctrl is not None:
+                            routes[i]["ctrl"] = new_ctrl
+                        st = self._edge_stats(i, routes)
+                        ok_i = (st[0] <= before[0] and st[3] <= before[3] and
+                                (st[1] is None or
+                                 st[1] >= self.cl - PRESS_MARGIN - 1e-6) and
+                                st[2] >= ANCHOR_MIN_DEG and
+                                (st[4] is None or st[4] >= 4.0) and
+                                self._own_press(i, routes) <= own_before and
+                                self._sibling_cross(i, routes) <= sib_before and
+                                self._cert_angle_ok(i, routes))
+                        if ok_i:
+                            applied_i = True
+                            break
+                    if applied_i:
+                        jaid2, jpts_new = jalt
+                        occ.setdefault((v, jaid2), set()).add((j, jend))
+                        occ.setdefault((v, aid), set()).add((i, end))
+                        report["moved"] += 2
+                        if os.environ.get("STDRAW_SNAP_DEBUG"):
+                            print(f"  [snapdbg] retry {fail['edge']}:{fail['end']} "
+                                  f"-> {aid}; blocker {self.edges[j]} gave way "
+                                  f"{jaid}->{jaid2}", file=sys.stderr)
+                        done = True
+                        break
+                    # rollback both (i tried every anchor against this jalt)
+                    routes[i]["points"] = before_pts
+                    if before_ctrl is not None:
+                        routes[i]["ctrl"] = list(before_ctrl)
+                    if before_vg is not None:
+                        routes[i]["vg_corners"] = [list(q) for q in before_vg[0]]
+                        routes[i]["vg_fillets"] = [dict(f) for f in before_vg[1]]
+                    routes[j]["points"] = jbefore_pts
+                    if jbefore_ctrl is not None:
+                        routes[j]["ctrl"] = list(jbefore_ctrl)
+                    if jbefore_vg is not None:
+                        routes[j]["vg_corners"] = [list(q) for q in jbefore_vg[0]]
+                        routes[j]["vg_fillets"] = [dict(f) for f in jbefore_vg[1]]
+                if done:
+                    report["failures"] = [
+                        f for f in report["failures"] if f != fail]
 
     # -- main entry --
     def route_all(self):
