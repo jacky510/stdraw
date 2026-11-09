@@ -97,6 +97,11 @@ def detect_bowtie_vertex(graph, why=None):
     nodes = list(graph.node_ids())
     edges = [(e.a, e.b) for e in graph.edges]
     adj = _adjacency(edges)
+    # _adjacency keys derive from edges only: isolated nodes (degree 0, in no
+    # edge) would KeyError below. Detection runs on every auto-layout graph
+    # (probe precedes the hit test), so adj must cover ALL nodes.
+    for v in nodes:
+        adj.setdefault(v, set())
     core = [v for v in nodes if adj[v]]
     deg0 = [v for v in nodes if not adj[v]]
     if len(core) < 5 or len(core) > MAX_BOWTIE_N:
