@@ -17,5 +17,3 @@ Our internal comparison and the lessons distilled from these projects live in
 `docs/` and our agent skills; where we adopted a pattern, the credit is theirs
 and the mistakes are ours. All referenced projects are MIT or W3C-documented
 standards — thank you for licensing generosity.
-
-（中文致谢：stdraw 的交互层与质量门禁设计借鉴了 diagram-js/bpmn-js 的实色描边命中层与折点交互、drawio 的拖段插双折点与自绘命中、React Flow 的端点重连约束、cytoscape 的几何命中与真浏览器 e2e、W3C APG 的键盘/焦点验收口径。感谢这些项目的开源馈赠——功劳归它们，错误归我们。）
