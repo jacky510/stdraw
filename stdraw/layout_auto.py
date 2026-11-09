@@ -25,6 +25,28 @@ from . import textmetrics
 from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
                       ANCHOR_MIN_DEG, border_point)
 
+# ref-scrubbed finalize (jacky 2026-11-09 ruling "C+B"): edge/node density at or
+# above which anchor_snap runs in gate-guarded probe mode (see the snap block
+# in layout()).  Measured basis: random n10 corpus E/N = 1.60 (dense; n10-i05
+# regresses: crossings 0->2 / coincidence / 1 endpoint unanchored), classic
+# corpus <= 1.62 (classic-cld snaps clean) -- the probe keeps snapping any
+# dense graph that passes the hard gates with zero regressions.
+ANCHOR_SNAP_DENSE_E_OVER_N = 1.6
+
+
+def _clone_route(rt):
+    """Deep copy of one route dict (points/ctrl/vg_corners/vg_fillets only --
+    the fields anchor_snap mutates; used by the dense-probe revert path)."""
+    c = dict(rt)
+    c["points"] = [list(p) for p in rt["points"]]
+    if rt.get("ctrl") is not None:
+        c["ctrl"] = list(rt["ctrl"])
+    if rt.get("vg_corners") is not None:
+        c["vg_corners"] = [list(q) for q in rt["vg_corners"]]
+    if rt.get("vg_fillets") is not None:
+        c["vg_fillets"] = [dict(f) for f in rt["vg_fillets"]]
+    return c
+
 
 class AutoConfig:
     fs_title: float = 12.5
@@ -1505,19 +1527,66 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # Router.anchor_snap for the algorithm path); runs across every auto
     # engine, frozen constructed/waypoint edges included -- a static render
     # may not show any off-grid endpoint.
-    _snap_report = router.anchor_snap(routes)
-    if _snap_report["failures"]:
-        print(f"[stdraw] anchor_snap: {_snap_report['moved']} endpoints snapped, "
-              f"{len(_snap_report['failures'])} endpoint(s) could not be placed "
-              f"on a standard anchor: {_snap_report['failures'][:5]}",
-              file=sys.stderr)
+    _density = len(EDGES_REF[0]) / max(len(nodes), 1)
+    _snap_deferred = None
+    if _density >= ANCHOR_SNAP_DENSE_E_OVER_N:
+        # ref-scrubbed finalize (jacky 2026-11-09 ruling "C+B"): density-gated
+        # snap probe.  A static scalar density threshold cannot separate the
+        # classic corpus (classic-cld E/N = 13/8 = 1.62, snaps clean -- 21/21
+        # green) from the random dense n10 corpus (E/N = 16/10 = 1.60, snap
+        # conflicts with the detour-poly routing: measured on n10-i05
+        # visual_crossings 4 / 1 endpoint unanchored / line-line coincidence),
+        # and the failing case's max degree (4) is LOWER than classic-cld's
+        # (7).  So the density threshold switches snap into PROBE mode: apply
+        # the snap on a working copy, re-evaluate the hard gates (visual
+        # crossings + line-line coincidence + full anchor membership); keep
+        # the snapped routes only at zero regressions, otherwise revert to
+        # the pre-snap routes and record an honest deferral (the certificate
+        # reports the deferral with its measured reason and the gate stays
+        # measured -- no gate fudging; dense-snap specialization is a
+        # follow-up card).  Low-density graphs keep the unconditional snap.
+        _pre_pairs = router.final_crossing_pairs(routes)
+        _pre_coincide = len(router._route_coincide_pairs(routes))
+        _pre_routes = {i: _clone_route(routes[i]) for i in routes}
+        _snap_report = router.anchor_snap(routes)
+        _regress = []
+        _post_pairs = router.final_crossing_pairs(routes)
+        if _post_pairs > _pre_pairs:
+            _regress.append(f"crossings {_pre_pairs}->{_post_pairs}")
+        _post_coincide = len(router._route_coincide_pairs(routes))
+        if _post_coincide > _pre_coincide:
+            _regress.append(f"line_coincidence {_pre_coincide}->{_post_coincide}")
+        if _snap_report["failures"]:
+            _regress.append(f"{len(_snap_report['failures'])} endpoint(s) unanchored")
+        if _regress:
+            routes = _pre_routes
+            _snap_deferred = {"density_en": round(_density, 2),
+                              "reason": _regress,
+                              "moved_before_revert": _snap_report["moved"]}
+            print(f"[stdraw] anchor_snap DEFERRED (dense, E/N={_density:.2f}): "
+                  f"{'; '.join(_regress)} -- pre-snap routes kept", file=sys.stderr)
+        else:
+            print(f"[stdraw] anchor_snap: {_snap_report['moved']} endpoints snapped "
+                  f"(dense probe, E/N={_density:.2f}, zero gate regressions)",
+                  file=sys.stderr)
+    else:
+        _snap_report = router.anchor_snap(routes)
+        if _snap_report["failures"]:
+            print(f"[stdraw] anchor_snap: {_snap_report['moved']} endpoints snapped, "
+                  f"{len(_snap_report['failures'])} endpoint(s) could not be placed "
+                  f"on a standard anchor: {_snap_report['failures'][:5]}",
+                  file=sys.stderr)
     # ref-scrubbed: re-run the lens arrival channel AFTER snapping -- snap moves
     # lens arc endpoints/ctrl, so the arrival-normal caliber (<=10 deg) and the
     # pair separation may degrade.  The flip re-derives ctrl only (endpoints
     # stay on their anchors -> anchors_standard membership preserved) and is
     # strict-improvement + hard-gate guarded; enhanced_gates switches to the
-    # anchor-snap gate accounting (see Router.mutual_arrival_flip).
-    routes = router.mutual_arrival_flip(routes, enhanced_gates=True)
+    # anchor-snap gate accounting (see Router.mutual_arrival_flip).  Skipped
+    # on deferral: the reverted routes already passed the pre-snap flip above,
+    # and re-flipping unsnapped routes under the enhanced accounting would
+    # perturb the honest pre-snap state.
+    if _snap_deferred is None:
+        routes = router.mutual_arrival_flip(routes, enhanced_gates=True)
     router_pairs = router.final_crossing_pairs(routes)
 
     # ref-scrubbed R/B loop coloring: edge -> the set of declared-loop kinds it belongs to (deterministic rules in docs/layout-modes.md):
@@ -1740,6 +1809,9 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             **({} if from_meta is None else {"from_layout": from_meta}),
             "clearance": CLEARANCE,
             "router_cross_pairs": router_pairs,
+            # ref-scrubbed finalize: honest dense-snap deferral record (None
+            # when snap applied) -- certificate annotates the gate with it.
+            "anchor_snap_deferred": _snap_deferred,
             "solver_available": _has_solver(),
             **pos_meta,
             "routing_math": ("visibility-graph Dijkstra shortest path (clearance-"

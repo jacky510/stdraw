@@ -344,3 +344,31 @@ jacky 2026-11-09：「连接点还不是我之前定过的 16 个标准连接点
 - **验证（21 图 sweep，吸附前 vs 后逐图字节对比见卡）**：21/21 crossings 0、
   grade best、visual_crossings_zero True、anchors_standard True、端点成员
   违例 0；确定性两次运行字节一致（ci_checks 层 B）。
+
+### 密度阈值探针模式（ref-scrubbed 收口，jacky 2026-11-09 拍板「C+B」）
+
+random dense 抽样实测：n10-i05（E/N=1.60）吸附后三门连挂——visual_crossings
+2→4（2 fan 对+2 普通对）、1 端点无锚可落（N03→N08 poly）、line-line
+coincidence。而 classic 正本 classic-cld（E/N=13/8=1.62）吸附 21 图全绿，
+失败样例最大度（4）反而低于 classic-cld（7）——**任何静态标量密度阈值都无法
+既放行 classic-cld 又拦住 random n10**。故口径落地为：
+
+- **阈值**：`ANCHOR_SNAP_DENSE_E_OVER_N = 1.6`（E/N ≥ 1.6，即平均度 ≥ 3.2）
+  进入**探针模式**；低于阈值维持无条件吸附。
+- **探针**：在工作副本上执行完整吸附，然后复算三硬门（普通交叉对数
+  `final_crossing_pairs` / line-line coincidence 对数 / 端点锚成员——任一
+  端点无锚即失败）；**零回归才保留吸附结果，任一回归整体回退到吸附前路由**
+  （保留不变式：dense 图要么全端点落锚，要么完全回退，不存在半吸附态）。
+- **诚实降级**：回退时证书记录 `gates.anchors_standard_deferred =
+  {density_en, reason[], moved_before_revert}`，`anchors_standard` 门**保持
+  实测值 False**（不放水、不改 grade 语义——dense 降级图 grade 如实变为
+  uncertified/second，jacky 拍板的正是这条降级路径）；布局 meta 恒带
+  `anchor_snap_deferred`（null=已吸附）。回退路由不再跑吸附后的
+  `mutual_arrival_flip(enhanced_gates=True)`（吸附前翻转已跑过，避免扰动
+  诚实的吸附前状态）。
+- **ci_checks 断言（B2 随机层）**：E/N≥1.6 的图必须「成员门 True（探针保留）
+  或带非空 reason 的 deferred 记录」二选一；E/N<1.6 的图不允许出现 deferred
+  （低密度图没有降级豁免）；任何 deferred 必须带实测 reason。
+- **已知局限（后续卡专项）**：fan 对视觉交叉增量暂未进探针回归判据（实测
+  n10-i05 由「端点无锚」触发回退已覆盖；fan-only 回归未观测到）——dense 吸
+  附门径专项优化卡（coincidence 门+链式交叉溯源）承接。

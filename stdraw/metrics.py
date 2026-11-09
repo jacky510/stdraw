@@ -283,6 +283,9 @@ def scene_from_auto(v4: dict) -> dict:
     return {"nodes": nodes, "edges": edges, "polylines": polylines,
             "anchors": anchors,
             "router_pairs": v4["meta"].get("router_cross_pairs"),
+            # ref-scrubbed finalize: dense-snap deferral pass-through (None on
+            # normal graphs) -- certificate_auto annotates anchors_standard.
+            "anchor_snap_deferred": v4["meta"].get("anchor_snap_deferred"),
             "line_style": v4["meta"].get("line_style", "straight"),
             "deg0": set(v4["meta"].get("deg0", [])),
             # ring placement caliber: certificate picks metrics per placement mode
@@ -1001,6 +1004,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"] and
                    g["pitch_uniform"])
+    # ref-scrubbed finalize (jacky 2026-11-09 "C+B"): honest dense-snap
+    # deferral annotation -- the anchors_standard gate value stays MEASURED
+    # (False when endpoints remain off-anchor on a deferred dense graph);
+    # the deferral record documents the approved downgrade with its measured
+    # regressions.  No gate fudging: grade reflects the deferral honestly.
+    if scene.get("anchor_snap_deferred"):
+        g["anchors_standard_deferred"] = scene["anchor_snap_deferred"]
     hard_ok = (hard_ok and g["anchors_standard"]       # ref-scrubbed: 16-anchor membership
                and g["visual_crossings_zero"])
     dual_ok = routing_consistent is not False   # dual-accounting mismatch -> refuse the certificate
