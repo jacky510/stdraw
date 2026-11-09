@@ -64,10 +64,27 @@ jobs:
           python-version: "3.13"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - name: "Install (stdlib-only corpus regression)"
+      # Corpus phase dependency decision (2026-11-10; empirically
+      # bisected locally on random-n10-i01.cld, Python 3.12):
+      #   - solver (ortools) is REQUIRED: B2 runs `--recipe auto`, whose
+      #     auto-v2 placement refinement needs ortools. The stdlib-only
+      #     constructive fallback drifts on dense random graphs and fails the
+      #     hard gates — reproduced locally with `pip install -e .` only:
+      #     "FAIL 9 simple-graph placement regularity (column snap 0.40)" and
+      #     "FAIL 13 path_d render/verify geometry deviation 3.5px(N03->N09) /
+      #     8.2px(N04->N09) + arc G1 tangent continuity", exactly matching the
+      #     first CI failure of this job (run 42667887729). With solver
+      #     installed (measure/render-check absent) the same example exits 0.
+      #   - measure (pillow) is NOT needed: measure-only still failed the same
+      #     two gates; and the full corpus phases (B2,H2,J,H3) pass green in a
+      #     solver-only env (full phase run recorded in the bisect).
+      #   - render-check (playwright) is NOT needed: corpus phases never invoke
+      #     stdraw.rendercheck — DOM measurement is phase C, owned by
+      #     checks-core, which installs render-check itself.
+      - name: "Install (solver layer: --recipe auto placement refinement)"
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
+          pip install -e ".[solver]"
       - name: "Corpus regression: dense n10 sampling + classic 19-graph corpus + anchor sweep + polarity"
         env:
           STDRAW_CI_PHASES: B2,H2,J,H3
