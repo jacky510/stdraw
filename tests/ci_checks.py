@@ -594,9 +594,15 @@ def main():
         if "data-pol" in demo_w:
             failures.append("R/B coloring: demo still contains text badge data-pol")
         if 'stroke="#d97706"' not in demo_w or 'stroke="#0284c7"' not in demo_w:
-            failures.append("R/B coloring: demo missing R amber / B sky-blue coloring")
-        print("OK  R/B coloring: loop edges colored by polarity (R=amber / B=sky blue), "
-              "text badges removed, polarity data retained")
+            failures.append("R/B coloring: demo missing polarity amber / sky-blue coloring")
+        if 'stroke-dasharray="' in demo_w:
+            failures.append("polarity coloring: demo still has dashed edges "
+                            "(two-color caliber, jacky 2026-11-09: all solid)")
+        if 'stroke="#64748b"' in demo_w:
+            failures.append("polarity coloring: demo still has neutral-gray edges "
+                            "(two-color caliber, jacky 2026-11-09)")
+        print("OK  polarity coloring: edges colored by sign (+ amber / − sky blue), "
+              "all solid, text badges removed, polarity data retained")
 
         # I. Demo deliverable freshness (ref-scrubbed rework, v0.7.1 lesson):
         #    after the engine switched to spine-wing, demos/classic-cld-2d.html
