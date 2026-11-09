@@ -386,12 +386,22 @@ class TestSpineWingManualEquivalence(unittest.TestCase):
 
 
 class TestAnchorBand(unittest.TestCase):
-    """ref-scrubbed second-review rework: delivered-anchor in-band caliber
-    (edge-midpoint +/-1/4 band, corner hits = 0).
+    """ref-scrubbed rework: the default attachment caliber is the 16 standard
+    per-box anchor set (stdraw/anchors.py) -- gate = delivered endpoints are
+    ALL members of that set (per-graph, corpus-wide).
 
-    spine-wing (classic-cld) = 100% in-band hard gate; the other 19 corpus
-    graphs are locked to v0.7.2 baseline ratios (same-source caliber as the
-    CI gate tests/ci_checks.py BASELINE_BAND).
+    History: ref-scrubbed locked delivered anchors to the edge-midpoint +/-1/4
+    band (spine-wing 100% in-band, others locked to v0.7.2 ratio baselines,
+    corners=0).  The band was the PROXY for "prefer midpoints, avoid corners"
+    before a formal anchor set existed; the 16-anchor set supersedes it (the
+    set contains the midpoints, and the feasible-anchor selection + certificate
+    departure-angle gates still keep endpoints off corners whenever the
+    geometry allows -- measured classic corpus: 0 corner anchors used).  The
+    in-band ratio stays as a REPORT-ONLY measurement in the docstring below
+    (post-snap measured, CLI auto recipe): classic-cld 18/26, brand-flywheel
+    8/16, limits-to-growth 9/14, urban-migration 8/16, wage-price-spiral
+    8/12 -- lower than the old baselines BY DESIGN (nearest feasible anchor
+    sometimes sits outside the +/-1/4 band on the target-facing border).
     """
 
     def _band_stats(self, v4):
@@ -417,27 +427,40 @@ class TestAnchorBand(unittest.TestCase):
                     worst.append(f"{e['a']}->{e['b']}:{side}")
         return total, band, corner, worst
 
-    def test_spine_wing_anchors_all_in_band(self):
-        # jacky's second-review rejection: classic-cld delivered anchors must all be in-band with zero corner hits
-        # (the symptom-fix dashed departure (602,174) 3px-from-corner out-of-band violation was fixed by locally
-        # rerouting the inter-loop pair in-band -- straight line + right-edge poly detour, all edge-midpoint anchors)
-        v4 = layout(load("classic-cld-growth-and-burden"))
-        self.assertEqual(v4["meta"]["placement"], "spine-wing")
-        total, band, corner, worst = self._band_stats(v4)
-        self.assertEqual(corner, 0, "corner hits must = 0")
-        self.assertEqual(band, total, f"spine-wing anchors must be 100% in-band {worst}")
+    def _anchor_membership_violations(self, v4):
+        """ref-scrubbed: count delivered endpoints NOT on the box's 16 standard anchors."""
+        from stdraw.anchors import standard_anchors
+        ch = float(v4["meta"].get("cardH", 44.0))
+        bad = []
+        for e in v4["edges"]:
+            rt = e["route"]
+            for side, idx in (("a", 0), ("b", len(rt["points"]) - 1)):
+                nd = v4["nodes"][e[side]]
+                p = rt["points"][idx]
+                pts16 = standard_anchors(nd["x"], nd["y"],
+                                         nd["w"] / 2.0, ch / 2.0)
+                if not any(abs(ax - p[0]) <= 0.75 and abs(ay - p[1]) <= 0.75
+                           for _aid, ax, ay in pts16):
+                    bad.append(f"{e['a']}->{e['b']}:{side}"
+                               f"@({p[0]:.1f},{p[1]:.1f})")
+        return bad
 
-    def test_corpus_baseline_band_ratios_hold(self):
-        # remaining engines locked to the v0.7.2 baseline (zero-drift constraint: leftover out-of-band stays unfixed, prevents regression)
-        baseline = {"brand-flywheel": 14 / 16, "fishing-collapse": 15 / 18,
-                    "eroding-goals": 8 / 12, "shifting-the-burden": 10 / 16,
-                    "wage-price-spiral": 8 / 12}
-        for name, floor in baseline.items():
+    def test_corpus_standard_anchor_membership(self):
+        # ref-scrubbed (jacky 2026-11-09): the 16 standard connection points are
+        # the DEFAULT attachment caliber -- every rendered endpoint sits on its
+        # box's 16-anchor set.  Supersedes the ref-scrubbed in-band ratio locks
+        # (band = old proxy caliber; measured ratios preserved in the class
+        # docstring).
+        names = ["classic-cld-growth-and-burden",   # spine-wing engine
+                 "limits-to-growth",                # column-chain
+                 "brand-flywheel", "debt-spiral", "soil-erosion",  # ring
+                 "eroding-goals", "shifting-the-burden",           # bowtie
+                 "fixes-that-fail", "learning-flywheel",           # symmetric
+                 "wage-price-spiral", "bullwhip", "population-logistic"]
+        for name in names:
             v4 = layout(load(name))
-            total, band, corner, _ = self._band_stats(v4)
-            self.assertEqual(corner, 0, f"{name} corner hits must = 0")
-            self.assertGreaterEqual(band / total, floor - 1e-9,
-                                    f"{name} in-band ratio fell below the v0.7.2 baseline")
+            bad = self._anchor_membership_violations(v4)
+            self.assertEqual(bad, [], f"{name}: endpoints off the 16-anchor set {bad[:5]}")
 
 
 class TestDeterminism(unittest.TestCase):

@@ -18,6 +18,7 @@ Determinism: CP-SAT fixed at num_workers=1 + random_seed; the constructive
 method has no RNG. Same input, same output.
 """
 import math
+import sys
 from collections import defaultdict
 
 from . import textmetrics
@@ -1496,6 +1497,27 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # arc bulge when that turns both arrows into near-normal arrivals
     # (gate-guarded; untouched routes returned byte-for-byte otherwise).
     routes = router.mutual_arrival_flip(routes, frozen=_frozen)
+    # ref-scrubbed: default endpoint snapping to the 16 standard per-box anchor
+    # set (anchors.py caliber) -- jacky 2026-11-09: the standard connection
+    # points are the DEFAULT attachment caliber of every rendered endpoint,
+    # not only the interactive layer.  Gate-checked nearest-anchor assignment
+    # with per-(node, anchor) occupancy + fixpoint sweeps (see
+    # Router.anchor_snap for the algorithm path); runs across every auto
+    # engine, frozen constructed/waypoint edges included -- a static render
+    # may not show any off-grid endpoint.
+    _snap_report = router.anchor_snap(routes)
+    if _snap_report["failures"]:
+        print(f"[stdraw] anchor_snap: {_snap_report['moved']} endpoints snapped, "
+              f"{len(_snap_report['failures'])} endpoint(s) could not be placed "
+              f"on a standard anchor: {_snap_report['failures'][:5]}",
+              file=sys.stderr)
+    # ref-scrubbed: re-run the lens arrival channel AFTER snapping -- snap moves
+    # lens arc endpoints/ctrl, so the arrival-normal caliber (<=10 deg) and the
+    # pair separation may degrade.  The flip re-derives ctrl only (endpoints
+    # stay on their anchors -> anchors_standard membership preserved) and is
+    # strict-improvement + hard-gate guarded; enhanced_gates switches to the
+    # anchor-snap gate accounting (see Router.mutual_arrival_flip).
+    routes = router.mutual_arrival_flip(routes, enhanced_gates=True)
     router_pairs = router.final_crossing_pairs(routes)
 
     # ref-scrubbed R/B loop coloring: edge -> the set of declared-loop kinds it belongs to (deterministic rules in docs/layout-modes.md):

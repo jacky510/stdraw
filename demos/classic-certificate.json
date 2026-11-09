@@ -54,26 +54,28 @@
   "box_press_1px": 0,
   "routing_router_pairs": 0,
   "press_details": [],
-  "edge_box_min_clear": 29.5,
+  "edge_box_min_clear": 20.0,
   "anchor_violations": 0,
   "anchor_details": [],
-  "avg_edge_length": 157.9,
+  "anchor_standard_violations": 0,
+  "anchor_standard_details": [],
+  "avg_edge_length": 148.8,
   "row_align_rate": 0.625,
   "min_card_gap": 35.0,
   "spacing_cv": 0.128,
   "column_snap24_rate": null,
-  "mutual_pair_min_sep": 12.0,
+  "mutual_pair_min_sep": 15.5,
   "mutual_pair_details": [
    {
     "pair": [
      "crowding<->quickfix",
-     13.8
+     15.5
     ]
    },
    {
     "pair": [
      "crowding<->fundamental",
-     12.0
+     21.0
     ]
    }
   ],
@@ -87,7 +89,7 @@
    "B4": 0.2069,
    "R2": 0.2242
   },
-  "center_offset_x": 0.5,
+  "center_offset_x": 12.5,
   "line_kind_counts": {
    "line": 11,
    "arc": 2
@@ -104,6 +106,7 @@
   "box_press_zero": true,
   "edge_box_clear_ge_16": true,
   "anchors_smooth": true,
+  "anchors_standard": true,
   "min_gap_ge_16": true,
   "cv_le_035": true,
   "spine_axis_le_2px": true,
@@ -114,7 +117,7 @@
   "visual_crossings_zero": true,
   "routing_consistent": true
  },
- "gates_passed": "12/12",
+ "gates_passed": "13/13",
  "reports": {
   "crossings_zero": true,
   "crossings_note": "soft target: <=2 crossings allowed when placement regularity holds (product call: some line intersection is acceptable; order and elegance come first); grading caliber unchanged (best = all hard gates + 0 crossings)",

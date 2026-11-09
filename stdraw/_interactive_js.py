@@ -239,6 +239,21 @@ function safeRerouteUpdate(i, what) {
 function hlEdge(i, on) {
   var g = visG(i);
   if (g) { if (on) g.classList.add('hl'); else g.classList.remove('hl'); }
+  setEpVis(i, on);   // ref-scrubbed: endpoint handle dots show only on hover
+}
+// ref-scrubbed: per-edge endpoint handle visibility. Default hidden (visual
+// noise in the rendered graph); visible while the edge is hovered or its
+// endpoint is being dragged (drag hover is intercepted by the topmost hit
+// circle, so the drag start must show them explicitly).
+function setEpVis(i, on) {
+  var rec = epEls[i];
+  if (!rec) return;
+  [0, 1].forEach(function (end) {
+    (rec[end] || []).forEach(function (c) {
+      if (c.getAttribute('class').indexOf('stdraw-eps-hit') === -1)
+        c.classList.toggle('vis', !!on);
+    });
+  });
 }
 function updateEdge(i) {
   var e = edges[i], g = visG(i);
@@ -639,7 +654,11 @@ styleEl.textContent = '#stdraw-handles circle.stdraw-wp{fill:#fff;stroke:#475569
   // press always resolves to the endpoint drag BEFORE the 12px segment hit
   // band (drag-line = whole-segment translation) can claim it — endpoint
   // hit priority is structural (DOM order), pinned by the probe.
-  '#stdraw-eps circle.stdraw-ep{fill:#fff;stroke:#0284c7;stroke-width:1.6;cursor:move;pointer-events:all}' +
+  // ref-scrubbed: the VISIBLE handle dot is hidden by default (jacky: dots in
+  // the rendered graph are visual noise); it fades in only while its edge is
+  // hovered or its endpoint is being dragged (.vis class, see setEpVis).
+  '#stdraw-eps circle.stdraw-ep{fill:#fff;stroke:#0284c7;stroke-width:1.6;cursor:move;pointer-events:all;opacity:0;transition:opacity .12s}' +
+  '#stdraw-eps circle.stdraw-ep.vis{opacity:1}' +
   '#stdraw-eps circle.stdraw-eps-hit{fill:rgba(255,255,255,0);stroke:none;cursor:move;pointer-events:all}' +
   '.stdraw-tip{position:absolute;z-index:9;background:#1f2937;color:#fff;' +
   'font:12px/1.4 sans-serif;padding:3px 8px;border-radius:4px;pointer-events:none}';
@@ -1182,7 +1201,7 @@ function hideFloat() {
 var anchorLayer = document.createElementNS(NS, 'g');
 anchorLayer.id = 'stdraw-anchors';
 svg.appendChild(anchorLayer);
-var anchorToggle = true, hoverNode = null;
+var anchorToggle = false, hoverNode = null;   // ref-scrubbed: anchor dots OFF by default (jacky: dots are visual noise; hover + toolbar toggle still show them)
 var ANCHOR_CLICK_TOL = 10;   // px: a press within this distance of a visible
                              // standard anchor is an explicit assignment
 function setAnchorToggle(on) {
@@ -1326,6 +1345,7 @@ function onDown(ev) {
       var peE = svgPoint(ev);
       if (peE) {
         drag = {ep: true, edge: eiE, end: endE, start: [peE.x, peE.y], ev: ev};
+        setEpVis(eiE, true);   // ref-scrubbed: show the dragged endpoint's handles
         try { he.setPointerCapture(ev.pointerId); } catch (eE0) {}
         ev.preventDefault();
         ev.stopPropagation();
@@ -1619,6 +1639,7 @@ function onUp(ev) {
       else eU.pts[endU === 0 ? 0 : eU.pts.length - 1] = coordU;
     }
     drag = null;
+    setEpVis(eiU, false);   // ref-scrubbed: drag over, dots hide again
     updateEdge(eiU);
     renderAnchors();
     refreshMetrics();
@@ -1961,6 +1982,15 @@ window.__stdrawAnchorDots = function () {
   return out;
 };
 window.__stdrawAnchorToggleState = function () { return !!anchorToggle; };
+window.__stdrawSetAnchorToggle = function (on) { setAnchorToggle(!!on); };   // ref-scrubbed probe hook
+window.__stdrawEndpointHandleVis = function () {
+  var out = [];
+  epsLayer.querySelectorAll('circle.stdraw-ep').forEach(function (c) {
+    out.push([+c.getAttribute('data-edge'), +c.getAttribute('data-end'),
+              getComputedStyle(c).opacity]);
+  });
+  return out;
+};
 window.__stdrawEndpointHandles = function () {
   var out = [];
   epsLayer.querySelectorAll('circle.stdraw-ep').forEach(function (c) {
@@ -1983,7 +2013,7 @@ if (btnE) btnE.addEventListener('click', exportLayout);
 if (btnR) btnR.addEventListener('click', reset);
 var btnA = document.getElementById('stdraw-anchors-toggle');
 if (btnA) {
-  btnA.textContent = 'Anchors: on';
+  btnA.textContent = 'Anchors: ' + (anchorToggle ? 'on' : 'off');   // ref-scrubbed: default off
   btnA.addEventListener('click', function () { setAnchorToggle(!anchorToggle); });
 }
 rebuildHandles();

@@ -266,6 +266,7 @@ from .routing import (sample_polyline, dist_point_rect, seg_cross as _rc_seg_cro
                       min_pair_dist,
                       PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE,
                       span_one_way_segs, COINCIDE_THR, COINCIDE_SPAN)
+from .anchors import standard_anchors as _std_anchors
 
 
 def scene_from_auto(v4: dict) -> dict:
@@ -470,6 +471,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
 
     # 2. Box press (1px margin) + edge-box clearance + own-box endpoint compliance
     press, clear_details, anchor_bad = [], [], []
+    anchor_standard_bad = 0          # ref-scrubbed: 16-anchor-set membership gate
+    anchor_standard_details = []
     min_clear = None
     for i, e in enumerate(edges):
         pts = sample_polyline(polys[i])
@@ -491,7 +494,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                 press.append({"edge": f"{e['a']}->{e['b']}", "card": v, "margin": 1})
             min_clear = dmin if min_clear is None else min(min_clear, dmin)
         # Own box: no other sampled point may enter the box (incl. 1px margin);
-        # anchors must sit on the box border
+        # anchors must sit on the box border.
+        # ref-scrubbed: standard anchors sit INSET 3px inside the border, so the
+        # attachment zone (samples within 6px of the endpoint, before the
+        # departure clears the 1px-inflated margin) is part of the attachment
+        # by construction and is exempt -- the same accounting as
+        # Router._own_press (anchor_snap gate).  What this gate still catches
+        # is the route BODY (beyond the attachment zone) stabbing into the box.
         for v, end_key in ((e["a"], "a"), (e["b"], "b")):
             p = nodes[v]
             hw, hh = p["w"] / 2, p["h"] / 2
@@ -500,8 +509,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                 anchor_bad.append({"edge": f"{e['a']}->{e['b']}", "end": end_key,
                                    "why": "anchor off-border"})
                 continue
+            q0, q1 = pts[0], pts[-1]
             interior = any(dist_point_rect(px, py, p["x"], p["y"], hw + PRESS_MARGIN, hh + PRESS_MARGIN) <= 0
-                           for (px, py) in pts[1:-1])
+                           for (px, py) in pts[1:-1]
+                           if math.hypot(px - q0[0], py - q0[1]) > 6.0 and
+                           math.hypot(px - q1[0], py - q1[1]) > 6.0)
             if interior:
                 press.append({"edge": f"{e['a']}->{e['b']}", "card": v, "why": "own-box"})
         # Anchor smoothness (angle recomputed independently)
@@ -521,6 +533,25 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             if ang < ANCHOR_MIN_DEG:
                 anchor_bad.append({"edge": f"{e['a']}->{e['b']}", "end": end_key,
                                    "angle": round(ang, 1)})
+        # ref-scrubbed: endpoint membership in the 16 standard anchor set
+        # (anchors.py caliber; tol 0.75px = the same border tolerance as the
+        # anchor on-border check above).  The default attachment caliber:
+        # every rendered endpoint sits on one of its box's 16 standard
+        # connection points.
+        for end_key in ("a", "b"):
+            v = e[end_key]
+            a0 = anchors.get(i, {}).get(end_key)
+            if a0 is None:
+                continue
+            nd = nodes[v]
+            pts16 = _std_anchors(nd["x"], nd["y"], nd["w"] / 2.0, nd["h"] / 2.0)
+            if not any(abs(ax - a0[0]) <= 0.75 and abs(ay - a0[1]) <= 0.75
+                       for _aid, ax, ay in pts16):
+                anchor_standard_bad += 1
+                if len(anchor_standard_details) < 10:
+                    anchor_standard_details.append(
+                        {"edge": f"{e['a']}->{e['b']}", "end": end_key,
+                         "anchor": [round(a0[0], 1), round(a0[1], 1)]})
 
     # 3. Average edge length / row alignment / card gap / CV (same caliber as v1)
     avg_len = sum(sum(math.dist(polys[i][k], polys[i][k + 1])
@@ -758,6 +789,10 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "edge_box_min_clear": round(min_clear, 1) if min_clear is not None else None,
         "anchor_violations": len(anchor_bad),
         "anchor_details": anchor_bad[:10],
+        # ref-scrubbed: delivered endpoints must sit on the box's 16 standard
+        # anchor set (anchors.py caliber) -- the default attachment caliber.
+        "anchor_standard_violations": anchor_standard_bad,
+        "anchor_standard_details": anchor_standard_details[:10],
         "avg_edge_length": round(avg_len, 1),
         "row_align_rate": round(row_rate, 3) if row_rate is not None else None,
         "min_card_gap": round(min_gap, 1),
@@ -806,6 +841,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "box_press_zero": metrics["box_press_1px"] == 0,
             "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
             "anchors_smooth": metrics["anchor_violations"] == 0,
+            "anchors_standard": metrics["anchor_standard_violations"] == 0,
             "min_gap_ge_16": metrics["min_card_gap"] >= 16,
             "ring_spacing_cv_le_005": (metrics["ring_spacing_cv"] is not None
                                        and metrics["ring_spacing_cv"] <= 0.05),
@@ -819,6 +855,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "box_press_zero": metrics["box_press_1px"] == 0,
             "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
             "anchors_smooth": metrics["anchor_violations"] == 0,
+            "anchors_standard": metrics["anchor_standard_violations"] == 0,
             "min_gap_ge_16": metrics["min_card_gap"] >= 16,
             "cv_le_035": metrics["spacing_cv"] <= 0.35,
             "column_axis_aligned": (metrics["column_axis_deviation"] is not None
@@ -843,6 +880,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "box_press_zero": metrics["box_press_1px"] == 0,
             "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
             "anchors_smooth": metrics["anchor_violations"] == 0,
+            "anchors_standard": metrics["anchor_standard_violations"] == 0,
             "min_gap_ge_16": metrics["min_card_gap"] >= 16,
             "column_axis_aligned": (metrics["column_axis_deviation"] is not None
                                     and metrics["column_axis_deviation"] <= 2.0),
@@ -858,6 +896,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "box_press_zero": metrics["box_press_1px"] == 0,
             "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
             "anchors_smooth": metrics["anchor_violations"] == 0,
+            "anchors_standard": metrics["anchor_standard_violations"] == 0,
             "min_gap_ge_16": metrics["min_card_gap"] >= 16,
             "cv_le_035": metrics["spacing_cv"] <= 0.35,
             "symmetry_mirror_le_2px": (metrics["symmetry_mirror_err"] is not None
@@ -875,6 +914,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "box_press_zero": metrics["box_press_1px"] == 0,
             "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
             "anchors_smooth": metrics["anchor_violations"] == 0,
+            "anchors_standard": metrics["anchor_standard_violations"] == 0,
             "min_gap_ge_16": metrics["min_card_gap"] >= 16,
             "cv_le_035": metrics["spacing_cv"] <= 0.35,
             "spine_axis_le_2px": (metrics["spine_axis_deviation"] is not None
@@ -891,6 +931,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "box_press_zero": metrics["box_press_1px"] == 0,
             "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
             "anchors_smooth": metrics["anchor_violations"] == 0,
+            "anchors_standard": metrics["anchor_standard_violations"] == 0,
             "min_gap_ge_16": metrics["min_card_gap"] >= 16,
             "cv_le_035": metrics["spacing_cv"] <= 0.35,
             # Row alignment demoted to report item (14 hand-pulled samples show
@@ -960,7 +1001,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"] and
                    g["pitch_uniform"])
-    hard_ok = hard_ok and g["visual_crossings_zero"]
+    hard_ok = (hard_ok and g["anchors_standard"]       # ref-scrubbed: 16-anchor membership
+               and g["visual_crossings_zero"])
     dual_ok = routing_consistent is not False   # dual-accounting mismatch -> refuse the certificate
     if metrics["crossings"] == 0 and hard_ok and dual_ok:
         grade = "best"

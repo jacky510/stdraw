@@ -980,7 +980,40 @@ def main():
                 "document.getElementById('stdraw-data').textContent"))
             vid_a = lay_a["nodes"][0]["id"]
 
-            # A1. hover shows the 16 standard anchor dots
+            # A0. ref-scrubbed: dots AND endpoint handle dots are hidden by
+            # default (visual-noise caliber); the toolbar toggle stays.
+            pg.evaluate("window.__stdrawSetAnchorToggle(false)")
+            pg.wait_for_timeout(80)
+            ep_vis = pg.evaluate("window.__stdrawEndpointHandleVis()")
+            chk("default render: no endpoint handle dots visible (opacity 0)",
+                len(ep_vis) > 0 and all(v[2] == "0" for v in ep_vis),
+                f"vis={ep_vis[:4]}")
+            chk("default render: anchor toggle state is off",
+                pg.evaluate("window.__stdrawAnchorToggleState()") is False, "")
+
+            # A0b. endpoint handle dots fade in on edge hover, hide on leave
+            _eg0 = pg.locator('g[data-edge]').first
+            _eg0.hover()
+            pg.wait_for_timeout(250)
+            ep_hov = pg.evaluate("window.__stdrawEndpointHandleVis()")
+            _hov_edge = None
+            _vis_pairs = [v for v in ep_hov if v[2] == "1"]
+            if _vis_pairs:
+                _hov_edge = _vis_pairs[0][0]
+            chk("edge hover shows that edge's two endpoint handle dots",
+                _hov_edge is not None and
+                all(v[2] == ("1" if v[0] == _hov_edge else "0")
+                    for v in ep_hov),
+                f"hover_edge={_hov_edge} vis={ep_hov[:6]}")
+            pg.mouse.move(5, 5)
+            pg.wait_for_timeout(250)
+            ep_left = pg.evaluate("window.__stdrawEndpointHandleVis()")
+            chk("mouse leave hides all endpoint handle dots again",
+                all(v[2] == "0" for v in ep_left), f"vis={ep_left[:4]}")
+
+            # A1. hover shows the 16 standard anchor dots (toggle explicitly
+            # on -- default caliber is off since ref-scrubbed)
+            pg.evaluate("window.__stdrawSetAnchorToggle(true)")
             pg.locator(f'g[data-node="{vid_a}"]').hover()
             pg.wait_for_timeout(100)
             dots = pg.evaluate("window.__stdrawAnchorDots()")
@@ -1006,8 +1039,10 @@ def main():
 
             # A3. the toggle hides / restores the dots (asserted under an
             # ACTIVE hover — dots vanishing because the hover was lost would
-            # prove nothing)
-            pg.click("#stdraw-anchors-toggle")
+            # prove nothing). ref-scrubbed: state is driven through the probe
+            # hook (the default caliber is off, so the toggle now starts ON
+            # here from A1 and is left OFF afterwards = the shipped default).
+            pg.evaluate("window.__stdrawSetAnchorToggle(false)")
             pg.locator(f'g[data-node="{vid_a}"]').hover()
             pg.wait_for_timeout(80)
             dots_off = pg.evaluate("window.__stdrawAnchorDots()")
@@ -1015,7 +1050,7 @@ def main():
             chk("anchor toggle off hides dots under active hover",
                 len(dots_off) == 0 and off_state is False,
                 f"dots={len(dots_off)} state={off_state}")
-            pg.click("#stdraw-anchors-toggle")
+            pg.evaluate("window.__stdrawSetAnchorToggle(true)")
             pg.locator(f'g[data-node="{vid_a}"]').hover()
             pg.wait_for_timeout(80)
             dots_on = pg.evaluate("window.__stdrawAnchorDots()")
@@ -1023,6 +1058,7 @@ def main():
                 len(dots_on) == 16 and
                 pg.evaluate("window.__stdrawAnchorToggleState()") is True,
                 f"dots={len(dots_on)}")
+            pg.evaluate("window.__stdrawSetAnchorToggle(false)")
 
             # B. endpoint drag -> release snaps to the NEAREST standard anchor
             #    (expected winner computed independently in Python). The
