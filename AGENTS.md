@@ -409,10 +409,44 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.7.12** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.7.13** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
 
+- **v0.7.13 version closure** (implementation cards ref-scrubbed / ref-scrubbed /
+  ref-scrubbed / ref-scrubbed): **16 standard anchors by default + polarity-only
+  two-color rendering + certificate schema additions** —
+  (a) per-box **16-anchor set** (`stdraw/anchors.py`: 4 edge midpoints + 4
+  corners + 8 golden-section points, all on the inset-3px border rect) with
+  interactive-layer hover display (toolbar toggle, default off), edge-endpoint
+  drag with nearest-anchor snapping, explicit anchor pinning that
+  re-projects endpoints on node drag, and export/layout round-trip
+  (`edges[].anchors` / `edge_anchors`);
+  (b) **anchor snapping in the default pipeline** (`Router.anchor_snap`:
+  gated nearest-anchor assignment with per-box-per-anchor occupancy,
+  immovable-point scan ≤4 rounds, yield-and-retry conflict channel; mutual
+  pairs snap as mirror golden pairs, `mutual_arrival_flip(enhanced_gates)`
+  restores vertical entry); certificate adds the **`anchors_standard` hard
+  gate**; **density-gated deferral** (E/N ≥ 1.6 → snap deferred with
+  `anchors_standard_deferred` recorded — honest downgrade, no gate
+  watering);
+  (c) render declutter: anchor dots default-off and endpoint handles
+  hidden until hover/drag — no decorative circles in delivered
+  PNG/HTML/3D;
+  (d) loop visualization: **edge colors encode edge polarity only**
+  (+ amber #d97706 / − sky #0284c7, all solid; gray shared-edge tint,
+  dashed=negative, loop-id pills and multi-row legends removed; 3D
+  polarity tubes + ConeGeometry arrowheads readable when scaled); minimal
+  two-block legend;
+  (e) certificate adds **`mode_decision_trace`** (which structural rule
+  fired and why); README EN/zh lead with scale/latency expectations
+  (≤10 nodes / classic ~10s vs graphviz 0.03s); `docs/layout-modes.en.md`
+  English edition.
+  Baselines regenerated with per-figure expected-change lists; classic
+  21/21 sweep green (crossings 0 / grade best / anchors_standard true);
+  pytest 114/114 + ci_checks EXIT=0; AGENTS version section written by
+  default with jacky's explicit explicit approval (protected-file op,
+  2026-11-09).
 - **v0.7.12 version closure** (implementation card ref-scrubbed): **fan
   crossings eliminated + visual_crossings hard-gated** — entry-side (target
   end) fan slots order by the approach-point projection when the other-box
