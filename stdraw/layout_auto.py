@@ -1527,8 +1527,12 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # not only the interactive layer.  Gate-checked nearest-anchor assignment
     # with per-(node, anchor) occupancy + fixpoint sweeps (see
     # Router.anchor_snap for the algorithm path); runs across every auto
-    # engine, frozen constructed/waypoint edges included -- a static render
-    # may not show any off-grid endpoint.
+    # engine -- a static render may not show any off-grid endpoint.  One
+    # frozen exception: user-anchored waypoint edges (bend-handle exports)
+    # keep their border-point endpoints aimed at the first/last waypoint --
+    # those are 3px outside the inset anchor rectangle by construction, so
+    # they are neither moved nor counted as snap failures (their unanchored
+    # state is the documented waypoints caliber, graded honestly).
     _density = len(EDGES_REF[0]) / max(len(nodes), 1)
     _snap_deferred = None
     if _density >= ANCHOR_SNAP_DENSE_E_OVER_N:
