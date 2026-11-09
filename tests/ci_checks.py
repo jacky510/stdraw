@@ -142,6 +142,16 @@ def load(outdir, name):
 
 
 def main():
+    # Internal-leak sanitization gate (AGENTS.md "Internal-leak sanitization
+    # gate"; script scripts/check_internal_leaks.py). Runs before all checks.
+    gate = subprocess.run(
+        [sys.executable,
+         os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                      os.pardir, "scripts", "check_internal_leaks.py")]
+    )
+    if gate.returncode != 0:
+        print("ci_checks: aborting — internal-leak gate failed", file=sys.stderr)
+        return 1
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(root)
     failures = []
@@ -252,7 +262,7 @@ def main():
             if (m.get("edge_box_min_clear") or 0) < 16:
                 failures.append(f"random {ex}: edge_box_min_clear="
                                 f"{m.get('edge_box_min_clear')} < 16")
-            # ref-scrubbed finalize (jacky 2026-11-09 ruling "C+B"): density-
+            # ref-scrubbed finalize (approved 2026-11-09): density-
             # gated snap caliber.  A dense graph (E/N >= 1.6) must either
             # deliver every endpoint on the 16-anchor set (snap probe kept,
             # zero gate regressions) or carry an anchors_standard_deferred

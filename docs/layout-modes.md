@@ -345,7 +345,7 @@ jacky 2026-11-09：「连接点还不是我之前定过的 16 个标准连接点
   grade best、visual_crossings_zero True、anchors_standard True、端点成员
   违例 0；确定性两次运行字节一致（ci_checks 层 B）。
 
-### 密度阈值探针模式（ref-scrubbed 收口，jacky 2026-11-09 拍板「C+B」）
+### 密度阈值探针模式（ref-scrubbed 收口，jacky 2026-11-09 拍板通过）
 
 random dense 抽样实测：n10-i05（E/N=1.60）吸附后三门连挂——visual_crossings
 2→4（2 fan 对+2 普通对）、1 端点无锚可落（N03→N08 poly）、line-line

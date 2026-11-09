@@ -1,0 +1,37 @@
+#!/bin/sh
+# Internal-leak sanitization gate (second insurance layer; CI is authoritative).
+# Rules: scripts/check_internal_leaks.py + AGENTS.md "Internal-leak sanitization gate".
+# Install: git config core.hooksPath scripts/hooks
+
+PY="${PYTHON:-python}"
+GATE="$(git rev-parse --show-toplevel)/scripts/check_internal_leaks.py"
+
+# Layer 1: tracked-tree content scan
+"$PY" "$GATE" || exit 1
+
+zero=0000000000000000000000000000000000000000
+ID_PAT='t_[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]'
+MSG_PAT='t_[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]|C:[/\\]Users|Feishu[[:space:]]+approval'
+
+while read local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue   # deletion
+  # Layer 2: pushed branch/tag name must not carry internal ids
+  case "$local_ref" in
+    *$ID_PAT*)
+      echo "PUSH BLOCKED: ref name '$local_ref' contains an internal task id"
+      exit 1 ;;
+  esac
+  # Layer 3: commit messages in the push range
+  if [ "$remote_sha" = "$zero" ]; then
+    range="$local_sha --not --remotes"
+  else
+    range="$remote_sha..$local_sha"
+  fi
+  if git log --format=%B $range | grep -Eq "$MSG_PAT"; then
+    echo "PUSH BLOCKED: commit messages in range contain internal markers"
+    git log --format=%h $range | head -20
+    exit 1
+  fi
+done
+
+exit 0
