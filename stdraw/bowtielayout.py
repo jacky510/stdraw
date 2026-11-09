@@ -85,11 +85,14 @@ def _canon(seq):
     return tuple(best)
 
 
-def detect_bowtie_vertex(graph):
+def detect_bowtie_vertex(graph, why=None):
     """Bowtie-vertex detection. Returns a plan dict or None.
 
     plan = {"shared": shared node, "loops": [(kind, [c1..ck]), ...] (upper
             ring first), "deg0": [isolated nodes]}
+
+    why: optional dict — receives a deterministic one-line reason for the
+    outcome (mode decision trace, certificate mode_decision_trace field).
     """
     nodes = list(graph.node_ids())
     edges = [(e.a, e.b) for e in graph.edges]
@@ -97,16 +100,33 @@ def detect_bowtie_vertex(graph):
     core = [v for v in nodes if adj[v]]
     deg0 = [v for v in nodes if not adj[v]]
     if len(core) < 5 or len(core) > MAX_BOWTIE_N:
+        if why is not None:
+            why["reason"] = (f"core n={len(core)} "
+                             f"(need 5..{MAX_BOWTIE_N})")
         return None
     cycles = columnlayout._enumerate_cycles(core, adj)
     if len(cycles) != 2:
+        if why is not None:
+            why["reason"] = (f"{len(cycles)} simple loops enumerated "
+                             "(need exactly 2)")
         return None
     s0, s1 = set(cycles[0]), set(cycles[1])
     shared_set = s0 & s1
     if len(shared_set) != 1:
+        if why is not None:
+            why["reason"] = (f"the 2 simple loops share {len(shared_set)} "
+                             "nodes (need exactly 1 — shared-2 is the "
+                             "shared-edge bowtie topology)")
         return None
     if s0 | s1 != set(core):
-        return None            # dangling nodes outside the rings -> conservatively no trigger
+        if why is not None:
+            why["reason"] = ("dangling core nodes outside the two rings — "
+                             "conservatively no trigger")
+        return None
+    if why is not None:
+        why["reason"] = ("exactly 2 simple loops sharing exactly 1 node "
+                         f"(shared={sorted(shared_set)[0]}), rings cover all "
+                         f"{len(core)} core nodes")
     shared = sorted(shared_set)[0]
     eset = set(edges)
 

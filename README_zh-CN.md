@@ -6,6 +6,8 @@
 
 *Text DSL 进 → 带质量证书的图出。诚实分级，绝不冒充「零交叉」。*
 
+**规模预期，开门见山：推荐 ≤10 节点 · classic 配方均值 ~10 秒/张（graphviz-dot 0.03 秒——慢 2~3 个数量级是刻意取舍：用速度换硬质量门 + 机器可读证书）· n≥50 不推荐。** 数据：[benchmarks/REPORT.md](benchmarks/REPORT.md)
+
 [English](README.md) | 简体中文
 
 </div>

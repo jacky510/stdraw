@@ -49,22 +49,31 @@ def _adjacency(edges):
     return adj
 
 
-def detect_comb(graph):
+def detect_comb(graph, why=None):
     """Trigger detection. Returns a comb plan dict or None (no trigger).
 
     plan = {"hubs": [left, right], "sources": [S in declaration order],
             "column": [ordered column, top -> bottom], "m": int,
             "components": {root: [tree nodes in column order]}, "deg0": [...]}
+
+    why: optional dict — receives a deterministic one-line reason for the
+    outcome (mode decision trace, certificate mode_decision_trace field).
     """
     nodes = list(graph.node_ids())
     n = len(nodes)
     if n < 2 * 1 + MIN_SOURCES or n > MAX_COMB_N:
+        if why is not None:
+            why["reason"] = (f"n={n} (need {2 * 1 + MIN_SOURCES}.."
+                             f"{MAX_COMB_N})")
         return None
     edges = [(e.a, e.b) for e in graph.edges]
     adj = _adjacency(edges)
     core = [v for v in nodes if adj.get(v)]
     deg0 = [v for v in nodes if not adj.get(v)]
     if len(core) < 2 + MIN_SOURCES:
+        if why is not None:
+            why["reason"] = (f"core n={len(core)} "
+                             f"(need >= {2 + MIN_SOURCES})")
         return None
 
     decl = {v: i for i, v in enumerate(nodes)}
@@ -87,8 +96,15 @@ def detect_comb(graph):
             if best is None or key < best[0]:
                 best = (key, h1, h2, sorted(S, key=lambda v: decl[v]), plan)
     if best is None:
+        if why is not None:
+            why["reason"] = ("no bilateral-hub pair: no two non-adjacent "
+                             f"nodes with identical source-only neighborhoods "
+                             f"(|S| >= {MIN_SOURCES})")
         return None
     _, h1, h2, sources, (comps, column) = best
+    if why is not None:
+        why["reason"] = (f"bilateral hubs {h1}/{h2} with identical "
+                         f"source-only neighborhood |S|={len(sources)}")
     return {"hubs": [h1, h2], "sources": sources, "column": column,
             "components": comps, "m": len(sources), "deg0": deg0}
 
