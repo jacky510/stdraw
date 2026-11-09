@@ -31,7 +31,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[solver,measure]"
-          pip install playwright
+          pip install playwright pytest
       - name: "Resolve playwright version"
         id: pwver
         run: echo "ver=$(pip show playwright | awk '/^Version:/ {print $2}')" >> "$GITHUB_OUTPUT"
@@ -48,6 +48,12 @@ jobs:
           python -m stdraw layout --help
       - name: "Full checks: ortho byte-regression + auto hard gates + DOM bounds + determinism"
         run: python tests/ci_checks.py
+      - name: "Full pytest suite (unit + regression + brute-force + scalability wall-clock + playwright font-env)"
+        run: python -m pytest tests/ -q
+      - name: "Module-level check scripts (execute at import; run directly, not via pytest)"
+        run: |
+          python tests/test_ring_layout.py
+          python tests/test_visibility.py
 
   checks-py39-weekly:
     # 3.9 full-compatibility sweep: weekly schedule only, never on push/pr

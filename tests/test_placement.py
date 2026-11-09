@@ -135,3 +135,8 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# pytest entry (CI full-suite collection; script behavior unchanged).
+def test_placement_bruteforce():
+    assert main() == 0

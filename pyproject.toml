@@ -41,3 +41,9 @@ stdraw = "stdraw.__main__:main"
 
 [tool.setuptools]
 packages = ["stdraw"]
+
+[tool.pytest.ini_options]
+# test_ring_layout.py / test_visibility.py are module-level check scripts
+# (their bodies execute at import; no pytest entry functions). Excluded from
+# pytest collection and run directly by CI instead (see .github/workflows/ci.yml).
+addopts = "--ignore=tests/test_ring_layout.py --ignore=tests/test_visibility.py"
