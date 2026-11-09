@@ -1,6 +1,6 @@
 {
  "tool": "stdraw",
- "version": "0.7.1",
+ "version": "0.7.15",
  "layer": "2D",
  "graph": "classic-cld",
  "n": 8,
