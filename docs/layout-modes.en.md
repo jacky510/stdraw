@@ -478,7 +478,7 @@ conjunction).
   anchors_standard True, 0 off-anchor endpoints; deterministic (two runs
   byte-identical, ci_checks layer B).
 
-### Density-threshold probe mode (ref-scrubbed closure, jacky 2026-11-09 ruling "C+B")
+### Density-threshold probe mode (ref-scrubbed closure, approved 2026-11-09)
 
 Random dense sampling measured: n10-i05 (E/N = 1.60) fails three gates after
 snapping — visual_crossings 2 -> 4 (2 fan pairs + 2 normal pairs), 1 endpoint

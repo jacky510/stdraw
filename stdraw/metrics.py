@@ -1004,7 +1004,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"] and
                    g["pitch_uniform"])
-    # ref-scrubbed finalize (jacky 2026-11-09 "C+B"): honest dense-snap
+    # ref-scrubbed finalize (approved 2026-11-09): honest dense-snap
     # deferral annotation -- the anchors_standard gate value stays MEASURED
     # (False when endpoints remain off-anchor on a deferred dense graph);
     # the deferral record documents the approved downgrade with its measured

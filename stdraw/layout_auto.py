@@ -25,7 +25,7 @@ from . import textmetrics
 from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
                       ANCHOR_MIN_DEG, border_point)
 
-# ref-scrubbed finalize (jacky 2026-11-09 ruling "C+B"): edge/node density at or
+# ref-scrubbed finalize (approved 2026-11-09): edge/node density at or
 # above which anchor_snap runs in gate-guarded probe mode (see the snap block
 # in layout()).  Measured basis: random n10 corpus E/N = 1.60 (dense; n10-i05
 # regresses: crossings 0->2 / coincidence / 1 endpoint unanchored), classic
@@ -1530,7 +1530,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     _density = len(EDGES_REF[0]) / max(len(nodes), 1)
     _snap_deferred = None
     if _density >= ANCHOR_SNAP_DENSE_E_OVER_N:
-        # ref-scrubbed finalize (jacky 2026-11-09 ruling "C+B"): density-gated
+        # ref-scrubbed finalize (approved 2026-11-09): density-gated
         # snap probe.  A static scalar density threshold cannot separate the
         # classic corpus (classic-cld E/N = 13/8 = 1.62, snaps clean -- 21/21
         # green) from the random dense n10 corpus (E/N = 16/10 = 1.60, snap

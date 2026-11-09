@@ -67,7 +67,31 @@ Local dev interpreter: `<user-home>/AppData/Local/Programs/Python/Python312/pyth
 - **Acceptance tiers**: card-level = this card's acceptance (tests + cross-checks); publishing-face = publishing face + CI certificate gates. Changes touching the publishing face **must pass both tiers**; for publishing-face acceptance, write the cell-by-cell cross-check script before editing docs (certificate gates per key, REPORT.md summary table per cell, CLI parameter table vs `--help` measured)
 - Threshold numbers written on a card are snapshots from drafting; the final state follows the measured JSON
 - After pushing you must read back: `gh api repos/jacky510/stdraw/commits?per_page=1 --jq '.[0].commit.committer.date'`
-- Commit messages state the corresponding card id
+- Commit messages describe the change itself; internal card ids are banned from
+  public history -- see the internal-leak sanitization gate section below
+
+## Internal-leak sanitization gate
+
+Internal coordination identifiers must never reach the public repository
+(history rewrite 2026-11 scrubbed all prior occurrences). Banned in every
+tracked file, commit message and branch/tag name:
+
+- Task/card ids matching `t_[0-9a-f]{8}` -- write `ref-scrubbed` instead
+- Local machine absolute paths (drive-letter user-profile paths, both slash
+  styles) -- write `<user-home>` instead
+- Chat-app approval records (the app name followed by `approval`) -- write
+  `explicit approval`
+- Verdict/approval codes (former `C+B/A+D`-style) -- write `approval`
+
+Enforcement, two independent layers (both must stay green):
+
+1. CI first step: `python scripts/check_internal_leaks.py` scans the tracked tree.
+2. Pre-push hook (repo config `core.hooksPath = scripts/hooks`): tree scan plus
+   pushed ref-name check plus commit-message range check -- a push carrying any
+   banned pattern fails physically.
+
+Adding a new banned pattern = one commit updating all three places together:
+`scripts/check_internal_leaks.py`, `scripts/hooks/pre-push`, and this section.
 
 ## Branches & release
 
@@ -445,7 +469,7 @@ the spec documents.
   Baselines regenerated with per-figure expected-change lists; classic
   21/21 sweep green (crossings 0 / grade best / anchors_standard true);
   pytest 114/114 + ci_checks EXIT=0; AGENTS version section written by
-  default with jacky's explicit explicit approval (protected-file op,
+  default with jacky's explicit approval (protected-file op,
   2026-11-09).
 - **v0.7.12 version closure** (implementation card ref-scrubbed): **fan
   crossings eliminated + visual_crossings hard-gated** — entry-side (target
