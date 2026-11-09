@@ -363,11 +363,5 @@ if __name__ == "__main__":
 
 
 # pytest entry (CI full-suite collection; script behavior unchanged).
-# XFAIL(strict): G4 "anchor on a-side box border" regressed with the dense
-# snap-gate engine (passes on 1174ab2, fails on 728f653; fixture: waypoints
-# recompute anchor lands ~3px inside the a-side box). Tracked in the follow-up
-# engine card - when fixed, this strict xfail turns XPASS and fails, forcing
-# marker removal.
-@pytest.mark.xfail(reason="G4 anchor-off-border engine regression (dense snap gate era); follow-up card", strict=True)
 def test_manual_layout():
     assert main() == 0

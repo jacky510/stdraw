@@ -182,20 +182,58 @@ def shortest_path(src, dst, rects, c):
     """Shortest path on the visibility graph over inflated obstacle corners. Returns None when unreachable.
 
         Returns the polyline [src, corner*, ..., dst] (exactly optimal on the graph; optimality bounds in the module docstring).
+
+        Exact-equivalence speedup (WS5 caliber, measured on the dev box during
+        the dense-snap wall-clock regression fix): the corner-corner visibility
+        submatrix depends only on (rects, c) -- cached per (rounded rects,
+        rounded c) and consulted as a set membership instead of a fresh
+        _visible recheck per pair; src/dst pairs are still computed live.
+        Same _visible verdicts on the same inputs, same weights, same
+        ascending (i, j) adjacency generation order -> byte-identical paths.
     """
     if not rects:
         return [tuple(src), tuple(dst)]
     nodes = _graph_nodes(src, dst, rects, c)
     n = len(nodes)
+    vis = _corner_visibility(rects, c)
     # Adjacency list: O(n^2) visibility rechecks, generated in ascending (i,j) order -> deterministic
     adj = [[] for _ in range(n)]
     for i in range(n):
         for j in range(i + 1, n):
-            if _visible(nodes[i], nodes[j], rects, c):
+            if i >= 2 and j >= 2:
+                ok = (i, j) in vis
+            else:
+                ok = _visible(nodes[i], nodes[j], rects, c)
+            if ok:
                 w = math.hypot(nodes[i][0] - nodes[j][0], nodes[i][1] - nodes[j][1])
                 adj[i].append((j, w))
                 adj[j].append((i, w))
     return _dijkstra(nodes, adj, 0, 1)
+
+
+_CORNER_VIS_CACHE = {}
+
+
+def _corner_visibility(rects, c):
+    """Set of visible corner-corner pairs (global indices in _graph_nodes order), cached per (rects, c)."""
+    key = (tuple(tuple(r) for r in rects), float(c))
+    ent = _CORNER_VIS_CACHE.get(key)
+    if ent is None:
+        corners = []
+        for (cx, cy, hw, hh) in rects:
+            gx, gy = hw + c, hh + c
+            corners.extend([(cx - gx, cy - gy), (cx + gx, cy - gy),
+                            (cx + gx, cy + gy), (cx - gx, cy + gy)])
+        vis = set()
+        m = len(corners)
+        for i in range(m):
+            for j in range(i + 1, m):
+                if _visible(corners[i], corners[j], rects, c):
+                    vis.add((i + 2, j + 2))
+        if len(_CORNER_VIS_CACHE) >= 512:
+            _CORNER_VIS_CACHE.clear()
+        _CORNER_VIS_CACHE[key] = ent = vis
+    return ent
 
 
 def _shortcut(path, rects, c, rounds=3):

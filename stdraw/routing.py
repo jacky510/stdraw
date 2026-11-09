@@ -148,6 +148,87 @@ def span_one_way_segs(samples, segs, step=SAMPLE_STEP, thr=COINCIDE_THR):
     return total
 
 
+SEG_GRID_CELL = 16         # px, exact-acceleration grid cell for the coincide gate
+
+
+def build_seg_grid(segs, cell=SEG_GRID_CELL):
+    """Register each segment id into every grid cell its bbox touches.
+
+        Exact-equivalence acceleration structure for span_one_way_segs_grid:
+        a segment within COINCIDE_THR (1px) of a query point has its bbox
+        intersecting that point's 3x3 cell neighborhood (cell >= 2px), so the
+        neighborhood scan sees every segment the exact all-segments scan
+        could score -- identical membership decisions, fewer
+        _pt_seg_dist calls (the n20 wall-clock regression's inner loop).
+    """
+    grid = {}
+    for si, (p, q) in enumerate(segs):
+        cx1 = int(math.floor(min(p[0], q[0]) / cell))
+        cx2 = int(math.floor(max(p[0], q[0]) / cell))
+        cy1 = int(math.floor(min(p[1], q[1]) / cell))
+        cy2 = int(math.floor(max(p[1], q[1]) / cell))
+        for cx in range(cx1, cx2 + 1):
+            for cy in range(cy1, cy2 + 1):
+                grid.setdefault((cx, cy), []).append(si)
+    return grid
+
+
+def build_seg_grid_margin(segs, cell=SEG_GRID_CELL, margin=1):
+    """build_seg_grid with a `margin`-cell halo around each segment bbox.
+
+        Used by the crossing-accounting world (_edge_world): seg_cross carries
+        an EPS (1e-9) tolerance (collinear-overlap / endpoint-EPS branches), so
+        a "crossing" pair may effectively meet within EPS outside the strict
+        bboxes -- the halo guarantees the opposing segment is registered even
+        when the effective meeting point sits a sub-EPS step past a cell
+        boundary (exact verdicts, no missed pairs).
+    """
+    grid = {}
+    for si, (p, q) in enumerate(segs):
+        cx1 = int(math.floor(min(p[0], q[0]) / cell)) - margin
+        cx2 = int(math.floor(max(p[0], q[0]) / cell)) + margin
+        cy1 = int(math.floor(min(p[1], q[1]) / cell)) - margin
+        cy2 = int(math.floor(max(p[1], q[1]) / cell)) + margin
+        for cx in range(cx1, cx2 + 1):
+            for cy in range(cy1, cy2 + 1):
+                grid.setdefault((cx, cy), []).append(si)
+    return grid
+
+
+def span_one_way_segs_grid(samples, segs, grid, step=SAMPLE_STEP,
+                           thr=COINCIDE_THR, cell=SEG_GRID_CELL):
+    """Grid-accelerated span_one_way_segs (bit-identical accounting).
+
+        Per sample, dmin is taken over the segments registered in the 3x3
+        cell neighborhood; every segment that could be within thr of the
+        sample is registered there (build_seg_grid invariant), so the
+        membership decision (min dist < thr) is identical and the
+        accumulated span is bit-identical to span_one_way_segs.
+    """
+    total = 0.0
+    for px, py in samples:
+        cx = int(math.floor(px / cell))
+        cy = int(math.floor(py / cell))
+        hit = False
+        for gx in (cx - 1, cx, cx + 1):
+            for gy in (cy - 1, cy, cy + 1):
+                bucket = grid.get((gx, gy))
+                if not bucket:
+                    continue
+                for si in bucket:
+                    s = segs[si]
+                    if _pt_seg_dist((px, py), s[0], s[1]) < thr:
+                        hit = True
+                        break
+                if hit:
+                    break
+            if hit:
+                break
+        if hit:
+            total += step
+    return total
+
+
 def quad_points(p0, ctrl, p1, n=24):
     """Quadratic Bezier discretization (arcs)."""
     pts = []
@@ -669,6 +750,64 @@ class Router:
                     return True
         return False
 
+    def _edge_world(self, j, pts):
+        """Cached crossing-query world of edge j's polyline: (segs, grid, bbox).
+
+            Content-keyed (exact point tuples), so any route mutation misses
+            naturally; bounded clear keeps memory flat.  Pure acceleration:
+            the segs are exactly zip(pts[:-1], pts[1:]) as _poly_cross walks
+            them, and the grid registers every segment in the cells its bbox
+            covers -- two segments intersect only at a point contained in
+            both bboxes, so a grid lookup over one segment's bbox cells sees
+            every opposing segment it could cross (identical verdicts).
+        """
+        cache = getattr(self, "_edge_world_cache", None)
+        if cache is None:
+            cache = self._edge_world_cache = {}
+        key = (j, tuple(map(tuple, pts)))
+        ent = cache.get(key)
+        if ent is None:
+            tp = [tuple(p) for p in pts]
+            segs = list(zip(tp[:-1], tp[1:]))
+            ent = (segs, build_seg_grid_margin(segs, 16),
+                   (min(p[0] for p in tp), min(p[1] for p in tp)),
+                   (max(p[0] for p in tp), max(p[1] for p in tp)))
+            if len(cache) >= 2048:
+                cache.clear()
+            cache[key] = ent
+        return ent
+
+    def _poly_cross_world(self, pa, j, pb):
+        """_poly_cross(pa, pb) with pb's segments behind a cached seg grid (exact-equivalent)."""
+        segs_b, grid_b, bl, bh = self._edge_world(j, pb)
+        ax_lo = min(p[0] for p in pa); ax_hi = max(p[0] for p in pa)
+        ay_lo = min(p[1] for p in pa); ay_hi = max(p[1] for p in pa)
+        # strict bbox disjointness => no intersection (exact reject)
+        if ax_lo > bh[0] or bl[0] > ax_hi or ay_lo > bh[1] or bl[1] > ay_hi:
+            return False
+        for s1 in zip(pa[:-1], pa[1:]):
+            (x1, y1), (x2, y2) = s1[0], s1[1]
+            cx1 = int(math.floor(min(x1, x2) / 16)) - 1
+            cx2 = int(math.floor(max(x1, x2) / 16)) + 1
+            cy1 = int(math.floor(min(y1, y2) / 16)) - 1
+            cy2 = int(math.floor(max(y1, y2) / 16)) + 1
+            seen = None
+            for cx in range(cx1, cx2 + 1):
+                for cy in range(cy1, cy2 + 1):
+                    bucket = grid_b.get((cx, cy))
+                    if not bucket:
+                        continue
+                    if seen is None:
+                        seen = set()
+                    for sid in bucket:
+                        if sid in seen:
+                            continue
+                        seen.add(sid)
+                        s2 = segs_b[sid]
+                        if seg_cross(s1[0], s1[1], s2[0], s2[1]):
+                            return True
+        return False
+
     def joint_reroute(self, out, max_sweeps=3, top_k=25):
         """Joint re-routing of crossing pairs: breaks the "each is the other's optimum" deadlock of pass2 coordinate descent.
 
@@ -951,7 +1090,7 @@ class Router:
             if j == i or self.edges[j][0] in self.edges[i] or \
                     self.edges[j][1] in self.edges[i]:
                 continue
-            if self._poly_cross(pts, o["points"]):
+            if self._poly_cross_world(pts, j, o["points"]):
                 cross += 1
         msep = None
         j = self.eidx.get((b, a))
@@ -2429,7 +2568,9 @@ class Router:
 
         Endpoints for which no anchor passes the gates stay untouched and
         are reported in the returned report (honest degradation; the
-        certificate's anchors_standard gate counts them).  Deterministic:
+        certificate's anchors_standard gate counts them).  Waypoint-kind
+        edges are exempt from both: their endpoints keep the border-point
+        caliber and are not counted as failures.  Deterministic:
         fixed order + fixed ladder, no RNG.
         """
         occ = {}
@@ -2453,6 +2594,20 @@ class Router:
             changed = False
             for i in sorted(routes):
                 a, b = self.edges[i]
+                if routes[i].get("kind") == "waypoints":
+                    # User-anchored waypoint edges are FROZEN here (same
+                    # exemption as tier 2 below): their delivered endpoints are
+                    # the box-edge border points aimed at the first/last
+                    # waypoint (layout_auto waypoints override caliber), which
+                    # by construction sit 3px OUTSIDE the inset 16-anchor
+                    # rectangle -- re-anchoring them onto a standard anchor
+                    # would break both the border caliber and the
+                    # export->--from-layout recompute round-trip.  They are
+                    # also NOT reported as snap failures: an unanchored
+                    # user-anchored endpoint is the honest delivered state,
+                    # not a snap defect (counting it would force the dense
+                    # probe into a wholesale deferral).
+                    continue
                 for end, v in ((0, a), (1, b)):
                     idx = 0 if end == 0 else len(routes[i]["points"]) - 1
                     p = routes[i]["points"][idx]
@@ -2625,29 +2780,58 @@ class Router:
         report["failures"] = [{"edge": e, "end": n} for e, n in report["failures"]]
         return report
 
+    def _coi_geom(self, i, pts):
+        """Cached coincidence geometry of route i: sampled points / segs /
+        seg grid / sampled bbox, keyed by the exact point-list contents.
+
+            anchor_snap re-evaluates the same geometries many times
+            (before_coi once per endpoint per sweep + after_coi per candidate
+            gate, each against EVERY other edge) -- without the cache every
+            call re-sampled all ~30 dense routes of an n20 graph (measured:
+            the dominant share of the 126s->956s n20 wall-clock regression).
+            Content-keyed, so any route mutation naturally misses; bounded
+            clear keeps memory flat.  Pure acceleration: values are the same
+            sample_polyline products the exact path computed.
+        """
+        cache = getattr(self, "_coi_geom_cache", None)
+        if cache is None:
+            cache = self._coi_geom_cache = {}
+        key = (i, tuple(map(tuple, pts)))
+        ent = cache.get(key)
+        if ent is None:
+            s = sample_polyline(pts)
+            segs = list(zip(s[:-1], s[1:]))
+            ent = (s, segs, build_seg_grid(segs),
+                   (min(p[0] for p in s), min(p[1] for p in s)),
+                   (max(p[0] for p in s), max(p[1] for p in s)))
+            if len(cache) >= 2048:
+                cache.clear()
+            cache[key] = ent
+        return ent
+
     def _coincide_max_span(self, i, routes):
         """Max adherence span (px) between edge i and any other edge.
 
             Same source as the certificate's line_line_coincident accounting
             (_pair_coincide_span), bbox-prefiltered for the per-candidate
             cost of the anchor_snap gates (ref-scrubbed coincidence gate).
+            Sampled geometry and the seg grid come from the content-keyed
+            _coi_geom cache and the pair span runs over the 3x3 grid
+            neighborhood -- an exact-equivalence speedup (bit-identical
+            spans, differential-tested against span_one_way_segs), same
+            caliber as the WS5 routing bbox pruning.
         """
-        pts = routes[i]["points"]
-        sa = sample_polyline(pts)
-        il = (min(p[0] for p in sa), min(p[1] for p in sa))
-        ih = (max(p[0] for p in sa), max(p[1] for p in sa))
+        sa, segs_a, grid_a, il, ih = self._coi_geom(i, routes[i]["points"])
         best = 0.0
         for j, o in routes.items():
             if j == i:
                 continue
-            sb = sample_polyline(o["points"])
-            jl = (min(p[0] for p in sb), min(p[1] for p in sb))
-            jh = (max(p[0] for p in sb), max(p[1] for p in sb))
+            sb, segs_b, grid_b, jl, jh = self._coi_geom(j, o["points"])
             if (il[0] - jh[0] > COINCIDE_THR or jl[0] - ih[0] > COINCIDE_THR or
                     il[1] - jh[1] > COINCIDE_THR or jl[1] - ih[1] > COINCIDE_THR):
                 continue
-            s = max(span_one_way_segs(sa, list(zip(sb[:-1], sb[1:]))),
-                    span_one_way_segs(sb, list(zip(sa[:-1], sa[1:]))))
+            s = max(span_one_way_segs_grid(sa, segs_b, grid_b),
+                    span_one_way_segs_grid(sb, segs_a, grid_a))
             if s > best:
                 best = s
         return best
@@ -2735,7 +2919,25 @@ class Router:
                 if occ.get((ladders[1][1], aid_b)):
                     continue
                 for c in infls:
-                    route = _vis.plan_route([ax, ay], [bx, by], rects, c)
+                    # plan_route memo keyed by the full argument tuple
+                    # (obstacle set is fixed per (a,b) pair + graph): the same
+                    # anchor pair / inflation recurs across fixpoint sweeps
+                    # for endpoints whose neighbourhood has not settled, and
+                    # each miss costs a visibility-graph Dijkstra.  Pure
+                    # acceleration -- plan_route is deterministic, identical
+                    # arguments yield identical routes; fillets are copied on
+                    # retrieval so cached entries are never shared mutably.
+                    ck = (a, b, ax, ay, bx, by, c)
+                    pcache = getattr(self, "_snap_plan_cache", None)
+                    if pcache is None:
+                        pcache = self._snap_plan_cache = {}
+                    if ck in pcache:
+                        route = pcache[ck]
+                    else:
+                        route = _vis.plan_route([ax, ay], [bx, by], rects, c)
+                        if len(pcache) >= 8192:
+                            pcache.clear()
+                        pcache[ck] = route
                     if not route:
                         continue
                     pts_n = [list(pp) for pp in route["dense"]]
@@ -2748,7 +2950,8 @@ class Router:
                                  "cross_edges": 0, "ang_a": 0.0, "ang_b": 0.0,
                                  "vg_corners": [list(pp) for pp in
                                                 route["corner_pts"]],
-                                 "vg_fillets": route["fillets"]}
+                                 "vg_fillets": [dict(f) for f in
+                                                route["fillets"]]}
                     after = self._edge_stats(i, routes)
                     ok = (after[0] <= before[0] and after[3] <= before[3] and
                           (after[1] is None or
