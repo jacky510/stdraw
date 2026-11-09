@@ -1,20 +1,20 @@
-# benchmarks — stdraw 基准集与基线对比
+# benchmarks — stdraw benchmark suite and baseline comparison
 
-语料：`corpus/classic/`（19 张经典 CLD，lint 全绿）+ `corpus/random/`（80 张固定种子稀疏图，n∈{10,20,30,50}×20）。清单：`manifest.json`。
-运行：`tools/run_all.py`（可重入，预算与 DNF 协议见 `REPORT.md §2`）。
-聚合：`tools/collect.py` → `REPORT.md`（逐图大表）。
+Corpus: `corpus/classic/` (19 classic CLDs, lint all green) + `corpus/random/` (80 fixed-seed sparse graphs, n∈{10,20,30,50}×20). Listing: `manifest.json`.
+Run: `tools/run_all.py` (re-entrant; budget and DNF protocol in `REPORT.md §2`).
+Aggregate: `tools/collect.py` → `REPORT.md` (per-graph tables).
 
-## 摘要表（classic 均值；随机族按 n 聚合见 REPORT §4）
+## Summary table (classic means; random family aggregated by n in REPORT §4)
 
-| 工具 | 交叉 | 框压线 | 净距违规 | CV | 行对齐 | 耗时s |
+| Tool | Crossings | Box-press | Clearance viol. | CV | Row-align | Runtime(s) |
 |---|---|---|---|---|---|---|
-| stdraw·ortho(构造法) | — | — | — | — | — | — |
-| stdraw·auto(WS3布线) | — | — | — | — | — | — |
-| stdraw·auto+WS2(精确层) | — | — | — | — | — | — |
+| stdraw-ortho (constructive) | — | — | — | — | — | — |
+| stdraw-auto (WS3 routing) | — | — | — | — | — | — |
+| stdraw-auto+WS2 (exact layer) | — | — | — | — | — | — |
 | Graphviz dot | — | — | — | — | — | — |
 | Graphviz neato | — | — | — | — | — | — |
 | Graphviz sfdp | — | — | — | — | — | — |
 | ELK layered | — | — | — | — | — | — |
 
-诚实边界：随机族 n≥20 的全 DNF 已由 WS5 修复（CP-SAT 确定性时间预算 + 布线精确等价提速，根因与修复记录见 `REPORT.md §5`），但运行时间仍慢基线 2~3 个数量级、随机族框压线/净距非 0；OGDF 未同题运行（§6）。「最好」主张措辞以 REPORT §8 为准，经 default 复核后才写入仓库 README。
+Honest boundary: the random-family n≥20 all-DNF was fixed by WS5 (CP-SAT deterministic time budget + exact-equivalence routing speedup; root cause and fix record in `REPORT.md §5`), but runtime remains 2–3 orders of magnitude slower than the baselines and random-family box-press/clearance are not 0; OGDF was not run on the same problem (§6). "Best"-claim wording follows REPORT §8 and is written into the repo README only after default's review.
 

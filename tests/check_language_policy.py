@@ -33,6 +33,9 @@ EN_TEXT_FILES = [
     "demos/classic-cld-3d.html",
     "demos/classic-certificate.json",
     "demos/classic-loops-audit.json",
+    "benchmarks/README.md",
+    "benchmarks/REPORT.md",
+    "benchmarks/manual/README.md",
 ]
 
 ZH_TEXT_FILES = [
@@ -41,9 +44,6 @@ ZH_TEXT_FILES = [
     "docs/crossing-exact.md",
     "docs/ortools-comparison.md",
     "docs/dsl-spec-v0.1.zh-CN.md",
-    "benchmarks/README.md",
-    "benchmarks/REPORT.md",
-    "benchmarks/manual/README.md",
 ]
 
 # Model-content exemptions: node / loop labels from the classic corpus demo.
@@ -144,7 +144,6 @@ def check_en_py_file(path, rel):
     # labels; collect.py generates the Chinese-face REPORT.md); all other
     # tokens — comments, identifiers, messages — must be CJK-free.
     fixture_only = rel.startswith("tests/") or rel in (
-        "benchmarks/tools/collect.py",
         "benchmarks/tools/gen_random.py",
     )
     toks = list(tokenize.generate_tokens(io.StringIO(dropped).readline))

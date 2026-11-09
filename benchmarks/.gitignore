@@ -1,5 +1,5 @@
-# benchmarks/.gitignore：基线工具环境与中间产物不入仓（可由脚本+固定版本重建），
-# 评测 JSON 与日志全量留证入仓。
+# benchmarks/.gitignore: baseline-tool environments and intermediates stay out of the repo
+# (rebuildable from scripts + pinned versions); evaluation JSONs and logs are kept in full as evidence.
 tools/env/
 raw/*.elk.in.json
 raw/*.elk.layout.json
