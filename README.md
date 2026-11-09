@@ -102,9 +102,10 @@ stdraw/
 │   ├── loops.py         #   loop-semantics audit (lint)
 │   ├── dsl.py           #   .cld DSL parser
 │   ├── model.py         #   graph data model
-│   ├── render.py        #   2D HTML rendering (inline SVG, v1/v2 forms)
+│   ├── render.py        #   2D HTML rendering (inline SVG, v1/v2 forms, --theme light|dark)
 │   ├── render3d.py      #   3D HTML rendering (three.js)
-│   └── __main__.py      #   CLI: stdraw layout ... [--recipe auto|ortho] [--linestyle straight|arc]
+│   ├── themes.py        #   design tokens: single source for the light/dark palettes (viewer/themes.js is generated from it)
+│   └── __main__.py      #   CLI: stdraw layout ... [--recipe auto|ortho] [--linestyle straight|arc] [--theme light|dark]
 ├── examples/            # .cld cases (limits-to-growth / classic-cld-growth-and-burden)
 ├── demos/               # deliverable form: 2D/3D demos + certificate JSON
 ├── viewer/              # zero-dependency interactive viewer (four forms + live certificate)

@@ -4,8 +4,9 @@ Once a causal diagram (CLD) is built, the user picks a display form; every form 
 
 ## Quick Start
 
-Open `viewer/index.html` in a browser (single file, zero dependencies, zero network — three.js is inlined).
+Open `viewer/index.html` in a browser (zero dependencies, zero network — three.js is inlined; the sibling `themes.js` is the generated design-token file and must ship next to it).
 Built-in example: the classic "Limits to Growth" archetype (5 nodes / 7 edges / 3 feedback loops).
+**Theme**: the topbar `Theme` button toggles Light / Dark (default Dark, the shipped look); the preference persists in `localStorage` (`stdraw-theme`). Tokens for both themes are defined once in `stdraw/themes.py` and consumed here via the generated `themes.js` (byte-pinned by `tests/test_theme_tokens.py`).
 
 ## Four Display Forms
 
