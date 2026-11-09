@@ -14,7 +14,7 @@ English | [中文](README_zh-CN.md)
 
 [![CI](https://github.com/jacky510/stdraw/actions/workflows/ci.yml/badge.svg)](https://github.com/jacky510/stdraw/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.7.13-blue.svg)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.7.15-blue.svg)](pyproject.toml)
 [![Stars](https://img.shields.io/github/stars/jacky510/stdraw.svg?style=flat)](https://github.com/jacky510/stdraw/stargazers)
 
 [Install](#install) · [Gallery](#gallery) · [Quickstart](#quickstart) · [DSL](#dsl-in-one-minute) · [Certificates](#certificates--quality-gates) · [Agent Integration](#agent-integration)
@@ -29,7 +29,7 @@ pip install stdraw
 
 Mainstream diagram tools stop at "crossing minimization" heuristics, and **none of them make a verifiable promise about their own output**. stdraw is built the other way around:
 
-- **auto-v2 (default recipe)**: **structure-aware mode layout** — a deterministic priority chain (bowtie-vertex → spine-wing → column-chain → ring-cycle → layered) picks one arrangement template per graph structure, each with a trial gate (non-triggering graphs stay byte-identical); plus straight/arc-first routing (optional CP-SAT refinement), enforced by **hard quality gates**: box-over-line = 0 (any angle), edge-to-box clearance ≥ 16px, smooth border anchors, and mode-specific regularity gates — see [docs/layout-modes.md](docs/layout-modes.md) (zh original; self-contained English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md));
+- **auto-v2 (default recipe)**: **structure-aware mode layout** — a deterministic priority chain (symmetric → bowtie-vertex → spine-wing → comb-bilateral → column-chain → ring-cycle → layered) picks one arrangement template per graph structure, each with a trial gate (non-triggering graphs stay byte-identical); plus straight/arc-first routing (optional CP-SAT refinement), enforced by **hard quality gates**: box-over-line = 0 (any angle), edge-to-box clearance ≥ 16px, smooth border anchors, and mode-specific regularity gates — see [docs/layout-modes.md](docs/layout-modes.md) (zh original; self-contained English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md));
 - **Ring layout for loop-dominated small graphs (v0.5.0)**: when a small graph (≤ 12 nodes) has a dominant simple cycle covering ≥ n−2 nodes (or ≥ 90% of its edges lie on cycles), the main loop is placed on **regular-polygon ring slots** in cycle order (declared loop order preferred, so R/B polarity colors read along the ring), chords route inside the ring, and residual nodes get deterministic inner/outer slots; the certificate switches to **ring-appropriate metrics** (ring-spacing CV + polygon template-fit error) instead of row alignment — layout mode is stated honestly, never judged by row-gate yardsticks; non-triggering graphs keep the layered path byte-identical;
 - **Anchor-band hard gate (v0.7.3)**: delivered edge anchors clamped to the mid-band (edge midpoint ± 1/4 edge length, corner hits = 0) are now enforced per-figure in CI — spine-wing figures require 100% in-band; mutual-pair edges whose band-clamped anchors cannot pass the hard gates get a deterministic band-anchored local re-route (anchor-band candidates + nested-arc escape hatch + own-box interior check); other engines are locked to their v0.7.2 baseline ratios (ring mutual corridors / bowtie ±12px spoke corridors are registered legacy) — see [docs/layout-modes.md](docs/layout-modes.md) (zh original; self-contained English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md));
 - **Layout aesthetics v3.1 (v0.7.1)**: **spine-wing mode** — graphs with a dominant hub pair (an edge whose endpoints share ≥3 common neighbors = a midline "wing band") plus a constructible secondary cluster get the vertical-spine + midline-wing layout (jacky's hand-drawn classic-cld reference): spine strictly vertical on the axis, wings pressed to the horizontal midline, outer mirror pair symmetric about it; deterministic trigger (hub-pair common-neighbor count + rest-cluster pairing + spine length ratio ≤0.5), equivalent certificate gates (spine-axis ≤2px, midline ≤2px, mirror ≤2px); corpus sweep: only classic-cld-growth-and-burden switches, all other 18 byte-identical — see [docs/layout-modes.md](docs/layout-modes.md) (zh original; self-contained English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md));
@@ -48,7 +48,7 @@ Mainstream diagram tools stop at "crossing minimization" heuristics, and **none 
 
 ## Gallery
 
-All images are real renderings produced by the current engine (v0.7.13) from the in-repo corpus — no mock-ups, no stale artifacts (click through to each demo).
+All images are real renderings produced by the current engine (v0.7.15) from the in-repo corpus — no mock-ups, no stale artifacts (click through to each demo).
 
 <table>
   <tr>

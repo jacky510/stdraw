@@ -401,7 +401,7 @@ geometrically equivalent (mirror images).
 | bowtie-vertex | mirror-axis error <= 2px (shared node on the axis + rings mirrored up/down) |
 | layered | uniform row pitch + 24px column snap >= 60% (simple graphs) |
 
-## Standard box anchor set (16 points, ref-scrubbed, interactive layer only)
+## Standard box anchor set (16 points, ref-scrubbed; default snap caliber since ref-scrubbed)
 
 - **Caliber**: each box gets 16 discrete standard connection points = 4 edge
   midpoints + 4 corners + 2 golden-ratio points (0.382/0.618) per edge = a
@@ -413,11 +413,14 @@ geometrically equivalent (mirror images).
   tip (outside the rx=7 rounded corners); golden-point directions are fixed
   clockwise (g1 = 0.382, g2 = 0.618; top edge left->right, right edge
   top->bottom, bottom edge right->left, left edge bottom->top).
-- **Source of truth**: `stdraw/anchors.py` (pure functions; the static
-  layout/routing pipeline does NOT import it — the automatic anchor planning
-  caliber is unchanged -> 21-input sweep byte-identical); the interactive
+- **Source of truth**: `stdraw/anchors.py` (pure functions); the interactive
   layer's `_interactive_js.stdAnchors` mirrors the same formulas (live card
-  geometry), probe-verified point-by-point JS vs Python (<= 0.02px).
+  geometry), probe-verified point-by-point JS vs Python (<= 0.02px). The
+  original ref-scrubbed landing covered the interactive layer only (the
+  "static pipeline does not import it -> 21-input sweep byte-identical"
+  constraint); the caliber was later upgraded to the delivery default — the
+  static pipeline gained `Router.anchor_snap` (see the section below) and
+  imports this library ever since.
 - **Interactive semantics**: hovering a box shows the 16 anchors (toolbar
   toggle); edge endpoints (start + arrow end) drag individually and snap on
   release to the **owning box's** nearest standard anchor (ties take the
