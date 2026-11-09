@@ -376,7 +376,7 @@ def main():
     R.append("| Tool | Crossings | Box-press | Clearance viol. | CV | Row-align | Runtime(s) |")
     R.append("|---|---|---|---|---|---|---|")
     for suf, name in TOOLS:
-        v = classic_summary.get(name)
+        v = classic_summary.get(suf)
         if not v or v["crossings"] is None:
             R.append(f"| {name} | — | — | — | — | — | — |")
             continue
