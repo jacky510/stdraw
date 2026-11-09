@@ -663,8 +663,11 @@ def _forced_arc_route(nodes_px, a, b, clearance):
     return best[1], best[2]
 
 
-def _ring_trial(plan, nodes, widths, card_h, cfg):
+def _ring_trial(plan, nodes, widths, card_h, cfg, why=None):
     """Ring placement + routing trial: adopted only if every hard-gate proxy passes; otherwise None (fall back to layered, byte-for-byte unchanged).
+
+    why: optional dict — receives the trial-gate outcome reason (mode
+    decision trace).
 
     The proxy caliber shares its source with the delivered certificate:
     crossings (router theory) <=2, box press=0, edge-box clearance>=clearance,
@@ -674,12 +677,17 @@ def _ring_trial(plan, nodes, widths, card_h, cfg):
     """
     from . import ringlayout
     from .routing import (min_pair_dist, sample_polyline, ANCHOR_MIN_DEG)
+
+    def _why(reason):
+        if why is not None:
+            why["reason"] = reason
+        return None
     adj, _ = ringlayout._adjacency(EDGES_REF[0])
     try:
         pos, y, meta = ringlayout.place_ring(plan, widths, card_h, cfg, adj,
                                              EDGES_REF[0])
     except ringlayout.InfeasibleRing:
-        return None
+        return _why("trial: constructed placement infeasible (InfeasibleRing)")
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
     # card gap >=16 (place_ring places at 18; a pairwise recheck is the backstop)
     vs = sorted(nodes)
@@ -689,18 +697,18 @@ def _ring_trial(plan, nodes, widths, card_h, cfg):
             gap_x = abs(pos[a] - pos[b]) - (widths[a] + widths[b]) / 2
             gap_y = abs(y[a] - y[b]) - card_h
             if max(gap_x, gap_y) < cfg.min_gap - 2:      # rect_gap caliber (>=16 gate)
-                return None
+                return _why("trial gate: card gap < 16 (rect_gap caliber)")
     router = Router(nodes_px, EDGES_REF[0], cfg.clearance, cfg.pitch)
     routes = router.route_all()
     if router.final_crossing_pairs(routes) > 2:
-        return None
+        return _why("trial gate: router-theory crossings > 2")
     eset = set(EDGES_REF[0])
     for i, info in routes.items():
         if info.get("press", 0):
-            return None
+            return _why("trial gate: box press != 0")
         clr = info.get("min_clear")
         if clr is None or clr < cfg.clearance:
-            return None
+            return _why("trial gate: edge-box clearance < 16px")
         # anchor smoothing proxy (same caliber as check item 4)
         pts = info["points"]
         for v, p_idx, n_idx in ((EDGES_REF[0][i][0], 0, 1),
@@ -709,16 +717,16 @@ def _ring_trial(plan, nodes, widths, card_h, cfg):
             a0 = pts[p_idx]
             if (abs(abs(a0[0] - p[0]) - p[2] / 2) > abs(abs(a0[1] - p[1]) - p[3] / 2) + 1e-9
                     and abs(abs(a0[1] - p[1]) - p[3] / 2) > 0.75):
-                return None                      # anchor not on the box edge
+                return _why("trial gate: anchor not on the box edge")
             dx, dy = pts[n_idx][0] - a0[0], pts[n_idx][1] - a0[1]
             n = math.hypot(dx, dy)
             if n < 1e-9:
-                return None
+                return _why("trial gate: degenerate anchor segment")
             on_x = abs(abs(a0[0] - p[0]) - p[2] / 2) <= abs(abs(a0[1] - p[1]) - p[3] / 2)
             tx, ty = (0.0, 1.0) if on_x else (1.0, 0.0)
             c = abs(dx * tx + dy * ty) / n
             if math.degrees(math.acos(max(0.0, min(1.0, c)))) < ANCHOR_MIN_DEG:
-                return None
+                return _why("trial gate: anchor smoothing < 20deg")
     # mutual-pair separation >=4px (F1 caliber)
     for i in range(len(EDGES_REF[0])):
         for j in range(i + 1, len(EDGES_REF[0])):
@@ -727,7 +735,9 @@ def _ring_trial(plan, nodes, widths, card_h, cfg):
             md = min_pair_dist(sample_polyline(routes[i]["points"]),
                                sample_polyline(routes[j]["points"]))
             if md is None or md < 4.0:
-                return None
+                return _why("trial gate: mutual-pair separation < 4px")
+    if why is not None:
+        why["reason"] = "trial gate passed"
     plan = dict(plan)
     plan["placed"] = (pos, y, meta)
     return plan
@@ -802,14 +812,21 @@ def _final_pairs(nodes_px, edges, routes, cfg):
     return router.final_crossing_pairs(routes)
 
 
-def _sym_trial(plan, nodes, widths, card_h, cfg):
-    """Bowtie-pair symmetric placement + routing trial gate: adopted only if the gate passes; otherwise None (fallback, byte-for-byte unchanged)."""
+def _sym_trial(plan, nodes, widths, card_h, cfg, why=None):
+    """Bowtie-pair symmetric placement + routing trial gate: adopted only if the gate passes; otherwise None (fallback, byte-for-byte unchanged).
+
+    why: optional dict — receives the trial-gate outcome reason (mode
+    decision trace).
+    """
     from . import symlayout
     edges = EDGES_REF[0]
     try:
         pos, y, meta, constructed = symlayout.place_bowtie(plan, widths,
                                                            card_h, cfg, edges)
     except symlayout.InfeasibleBowtie:
+        if why is not None:
+            why["reason"] = ("trial: constructed placement infeasible "
+                             "(InfeasibleBowtie)")
         return None
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
@@ -821,14 +838,27 @@ def _sym_trial(plan, nodes, widths, card_h, cfg):
     # line-style consistency hard rule: no vg/poly polylines inside the symmetric structure (arc > straight > polyline)
     for i, info in routes.items():
         if info["kind"] in ("vg", "poly", "wrap"):
+            if why is not None:
+                why["reason"] = ("trial gate: polyline route inside the "
+                                 "symmetric structure (line-type consistency "
+                                 "hard rule)")
             return None
     if not _constructed_gates(nodes_px, edges, routes, cfg, constructed):
+        if why is not None:
+            why["reason"] = ("trial gate: hard-gate proxy failed "
+                             "(crossings<=2 / press=0 / clearance>=16 / "
+                             "smooth anchors / mutual separation / card gap)")
         return None
+    if why is not None:
+        why["reason"] = "trial gate passed"
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
-def _bowtie_trial(plan, nodes, widths, card_h, cfg):
+def _bowtie_trial(plan, nodes, widths, card_h, cfg, why=None):
     """Bowtie-vertex symmetric placement + routing trial gate: adopted only if the gate passes; otherwise None (fallback, byte-for-byte unchanged).
+
+    why: optional dict — receives the trial-gate outcome reason (mode
+    decision trace).
 
     ref-scrubbed (aesthetics v3): graphs with exactly 2 simple loops sharing
     exactly 1 node (the wage-price-spiral
@@ -843,6 +873,9 @@ def _bowtie_trial(plan, nodes, widths, card_h, cfg):
         pos, y, meta, constructed = bowtielayout.place_bowtie_vertex(
             plan, widths, card_h, cfg, edges)
     except bowtielayout.InfeasibleBowtieVertex:
+        if why is not None:
+            why["reason"] = ("trial: constructed placement infeasible "
+                             "(InfeasibleBowtieVertex)")
         return None
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
@@ -854,14 +887,27 @@ def _bowtie_trial(plan, nodes, widths, card_h, cfg):
     # line-style consistency hard rule: no vg/poly polylines inside the symmetric structure (arc > straight > polyline)
     for i, info in routes.items():
         if info["kind"] in ("vg", "poly", "wrap"):
+            if why is not None:
+                why["reason"] = ("trial gate: polyline route inside the "
+                                 "symmetric structure (line-type consistency "
+                                 "hard rule)")
             return None
     if not _constructed_gates(nodes_px, edges, routes, cfg, constructed):
+        if why is not None:
+            why["reason"] = ("trial gate: hard-gate proxy failed "
+                             "(crossings<=2 / press=0 / clearance>=16 / "
+                             "smooth anchors / mutual separation / card gap)")
         return None
+    if why is not None:
+        why["reason"] = "trial gate passed"
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
-def _spine_trial(plan, nodes, widths, card_h, cfg):
+def _spine_trial(plan, nodes, widths, card_h, cfg, why=None):
     """Spine-wing placement + routing trial gate: adopted only if the gate passes; otherwise None (fallback, byte-for-byte unchanged).
+
+    why: optional dict — receives the trial-gate outcome reason (mode
+    decision trace).
 
     ref-scrubbed (v0.7.1): hub pair on the spine + midline wing band + mirrored
     clusters beyond the wings
@@ -876,6 +922,9 @@ def _spine_trial(plan, nodes, widths, card_h, cfg):
         pos, y, meta, constructed = spinewinglayout.place_spine_wing(
             plan, widths, card_h, cfg, edges)
     except spinewinglayout.InfeasibleSpineWing:
+        if why is not None:
+            why["reason"] = ("trial: constructed placement infeasible "
+                             "(InfeasibleSpineWing)")
         return None
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
@@ -885,11 +934,17 @@ def _spine_trial(plan, nodes, widths, card_h, cfg):
         if cr is not None:
             routes[i] = dict(cr)
     if not _constructed_gates(nodes_px, edges, routes, cfg, constructed):
+        if why is not None:
+            why["reason"] = ("trial gate: hard-gate proxy failed "
+                             "(crossings<=2 / press=0 / clearance>=16 / "
+                             "smooth anchors / mutual separation / card gap)")
         return None
+    if why is not None:
+        why["reason"] = "trial gate passed"
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
-def _comb_trial(plan, nodes, widths, card_h, cfg):
+def _comb_trial(plan, nodes, widths, card_h, cfg, why=None):
     """Comb-bilateral placement + routing trial gate: adopted only if every
     route is a straight line (the comb contract: column spine vertical +
     hub fan straight) AND the unified hard-gate proxy passes; otherwise None
@@ -905,6 +960,9 @@ def _comb_trial(plan, nodes, widths, card_h, cfg):
         pos, y, meta, constructed = comblayout.place_comb(plan, widths,
                                                           card_h, cfg)
     except comblayout.InfeasibleComb:
+        if why is not None:
+            why["reason"] = ("trial: constructed placement infeasible "
+                             "(InfeasibleComb — both fan tiers exhausted)")
         return None
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
@@ -927,17 +985,31 @@ def _comb_trial(plan, nodes, widths, card_h, cfg):
                          "cross_edges": 0, "ang_a": 90.0, "ang_b": 90.0}
     for i, info in routes.items():
         if info["kind"] != "line":
+            if why is not None:
+                why["reason"] = ("trial gate: comb contract broken — "
+                                 f"non-straight route ({info['kind']}) in "
+                                 "the hub fan")
             return None                      # comb contract: all-straight fan
     if not _constructed_gates(nodes_px, edges, routes, cfg, {}):
+        if why is not None:
+            why["reason"] = ("trial gate: hard-gate proxy failed "
+                             "(crossings<=2 / press=0 / clearance>=16 / "
+                             "smooth anchors / mutual separation / card gap)")
         return None
+    if why is not None:
+        why["reason"] = "trial gate passed (all-straight fan contract held)"
     plan = dict(plan)
     plan["placed"] = (pos, y, meta)
     plan["constructed"] = {k: dict(v) for k, v in constructed.items()}
     return plan
 
 
-def _column_trial(plan, nodes, widths, card_h, cfg):
-    """Column placement + routing trial gate: adopted only if the gate passes; otherwise None (fall back to layered, byte-for-byte unchanged)."""
+def _column_trial(plan, nodes, widths, card_h, cfg, why=None):
+    """Column placement + routing trial gate: adopted only if the gate passes; otherwise None (fall back to layered, byte-for-byte unchanged).
+
+    why: optional dict — receives the trial-gate outcome reason (mode
+    decision trace).
+    """
     from . import columnlayout
     from .routing import min_pair_dist, sample_polyline
     edges = EDGES_REF[0]
@@ -946,6 +1018,9 @@ def _column_trial(plan, nodes, widths, card_h, cfg):
         pos, y, meta, constructed = columnlayout.place_column(
             plan, widths, card_h, cfg, adj, edges)
     except columnlayout.InfeasibleColumn:
+        if why is not None:
+            why["reason"] = ("trial: constructed placement infeasible "
+                             "(InfeasibleColumn)")
         return None
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
@@ -955,7 +1030,13 @@ def _column_trial(plan, nodes, widths, card_h, cfg):
         if cr is not None:
             routes[i] = dict(cr)
     if not _constructed_gates(nodes_px, edges, routes, cfg, constructed):
+        if why is not None:
+            why["reason"] = ("trial gate: hard-gate proxy failed "
+                             "(crossings<=2 / press=0 / clearance>=16 / "
+                             "smooth anchors / mutual separation / card gap)")
         return None
+    if why is not None:
+        why["reason"] = "trial gate passed"
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
@@ -998,6 +1079,12 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     _routes_final = None
     constructed = {}
     from_meta = None
+    # ref-scrubbed mode decision trace: every rule evaluation in the deterministic
+    # priority chain is recorded (rule, tier, triggered, reason, trial gate) so
+    # the certificate can show WHY a placement mode was picked (review report
+    # item 5: reduce the trigger-template black-box feel). Recording only — the
+    # decision logic below is untouched, so non-hit paths stay byte-identical.
+    _mode_rules = []
     if manual is not None:
         pos, y, rows, from_meta = _manual_positions(nodes, widths, manual)
         deg0 = []
@@ -1007,43 +1094,92 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         #  (the learning-flywheel family) -> column (long chains / few loops, main ring <=4) -> ring (loop-dominant small graphs, ref-scrubbed)
         #  -> the existing layered path.
         #  Every new mode carries a trial gate: silent fallback when the gate fails, and the fallback path is byte-for-byte unchanged.
+        def _rule_hit(name, tier, det_ok, plan, det_why, trial_why=None):
+            """Record one priority-chain rule evaluation (trace only)."""
+            entry = {"tier": tier, "rule": name,
+                     "triggered": plan is not None,
+                     "reason": (det_why or {}).get("reason")}
+            if det_ok and plan is None and trial_why is not None:
+                entry["trial_gate"] = "fail"
+                entry["reason"] = (entry["reason"] + " — " +
+                                   (trial_why or {}).get("reason", ""))
+            elif plan is not None:
+                entry["trial_gate"] = "pass"
+            else:
+                entry["trial_gate"] = None
+            _mode_rules.append(entry)
+            return plan
+
         sym_plan = None
         bw_plan = None
         sw_plan = None
         comb_plan = None
         column_plan = None
         ring_plan = None
-        if len(nodes) <= 12:
+        _why_sym, _why_bw, _why_sw = {}, {}, {}
+        _why_comb, _why_col, _why_ring = {}, {}, {}
+        _tw_sym, _tw_bw, _tw_sw = {}, {}, {}
+        _tw_comb, _tw_col, _tw_ring = {}, {}, {}
+        _chain_cap = len(nodes) <= 12
+        if not _chain_cap:
+            _cap_reason = (f"n={len(nodes)} > 12 — structural modes cap at "
+                           "12 nodes")
+            for _nm in ("symmetric (shared-edge bowtie)", "bowtie-vertex",
+                        "spine-wing", "column-chain", "comb-bilateral",
+                        "ring-cycle"):
+                _mode_rules.append({"tier": 0, "rule": _nm,
+                                    "triggered": False,
+                                    "reason": f"not evaluated: {_cap_reason}",
+                                    "trial_gate": None})
+        if _chain_cap:
             from . import symlayout as _symlayout
-            _sym = _symlayout.detect_bowtie(graph)
+            _sym = _symlayout.detect_bowtie(graph, why=_why_sym)
             if _sym is not None:
-                sym_plan = _sym_trial(_sym, nodes, widths, card_h, cfg)
+                sym_plan = _sym_trial(_sym, nodes, widths, card_h, cfg,
+                                      why=_tw_sym)
+            _rule_hit("symmetric (shared-edge bowtie)", 1, _sym is not None,
+                      sym_plan, _why_sym, _tw_sym)
         # ref-scrubbed (aesthetics v3) bowtie-vertex (two loops sharing a single node): topologically mutually exclusive with the shared-edge bowtie
         # (symmetric) and tied with it at the top tier; detection enumerates simple loops (the declared table mixes in 2-node pseudo-loops
         # and misses derived loops, so it is unusable).
-        if sym_plan is None and len(nodes) <= 12:
+        if sym_plan is None and _chain_cap:
             from . import bowtielayout as _bowtielayout
-            _bw = _bowtielayout.detect_bowtie_vertex(graph)
+            _bw = _bowtielayout.detect_bowtie_vertex(graph, why=_why_bw)
             if _bw is not None:
-                bw_plan = _bowtie_trial(_bw, nodes, widths, card_h, cfg)
-        if bw_plan is None and sym_plan is None and len(nodes) <= 12:
+                bw_plan = _bowtie_trial(_bw, nodes, widths, card_h, cfg,
+                                        why=_tw_bw)
+            _rule_hit("bowtie-vertex", 1, _bw is not None, bw_plan,
+                      _why_bw, _tw_bw)
+        if bw_plan is None and sym_plan is None and _chain_cap:
             from . import spinewinglayout as _spinewinglayout
-            _sw = _spinewinglayout.detect_spine_wing(graph)
+            _sw = _spinewinglayout.detect_spine_wing(graph, why=_why_sw)
             if _sw is not None:
-                sw_plan = _spine_trial(_sw, nodes, widths, card_h, cfg)
+                sw_plan = _spine_trial(_sw, nodes, widths, card_h, cfg,
+                                       why=_tw_sw)
+            _rule_hit("spine-wing", 2, _sw is not None, sw_plan,
+                      _why_sw, _tw_sw)
         if (bw_plan is None and sym_plan is None and sw_plan is None
-                and len(nodes) <= 12):
+                and _chain_cap):
             from . import ringlayout as _ringlayout
             from . import columnlayout as _columnlayout
             from . import comblayout as _comblayout
-            _ring_detect = _ringlayout.detect_ring(graph)
-            _col_plan = None
+            _ring_detect = _ringlayout.detect_ring(graph, why=_why_ring)
             # column is detected only when ring would not take the pure-cycle/ratio branch (cover-triggered graphs with a main ring <=4 go
             # to column; large rings with k>=5 still go to ring)
             if _ring_detect is None or _ring_detect["trigger"] == "cover":
-                _col_plan = _columnlayout.detect_column(graph)
-                if _col_plan is not None:
-                    column_plan = _column_trial(_col_plan, nodes, widths, card_h, cfg)
+                _col = _columnlayout.detect_column(graph, why=_why_col)
+                if _col is not None:
+                    column_plan = _column_trial(_col, nodes, widths, card_h,
+                                                cfg, why=_tw_col)
+                _rule_hit("column-chain", 3, _col is not None, column_plan,
+                          _why_col, _tw_col)
+            else:
+                _mode_rules.append({
+                    "tier": 3, "rule": "column-chain", "triggered": False,
+                    "reason": ("not evaluated: ring detection would take the "
+                               f"{_ring_detect['trigger']} branch "
+                               "(pure-cycle/ratio graphs go to ring-cycle)"),
+                    "trial_gate": None})
             # v0.7.7 comb-bilateral (K_{m,2} bilateral hubs) sits between
             # column and ring (preempts ring: these graphs score a high
             # non-bridge ratio with a 4-cycle "main ring" and historically
@@ -1052,14 +1188,48 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             # column is strictly longer than the best column spine (in the
             # established column-chain families the spine weaves
             # hub-source-hub-source and is at least as salient — zero drift).
-            _comb = _comblayout.detect_comb(graph)
-            if _comb is not None and _col_plan is not None \
-                    and len(_comb["column"]) <= len(_col_plan.get("spine") or ()):
+            _comb = _comblayout.detect_comb(graph, why=_why_comb)
+            if _comb is not None and _col is not None \
+                    and len(_comb["column"]) <= len(_col.get("spine") or ()):
+                _mode_rules.append({
+                    "tier": 2, "rule": "comb-bilateral", "triggered": False,
+                    "reason": ("detected, but not adopted: the comb source "
+                               "column is not strictly longer than the best "
+                               "column spine (salience rule — the column "
+                               "reading wins)"),
+                    "trial_gate": None})
                 _comb = None
             if _comb is not None:
-                comb_plan = _comb_trial(_comb, nodes, widths, card_h, cfg)
+                comb_plan = _comb_trial(_comb, nodes, widths, card_h, cfg,
+                                        why=_tw_comb)
+                _rule_hit("comb-bilateral", 2, True, comb_plan,
+                          _why_comb, _tw_comb)
             if column_plan is None and comb_plan is None and _ring_detect is not None:
-                ring_plan = _ring_trial(_ring_detect, nodes, widths, card_h, cfg)
+                ring_plan = _ring_trial(_ring_detect, nodes, widths, card_h,
+                                        cfg, why=_tw_ring)
+                _rule_hit("ring-cycle", 4, True, ring_plan,
+                          _why_ring, _tw_ring)
+            elif _ring_detect is None:
+                _mode_rules.append({"tier": 4, "rule": "ring-cycle",
+                                    "triggered": False,
+                                    "reason": _why_ring.get("reason"),
+                                    "trial_gate": None})
+            elif column_plan is not None or comb_plan is not None:
+                _mode_rules.append({"tier": 4, "rule": "ring-cycle",
+                                    "triggered": False,
+                                    "reason": ("detected, but a higher-tier "
+                                               "plan was adopted — trial not "
+                                               "run"),
+                                    "trial_gate": None})
+        if not any(p is not None for p in (sym_plan, bw_plan, sw_plan,
+                                           comb_plan, column_plan,
+                                           ring_plan)):
+            _mode_rules.append({"tier": 5, "rule": "layered (existing path)",
+                                "triggered": True,
+                                "reason": ("fallback: no structural mode "
+                                           "triggered — layered layering + "
+                                           "placement (byte-stable default)"),
+                                "trial_gate": None})
         constructed = {}
         if sym_plan is not None:
             spos, sy, smeta, sconstructed = sym_plan["placed"]
@@ -1480,6 +1650,51 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     else:
         row_y_out = [dy + cfg.top + r * cfg.pitch for r in range(len(rows))]
         pitch_out = cfg.pitch
+    # ref-scrubbed: assemble the mode decision trace (certificate mode_decision_trace).
+    # The anchor-band legacy exemption (v0.7.3 registered baselines): the
+    # enhanced mid-band re-anchor + mutual-straight reroute channels run only
+    # for spine-wing; every other engine keeps its registered v0.7.2 baseline
+    # in-band ratio (CI BASELINE_BAND lock) instead of the enhanced fix — that
+    # registered exemption is disclosed here rather than silently applied.
+    _engine_placement = {"sym-construct": "symmetric",
+                         "bowtie-construct": "bowtie-vertex",
+                         "spine-construct": "spine-wing",
+                         "comb-construct": "comb-bilateral",
+                         "column-construct": "column-chain",
+                         "ring-construct": "ring-cycle",
+                         "manual": "manual"}
+    _final_placement = ((pos_meta.get("placement")
+                         if isinstance(pos_meta, dict) else None)
+                        or _engine_placement.get(engine, "layered"))
+    if engine == "manual":
+        _mode_trace = {"engine": "manual", "placement": None, "manual": True,
+                       "rules": [],
+                       "fallback": {"used": False, "reason": None},
+                       "legacy_band_exemption": {
+                           "triggered": False,
+                           "detail": ("manual layout: the auto mode chain did "
+                                      "not run; routing hard gates still "
+                                      "apply, graded honestly")}}
+    else:
+        _legacy = engine != "spine-construct"
+        _mode_trace = {
+            "engine": engine, "placement": _final_placement, "manual": False,
+            "rules": _mode_rules,
+            "fallback": {"used": engine not in _engine_placement,
+                         "reason": ("no structural mode triggered — layered "
+                                    "path" if engine not in _engine_placement
+                                    else None)},
+            "legacy_band_exemption": {
+                "triggered": _legacy,
+                "detail": (f"{_final_placement}: keeps the registered v0.7.2 "
+                           "anchor-band baseline ratios (CI BASELINE_BAND "
+                           "lock); the enhanced mid-band re-anchor + "
+                           "mutual-straight reroute channels are spine-wing "
+                           "only"
+                           if _legacy else
+                           "spine-wing: 100% in-band enforced (enhanced "
+                           "re-anchor channel active, no legacy exemption)")},
+        }
     v4 = {
         "viewBox": [0, 0, W, H],
         "nodes": {v: {"x": pos[v], "y": y[v], "w": widths[v]} for v in nodes},
@@ -1495,6 +1710,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             "recipe": "auto-v2",
             "line_style": linestyle,
             "position_engine": engine,
+            # ref-scrubbed: deterministic mode-decision audit trail (which rule
+            # hit, why, trial gate, legacy band exemption) — see the certificate
+            # field of the same name.
+            "mode_decision_trace": _mode_trace,
             # --from-layout metadata (written only on the manual path; the auto path is byte-for-byte unchanged)
             **({} if from_meta is None else {"from_layout": from_meta}),
             "clearance": CLEARANCE,

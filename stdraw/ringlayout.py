@@ -234,7 +234,7 @@ def _chord_segments(ring, edges):
     return segs
 
 
-def detect_ring(graph):
+def detect_ring(graph, why=None):
     """Trigger detection + main-ring selection. Returns a ring plan dict or
     None (no trigger).
 
@@ -242,10 +242,15 @@ def detect_ring(graph):
             "polarity": "R"|"B"|None, "trigger": "pure-cycle"|"cover"|"ratio",
             "residuals": [non-ring non-isolated nodes], "deg0": [isolated nodes],
             "chord_crossings": int}
+
+    why: optional dict — receives a deterministic one-line reason for the
+    outcome (mode decision trace, certificate mode_decision_trace field).
     """
     nodes = list(graph.node_ids())
     n = len(nodes)
     if n < 3 or n > MAX_RING_N:
+        if why is not None:
+            why["reason"] = (f"n={n} (need 3..{MAX_RING_N})")
         return None
     edges = [(e.a, e.b) for e in graph.edges]
     adj, pairs = _adjacency(edges)
@@ -255,6 +260,8 @@ def detect_ring(graph):
     if _is_pure_cycle(core, adj):
         seq = _pure_cycle_order(core, adj)
         if seq:
+            if why is not None:
+                why["reason"] = f"pure cycle, all degree-2, k=n={n}"
             return {"ring": seq, "k": len(seq), "declared_loop": None,
                     "polarity": None, "trigger": "pure-cycle",
                     "residuals": [], "deg0": deg0,
@@ -266,11 +273,18 @@ def detect_ring(graph):
     for seq in _enumerate_cycles(core, adj):
         cands.append((seq, None, None))
     if not cands:
+        if why is not None:
+            why["reason"] = ("no simple loop (declared or enumerated) — "
+                             "not loop-dominated")
         return None
 
     ratio = _non_bridge_ratio(nodes, adj, pairs)
     cover_ok = any(len(s) >= n - COVER_SLACK for s, _, _ in cands)
     if not (cover_ok or ratio >= CYCLE_EDGE_RATIO):
+        if why is not None:
+            why["reason"] = (f"not loop-dominated: main-ring coverage < "
+                             f"n-{COVER_SLACK} and non-bridge edge ratio "
+                             f"{ratio:.2f} < {CYCLE_EDGE_RATIO}")
         return None
 
     eligible = [(s, lid, pol) for s, lid, pol in cands
@@ -287,6 +301,10 @@ def detect_ring(graph):
         if kmax <= 4:
             from .comblayout import detect_comb
             if detect_comb(graph) is not None:
+                if why is not None:
+                    why["reason"] = ("ratio branch with best ring k<=4 and "
+                                     "the bilateral-comb signature — that "
+                                     "family belongs to comb-bilateral")
                 return None
     best = None
     for seq, lid, pol in eligible:
@@ -297,6 +315,10 @@ def detect_ring(graph):
             best = (key, seq, lid, pol, cross)
     _, ring, lid, pol, cross = best
     residuals = [v for v in core if v not in set(ring)]
+    if why is not None:
+        why["reason"] = (f"loop-dominated (trigger="
+                         f"{'cover' if cover_ok else 'ratio'}), main ring "
+                         f"k={len(ring)}, chord crossings={cross}")
     return {"ring": list(ring), "k": len(ring), "declared_loop": lid,
             "polarity": pol, "trigger": "cover" if cover_ok else "ratio",
             "residuals": residuals, "deg0": deg0, "chord_crossings": cross}

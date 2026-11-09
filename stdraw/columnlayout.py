@@ -159,23 +159,30 @@ def _enumerate_cycles(nodes, adj, cap=2_000_000):
     return [list(c) for c in found.values()]
 
 
-def detect_column(graph):
+def detect_column(graph, why=None):
     """Trigger detection + spine selection. Returns a column plan dict or None.
 
     plan = {"spine": [spine order (directed, start = structurally most
             salient node)], "k": int, "declared_loop": id|None,
             "residuals": [non-spine non-isolated nodes], "deg0": [isolated
             nodes], "closing": (last, first) spine closing edge}
+
+    why: optional dict — receives a deterministic one-line reason for the
+    outcome (mode decision trace, certificate mode_decision_trace field).
     """
     nodes = list(graph.node_ids())
     n = len(nodes)
     if n < 3 or n > MAX_COLUMN_N:
+        if why is not None:
+            why["reason"] = (f"n={n} (need 3..{MAX_COLUMN_N})")
         return None
     edges = [(e.a, e.b, getattr(e, "polarity", "+")) for e in graph.edges]
     adj = _adjacency([(a, b) for a, b, _ in edges])
     core = [v for v in nodes if adj[v]]
     deg0 = [v for v in nodes if not adj[v]]
     if not core:
+        if why is not None:
+            why["reason"] = "no core nodes (no edges)"
         return None
 
     cands = []                                   # [(ring order, loop_id, negative-edge count)]
@@ -184,16 +191,28 @@ def detect_column(graph):
     for seq in _enumerate_cycles(core, adj):
         cands.append((seq, None, _neg_count(seq, edges, adj)))
     if not cands:
+        if why is not None:
+            why["reason"] = ("no simple loop (declared or enumerated) — "
+                             "nothing to close the main chain")
         return None
 
     kmax = max(len(s) for s, _, _ in cands)
     if kmax < 3 or kmax > MAX_RING_K:
+        if why is not None:
+            why["reason"] = (f"longest simple loop k={kmax} "
+                             f"(need 3..{MAX_RING_K})")
         return None
     # Pure ring (single component, all degree 2, k=n) goes to ring placement
     if kmax == n and all(len(adj[v]) == 2 for v in core):
+        if why is not None:
+            why["reason"] = (f"pure ring k=n={n} — belongs to ring-cycle "
+                             "(pure-cycle trigger)")
         return None
     # Main ring covers the whole graph (k=n) -> ring-dominated, not column
     if kmax >= n:
+        if why is not None:
+            why["reason"] = (f"main ring covers the whole graph (k={kmax} "
+                             f">= n={n}) — ring-dominated, not column")
         return None
 
     colors = _wl_colors(core, adj)
@@ -208,6 +227,9 @@ def detect_column(graph):
     _, spine0, lid = best
     spine = _orient_spine(spine0, adj, colors, edges)
     residuals = [v for v in core if v not in set(spine)]
+    if why is not None:
+        why["reason"] = (f"main ring k={len(spine)} < n={n} "
+                         "(small main ring -> strong chain reading)")
     return {"spine": spine, "k": len(spine), "declared_loop": lid,
             "residuals": residuals, "deg0": deg0,
             "closing": (spine[-1], spine[0])}

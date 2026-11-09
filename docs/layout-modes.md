@@ -1,6 +1,7 @@
 # 布局模式与美学口径（v0.7.1）
 
-> Engineering doc, maintained in Chinese — English overview: README.md
+> Engineering doc, maintained in Chinese — English edition (self-contained):
+> [layout-modes.en.md](layout-modes.en.md)
 
 > jacky 2026-11-05 全图审查定调（最高优先设计原则）：
 > 「如果方框排布能有规律，那么就尽量形成规律，比如纵向对齐一列，比如圆形回路。
@@ -23,6 +24,24 @@
 每个新模式带**试验闸门**：构造排布后跑同一布线器复核硬门代理（交叉≤2、
 压线=0、净距≥16、锚点平滑、互环分离、卡距≥16），任一不过**静默回退**
 下一优先级——回退路径输出与不触发的图完全一致（负例逐字节不变）。
+
+### 模式决策链留痕（mode_decision_trace，ref-scrubbed）
+
+上面的确定性优先级链可审计：每次自动布局在 `meta`（layout.json）与证书
+（certificate.json，同名字段）记录 `mode_decision_trace`：
+
+- `rules`——按求值顺序逐条记录：规则名、优先级、是否命中、**命中/不命中
+  的结构性依据（带实测数字）**、试验闸门结果（pass / fail / 不适用）；
+  被更高优先级抢占的规则如实记「detected, but not adopted / trial not run」。
+- `fallback`——是否走了分层兜底及原因。
+- `legacy_band_exemption`——v0.7.2 基线带外遗留的登记豁免：增强式中带
+  重锚与互指直线重布线通道仅 spine-wing 启用，其余引擎按 CI
+  `BASELINE_BAND` 锁表保留登记基线带内比例；该豁免逐图披露，不再静默。
+- 手动布局（--from-layout）不进链：`manual: true`、`rules: []`——布线
+  硬门照常复核，如实评分。
+
+评审报告（2026-11-09）第 5 条「触发决策日志」建议的落地：降低触发式模板
+黑盒感，证书读者可直接看到「哪条规则命中、为何命中、豁免是否触发」。
 
 ### 纵列模式（column-chain）
 

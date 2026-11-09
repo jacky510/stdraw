@@ -294,6 +294,9 @@ def scene_from_auto(v4: dict) -> dict:
             "spine_wing": v4["meta"].get("spine_wing"),
             # comb-bilateral mode certificate caliber (v0.7.7)
             "comb": v4["meta"].get("comb"),
+            # ref-scrubbed: deterministic mode-decision audit trail (which rule
+            # hit, why, trial gate, legacy band exemption)
+            "mode_decision_trace": v4["meta"].get("mode_decision_trace"),
             # line-kind statistics (arc > straight > polyline hierarchy report)
             "line_kinds": [e["route"].get("kind") for e in v4["edges"]],
             }
@@ -993,6 +996,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                       "bowtie-vertex" if bowtie_mode else
                       "spine-wing" if spine_mode else
                       "comb-bilateral" if comb_mode else "layered"),
+        # ref-scrubbed: which structural rule fired and why, trial-gate outcome,
+        # and whether the registered anchor-band legacy exemption applies —
+        # the trigger-template audit trail (None for scenes without the trace,
+        # e.g. hand-built scenes in tests).
+        "mode_decision_trace": scene.get("mode_decision_trace"),
         "metrics": metrics,
         "gates": g,
         "gates_passed": f"{g_pass}/{len(g)}",

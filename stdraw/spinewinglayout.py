@@ -106,12 +106,15 @@ def _canon(seq):
     return columnlayout._canon(seq)
 
 
-def detect_spine_wing(graph):
+def detect_spine_wing(graph, why=None):
     """Spine-wing detection. Returns a plan dict or None.
 
     plan = {"spine_tail", "spine_head", "wings": {"left": [...], "anchor": w},
             "rest_pairs": [[up, down], ...], "rest_single": [v] or [],
             "deg0": [isolated nodes]}
+
+    why: optional dict — receives a deterministic one-line reason for the
+    outcome (mode decision trace, certificate mode_decision_trace field).
     """
     nodes = list(graph.node_ids())
     edges = [(e.a, e.b) for e in graph.edges]
@@ -119,6 +122,9 @@ def detect_spine_wing(graph):
     core = [v for v in nodes if adj[v]]
     deg0 = [v for v in nodes if not adj[v]]
     if len(core) < 6 or len(core) > MAX_SPINE_WING_N:
+        if why is not None:
+            why["reason"] = (f"core n={len(core)} "
+                             f"(need 6..{MAX_SPINE_WING_N})")
         return None
 
     # Spine candidates: the directed edge whose endpoints have the most common neighbors (deterministic tie-break chain)
@@ -136,20 +142,36 @@ def detect_spine_wing(graph):
         if best is None or key < best[0]:
             best = (key, u, v, cn)
     if best is None:
+        if why is not None:
+            why["reason"] = ("no hub-pair candidate: no directed edge whose "
+                             f"endpoints share {MIN_WINGS}..{MAX_WINGS} "
+                             "common neighbors")
         return None
     _key, u, v, wings_set = best
     wings = sorted(wings_set)
     rest = sorted(set(core) - {u, v} - wings_set)
     # (1) wing band + (2) secondary clusters (a pure growth core with empty rest does not trigger — limits-to-growth)
     if not (1 <= len(rest) <= MAX_REST):
+        if why is not None:
+            why["reason"] = (f"rest cluster n={len(rest)} "
+                             f"(need 1..{MAX_REST}; 0 = pure growth core, "
+                             "e.g. limits-to-growth — no burden side)")
         return None
     # (3) spine length ratio: hub-pair nodes / core nodes <= 0.5 — a compact hub pair
     #     (long-chain shapes go to column-chain; 2-node hub pairs measured 0.22-0.33 corpus-wide)
     if len({u, v}) / max(1, len(core)) > 0.5:
+        if why is not None:
+            why["reason"] = (f"spine length ratio "
+                             f"{len({u, v}) / max(1, len(core)):.2f} > 0.5 "
+                             "(long-chain shapes go to column-chain)")
         return None
     # (2)' double-axis constructibility: rest hangs only on spine∪wings∪rest (no outsiders)
     allowed = {u, v} | wings_set | set(rest)
     if not all(adj[r] <= allowed for r in rest):
+        if why is not None:
+            why["reason"] = ("rest adjacency reaches outside "
+                             "spine∪wings∪rest (double-axis "
+                             "constructibility fails)")
         return None
     # (4) rest mirror constructibility: first pair rest nodes sharing a declared loop
     #     (sample quickfix/sideeffect both in R2 become a mirror pair, while
@@ -180,6 +202,10 @@ def detect_spine_wing(graph):
         used |= {rest_left[i], rest_left[i + 1]}
     single = sorted((r for r in rest if r not in used), key=_restrict_key)
     if len(pairs) > 3 or len(single) > 1:
+        if why is not None:
+            why["reason"] = (f"rest mirror pairing infeasible: "
+                             f"pairs={len(pairs)} (max 3), "
+                             f"leftovers={len(single)} (max 1)")
         return None
 
     # Wing assignment: the rest cluster's anchor wing (most adjacencies to rest; ties -> smaller canon) -> right side
@@ -203,6 +229,10 @@ def detect_spine_wing(graph):
     left_wings.sort(key=lambda w: (_wing_kind(w), _canon1(w)))
     # Pair first goes to the upper wing, second to the lower; a leftover goes lower-inside (sample fundamental)
     rest_pairs = [[p[0], p[1]] for p in pairs]
+    if why is not None:
+        why["reason"] = (f"hub pair {u}->{v} with W={len(wings_set)} common "
+                         f"neighbors, rest n={len(rest)} mirror-pairable "
+                         f"({len(pairs)} pairs / {len(single)} leftover)")
     return {"spine_tail": u, "spine_head": v,
             "wings_left": left_wings, "wing_anchor": anchor,
             "rest_pairs": rest_pairs, "rest_single": single,

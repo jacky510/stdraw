@@ -9,6 +9,42 @@
  "recipe": "auto-v2",
  "line_style": "straight",
  "placement": "spine-wing",
+ "mode_decision_trace": {
+  "engine": "spine-construct",
+  "placement": "spine-wing",
+  "manual": false,
+  "rules": [
+   {
+    "tier": 1,
+    "rule": "symmetric (shared-edge bowtie)",
+    "triggered": false,
+    "reason": "core n=8, edges m=13 (need exactly 4 core nodes / 5 edges)",
+    "trial_gate": null
+   },
+   {
+    "tier": 1,
+    "rule": "bowtie-vertex",
+    "triggered": false,
+    "reason": "7 simple loops enumerated (need exactly 2)",
+    "trial_gate": null
+   },
+   {
+    "tier": 2,
+    "rule": "spine-wing",
+    "triggered": true,
+    "reason": "hub pair rate->adopters with W=3 common neighbors, rest n=3 mirror-pairable (1 pairs / 1 leftover)",
+    "trial_gate": "pass"
+   }
+  ],
+  "fallback": {
+   "used": false,
+   "reason": null
+  },
+  "legacy_band_exemption": {
+   "triggered": false,
+   "detail": "spine-wing: 100% in-band enforced (enhanced re-anchor channel active, no legacy exemption)"
+  }
+ },
  "metrics": {
   "crossings": 0,
   "crossing_details": [],

@@ -106,7 +106,7 @@ content.
    **trial gate** (after construction, placement re-runs the same router's
    hard-gate proxies for review), and any failure **silently falls back** to
    the next tier, with negative cases byte-identical. Full rules in
-   [docs/layout-modes.md](docs/layout-modes.md) (Chinese).
+   [docs/layout-modes.md](docs/layout-modes.md) (Chinese; English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md)).
    - **Placement hard gates**: box-over-line = 0 (any angle, 1px margin),
      edge-box clearance >= 16px, smooth anchors, card gap >= 16px (36px
      breathing target), mutual pairs (a<->b bidirectional edges) two-line
@@ -523,7 +523,7 @@ the spec documents.
   demo freshness gate** (ref-scrubbed series reworks);
 - **v0.7.1 spine-wing** (landing card ref-scrubbed): detection conditions,
   placement template and regularity-gate caliber original =
-  [docs/layout-modes.md](docs/layout-modes.md) (Chinese) section spine-wing;
+  [docs/layout-modes.md](docs/layout-modes.md) (Chinese; English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md)) section spine-wing;
   no copy in this document;
 - **v0.7.0 bowtie-vertex** (landing card ref-scrubbed, aesthetics v3): caliber
   original = same document, section bowtie-vertex symmetric.

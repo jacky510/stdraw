@@ -45,26 +45,45 @@ def _adjacency(edges):
     return adj
 
 
-def detect_bowtie(graph):
-    """Bowtie detection. Returns {"A","B","L","R","deg0"} or None."""
+def detect_bowtie(graph, why=None):
+    """Bowtie detection. Returns {"A","B","L","R","deg0"} or None.
+
+    why: optional dict — receives a deterministic one-line reason for the
+    outcome (mode decision trace, certificate mode_decision_trace field).
+    """
     nodes = list(graph.node_ids())
     edges = [(e.a, e.b) for e in graph.edges]
     adj = _adjacency(edges)
     core = [v for v in nodes if adj.get(v)]
     deg0 = [v for v in nodes if not adj.get(v)]
     if len(core) != 4 or len(edges) != 5:
+        if why is not None:
+            why["reason"] = (f"core n={len(core)}, edges m={len(edges)} "
+                             "(need exactly 4 core nodes / 5 edges)")
         return None
     d3 = sorted(v for v in core if len(adj[v]) == 3)
     d2 = sorted(v for v in core if len(adj[v]) == 2)
     if len(d3) != 2 or len(d2) != 2:
+        if why is not None:
+            why["reason"] = ("degree sequence not {3,3,2,2} "
+                             f"(deg-3: {len(d3)}, deg-2: {len(d2)})")
         return None
     a, b = d3
     l, r = d2
     if b not in adj[a] or r in adj[l]:
+        if why is not None:
+            why["reason"] = ("the two degree-3 nodes are not adjacent, or the "
+                             "degree-2 pair is adjacent (not a shared-edge bowtie)")
         return None
     # Structural self-check: exactly two triangles = {a,b,l} and {a,b,r}, sharing edge a-b
     if not (l in adj[a] and l in adj[b] and r in adj[a] and r in adj[b]):
+        if why is not None:
+            why["reason"] = ("triangles {{a,b,l}} / {{a,b,r}} not complete "
+                             "(not two triangles sharing edge a-b)")
         return None
+    if why is not None:
+        why["reason"] = ("two triangles sharing edge "
+                         f"{a}-{b} (deg sequence {{3,3,2,2}})")
     # A = upper-row node: deterministic (id order; a/b sit at swap-symmetric positions, geometry invariant)
     return {"A": a, "B": b, "L": l, "R": r, "deg0": deg0}
 
