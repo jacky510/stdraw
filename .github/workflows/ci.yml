@@ -4,29 +4,56 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Saturdays 03:00 UTC = 11:00 UTC+8 — weekly full 3.9 compatibility sweep
+    - cron: "0 3 * * 6"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   checks:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.13"]
-    steps:
+        python-version: ["3.13"]
+    steps: &ci_steps
       - uses: actions/checkout@v4
       - name: "Internal-leak sanitization gate"
         run: python scripts/check_internal_leaks.py
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: "Install (optional layers: solver + measure + render-check)"
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[solver,measure]"
           pip install playwright
-          playwright install chromium
+      - name: "Resolve playwright version"
+        id: pwver
+        run: echo "ver=$(pip show playwright | awk '/^Version:/ {print $2}')" >> "$GITHUB_OUTPUT"
+      - name: "Cache playwright chromium"
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ runner.os }}-${{ steps.pwver.outputs.ver }}
+      - name: "Playwright chromium (skips download on cache hit)"
+        run: playwright install chromium
       - name: CLI help smoke
         run: |
           stdraw --help
           python -m stdraw layout --help
       - name: "Full checks: ortho byte-regression + auto hard gates + DOM bounds + determinism"
         run: python tests/ci_checks.py
+
+  checks-py39-weekly:
+    # 3.9 full-compatibility sweep: weekly schedule only, never on push/pr
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+    steps: *ci_steps
