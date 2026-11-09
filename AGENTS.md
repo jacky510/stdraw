@@ -433,10 +433,48 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.7.13** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.7.15** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
 
+- **v0.7.15 version closure** (dense snap gate path; complements the lens
+  joint re-assign landed in v0.7.13's window): **routing gate-path
+  hardening for anchor snapping on denser graphs** —
+  (a) anchor_snap candidates gain the **coincidence gate**
+  (`_coincide_no_worse` / `_coincide_max_span`, certificate-same-source
+  accounting): a candidate may never CREATE a line-line coincident pair
+  (span < COINCIDE_SPAN stays < 8px) and existing violations repair
+  monotonically;
+  (b) **joint-detour tier** (`_snap_joint_detour`): an endpoint rejected on
+  all 16 anchors by tier-1 re-plans the whole edge as a visibility-graph
+  route from a standard-anchor PAIR (nearest-first ladders × two inflation
+  tiers) — both endpoints land on the 16-anchor set by construction;
+  mutual pairs and user waypoint edges are excluded;
+  (c) **edge-direction endpoint order law**: re-planned routes emit
+  points[0] on box a and points[-1] on box b — a reversed route ships both
+  ends off-border (random-n10-i00 measured);
+  (d) random-corpus A/B vs the previous main: n10 family 6 improved / 9
+  unchanged / 0 regressed / 5 pre-existing crashes (separate card);
+  probe-kept snap 2→8 graphs (worst-case visual crossings 4→1,
+  anchor/coincidence violations →0); classic 21 graphs byte-identical;
+  density threshold 1.6 kept, de-deferral deferred pending more data;
+  (e) lens placement exploration archived
+  (`benchmarks/tools/lens_placement_experiment.py`): mirrored-pairing
+  quantization floor 13.8 deg confirmed, 12 placement nudges all
+  gate-rejected, shared anchor = 0 px separation — the data behind the
+  non-mirrored lens joint re-assign (already on main: classic-cld four ends
+  max 8.93 deg). Demos re-rendered; pytest 119 passed (+1 pre-existing
+  theme drift-gate failure reproduced on clean main — theme card's domain);
+  ci_checks EXIT=0.
+- **v0.7.14 version closure** (theme layer): design tokens in
+  `stdraw/themes.py` (single source; light tier frozen to the shipped
+  values, dark tier = the viewer slate look); `viewer/themes.js` generated
+  artifact byte-pinned by tests; CLI `--theme light|dark` (default light =
+  production face unchanged, 21-input sweep byte-identical); viewer topbar
+  theme toggle (localStorage `stdraw-theme`, default dark) with
+  real-browser probe gates; R/B semantic pairs per tier (dark #fbbf24 /
+  #7dd3fc, light #d97706 / #0284c7, WCAG ≥3.0 measured). pytest 120/120 +
+  ci_checks EXIT=0.
 - **v0.7.13 version closure** (implementation cards ref-scrubbed / ref-scrubbed /
   ref-scrubbed / ref-scrubbed): **16 standard anchors by default + polarity-only
   two-color rendering + certificate schema additions** —
