@@ -84,6 +84,21 @@ RANDOM_SAMPLES = [
     "benchmarks/corpus/random/random-n10-i04.cld",
     "benchmarks/corpus/random/random-n10-i05.cld",
 ]
+# Layer B3 (crash regression, 2026-11-09 sweep): 5/20 random n10 cases
+# crashed pre-render with `adj[v]` KeyError in the layout detectors
+# (bowtielayout/spinewing — detection probes run on every auto-layout graph
+# before any hit test, and _adjacency keys derive from edges only, so
+# isolated nodes had no key). Kept as its OWN list, not merged into
+# RANDOM_SAMPLES: B2 enforces routing-quality hard gates these crash
+# survivors do not promise (an honest rc=1 is acceptable here; a traceback
+# never is). Contract: exit in {0, 1} and stderr free of Traceback/KeyError.
+CRASH_REGRESSION_SAMPLES = [
+    "benchmarks/corpus/random/random-n10-i06.cld",
+    "benchmarks/corpus/random/random-n10-i07.cld",
+    "benchmarks/corpus/random/random-n10-i09.cld",
+    "benchmarks/corpus/random/random-n10-i14.cld",
+    "benchmarks/corpus/random/random-n10-i19.cld",
+]
 HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
               "min_gap_ge_16", "cv_le_035", "pitch_uniform",
               "column_snap24_ge_060",
@@ -332,6 +347,24 @@ def main():
 
             # ── C. DOM-measured box bounds (optional layer) ──
         mark("B2: random dense sampling (4 ex x2 runs)")
+        if _on("B2"):
+            # ── B3. Crash regression (same corpus job): detectors must
+            # never traceback on corpus graphs — exit 0 or honest rc=1,
+            # never a Traceback/KeyError (bowtielayout/spinewing adj
+            # KeyError legacy).
+            for ex in CRASH_REGRESSION_SAMPLES:
+                outd = os.path.join(tmp, os.path.basename(ex).split(".")[0] + "-crashreg")
+                r1 = run_cli(ex, outd, ("--recipe", "auto"), pitch=None)
+                tail = (r1.stderr or "").strip().splitlines()[-5:]
+                if r1.returncode not in (0, 1):
+                    failures.append(f"crashreg {ex}: exit {r1.returncode} "
+                                    f"(must be 0 or honest 1)\n{tail}")
+                elif "Traceback" in (r1.stderr or "") or "KeyError" in (r1.stderr or ""):
+                    failures.append(f"crashreg {ex}: traceback in stderr\n{tail}")
+                else:
+                    print(f"OK  crashreg {ex}: exit {r1.returncode} "
+                          f"({'rendered' if r1.returncode == 0 else 'honest rc=1'}, no traceback)")
+            mark("B3: crash regression (5 ex)")
         if _on("C"):
             r = subprocess.run(
                 [sys.executable, "-m", "stdraw.rendercheck",
