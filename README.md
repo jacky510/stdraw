@@ -52,12 +52,12 @@ All images are real renderings produced by the current engine (v0.7.12) from the
 
 <table>
   <tr>
-    <td><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a></td>
-    <td><a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a></td>
+    <td><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout, edges colored by sign (+ amber / − sky, all solid)" width="420"/></a></td>
+    <td><a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout, polarity tubes + cone arrowheads" width="420"/></a></td>
   </tr>
   <tr>
-    <td><strong>2D · auto-v2 spine-wing layout</strong> (classic-cld-growth-and-burden, 8n/13e, vertical spine + midline wing band + mirrored right wing, 0 crossings)</td>
-    <td><strong>3D · sphere arrangement</strong> (rotate freely; projection crossings solved by the camera)</td>
+    <td><strong>2D · auto-v2 spine-wing layout</strong> (classic-cld-growth-and-burden, 8n/13e, vertical spine + midline wing band + mirrored right wing, 0 crossings; edges colored by sign: + amber / − sky, all solid)</td>
+    <td><strong>3D · sphere arrangement</strong> (rotate freely; projection crossings solved by the camera; two-color polarity tubes + cone arrowheads on every edge)</td>
   </tr>
   <tr>
     <td colspan="2" align="center"><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a></td>

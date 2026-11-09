@@ -6,9 +6,11 @@ body{margin:0;font-family:Microsoft YaHei,sans-serif;background:#0b1220;color:#e
 button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:4px 12px;cursor:pointer}
 button.on{background:#2563eb;border-color:#2563eb}
 #info{position:fixed;bottom:10px;left:10px;font-size:12px;color:#94a3b8;z-index:10}
+#legend{position:fixed;bottom:10px;right:10px;font-size:13px;z-index:10}
 #c{position:fixed;inset:0}
 </style>
 <div id="bar"><b>stdraw 3D · classic-cld</b> <button onclick="setSolid('sphere')" id="btn-sphere">sphere</button><button onclick="setSolid('cube')" id="btn-cube">cube</button><button onclick="setSolid('tetra')" id="btn-tetra">tetra</button><button onclick="setSolid('cone')" id="btn-cone">cone</button></div>
+<div id="legend"><span style="color:#fbbf24">━ +</span>&nbsp;&nbsp;<span style="color:#7dd3fc">━ −</span></div>
 <div id="c"></div>
 <div id="info">drag to rotate / wheel to zoom / right-drag to pan · deterministic placement (same graph, same layout) · deterministic placement: slots + minimum-total-edge-length assignment; no crossing promise in 3D, projection crossings are solved by the camera</div>
 <script src="../assets/three.min.js"></script>
@@ -81,7 +83,13 @@ function draw(solid){
     sp.position.set(p[0], p[1] + 30, p[2]);
     group.add(sp); sprites.push(sp);
   });
-  // edges: single-arc chord lines bowed outward (control point pushed out along the position vector)
+  // edges: two-color polarity tubes (jacky 2026-11-09 caliber: color = the
+  // edge's own sign, all solid) + a cone arrowhead at every edge end; the tube
+  // body is trimmed back near the tip so the cone owns the endpoint and the
+  // direction stays legible when zoomed out. Bright shades of the 2D palette
+  // (#d97706/#0284c7) for the dark scene background.
+  const TUBE_RAD = 3.2, CONE_RAD = 8.0, CONE_LEN = 30;
+  window.__stdraw3dEdges = [];
   DATA.edges.forEach(e=>{
     const a = new THREE.Vector3(...pos[e.a]);
     const b = new THREE.Vector3(...pos[e.b]);
@@ -89,9 +97,20 @@ function draw(solid){
     const out = mid.length() < 1 ? a.clone().normalize() : mid.clone().normalize();
     const ctrl = mid.add(out.multiplyScalar(mid.length()*0.18 + 20));
     const curve = new THREE.QuadraticBezierCurve3(a, ctrl, b);
-    const neg = e.p === '-';
-    const mat = new THREE.LineBasicMaterial({color: neg ? 0x60a5fa : 0x94a3b8, transparent:true, opacity:0.85});
-    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(24)), mat));
+    const polCol = e.p === '-' ? 0x7dd3fc : 0xfbbf24;   // '−' sky / '+' amber
+    const polHex = e.p === '-' ? '#7dd3fc' : '#fbbf24';
+    const bodyPts = curve.getPoints(24).slice(0, 22);   // t=0..0.875: tube stops before the cone zone
+    const body = new THREE.CatmullRomCurve3(bodyPts);
+    group.add(new THREE.Mesh(new THREE.TubeGeometry(body, 24, TUBE_RAD, 8, false),
+      new THREE.MeshBasicMaterial({color: polCol})));
+    const tangent = curve.getTangent(1).normalize();
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(CONE_RAD, CONE_LEN, 12),
+      new THREE.MeshBasicMaterial({color: polCol}));
+    cone.position.copy(b.clone().sub(tangent.clone().multiplyScalar(CONE_LEN/2)));
+    cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), tangent);
+    group.add(cone);
+    window.__stdraw3dEdges.push({a:e.a, b:e.b, pol:e.p, color:polHex,
+      tube:true, cone:true, dir:[tangent.x, tangent.y, tangent.z]});
   });
   scene.add(group);
   document.querySelectorAll('#bar button').forEach(b=>b.classList.toggle('on', b.id==='btn-'+solid));

@@ -111,14 +111,16 @@ h1{{font-size:18px}} svg{{background:#fff;border:1px solid #e2e8f0;border-radius
 
 
 # ═══ auto-v2 rendering: straight/arc lines first-class + anchored directional arrows ═══
-# R/B polarity coloring: loop edges colored by the polarity of their declared
-# loop (R = amber #d97706 / B = sky blue #0284c7 — white-background-readable
-# darkened shades of the conventional hues); the R/B text badges are removed
-# (text clutters complex graphs); negative-polarity edges dashed (+/- semantics
-# kept); polarity data in layout.json / certificate.json unchanged.
-LOOP_COLOR_R = "#d97706"
-LOOP_COLOR_B = "#0284c7"
-NEUTRAL_COLOR = "#64748b"
+# Edge coloring caliber (jacky 2026-11-09 ruling, two-color polarity rework):
+# lines carry exactly TWO colors keyed to each edge's own sign — '+' = amber,
+# '−' = sky blue — and every line is solid. The dashed=negative encoding, the
+# gray shared-edge color and the loop-id badges are retired; loop membership is
+# no longer a visual encoding (a shared R/B edge takes its own sign color).
+# The legend shrinks to two swatches + "+"/"−". Polarity data in layout.json /
+# certificate.json unchanged.
+EDGE_COLOR_POS = "#d97706"
+EDGE_COLOR_NEG = "#0284c7"
+NEUTRAL_COLOR = "#64748b"  # defensive fallback only (DSL edges always carry a sign)
 
 
 def _edge_svg(e, labels, values):
@@ -126,8 +128,9 @@ def _edge_svg(e, labels, values):
     path); arrow follows the last segment direction."""
     r = e["route"]
     pts = r["points"]
-    color = e.get("loop_color") or NEUTRAL_COLOR
-    dash = ' stroke-dasharray="6 4"' if e.get("polarity") == "-" else ""
+    pol = e.get("polarity", "+")
+    color = (EDGE_COLOR_NEG if pol == "-" else
+             EDGE_COLOR_POS if pol == "+" else NEUTRAL_COLOR)
     if r.get("path_d"):
         d = r["path_d"]
     elif r["kind"] == "arc" and "ctrl" in r:
@@ -136,7 +139,7 @@ def _edge_svg(e, labels, values):
              f'{pts[-1][0]} {pts[-1][1]}')
     else:
         d = 'M ' + ' L '.join(f'{p[0]} {p[1]}' for p in pts)
-    out = [f'<path d="{d}" fill="none" stroke="{color}" stroke-width="1.3"{dash}/>']
+    out = [f'<path d="{d}" fill="none" stroke="{color}" stroke-width="1.3"/>']
     # Arrow: last-segment direction
     import math as _m
     (x1, y1), (x2, y2) = pts[-2], pts[-1]
@@ -147,11 +150,12 @@ def _edge_svg(e, labels, values):
     return ''.join(out)
 
 
-# R/B text badges were removed together with the polarity coloring rework:
-# badge semantics are now carried by edge coloring (R = amber / B = sky blue)
-# + dashed negative edges; polarity data stays in layout.json /
-# certificate.json. The drag layer was synced the same way: the badge replay
-# (refreshMarkers/polGroups) in _interactive_js was removed too.
+# R/B text badges were removed together with the coloring rework: edge
+# coloring now carries each edge's own sign ('+' amber / '−' sky, all solid);
+# polarity data stays in layout.json / certificate.json. The drag layer was
+# synced the same way: the badge replay (refreshMarkers/polGroups) in
+# _interactive_js was removed too, and drag re-routing keeps the static
+# stroke attributes.
 
 
 def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
@@ -167,8 +171,8 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     parts = []
     parts.append(f'<svg id="stdraw-svg" viewBox="0 0 {W} {H}" '
                  f'font-family="Microsoft YaHei,sans-serif">')
-    # R/B text badges removed (loop polarity is now expressed by edge
-    # coloring: R = amber / B = sky blue; negative-polarity edges dashed).
+    # R/B text badges removed (each edge's sign is now expressed by two-color
+    # edge coloring: '+' amber / '−' sky blue, all solid).
     # Polarity data stays in layout.json / certificate.json.
     for i, e in enumerate(edges):
         e["_idx"] = i
@@ -295,8 +299,12 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                         f'<tr><td>Row alignment &ge;0.60</td>'
                         f'<td class="{_cls(rep.get("row_align_ge_060"))}">'
                         f'{_mark(rep.get("row_align_ge_060"))}</td></tr></table>')
-        legend = ('<p class="note">Edge coloring: amber = reinforcing loop (R) · sky blue = '
-                  'balancing loop (B) · gray = non-loop edge / mixed loops; dashed = negative polarity (−)</p>')
+        legend = ('<p class="note">Edge sign: '
+                  '<svg width="28" height="10" style="vertical-align:middle" aria-hidden="true">'
+                  '<line x1="2" y1="5" x2="26" y2="5" stroke="#d97706" stroke-width="4"/></svg> <b>+</b>'
+                  '&nbsp;&nbsp;'
+                  '<svg width="28" height="10" style="vertical-align:middle" aria-hidden="true">'
+                  '<line x1="2" y1="5" x2="26" y2="5" stroke="#0284c7" stroke-width="4"/></svg> <b>−</b></p>')
         cert_html = f'''<div class="cert"><h3>Quality certificate (rechecked on delivered coordinates · auto-v2 hard gates)</h3>
 <table>
 {metric_rows}

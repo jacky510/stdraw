@@ -54,12 +54,12 @@ pip install stdraw
 
 <table>
   <tr>
-    <td><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout" width="420"/></a></td>
-    <td><a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout" width="420"/></a></td>
+    <td><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout, edges colored by sign (+ amber / − sky, all solid)" width="420"/></a></td>
+    <td><a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout, polarity tubes + cone arrowheads" width="420"/></a></td>
   </tr>
   <tr>
-    <td><strong>2D · auto-v2 纵柱+翼位布局</strong>（增长极限×转嫁负担，8n/13e，中央纵柱+中线翼位带+右翼镜像对、0 交叉）</td>
-    <td><strong>3D · 球面排布</strong>（任意角度旋转，投影交叉由相机解决）</td>
+    <td><strong>2D · auto-v2 纵柱+翼位布局</strong>（增长极限×转嫁负担，8n/13e，中央纵柱+中线翼位带+右翼镜像对、0 交叉；边按符号双色：+ 琥珀 / − 天蓝，全实线）</td>
+    <td><strong>3D · 球面排布</strong>（任意角度旋转，投影交叉由相机解决；两色极性管+每边锥形箭头）</td>
   </tr>
   <tr>
     <td colspan="2" align="center"><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a></td>
