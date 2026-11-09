@@ -51,6 +51,14 @@ def main():
         t0 = time.perf_counter()
         v4 = recipes_run("auto-v2", g, AutoConfig(), "straight")
         dt = time.perf_counter() - t0
+        # Wall-clock hard gate (interim bound, catches DNF/hang-class regressions).
+        # Grounding (benchmarks/REPORT.md): S3 budget protocol random n>=20 =
+        # 100s/graph, S4 median 21.1s (benchmark machine). Measured on the dev
+        # box: ~126s/run on the pre-dense-snap engine (quiet), 956.2s on
+        # 728f653 (loaded) - a ~7.6x wall-clock regression flagged for the
+        # follow-up card. 1800s only proves the run terminates; TIGHTEN back to
+        # ~300s once the n20 runtime regression is fixed.
+        assert dt <= 1800.0, f"n20 auto-v2 wall-clock {dt:.1f}s > 1800s budget"
         outs.append(json.dumps(v4, sort_keys=True))
         print(f"  run: {dt:.1f}s engine={v4['meta']['position_engine']} "
               f"status={v4['meta'].get('solver_status')}")
@@ -82,3 +90,10 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# pytest entry (CI full-suite collection; script behavior unchanged).
+# NOTE: ortools-less environments get an honest SKIP from main() (return 0);
+# CI installs the solver extra so the gate is live there.
+def test_scalability():
+    assert main() == 0

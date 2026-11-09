@@ -94,3 +94,12 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# pytest entry (CI full-suite collection; script behavior unchanged).
+def test_auto_viewbox():
+    cwd = os.getcwd()
+    try:
+        assert main() == 0
+    finally:
+        os.chdir(cwd)   # main() chdirs to the repo root; keep pytest cwd stable

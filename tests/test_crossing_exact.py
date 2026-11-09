@@ -238,3 +238,8 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# pytest entry (CI full-suite collection; script behavior unchanged).
+def test_crossing_exact_bruteforce():
+    assert main() == 0

@@ -1,0 +1,8 @@
+# Byte-pinned artifact (drift gate byte-compares against regenerated output in
+# binary mode). No EOL conversion: checkout must write index bytes verbatim so
+# the pin matches on every platform (CRLF working-tree copies broke the gate).
+# NOTE: tests/baselines/*.layout.json deliberately stays under normal eol
+# handling - the Windows CLI writes layout.json in text mode (CRLF), and the
+# ortho production pin compares raw bytes, so the local working-tree copies
+# must follow the platform convention (CRLF here, LF on CI) to stay equal.
+viewer/themes.js -text
