@@ -25,6 +25,7 @@ from .check import geometry_report_to_file
 from .metrics import certificate, scene_from_planar
 from .loops import loops_audit
 from .render import render_html
+from .themes import DEFAULT_STATIC_THEME, THEMES
 from .layout3d import SOLIDS, layout3d
 from .render3d import render_3d_html
 from .delivery import strip_delivery_metadata, stamp_cli_deliverable
@@ -100,6 +101,8 @@ def main(argv=None):
                     help="v0.7.11 deterministic constraint (comb layouts): explicit "
                          "hub side assignment, e.g. wdc=left,stx=right")
     ap.add_argument("--name", default="", help="graph name (default: the DSL graph name)")
+    ap.add_argument("--theme", default=DEFAULT_STATIC_THEME, choices=sorted(THEMES),
+                    help="2D demo HTML theme (default: light = the current production face)")
     ap.add_argument("--exact", action="store_true",
                     help="WS2 exact crossing-number layer: B&B squeeze computes cr(G) and writes the "
                          "certificate exactness block (proven_optimal/gap; requires the optional "
@@ -198,8 +201,8 @@ def main(argv=None):
                   f"{m['spacing_cv']} -> grade [{cert['grade']}] -> {p}")
             hp = os.path.join(a.outdir, "demo-2d.html")
             with open(hp, "w", encoding="utf-8") as f:
-                f.write(render_html(v4, name, cert, lr, labels, values))
-            print(f"      demo -> {hp}")
+                f.write(render_html(v4, name, cert, lr, labels, values, a.theme))
+            print(f"      demo -> {hp} (theme {a.theme})")
             if rc:
                 sys.exit(1)
     else:
@@ -264,8 +267,8 @@ def main(argv=None):
               f"grade [{cert['grade']}] -> {p}")
         hp = os.path.join(a.outdir, "demo-2d.html")
         with open(hp, "w", encoding="utf-8") as f:
-            f.write(render_html(v4, name, cert, lr, labels, values))
-        print(f"      demo -> {hp}")
+            f.write(render_html(v4, name, cert, lr, labels, values, a.theme))
+        print(f"      demo -> {hp} (theme {a.theme})")
         if rc:
             if a.from_layout and a.compare_auto:
                 deferred_exit = 1     # emit the comparison report first, exit code deferred

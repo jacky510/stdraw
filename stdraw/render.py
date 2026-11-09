@@ -5,13 +5,22 @@ import html
 import json
 
 from ._interactive_js import _INTERACTIVE_JS
+from .themes import (DEFAULT_STATIC_THEME, LIGHT, THEMES, get as _get_theme)
+
+# Two-color polarity constants kept for backward compatibility: they are the
+# LIGHT-tier values; themed rendering reads the tokens via _edge_svg(T=...).
+EDGE_COLOR_POS = LIGHT["edge_pos"]
+EDGE_COLOR_NEG = LIGHT["edge_neg"]
+NEUTRAL_COLOR = LIGHT["neutral"]  # defensive fallback only (DSL edges always carry a sign)
 
 
 def render_html(v4: dict, graph_name: str = "", cert: dict = None,
                 loops_report: dict = None, labels: dict = None,
-                values: dict = None) -> str:
+                values: dict = None, theme: str = DEFAULT_STATIC_THEME) -> str:
+    T = _get_theme(theme)
     if v4.get("edges") and "route" in v4["edges"][0]:
-        return render_auto_html(v4, graph_name, cert, loops_report, labels, values)
+        return render_auto_html(v4, graph_name, cert, loops_report, labels,
+                                values, theme)
     W, H = v4["viewBox"][2], v4["viewBox"][3]
     nodes, edges, bars = v4["nodes"], v4["edges"], v4.get("bars", {})
     meta = v4["meta"]
@@ -25,29 +34,29 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
     # own associated line columns)
     for v, (b0, b1) in bars.items():
         parts.append(f'<line x1="{b0}" y1="{nodes[v]["y"]}" x2="{b1}" y2="{nodes[v]["y"]}" '
-                     f'stroke="#94a3b8" stroke-width="2"/>')
+                     f'stroke="{T["leader_line"]}" stroke-width="2"/>')
     # Vertical lines + arrows
     for e in edges:
         x, y1, y2 = e["x"], e["y1"], e["y2"]
         parts.append(f'<line x1="{x}" y1="{y1}" x2="{x}" y2="{y2}" '
-                     f'stroke="#64748b" stroke-width="1.3"/>')
+                     f'stroke="{T["line"]}" stroke-width="1.3"/>')
         ax, ay, d = e["arrow"]
         parts.append(f'<path d="M {ax - 4} {ay - 6 * d} L {ax} {ay} L {ax + 4} {ay - 6 * d} '
-                     f'Z" fill="#64748b"/>')
+                     f'Z" fill="{T["line"]}"/>')
     # Cards
     for v, p in nodes.items():
         x, y, w = p["x"], p["y"], p["w"]
         label = html.escape(labels.get(v, v))
         value = html.escape(values.get(v, ""))
         parts.append(f'<g><rect x="{x - w / 2:.0f}" y="{y - card_h / 2:.0f}" width="{w}" '
-                     f'height="{card_h}" rx="7" fill="#fffbeb" stroke="#f59e0b" '
+                     f'height="{card_h}" rx="7" fill="{T["card_fill"]}" stroke="{T["card_stroke"]}" '
                      f'stroke-width="1.5"/>'
                      f'<text x="{x:.0f}" y="{y - card_h / 2 + 17:.0f}" text-anchor="middle" '
-                     f'font-size="{meta.get("fs", [12.5, 14])[0]}" fill="#78350f">{label}</text>')
+                     f'font-size="{meta.get("fs", [12.5, 14])[0]}" fill="{T["card_label"]}">{label}</text>')
         if value:
             parts.append(f'<text x="{x:.0f}" y="{y + card_h / 2 - 7:.0f}" text-anchor="middle" '
                          f'font-size="{meta.get("fs", [12.5, 14])[1]}" font-weight="bold" '
-                         f'fill="#1f2937">{value}</text>')
+                         f'fill="{T["card_value"]}">{value}</text>')
         parts.append('</g>')
     parts.append('</svg>')
 
@@ -95,12 +104,12 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
     return f'''<!doctype html><html lang="en"><meta charset="utf-8">
 <title>stdraw 2D · {html.escape(graph_name)}</title>
 <style>
-body{{margin:16px;background:#f8fafc;font-family:Microsoft YaHei,sans-serif}}
-h1{{font-size:18px}} svg{{background:#fff;border:1px solid #e2e8f0;border-radius:8px;max-width:1280px}}
-.cert{{margin-top:12px;padding:10px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;max-width:1280px}}
-.cert table{{border-collapse:collapse}} .cert td{{border:1px solid #e2e8f0;padding:2px 10px}}
-.ok{{color:#16a34a}} .bad{{color:#dc2626}} .note{{color:#64748b;font-size:12px}}
-.grade{{color:#1d4ed8}}
+body{{margin:16px;background:{T["page_bg"]};font-family:Microsoft YaHei,sans-serif}}
+h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canvas_border"]};border-radius:8px;max-width:1280px}}
+.cert{{margin-top:12px;padding:10px 14px;background:{T["panel_bg"]};border:1px solid {T["panel_border"]};border-radius:8px;font-size:13px;max-width:1280px}}
+.cert table{{border-collapse:collapse}} .cert td{{border:1px solid {T["panel_border"]};padding:2px 10px}}
+.ok{{color:{T["ok"]}}} .bad{{color:{T["bad"]}}} .note{{color:{T["note"]};font-size:12px}}
+.grade{{color:{T["grade"]}}}
 </style>
 <h1>stdraw 2D layout · {html.escape(graph_name)} (visibility representation: all-vertical lines, 0 crossings guaranteed by theorem; unrelated lines piercing cards occlusion-style is allowed by design)</h1>
 {''.join(parts)}
@@ -117,20 +126,18 @@ h1{{font-size:18px}} svg{{background:#fff;border:1px solid #e2e8f0;border-radius
 # gray shared-edge color and the loop-id badges are retired; loop membership is
 # no longer a visual encoding (a shared R/B edge takes its own sign color).
 # The legend shrinks to two swatches + "+"/"−". Polarity data in layout.json /
-# certificate.json unchanged.
-EDGE_COLOR_POS = "#d97706"
-EDGE_COLOR_NEG = "#0284c7"
-NEUTRAL_COLOR = "#64748b"  # defensive fallback only (DSL edges always carry a sign)
+# certificate.json unchanged. Token values live in stdraw/themes.py (one
+# definition consumed by the static export and the viewer alike).
 
 
-def _edge_svg(e, labels, values):
+def _edge_svg(e, labels, values, T):
     """One edge -> SVG (line/poly polyline, arc real Bezier, vg exact L+A
     path); arrow follows the last segment direction."""
     r = e["route"]
     pts = r["points"]
     pol = e.get("polarity", "+")
-    color = (EDGE_COLOR_NEG if pol == "-" else
-             EDGE_COLOR_POS if pol == "+" else NEUTRAL_COLOR)
+    color = (T["edge_neg"] if pol == "-" else
+             T["edge_pos"] if pol == "+" else T["neutral"])
     if r.get("path_d"):
         d = r["path_d"]
     elif r["kind"] == "arc" and "ctrl" in r:
@@ -160,7 +167,9 @@ def _edge_svg(e, labels, values):
 
 def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                      loops_report: dict = None, labels: dict = None,
-                     values: dict = None) -> str:
+                     values: dict = None,
+                     theme: str = DEFAULT_STATIC_THEME) -> str:
+    T = _get_theme(theme)
     W, H = v4["viewBox"][2], v4["viewBox"][3]
     nodes, edges = v4["nodes"], v4["edges"]
     meta = v4["meta"]
@@ -176,22 +185,22 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     # Polarity data stays in layout.json / certificate.json.
     for i, e in enumerate(edges):
         e["_idx"] = i
-        parts.append(f'<g data-edge="{i}">' + _edge_svg(e, labels, values) + '</g>')
+        parts.append(f'<g data-edge="{i}">' + _edge_svg(e, labels, values, T) + '</g>')
     for v, p in nodes.items():
         x, y, w = p["x"], p["y"], p["w"]
         label = html.escape(labels.get(v, v))
         value = html.escape(values.get(v, ""))
         parts.append(f'<g data-node="{html.escape(v, quote=True)}">'
                      f'<rect x="{x - w / 2:.0f}" y="{y - card_h / 2:.0f}" width="{w}" '
-                     f'height="{card_h}" rx="7" fill="#fffbeb" stroke="#f59e0b" '
+                     f'height="{card_h}" rx="7" fill="{T["card_fill"]}" stroke="{T["card_stroke"]}" '
                      f'stroke-width="1.5"/>'
                      f'<text x="{x:.0f}" y="{y + 4:.0f}" text-anchor="middle" '
                      f'dominant-baseline="middle" '
-                     f'font-size="{meta.get("fs", [12.5, 14])[0]}" fill="#78350f">{label}</text>')
+                     f'font-size="{meta.get("fs", [12.5, 14])[0]}" fill="{T["card_label"]}">{label}</text>')
         if value:
             parts.append(f'<text x="{x:.0f}" y="{y + card_h / 2 - 7:.0f}" text-anchor="middle" '
                          f'font-size="{meta.get("fs", [12.5, 14])[1]}" font-weight="bold" '
-                         f'fill="#1f2937">{value}</text>')
+                         f'fill="{T["card_value"]}">{value}</text>')
         parts.append('</g>')
     parts.append('</svg>')
     # ── Interactive layer: toolbar + embedded data + script ──
@@ -301,10 +310,10 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                         f'{_mark(rep.get("row_align_ge_060"))}</td></tr></table>')
         legend = ('<p class="note">Edge sign: '
                   '<svg width="28" height="10" style="vertical-align:middle" aria-hidden="true">'
-                  '<line x1="2" y1="5" x2="26" y2="5" stroke="#d97706" stroke-width="4"/></svg> <b>+</b>'
+                  f'<line x1="2" y1="5" x2="26" y2="5" stroke="{T["edge_pos"]}" stroke-width="4"/></svg> <b>+</b>'
                   '&nbsp;&nbsp;'
                   '<svg width="28" height="10" style="vertical-align:middle" aria-hidden="true">'
-                  '<line x1="2" y1="5" x2="26" y2="5" stroke="#0284c7" stroke-width="4"/></svg> <b>−</b></p>')
+                  f'<line x1="2" y1="5" x2="26" y2="5" stroke="{T["edge_neg"]}" stroke-width="4"/></svg> <b>−</b></p>')
         cert_html = f'''<div class="cert"><h3>Quality certificate (rechecked on delivered coordinates · auto-v2 hard gates)</h3>
 <table>
 {metric_rows}
@@ -338,17 +347,17 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     return f'''<!doctype html><html lang="en"><meta charset="utf-8">
 <title>stdraw 2D · {html.escape(graph_name)}</title>
 <style>
-body{{margin:16px;background:#f8fafc;font-family:Microsoft YaHei,sans-serif}}
-h1{{font-size:18px}} svg{{background:#fff;border:1px solid #e2e8f0;border-radius:8px;max-width:1280px}}
-.cert{{margin-top:12px;padding:10px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;max-width:1280px}}
-.cert table{{border-collapse:collapse}} .cert td{{border:1px solid #e2e8f0;padding:2px 10px}}
-.ok{{color:#16a34a}} .bad{{color:#dc2626}} .note{{color:#64748b;font-size:12px}}
-.grade{{color:#1d4ed8}}
-.stdraw-toolbar{{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:8px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;max-width:1280px}}
-.stdraw-toolbar button{{padding:4px 14px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;cursor:pointer;font-size:13px}}
-.stdraw-toolbar button:hover{{background:#e2e8f0}}
-.stdraw-hint{{color:#64748b;font-size:12px}}
-#stdraw-metrics{{font-weight:600;color:#1f2937}}
+body{{margin:16px;background:{T["page_bg"]};font-family:Microsoft YaHei,sans-serif}}
+h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canvas_border"]};border-radius:8px;max-width:1280px}}
+.cert{{margin-top:12px;padding:10px 14px;background:{T["panel_bg"]};border:1px solid {T["panel_border"]};border-radius:8px;font-size:13px;max-width:1280px}}
+.cert table{{border-collapse:collapse}} .cert td{{border:1px solid {T["panel_border"]};padding:2px 10px}}
+.ok{{color:{T["ok"]}}} .bad{{color:{T["bad"]}}} .note{{color:{T["note"]};font-size:12px}}
+.grade{{color:{T["grade"]}}}
+.stdraw-toolbar{{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:8px 12px;background:{T["toolbar_bg"]};border:1px solid {T["toolbar_border"]};border-radius:8px;font-size:13px;max-width:1280px}}
+.stdraw-toolbar button{{padding:4px 14px;border:1px solid {T["btn_border"]};border-radius:6px;background:{T["btn_bg"]};cursor:pointer;font-size:13px}}
+.stdraw-toolbar button:hover{{background:{T["btn_hover_bg"]}}}
+.stdraw-hint{{color:{T["hint_text"]};font-size:12px}}
+#stdraw-metrics{{font-weight:600;color:{T["metrics_text"]}}}
 #stdraw-svg [data-node]{{cursor:grab}}
 #stdraw-svg [data-node] rect{{touch-action:none}}
 #stdraw-svg [data-node].dragging{{cursor:grabbing}}

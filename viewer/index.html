@@ -5,46 +5,56 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>stdraw · CLD Form Viewer</title>
 <style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#0b0e14;font-family:"Microsoft YaHei",system-ui,sans-serif}
+  :root{--st-scene-bg:#0b0e14;--st-bar-bg:rgba(11,14,20,.85);--st-bar-border:#263041;--st-bar-text:#e2e8f0;
+        --st-seg-bg:#1e293b;--st-seg-border:#334155;--st-seg-text:#e2e8f0;--st-seg-on-bg:#0e7490;--st-seg-on-text:#e0f2fe;
+        --st-leg-text:#94a3b8;--st-hint-text:#64748b;--st-hint-bg:rgba(11,14,20,.7);--st-loops-bg:rgba(11,14,20,.92);
+        --st-panel-text:#cbd5e1;--st-loop-hover-bg:#1e293b;--st-loop-on-bg:#0f2a33;--st-loop-on-border:#0e7490;
+        --st-tag-r-bg:#78350f;--st-tag-r-text:#fbbf24;--st-tag-b-bg:#0c3a55;--st-tag-b-text:#7dd3fc;
+        --st-fallback-card-bg:#111827;--st-fallback-card-border:#334155;--st-fallback-title:#fbbf24;
+        --st-fallback-code-bg:#1e293b;--st-fallback-code-text:#7dd3fc;
+        --st-edge-p:#22d3ee;--st-edge-m:#fb923c}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--st-scene-bg);font-family:"Microsoft YaHei",system-ui,sans-serif}
   #c{display:block;width:100%;height:100%}
   .bar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:12px;
-       padding:10px 16px;background:rgba(11,14,20,.85);border-bottom:1px solid #263041;
-       color:#e2e8f0;font-size:13px;z-index:10;flex-wrap:wrap}
+       padding:10px 16px;background:var(--st-bar-bg);border-bottom:1px solid var(--st-bar-border);
+       color:var(--st-bar-text);font-size:13px;z-index:10;flex-wrap:wrap}
   .bar h1{font-size:15px;margin:0;font-weight:600}
   .bar .meta{display:none} /* meta text hidden (data still written for automated verification) */
-  .seg{display:flex;gap:0;border:1px solid #334155;border-radius:8px;overflow:hidden}
-  .seg button{background:#1e293b;color:#e2e8f0;border:none;padding:5px 12px;font-size:13px;
-       cursor:pointer;font-family:inherit;border-right:1px solid #334155}
+  .seg{display:flex;gap:0;border:1px solid var(--st-seg-border);border-radius:8px;overflow:hidden}
+  .seg button{background:var(--st-seg-bg);color:var(--st-seg-text);border:none;padding:5px 12px;font-size:13px;
+       cursor:pointer;font-family:inherit;border-right:1px solid var(--st-seg-border)}
   .seg button:last-child{border-right:none}
-  .seg button.on{background:#0e7490;color:#e0f2fe}
-  .bar button.plain{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;
+  .seg button.on{background:var(--st-seg-on-bg);color:var(--st-seg-on-text)}
+  .bar button.plain{background:var(--st-seg-bg);color:var(--st-seg-text);border:1px solid var(--st-seg-border);border-radius:6px;
        padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit}
-  .bar .leg{display:flex;gap:10px;color:#94a3b8;font-size:12px;align-items:center}
+  .bar .leg{display:flex;gap:10px;color:var(--st-leg-text);font-size:12px;align-items:center}
   .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
-  .hint{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);color:#64748b;
-       font-size:12px;background:rgba(11,14,20,.7);padding:4px 14px;border-radius:8px;z-index:10}
+  .dot.p{background:var(--st-edge-p)} .dot.m{background:var(--st-edge-m)}
+  .hint{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);color:var(--st-hint-text);
+       font-size:12px;background:var(--st-hint-bg);padding:4px 14px;border-radius:8px;z-index:10}
   #loops{position:fixed;top:52px;right:12px;z-index:11;width:300px;max-height:calc(100% - 90px);overflow-y:auto;
-       background:rgba(11,14,20,.92);border:1px solid #263041;border-radius:10px;padding:8px 10px;
-       font-size:12px;color:#cbd5e1;display:none}
-  #loops .lhead{display:flex;justify-content:space-between;align-items:center;color:#e2e8f0;
+       background:var(--st-loops-bg);border:1px solid var(--st-bar-border);border-radius:10px;padding:8px 10px;
+       font-size:12px;color:var(--st-panel-text);display:none}
+  #loops .lhead{display:flex;justify-content:space-between;align-items:center;color:var(--st-bar-text);
        font-weight:600;margin-bottom:6px}
-  #loops .lhead button{background:none;border:none;color:#64748b;cursor:pointer;font-size:12px;font-family:inherit}
+  #loops .lhead button{background:none;border:none;color:var(--st-hint-text);cursor:pointer;font-size:12px;font-family:inherit}
   .loop{padding:6px 8px;border-radius:8px;cursor:pointer;line-height:1.5;margin-bottom:4px;border:1px solid transparent}
-  .loop:hover{background:#1e293b}
-  .loop.on{background:#0f2a33;border-color:#0e7490}
+  .loop:hover{background:var(--st-loop-hover-bg)}
+  .loop.on{background:var(--st-loop-on-bg);border-color:var(--st-loop-on-border)}
   .loop .tag{display:inline-block;min-width:28px;text-align:center;border-radius:6px;padding:0 5px;
        font-weight:700;margin-right:6px}
-  .loop .tag.R{background:#78350f;color:#fbbf24}
-  .loop .tag.B{background:#0c3a55;color:#7dd3fc}
-  .loop .nodes{color:#e2e8f0}
-  .loop .lm{color:#64748b;margin-left:4px}
-  #webgl-fallback{display:none;position:fixed;inset:0;z-index:99;background:#0b0e14;
-       color:#e2e8f0;font-size:15px;line-height:1.8;align-items:center;justify-content:center;text-align:center}
-  #webgl-fallback .card{max-width:660px;margin:0 24px;padding:32px 36px;border:1px solid #334155;
-       border-radius:12px;background:#111827}
-  #webgl-fallback h2{margin:0 0 12px;font-size:18px;color:#fbbf24}
-  #webgl-fallback code{background:#1e293b;padding:2px 8px;border-radius:6px;font-size:13px;color:#7dd3fc}
+  .loop .tag.R{background:var(--st-tag-r-bg);color:var(--st-tag-r-text)}
+  .loop .tag.B{background:var(--st-tag-b-bg);color:var(--st-tag-b-text)}
+  .loop .nodes{color:var(--st-bar-text)}
+  .loop .lm{color:var(--st-hint-text);margin-left:4px}
+  #webgl-fallback{display:none;position:fixed;inset:0;z-index:99;background:var(--st-scene-bg);
+       color:var(--st-bar-text);font-size:15px;line-height:1.8;align-items:center;justify-content:center;text-align:center}
+  #webgl-fallback .card{max-width:660px;margin:0 24px;padding:32px 36px;border:1px solid var(--st-fallback-card-border);
+       border-radius:12px;background:var(--st-fallback-card-bg)}
+  #webgl-fallback h2{margin:0 0 12px;font-size:18px;color:var(--st-fallback-title)}
+  #webgl-fallback code{background:var(--st-fallback-code-bg);padding:2px 8px;border-radius:6px;font-size:13px;color:var(--st-fallback-code-text)}
 </style>
+<script src="themes.js"></script>
 </head>
 <body>
 <div class="bar">
@@ -56,12 +66,13 @@
     <button data-m="3">3D · Force-Directed</button>
   </div>
   <span class="meta" id="meta">…</span>
-  <span class="leg"><span><span class="dot" style="background:#22d3ee"></span>+ Same sign</span>
-  <span><span class="dot" style="background:#fb923c"></span>− Opposite sign</span></span>
+  <span class="leg"><span><span class="dot p"></span>+ Same sign</span>
+  <span><span class="dot m"></span>− Opposite sign</span></span>
   <button class="plain" id="btnLoops">Loops</button>
   <button class="plain" id="btnShot">Export PNG Snapshot</button>
   <button class="plain" id="btnRot">Auto-rotate: Off</button>
   <button class="plain" id="btnReset">Reset View</button>
+  <button class="plain" id="btnTheme" title="Toggle light / dark theme">Theme: Dark</button>
 </div>
 <div id="loops">
   <div class="lhead"><span>Loops (auto-enumerated · short loop = strong feedback)</span><button id="loopClose">Close</button></div>
@@ -1137,7 +1148,42 @@
 <script>
 "use strict";
 window.__errors = [];
-window.onerror = function(m,s,l){ window.__errors.push(m+" @"+l); };
+window.onerror = function(m,s,l){ window.__errors.push(m+" @"+"l"); };
+// ── Theme core (design tokens from stdraw/themes.py via generated themes.js) ──
+const THEME_KEY = "stdraw-theme";
+const STDT = window.STDRAW_THEMES || {};
+const TH = () => STDT[THEME] || STDT.dark || {};
+let THEME = (function(){
+  const s = localStorage.getItem(THEME_KEY);
+  return (s && STDT[s]) ? s : "dark";   // viewer default stays dark (shipped look)
+})();
+const THEME_CSS_VARS = {
+  "scene-bg":"scene_bg", "bar-bg":"bar_bg", "bar-border":"bar_border", "bar-text":"bar_text",
+  "seg-bg":"seg_bg", "seg-border":"seg_border", "seg-text":"seg_text",
+  "seg-on-bg":"seg_on_bg", "seg-on-text":"seg_on_text", "leg-text":"leg_text",
+  "hint-text":"hint_text", "hint-bg":"hint_bg", "loops-bg":"loops_bg", "panel-text":"panel_text",
+  "loop-hover-bg":"loop_hover_bg", "loop-on-bg":"loop_on_bg", "loop-on-border":"loop_on_border",
+  "tag-r-bg":"tag_r_bg", "tag-r-text":"tag_r_text", "tag-b-bg":"tag_b_bg", "tag-b-text":"tag_b_text",
+  "fallback-card-bg":"fallback_card_bg", "fallback-card-border":"fallback_card_border",
+  "fallback-title":"fallback_title", "fallback-code-bg":"fallback_code_bg", "fallback-code-text":"fallback_code_text",
+  "edge-p":"edge_p", "edge-m":"edge_m"
+};
+function applyCssTheme(){
+  const T = TH(), r = document.documentElement.style;
+  for(const k in THEME_CSS_VARS){ const v = T[THEME_CSS_VARS[k]]; if(v !== undefined) r.setProperty("--st-"+k, v); }
+  document.documentElement.dataset.theme = THEME;
+  const b = document.getElementById("btnTheme");
+  if(b) b.textContent = "Theme: " + (THEME === "dark" ? "Dark" : "Light");
+}
+function setTheme(name){
+  if(!STDT[name]) return;
+  THEME = name;
+  try{ localStorage.setItem(THEME_KEY, name); }catch(e){}
+  applyCssTheme();
+  if(window.__stdrawRebuild) window.__stdrawRebuild();   // re-render 3D colors (registered when WebGL is OK)
+}
+applyCssTheme();
+document.getElementById("btnTheme").onclick = () => setTheme(THEME === "dark" ? "light" : "dark");
 const GRAPH = {"nodes": [{"id": "potential", "l": "潜在采纳者"}, {"id": "adopters", "l": "采纳者"}, {"id": "rate", "l": "采纳率"}, {"id": "word", "l": "口碑效应"}, {"id": "crowding", "l": "拥挤效应"}], "edges": [{"a": "adopters", "b": "word", "p": "+"}, {"a": "word", "b": "rate", "p": "+"}, {"a": "rate", "b": "adopters", "p": "+"}, {"a": "potential", "b": "rate", "p": "+"}, {"a": "adopters", "b": "potential", "p": "−"}, {"a": "adopters", "b": "crowding", "p": "+"}, {"a": "crowding", "b": "rate", "p": "−"}]};
 const LAYOUTS = {"ref": {"H": 26, "nodes": {"rate": {"x": 400, "y": 400}, "adopters": {"x": 1000, "y": 400}, "word": {"x": 700, "y": 130}, "potential": {"x": 700, "y": 660}, "crowding": {"x": 700, "y": 880}}}};
 const N = GRAPH.nodes.length;
@@ -1148,7 +1194,13 @@ GRAPH.edges.forEach(e=>{ ADJ[idx[e.a]].push(idx[e.b]); ADJ[idx[e.b]].push(idx[e.
 const DEG = ADJ.map(a=>a.length);
 const POLI = {};
 GRAPH.edges.forEach(e=>{ POLI[e.a+"|"+e.b]=e.p; }); // Store by true direction only: a bidirectional edge has its own polarity for each direction
-const COL_P = new THREE.Color(0x22d3ee), COL_M = new THREE.Color(0xfb923c);
+let COL_P, COL_M;   // THREE.Color, initialized from the theme tokens (see initEdgeCols)
+function initEdgeCols(){
+  const T = TH();
+  COL_P = new THREE.Color(T.edge_p || "#22d3ee");
+  COL_M = new THREE.Color(T.edge_m || "#fb923c");
+}
+initEdgeCols();
 const colOf = (a,b)=>((POLI[a+"|"+b]||"+").includes("+")?COL_P:COL_M);
 const EIDX = {}; GRAPH.edges.forEach((e,i)=>{ EIDX[idx[e.a]+"|"+idx[e.b]]=i; });
 const DIRADJ = GRAPH.nodes.map(()=>[]);
@@ -1275,11 +1327,11 @@ function makeLabel(text, wW, hW){
   const tw=Math.max(x.measureText(text).width,1);
   if(fixed) fs=Math.max(9, Math.min(fs, fs*Math.min((cw-14)/tw, (ch-8)/30)));
   x.font=fs+"px 'Microsoft YaHei', sans-serif";
-  const r=Math.min(14,ch/4), w=cw, h=ch;
-  x.fillStyle="rgba(17,24,39,.97)"; x.strokeStyle="#526175"; x.lineWidth=2;
+  const r=Math.min(14,ch/4), w=cw, h=ch, T=TH();
+  x.fillStyle=T.label_bg||"rgba(17,24,39,.97)"; x.strokeStyle=T.label_border||"#526175"; x.lineWidth=2;
   x.beginPath(); x.moveTo(r,0); x.arcTo(w,0,w,h,r); x.arcTo(w,h,0,h,r); x.arcTo(0,h,0,0,r); x.arcTo(0,0,w,0,r); x.closePath();
   x.fill(); x.stroke();
-  x.fillStyle="#f1f5f9"; x.textAlign="center"; x.textBaseline="middle";
+  x.fillStyle=T.label_text||"#f1f5f9"; x.textAlign="center"; x.textBaseline="middle";
   x.fillText(text,w/2,h/2+1);
   const tex=new THREE.CanvasTexture(cv); tex.minFilter=THREE.LinearFilter;
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true}));
@@ -1314,7 +1366,7 @@ if(!renderer){
 }else{
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x0b0e14);
+scene.background=new THREE.Color(TH().scene_bg||"#0b0e14");
 const camera=new THREE.PerspectiveCamera(55,1,1,12000);
 let HOME=new THREE.Vector3(0,0,1500);
 let P=null, group=null, MODE=0;
@@ -1579,7 +1631,7 @@ function build3d(sphere){
     const R=P.reduce((s,p)=>s+p.length(),0)/P.length;
     group.add(new THREE.LineSegments(
       new THREE.WireframeGeometry(new THREE.SphereGeometry(R,20,12)),
-      new THREE.LineBasicMaterial({color:0x64748b,transparent:true,opacity:0.13})));
+      new THREE.LineBasicMaterial({color:TH().faint_line||"#64748b",transparent:true,opacity:0.13})));
   }
   return (sphere?"sphere slots + total-edge-length-minimizing assignment (deterministic)":"force-directed (deterministic, no RNG)")+" · arcs bow away from center (no S-shapes)";
 }
@@ -1632,10 +1684,11 @@ function fitCamera(is3d){
   HOME=new THREE.Vector3(D*Math.sin(az)*Math.cos(el),D*Math.sin(el),D*Math.cos(az)*Math.cos(el));
   camera.position.copy(HOME); camera.lookAt(0,0,0);
   if(is3d){
-    scene.fog=new THREE.Fog(0x0b0e14,D*1.05,D*2.4);
+    const Tb=TH();
+    scene.fog=new THREE.Fog(Tb.scene_bg||"#0b0e14",D*1.05,D*2.4);
     if(window.__grid){ scene.remove(window.__grid); }
     const maxY=Math.max(...P.map(p=>Math.abs(p.y)));
-    const grid=new THREE.GridHelper(2400,24,0x24304a,0x161d2e);
+    const grid=new THREE.GridHelper(2400,24,new THREE.Color(Tb.grid_major||"#24304a"),new THREE.Color(Tb.grid_minor||"#161d2e"));
     grid.position.y=-(maxY+180); scene.add(grid); window.__grid=grid;
   } else {
     scene.fog=null;
@@ -1662,6 +1715,8 @@ window.__snapshot=doShot;
 function resize(){ const w=innerWidth,h=innerHeight;
   renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 addEventListener("resize",resize); resize();
+// Theme switch hook: re-color edge polarity + rebuild the current form with the active tokens
+window.__stdrawRebuild = function(){ initEdgeCols(); scene.background.set(TH().scene_bg||"#0b0e14"); build(MODE); };
 
 // ── 2D node dragging: hold the left button on a card to drag, lines/arrows follow live, certificate recomputed on release ──
 const raycaster=new THREE.Raycaster(), ndcV=new THREE.Vector2();
@@ -1788,7 +1843,8 @@ function showLoop(li){
   clearHL();
   const L=LOOPS[li];
   HL={li, nodes:new Set(L.path)};
-  const colr = L.type==="R" ? 0xfbbf24 : 0x38bdf8;
+  const Tl=TH();
+  const colr = L.type==="R" ? (Tl.loop_r||"#fbbf24") : (Tl.loop_b||"#38bdf8");
   const pos=[];
   L.eidx.forEach(ei=>{
     const pts=computeEdgePts(group.userData.edgeSpecs[ei]);
