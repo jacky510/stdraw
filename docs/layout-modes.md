@@ -372,3 +372,36 @@ coincidence。而 classic 正本 classic-cld（E/N=13/8=1.62）吸附 21 图全�
 - **已知局限（后续卡专项）**：fan 对视觉交叉增量暂未进探针回归判据（实测
   n10-i05 由「端点无锚」触发回退已覆盖；fan-only 回归未观测到）——dense 吸
   附门径专项优化卡（coincidence 门+链式交叉溯源）承接。
+### 互环透镜联合重指派（ref-scrubbed，恢复 <=10° 到达角目标）
+
+吸附的镜像 golden 对锚点量化会让部分互环透镜对的弦倾角存在硬下限：
+classic-cld crowding<->fundamental 两框中心错位 24px，量化锚偏移
+（crowding ±10.6px / fundamental ±16.5px）使镜像对的弦 dx 只能取
+24±5.9px，最坏弦倾角 atan(29.9/122) ≈ 13.8°。到达角 <=10°（两端同达）
+要求锚点水平错位 |Δx| <= tan(10°)·H（H=弦竖向跨度，本对 ≈122px →
+21.4px）——镜像锚弦的 29.9px 超出该锥形约束，ctrl 全域枚举下限
+~11.5°、交付 14.4°，目标在该锚指派下数学不可达（ref-scrubbed 如实降级
+15° 的依据）。
+
+**解法 = 扩展锚指派空间而非调 ctrl**：允许两弧各自取「非镜像」的
+朝向边锚组合（每框有向锚对枚举，他边已占锚排除），逐组合重定形
+（lockstep ctrl 平移 + ARC_CTRL_SCALE_LADDER 缩放）并复检全套交付门
+（press/交叉/净距/锚角/自家框/共端点兄弟交叉/带内/互环分离 >=12px），
+再模拟吸附后 `mutual_arrival_flip(enhanced_gates=True)` 得四端到达角。
+`Router.lens_joint_reassign` 只在两处 gate 下触发：pair 由联合吸附
+镜像指派过、且模拟 flip 后仍 >`ARRIVAL_TARGET_DEG`；**枚举最优组合
+四端全部 <=10° 才应用**（达不到目标的边际改善一律拒绝——soil-erosion
+crop_yield<->farming 实测枚举最优 21.69° vs 交付 21.82°，正确保持
+原字节）。应用后由调用方的 flip 精确复现模拟终态（本通道只落
+flip 前的梯门几何）。
+
+- **classic-cld 实测**：胜出指派 = arc1（crowding→fundamental）取
+  (s-g2 +10.6px → n 0px)、arc2（fundamental→crowding）取 (n-g1 −16.5px →
+  s-g1 −10.6px)，两弦倾角 6.27°/8.44°，四端到达角 2.8°/6.8°/0.9°/8.9°
+  （max 8.93°），互环分离 16.5px，14 checks fail=0、grade best、
+  全硬门绿——<=10° 目标恢复（test_mutual_lens_arrow_normal 断言回归
+  ARRIVAL_TARGET_DEG，15° 锚点口径上限退役）。
+- **字节影响**：21 图 classic sweep 仅 classic-cld 一图漂移
+  （layout/certificate/demo-2d，随引擎重渲，demos/ 新鲜度门同步）；
+  其余 20 图逐字节零漂移（触发条件构造性排除：flip 已达标的 pair
+  在模拟阶段即跳过）。

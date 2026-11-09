@@ -59,7 +59,7 @@
   "anchor_details": [],
   "anchor_standard_violations": 0,
   "anchor_standard_details": [],
-  "avg_edge_length": 148.8,
+  "avg_edge_length": 148.6,
   "row_align_rate": 0.625,
   "min_card_gap": 35.0,
   "spacing_cv": 0.128,
@@ -75,7 +75,7 @@
    {
     "pair": [
      "crowding<->fundamental",
-     21.0
+     16.5
     ]
    }
   ],

@@ -14,6 +14,7 @@ All candidates are enumerated in fixed order and picked by fixed scoring -- no R
 import math
 import os
 import sys
+import itertools
 
 from . import visibility as _vis
 from .anchors import standard_anchors as _std_anchors
@@ -1774,6 +1775,246 @@ class Router:
                         routes[i]["ctrl"] = ctrl_b
         return routes
 
+    # -- ref-scrubbed: joint anchor re-assignment for lens pairs the flip cannot fix --
+    def lens_joint_reassign(self, routes, lens_pairs, frozen=()):
+        """Joint anchor re-assignment when the ctrl-only flip misses the target.
+
+        ref-scrubbed's joint snap assigns each lens arc a MIRRORED anchor pair
+        (golden first, corner fallback).  On classic-cld crowding<->fundamental
+        the quantized mirror offsets (+-10.6px on crowding / +-16.5px on
+        fundamental over a 24px box-center offset) force one chord tilt to
+        13.8 deg, and the ctrl-only re-fit bottoms out at 14.4 deg delivered
+        (per-arc floor ~11.5) -- the pre-anchor <=10 deg target is unreachable
+        on that chord.  Enumeration over NON-mirrored joint assignments,
+        however, finds slim near-parallel chords (both tilts < 9 deg) that
+        meet the target on all four ends with every gate green (sep 16.5px).
+
+        This pass (ref-scrubbed) runs at the anchor-snap call site right before
+        the post-snap enhanced flip, ONLY for pairs the joint snap actually
+        re-anchored (report["lens_pairs"]) AND whose simulated post-flip state
+        still exceeds ARRIVAL_TARGET_DEG on any end.  For every ordered pair
+        of distinct facing-border anchors (both boxes; anchors claimed by
+        other edges excluded) it re-fits both arcs (lockstep ctrl translate +
+        ARC_CTRL_SCALE_LADDER rescale, engine gates), simulates the caller's
+        enhanced flip, and keeps the deterministic best assignment by
+        (max arrival deviation, -separation).  The candidate is applied ONLY
+        when it meets ARRIVAL_TARGET_DEG on all four ends (partial
+        "improvements" that still miss the target are rejected -- a marginal
+        deviation shave is not worth re-anchoring bytes; measured on
+        soil-erosion: best enumeration 21.69 deg vs delivered 21.82 deg,
+        correctly untouched); the caller's flip then reproduces the
+        simulated final state exactly (the pass leaves the PRE-flip ladder
+        geometry, the flip derives the delivered ctrl).
+        Pairs whose post-flip state already meets the target are returned
+        untouched -- byte-identical by construction.
+        """
+        SideNorm = {"t": (0.0, -1.0), "b": (0.0, 1.0),
+                    "r": (1.0, 0.0), "l": (-1.0, 0.0)}
+
+        def _four_devs(rs):
+            out = []
+            for i in (i1, i2):
+                inf = rs[i]
+                pts, ctrl = inf["points"], inf["ctrl"]
+                for end, v in ((0, self.edges[i][0]), (1, self.edges[i][1])):
+                    p = pts[0] if end == 0 else pts[-1]
+                    n = SideNorm[self._side_of(v, p)]
+                    t = ((ctrl[0] - p[0], ctrl[1] - p[1]) if end == 0
+                         else (p[0] - ctrl[0], p[1] - ctrl[1]))
+                    L = math.hypot(t[0], t[1])
+                    if L < 1e-9:
+                        return None
+                    c = abs(t[0] * n[0] + t[1] * n[1]) / L
+                    out.append(math.degrees(math.acos(max(0.0, min(1.0, c)))))
+            return out
+
+        for key in sorted(self.mutual):
+            if (key[0], key[1]) not in lens_pairs:
+                continue
+            i1 = self.eidx.get((key[0], key[1]))
+            i2 = self.eidx.get((key[1], key[0]))
+            if i1 is None or i2 is None or i1 == i2:
+                continue
+            if i1 in frozen or i2 in frozen:
+                continue
+            r1, r2 = routes.get(i1), routes.get(i2)
+            if not r1 or not r2:
+                continue
+            if r1.get("kind") != "arc" or r2.get("kind") != "arc":
+                continue
+            if r1.get("ctrl") is None or r2.get("ctrl") is None:
+                continue
+            ends = []
+            for i, v in ((i1, key[0]), (i1, key[1]), (i2, key[0]), (i2, key[1])):
+                e = self.edges[i]
+                ends.append((i, 0 if e[0] == v else 1, v))
+            end_of = {(i1, key[0]): ends[0][1], (i1, key[1]): ends[1][1],
+                      (i2, key[0]): ends[2][1], (i2, key[1]): ends[3][1]}
+            pidx = {(i, v): (0 if end == 0 else len(routes[i]["points"]) - 1)
+                    for i, end, v in ends}
+            s1 = self._side_of(key[0], routes[i1]["points"][pidx[(i1, key[0])]])
+            s2 = self._side_of(key[1], routes[i1]["points"][pidx[(i1, key[1])]])
+            s3 = self._side_of(key[0], routes[i2]["points"][pidx[(i2, key[0])]])
+            s4 = self._side_of(key[1], routes[i2]["points"][pidx[(i2, key[1])]])
+            if s1 != s3 or s2 != s4:
+                continue
+            # trigger: simulate the caller's post-snap enhanced flip; pairs it
+            # already fixes are left untouched (zero drift)
+            sim = {j: {"points": [list(p) for p in routes[j]["points"]],
+                       "ctrl": (list(routes[j]["ctrl"])
+                                if routes[j].get("ctrl") is not None else None),
+                       "kind": routes[j].get("kind")}
+                   for j in routes}
+            self.mutual_arrival_flip(sim, frozen=frozen, enhanced_gates=True)
+            cur_devs = _four_devs(sim)
+            if cur_devs is None or max(cur_devs) <= ARRIVAL_TARGET_DEG + 1e-9:
+                continue
+            # facing-border anchors per box (engine order = deterministic)
+            border = {}
+            ok_plan = True
+            for v, s in ((key[0], s1), (key[1], s2)):
+                cx, cy, hw, hh = self.N[v]
+                horiz = s in ("t", "b")
+                bcoord = (cy + (hh - 3.0) if s == "b" else
+                          cy - (hh - 3.0) if s == "t" else
+                          cx + (hw - 3.0) if s == "r" else cx - (hw - 3.0))
+                ancs = []
+                for aid, ax, ay in self._box_anchors(v):
+                    bc = ay if horiz else ax
+                    if abs(bc - bcoord) <= 0.01:
+                        ancs.append(aid)
+                border[v] = ancs
+                if len(ancs) < 2:
+                    ok_plan = False
+                    break
+            if not ok_plan:
+                continue
+            # anchors claimed by OTHER edges keep their claims
+            occ_local = {}
+            for j in sorted(routes):
+                if j in (i1, i2):
+                    continue
+                pj = routes[j]["points"]
+                for end, v, p in ((0, self.edges[j][0], pj[0]),
+                                  (1, self.edges[j][1], pj[-1])):
+                    aid = self._anchor_at(v, p)
+                    if aid is not None:
+                        occ_local.setdefault((v, aid), set()).add((j, end))
+            saved = {i: ([list(p) for p in routes[i]["points"]],
+                         list(routes[i]["ctrl"])) for i in (i1, i2)}
+            before_stats = {i: self._edge_stats(i, routes) for i in (i1, i2)}
+            before_own = {i: self._own_press(i, routes) for i in (i1, i2)}
+            before_sib = {i: self._sibling_cross(i, routes) for i in (i1, i2)}
+            best = None   # ((maxdev, -sep), geo) -- geo is the PRE-flip ladder state
+            for c_pair in itertools.permutations(border[key[0]], 2):
+                for f_pair in itertools.permutations(border[key[1]], 2):
+                    assign = [(i1, key[0], end_of[(i1, key[0])], c_pair[0]),
+                              (i1, key[1], end_of[(i1, key[1])], f_pair[0]),
+                              (i2, key[0], end_of[(i2, key[0])], c_pair[1]),
+                              (i2, key[1], end_of[(i2, key[1])], f_pair[1])]
+                    if any(occ_local.get((v, aid))
+                           for _i, v, _e, aid in assign):
+                        continue
+                    applied = False
+                    for f in ARC_CTRL_SCALE_LADDER:
+                        geo = {}
+                        for i in (i1, i2):
+                            pts = [list(q) for q in saved[i][0]]
+                            ctrl = list(saved[i][1])
+                            p0, p1 = list(pts[0]), list(pts[-1])
+                            for _i, v, end, aid in assign:
+                                if _i != i:
+                                    continue
+                                cand = next(q for q in self._box_anchors(v)
+                                            if q[0] == aid)
+                                if end == 0:
+                                    p0 = [cand[1], cand[2]]
+                                else:
+                                    p1 = [cand[1], cand[2]]
+                            mid = [(p0[0] + p1[0]) / 2.0,
+                                   (p0[1] + p1[1]) / 2.0]
+                            tctrl = [ctrl[0] + (p0[0] - saved[i][0][0][0])
+                                     + (p1[0] - saved[i][0][-1][0]),
+                                     ctrl[1] + (p0[1] - saved[i][0][0][1])
+                                     + (p1[1] - saved[i][0][-1][1])]
+                            fctrl = [mid[0] + (tctrl[0] - mid[0]) * f,
+                                     mid[1] + (tctrl[1] - mid[1]) * f]
+                            geo[i] = ([list(q) for q in quad_points(p0, fctrl, p1)],
+                                      fctrl)
+                        for i in (i1, i2):
+                            routes[i]["points"] = geo[i][0]
+                            routes[i]["ctrl"] = geo[i][1]
+                        sep = min_pair_dist(
+                            sample_polyline(routes[i1]["points"], step=4),
+                            sample_polyline(routes[i2]["points"], step=4))
+                        if sep is None or sep < 12.0:
+                            continue
+                        ok = True
+                        for i in (i1, i2):
+                            st = self._edge_stats(i, routes)
+                            if (st[0] > before_stats[i][0]
+                                    or st[3] > before_stats[i][3]
+                                    or (st[1] is not None and
+                                        st[1] < self.cl - PRESS_MARGIN - 1e-6)
+                                    or st[2] < ANCHOR_MIN_DEG
+                                    or self._own_press(i, routes) > before_own[i]
+                                    or self._sibling_cross(i, routes)
+                                    > before_sib[i]
+                                    or not self._cert_angle_ok(i, routes)
+                                    or not self._anchors_in_band(i, routes)):
+                                ok = False
+                                break
+                        if ok:
+                            applied = True
+                            break
+                    if not applied:
+                        continue
+                    # simulate the caller's enhanced flip on the candidate
+                    flip_in = {j: {"points": [list(p) for p in routes[j]["points"]],
+                                   "ctrl": (list(routes[j]["ctrl"])
+                                            if routes[j].get("ctrl") is not None
+                                            else None),
+                                   "kind": routes[j].get("kind")}
+                               for j in routes}
+                    self.mutual_arrival_flip(flip_in, frozen=frozen,
+                                             enhanced_gates=True)
+                    devs = _four_devs(flip_in)
+                    sep2 = min_pair_dist(
+                        sample_polyline(flip_in[i1]["points"], step=4),
+                        sample_polyline(flip_in[i2]["points"], step=4))
+                    for i in (i1, i2):
+                        st = self._edge_stats(i, flip_in)
+                        if (st[0] > before_stats[i][0]
+                                or st[3] > before_stats[i][3]
+                                or (st[1] is not None and
+                                    st[1] < self.cl - PRESS_MARGIN - 1e-6)
+                                or st[2] < ANCHOR_MIN_DEG
+                                or devs is None
+                                or sep2 is None or sep2 < 12.0):
+                            devs = None
+                            break
+                    if devs is None:
+                        continue
+                    score = (max(devs), -(sep2 if sep2 is not None else 0.0))
+                    if best is None or score < best[0]:
+                        best = (score, geo)
+                    # restore the ladder-state candidate for the next iteration
+                    for i in (i1, i2):
+                        routes[i]["points"] = geo[i][0]
+                        routes[i]["ctrl"] = geo[i][1]
+                # restore the delivered state between c_pair iterations
+                for i in (i1, i2):
+                    routes[i]["points"] = [list(q) for q in saved[i][0]]
+                    routes[i]["ctrl"] = list(saved[i][1])
+            for i in (i1, i2):
+                routes[i]["points"] = [list(q) for q in saved[i][0]]
+                routes[i]["ctrl"] = list(saved[i][1])
+            if best is not None and best[0][0] <= ARRIVAL_TARGET_DEG + 1e-9:
+                for i in (i1, i2):
+                    routes[i]["points"] = best[1][i][0]
+                    routes[i]["ctrl"] = best[1][i][1]
+        return routes
+
     # -- ref-scrubbed: default endpoint snapping to the 16 standard anchors --
     ANCHOR_SNAP_TOL = 0.51    # px: an endpoint within this of an anchor IS on that anchor (delivery rounds to 0.1px)
 
@@ -2119,6 +2360,8 @@ class Router:
                         occ.setdefault((v, aid), set()).add(
                             (_i, 0 if end_of[(_i, v)] == 0 else 1))
                     report["moved"] += 4
+                    report.setdefault("lens_pairs", []).append(
+                        (key[0], key[1]))
                     if os.environ.get("STDRAW_SNAP_DEBUG"):
                         print(f"  [lensdbg] {key} APPLIED golden={golden} "
                               f"assign={assign}", file=sys.stderr)

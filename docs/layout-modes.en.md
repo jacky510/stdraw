@@ -515,3 +515,47 @@ classic-cld and block random n10**. The landed caliber:
   the unanchored-endpoint trigger; a fan-only regression has not been
   observed) — the dense-snap specialization card (coincidence gate + chained
   crossing tracing) owns this.
+### Joint lens anchor re-assignment (ref-scrubbed, restoring the <=10 deg arrival target)
+
+The snap's MIRRORED golden-pair quantization gives some lens pairs a hard
+chord-tilt floor: classic-cld crowding<->fundamental has a 24px box-center
+offset, and the quantized anchor offsets (crowding +-10.6px / fundamental
++-16.5px) leave the mirror chords only dx = 24 +- 5.9px — the worst chord
+tilt is atan(29.9/122) ~= 13.8 deg.  Arriving within 10 deg of the border
+normal on BOTH ends requires the anchor horizontal offset
+|dx| <= tan(10 deg) * H (H = the chord's vertical span ~= 122px here ->
+21.4px); the 29.9px mirror chord exceeds that cone bound, the ctrl-only
+re-fit bottoms out at ~11.5 deg per arc (14.4 deg delivered), and the
+target is mathematically unreachable under that anchor assignment (the
+basis of ref-scrubbed's honest 15 deg downgrade).
+
+**Fix = widen the anchor-assignment space, not the ctrl search**: each arc
+may take a NON-mirrored pair of facing-border anchors (ordered anchor pairs
+per box, anchors claimed by other edges excluded); every candidate is
+re-fit (lockstep ctrl translate + ARC_CTRL_SCALE_LADDER rescale), passes
+the full delivery gate set (press / crossings / clearance / anchor angles /
+own-box / sibling fan crossings / mid-band / mutual separation >= 12px),
+then the post-snap `mutual_arrival_flip(enhanced_gates=True)` is simulated
+to measure all four end deviations.  `Router.lens_joint_reassign` triggers
+only for pairs the joint snap mirror-assigned AND whose simulated post-flip
+state still exceeds `ARRIVAL_TARGET_DEG`; **the winning assignment is
+applied only when ALL FOUR ends meet <= 10 deg** (marginal improvements
+that still miss the target are rejected — measured on soil-erosion
+crop_yield<->farming: enumeration best 21.69 deg vs delivered 21.82 deg,
+bytes correctly untouched).  After application the caller's flip reproduces
+the simulated final state exactly (this pass writes only the PRE-flip
+ladder geometry).
+
+- **classic-cld measured**: winning assignment = arc1
+  (crowding->fundamental) takes (s-g2 +10.6px -> n 0px), arc2
+  (fundamental->crowding) takes (n-g1 -16.5px -> s-g1 -10.6px); chord
+  tilts 6.27 / 8.44 deg, four end deviations 2.8 / 6.8 / 0.9 / 8.9 deg
+  (max 8.93 deg), mutual separation 16.5px, 14 checks fail=0, grade best,
+  all hard gates green — the <= 10 deg target is RESTORED
+  (test_mutual_lens_arrow_normal pins ARRIVAL_TARGET_DEG again; the
+  15 deg anchor-caliber ceiling of ref-scrubbed is retired).
+- **Byte impact**: the 21-figure classic sweep drifts on classic-cld ONLY
+  (layout/certificate/demo-2d re-rendered with the engine, demos/
+  freshness gate updated in the same batch); the other 20 figures are
+  byte-identical (constructively excluded: pairs the flip already fixes
+  are skipped at the simulation stage).
