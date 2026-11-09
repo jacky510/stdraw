@@ -28,6 +28,31 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
+
+# Phase timing instrumentation (2026-11-10 CI bottleneck localization card):
+# mark() records elapsed seconds since the previous mark; the table is
+# printed at the end. Purely observational — no assertion logic touched.
+_PREV = [time.time()]
+_PHASES = []
+
+
+def mark(label):
+    now = time.time()
+    _PHASES.append((label, now - _PREV[0]))
+    _PREV[0] = now
+
+
+def _on(pid):
+    """Phase selector for CI job splitting (2026-11-10 bottleneck card).
+
+    STDRAW_CI_PHASES="A,B,C" runs only those phases; unset/empty = all
+    (local default, behavior unchanged). Pure orchestration — assertions
+    untouched. Dependencies kept within one job: C needs B outputs, F2
+    needs F, G2/G3 follow G, J/H3 reuse H2 outputs.
+    """
+    sel = os.environ.get("STDRAW_CI_PHASES", "").strip()
+    return not sel or pid in (p.strip() for p in sel.split(","))
 
 EXAMPLES = [
     "examples/limits-to-growth.cld",
@@ -158,572 +183,611 @@ def main():
     tmp = tempfile.mkdtemp(prefix="stdraw-ci-")
     try:
         # ── A. ortho-v1 frozen regression (production behavior pin) ──
-        for ex in EXAMPLES:
-            name = os.path.splitext(os.path.basename(ex))[0]
-            out1 = os.path.join(tmp, name + "-ortho-1")
-            out2 = os.path.join(tmp, name + "-ortho-2")
-            r1 = run_cli(ex, out1, ("--recipe", "ortho"))
-            if r1.returncode != 0:
-                failures.append(f"ortho {ex}: CLI exit {r1.returncode}\n{r1.stderr}")
-                continue
-            run_cli(ex, out2, ("--recipe", "ortho"))
-            geo = load(out1, "geometry_report.json")
-            if geo.get("fail", 0) != 0:
-                failures.append(f"ortho {ex}: geometry fail={geo['fail']}")
-            cert = load(out1, "certificate.json")
-            if cert["metrics"]["crossings"] != 0 or cert["grade"] != "best":
-                failures.append(f"ortho {ex}: legacy cert crossings="
-                                f"{cert['metrics']['crossings']} grade={cert['grade']}")
-            # Production pin iron gate: byte-identical to the committed baseline
-            base = os.path.join(root, "tests", "baselines", name + ".layout.json")
-            with open(base, "rb") as a, \
-                 open(os.path.join(out1, "layout.json"), "rb") as b:
-                if a.read() != b.read():
-                    failures.append(f"ortho {ex}: layout.json drift vs tests/baselines/"
-                                    f"(production behavior pin broken -- planar.py must stay frozen)")
-            # Determinism (ref-scrubbed: loops_audit.json added to the byte-identical determinism list)
-            for fn in ("layout.json", "demo-2d.html", "loops_audit.json"):
-                with open(os.path.join(out1, fn), "rb") as a, \
-                     open(os.path.join(out2, fn), "rb") as b:
+        mark("gate: internal-leak")
+        if _on("A"):
+            for ex in EXAMPLES:
+                name = os.path.splitext(os.path.basename(ex))[0]
+                out1 = os.path.join(tmp, name + "-ortho-1")
+                out2 = os.path.join(tmp, name + "-ortho-2")
+                r1 = run_cli(ex, out1, ("--recipe", "ortho"))
+                if r1.returncode != 0:
+                    failures.append(f"ortho {ex}: CLI exit {r1.returncode}\n{r1.stderr}")
+                    continue
+                run_cli(ex, out2, ("--recipe", "ortho"))
+                geo = load(out1, "geometry_report.json")
+                if geo.get("fail", 0) != 0:
+                    failures.append(f"ortho {ex}: geometry fail={geo['fail']}")
+                cert = load(out1, "certificate.json")
+                if cert["metrics"]["crossings"] != 0 or cert["grade"] != "best":
+                    failures.append(f"ortho {ex}: legacy cert crossings="
+                                    f"{cert['metrics']['crossings']} grade={cert['grade']}")
+                # Production pin iron gate: byte-identical to the committed baseline
+                base = os.path.join(root, "tests", "baselines", name + ".layout.json")
+                with open(base, "rb") as a, \
+                     open(os.path.join(out1, "layout.json"), "rb") as b:
                     if a.read() != b.read():
-                        failures.append(f"ortho {ex}: {fn} non-deterministic (two runs differ)")
-            audit = load(out1, "loops_audit.json")
-            if audit["summary"]["problems"] != 0:
-                failures.append(f"ortho {ex}: loops problems={audit['summary']['problems']}")
-            print(f"OK  ortho {ex}: 11 checks fail=0, baseline byte-identical, deterministic")
+                        failures.append(f"ortho {ex}: layout.json drift vs tests/baselines/"
+                                        f"(production behavior pin broken -- planar.py must stay frozen)")
+                # Determinism (ref-scrubbed: loops_audit.json added to the byte-identical determinism list)
+                for fn in ("layout.json", "demo-2d.html", "loops_audit.json"):
+                    with open(os.path.join(out1, fn), "rb") as a, \
+                         open(os.path.join(out2, fn), "rb") as b:
+                        if a.read() != b.read():
+                            failures.append(f"ortho {ex}: {fn} non-deterministic (two runs differ)")
+                audit = load(out1, "loops_audit.json")
+                if audit["summary"]["problems"] != 0:
+                    failures.append(f"ortho {ex}: loops problems={audit['summary']['problems']}")
+                print(f"OK  ortho {ex}: 11 checks fail=0, baseline byte-identical, deterministic")
 
-        # ── B. auto-v2 new hard gates ──
-        for ex in AUTO_EXAMPLES:
-            name = os.path.splitext(os.path.basename(ex))[0]
-            out1 = os.path.join(tmp, name + "-auto-1")
-            out2 = os.path.join(tmp, name + "-auto-2")
-            r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
-            # auto recipe takes no pitch (self-tuned to 80)
-            if r1.returncode != 0:
-                tail = "\n".join(r1.stdout.strip().splitlines()[-25:])
+            # ── B. auto-v2 new hard gates ──
+        mark("A: ortho byte-regression (2 ex x2 runs)")
+        if _on("B"):
+            for ex in AUTO_EXAMPLES:
+                name = os.path.splitext(os.path.basename(ex))[0]
+                out1 = os.path.join(tmp, name + "-auto-1")
+                out2 = os.path.join(tmp, name + "-auto-2")
+                r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
+                # auto recipe takes no pitch (self-tuned to 80)
+                if r1.returncode != 0:
+                    tail = "\n".join(r1.stdout.strip().splitlines()[-25:])
+                    try:
+                        lj = json.load(open(os.path.join(out1, "layout.json"),
+                                            encoding="utf-8"))
+                        dump = json.dumps({"viewBox": lj["viewBox"],
+                                           "nodes": {v: p for v, p in lj["nodes"].items()}},
+                                          ensure_ascii=False)
+                    except Exception as _e:
+                        dump = f"layout.json unreadable: {_e}"
+                    failures.append(f"auto {ex}: CLI exit {r1.returncode}\n"
+                                    f"stderr={r1.stderr}\nstdout_tail:\n{tail}\n"
+                                    f"layout_dump={dump}")
+                    continue
+                run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
+                geo = load(out1, "geometry_report.json")
+                if geo.get("fail", 0) != 0:
+                    failures.append(f"auto {ex}: geometry fail={geo['fail']}")
+                cert = load(out1, "certificate.json")
+                m = cert["metrics"]
+                gates = _hard_gates_for(cert)
+                for k in gates:
+                    if not cert["gates"].get(k, False):
+                        failures.append(f"auto {ex}: hard gate {k} FAIL "
+                                        f"(metrics={json.dumps(m, ensure_ascii=False)[:300]})")
+                if m["crossings"] > 2:
+                    failures.append(f"auto {ex}: crossings={m['crossings']} > 2")
+                if cert["grade"] not in ("best", "second"):
+                    failures.append(f"auto {ex}: grade={cert['grade']}")
+                audit = load(out1, "loops_audit.json")
+                if audit["summary"]["problems"] != 0:
+                    failures.append(f"auto {ex}: loops problems={audit['summary']['problems']}")
+                # Determinism (ref-scrubbed: loops_audit.json added to the byte-identical determinism list)
+                for fn in ("layout.json", "certificate.json", "demo-2d.html",
+                           "loops_audit.json"):
+                    with open(os.path.join(out1, fn), "rb") as a, \
+                         open(os.path.join(out2, fn), "rb") as b:
+                        if a.read() != b.read():
+                            failures.append(f"auto {ex}: {fn} non-deterministic (two runs differ)")
+                print(f"OK  auto {ex}: hard gates pass, crossings={m['crossings']}, "
+                      f"grade={cert['grade']}, deterministic")
+
+            # ── B2. Random dense-graph sampling (WS3-Q routing-quality gated regression) ──
+        mark("B: auto hard gates (4 ex x2 runs)")
+        if _on("B2"):
+            for ex in RANDOM_SAMPLES:
+                name = os.path.splitext(os.path.basename(ex))[0]
+                out1 = os.path.join(tmp, name + "-auto-1")
+                out2 = os.path.join(tmp, name + "-auto-2")
+                r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
+                if r1.returncode != 0:
+                    tail = "\n".join(r1.stdout.strip().splitlines()[-10:])
+                    failures.append(f"random {ex}: CLI exit {r1.returncode}\n{tail}")
+                    continue
+                run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
+                geo = load(out1, "geometry_report.json")
+                if geo.get("fail", 0) != 0:
+                    failures.append(f"random {ex}: geometry fail={geo['fail']}")
+                cert = load(out1, "certificate.json")
+                m = cert["metrics"]
+                if m["crossings"] > 2:
+                    failures.append(f"random {ex}: crossings={m['crossings']} > 2")
+                if (m.get("edge_box_min_clear") or 0) < 16:
+                    failures.append(f"random {ex}: edge_box_min_clear="
+                                    f"{m.get('edge_box_min_clear')} < 16")
+                # ref-scrubbed finalize (approved 2026-11-09): density-
+                # gated snap caliber.  A dense graph (E/N >= 1.6) must either
+                # deliver every endpoint on the 16-anchor set (snap probe kept,
+                # zero gate regressions) or carry an anchors_standard_deferred
+                # record with a measured reason; the membership gate stays
+                # measured either way (no fudging).  A below-threshold graph has
+                # no deferral excuse: anchors_standard must be True outright.
                 try:
-                    lj = json.load(open(os.path.join(out1, "layout.json"),
-                                        encoding="utf-8"))
-                    dump = json.dumps({"viewBox": lj["viewBox"],
-                                       "nodes": {v: p for v, p in lj["nodes"].items()}},
-                                      ensure_ascii=False)
+                    with open(os.path.join(out1, "layout.json"), encoding="utf-8") as f:
+                        _lay = json.load(f)
+                    _dens = len(_lay["edges"]) / max(len(_lay["nodes"]), 1)
                 except Exception as _e:
-                    dump = f"layout.json unreadable: {_e}"
-                failures.append(f"auto {ex}: CLI exit {r1.returncode}\n"
-                                f"stderr={r1.stderr}\nstdout_tail:\n{tail}\n"
-                                f"layout_dump={dump}")
-                continue
-            run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
-            geo = load(out1, "geometry_report.json")
-            if geo.get("fail", 0) != 0:
-                failures.append(f"auto {ex}: geometry fail={geo['fail']}")
-            cert = load(out1, "certificate.json")
-            m = cert["metrics"]
-            gates = _hard_gates_for(cert)
-            for k in gates:
-                if not cert["gates"].get(k, False):
-                    failures.append(f"auto {ex}: hard gate {k} FAIL "
-                                    f"(metrics={json.dumps(m, ensure_ascii=False)[:300]})")
-            if m["crossings"] > 2:
-                failures.append(f"auto {ex}: crossings={m['crossings']} > 2")
-            if cert["grade"] not in ("best", "second"):
-                failures.append(f"auto {ex}: grade={cert['grade']}")
-            audit = load(out1, "loops_audit.json")
-            if audit["summary"]["problems"] != 0:
-                failures.append(f"auto {ex}: loops problems={audit['summary']['problems']}")
-            # Determinism (ref-scrubbed: loops_audit.json added to the byte-identical determinism list)
-            for fn in ("layout.json", "certificate.json", "demo-2d.html",
-                       "loops_audit.json"):
-                with open(os.path.join(out1, fn), "rb") as a, \
-                     open(os.path.join(out2, fn), "rb") as b:
-                    if a.read() != b.read():
-                        failures.append(f"auto {ex}: {fn} non-deterministic (two runs differ)")
-            print(f"OK  auto {ex}: hard gates pass, crossings={m['crossings']}, "
-                  f"grade={cert['grade']}, deterministic")
+                    failures.append(f"random {ex}: layout.json unreadable: {_e}")
+                    continue
+                _gates = cert.get("gates", {})
+                _astd = _gates.get("anchors_standard")
+                _defer = _gates.get("anchors_standard_deferred")
+                if _defer is not None:
+                    if not _defer.get("reason"):
+                        failures.append(f"random {ex}: deferral record without a measured reason")
+                    if _dens < 1.6:
+                        failures.append(f"random {ex}: deferral on a below-threshold "
+                                        f"graph (E/N={_dens:.2f} < 1.6)")
+                    print(f"OK  random {ex}: snap DEFERRED (dense E/N={_dens:.2f}, "
+                          f"reason={'; '.join(_defer.get('reason', []))}) -- honest downgrade")
+                elif not _astd:
+                    failures.append(f"random {ex}: anchors_standard fails with no "
+                                    f"deferral record (E/N={_dens:.2f})")
+                # Determinism (ref-scrubbed: loops_audit.json added to the byte-identical determinism list)
+                for fn in ("layout.json", "demo-2d.html", "loops_audit.json"):
+                    with open(os.path.join(out1, fn), "rb") as a, \
+                         open(os.path.join(out2, fn), "rb") as b:
+                        if a.read() != b.read():
+                            failures.append(f"random {ex}: {fn} non-deterministic (two runs differ)")
+                print(f"OK  random {ex}: crossings={m['crossings']}, "
+                      f"min_clear={m.get('edge_box_min_clear')}px, deterministic")
 
-        # ── B2. Random dense-graph sampling (WS3-Q routing-quality gated regression) ──
-        for ex in RANDOM_SAMPLES:
-            name = os.path.splitext(os.path.basename(ex))[0]
-            out1 = os.path.join(tmp, name + "-auto-1")
-            out2 = os.path.join(tmp, name + "-auto-2")
-            r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
-            if r1.returncode != 0:
-                tail = "\n".join(r1.stdout.strip().splitlines()[-10:])
-                failures.append(f"random {ex}: CLI exit {r1.returncode}\n{tail}")
-                continue
-            run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
-            geo = load(out1, "geometry_report.json")
-            if geo.get("fail", 0) != 0:
-                failures.append(f"random {ex}: geometry fail={geo['fail']}")
-            cert = load(out1, "certificate.json")
-            m = cert["metrics"]
-            if m["crossings"] > 2:
-                failures.append(f"random {ex}: crossings={m['crossings']} > 2")
-            if (m.get("edge_box_min_clear") or 0) < 16:
-                failures.append(f"random {ex}: edge_box_min_clear="
-                                f"{m.get('edge_box_min_clear')} < 16")
-            # ref-scrubbed finalize (approved 2026-11-09): density-
-            # gated snap caliber.  A dense graph (E/N >= 1.6) must either
-            # deliver every endpoint on the 16-anchor set (snap probe kept,
-            # zero gate regressions) or carry an anchors_standard_deferred
-            # record with a measured reason; the membership gate stays
-            # measured either way (no fudging).  A below-threshold graph has
-            # no deferral excuse: anchors_standard must be True outright.
+            # ── C. DOM-measured box bounds (optional layer) ──
+        mark("B2: random dense sampling (4 ex x2 runs)")
+        if _on("C"):
+            r = subprocess.run(
+                [sys.executable, "-m", "stdraw.rendercheck",
+                 os.path.join(tmp, os.path.basename(EXAMPLES[0]).split(".")[0] + "-auto-1")],
+                capture_output=True, text=True)
+            if r.returncode == 2:
+                print("SKIP  rendercheck: playwright unavailable (CI workflow installs the optional layer as backstop)")
+            elif r.returncode != 0:
+                failures.append(f"rendercheck: exit {r.returncode}\n{r.stdout}\n{r.stderr}")
+            else:
+                print("OK  rendercheck: DOM-measured box bounds, no overflow")
+
+            # ── D. WS3 routing math units (visibility-graph shortest path / clearance / dual criteria) ──
+        mark("C: DOM rendercheck (playwright chromium)")
+        if _on("D"):
+            r = subprocess.run([sys.executable, os.path.join(root, "tests",
+                                                              "test_visibility.py")],
+                               capture_output=True, text=True)
+            if r.returncode != 0:
+                failures.append(f"test_visibility: exit {r.returncode}\n{r.stdout}\n{r.stderr}")
+            else:
+                print("OK  test_visibility: visibility-graph shortest path / arc smoothness / dual criteria units all pass")
+
+            # ── E. WS2 exact crossing-count layer (optional: needs ortools; honestly SKIP when unavailable) ──
+        mark("D: test_visibility")
+        if _on("E"):
             try:
-                with open(os.path.join(out1, "layout.json"), encoding="utf-8") as f:
-                    _lay = json.load(f)
-                _dens = len(_lay["edges"]) / max(len(_lay["nodes"]), 1)
-            except Exception as _e:
-                failures.append(f"random {ex}: layout.json unreadable: {_e}")
-                continue
-            _gates = cert.get("gates", {})
-            _astd = _gates.get("anchors_standard")
-            _defer = _gates.get("anchors_standard_deferred")
-            if _defer is not None:
-                if not _defer.get("reason"):
-                    failures.append(f"random {ex}: deferral record without a measured reason")
-                if _dens < 1.6:
-                    failures.append(f"random {ex}: deferral on a below-threshold "
-                                    f"graph (E/N={_dens:.2f} < 1.6)")
-                print(f"OK  random {ex}: snap DEFERRED (dense E/N={_dens:.2f}, "
-                      f"reason={'; '.join(_defer.get('reason', []))}) -- honest downgrade")
-            elif not _astd:
-                failures.append(f"random {ex}: anchors_standard fails with no "
-                                f"deferral record (E/N={_dens:.2f})")
-            # Determinism (ref-scrubbed: loops_audit.json added to the byte-identical determinism list)
-            for fn in ("layout.json", "demo-2d.html", "loops_audit.json"):
-                with open(os.path.join(out1, fn), "rb") as a, \
-                     open(os.path.join(out2, fn), "rb") as b:
-                    if a.read() != b.read():
-                        failures.append(f"random {ex}: {fn} non-deterministic (two runs differ)")
-            print(f"OK  random {ex}: crossings={m['crossings']}, "
-                  f"min_clear={m.get('edge_box_min_clear')}px, deterministic")
-
-        # ── C. DOM-measured box bounds (optional layer) ──
-        r = subprocess.run(
-            [sys.executable, "-m", "stdraw.rendercheck",
-             os.path.join(tmp, os.path.basename(EXAMPLES[0]).split(".")[0] + "-auto-1")],
-            capture_output=True, text=True)
-        if r.returncode == 2:
-            print("SKIP  rendercheck: playwright unavailable (CI workflow installs the optional layer as backstop)")
-        elif r.returncode != 0:
-            failures.append(f"rendercheck: exit {r.returncode}\n{r.stdout}\n{r.stderr}")
-        else:
-            print("OK  rendercheck: DOM-measured box bounds, no overflow")
-
-        # ── D. WS3 routing math units (visibility-graph shortest path / clearance / dual criteria) ──
-        r = subprocess.run([sys.executable, os.path.join(root, "tests",
-                                                          "test_visibility.py")],
-                           capture_output=True, text=True)
-        if r.returncode != 0:
-            failures.append(f"test_visibility: exit {r.returncode}\n{r.stdout}\n{r.stderr}")
-        else:
-            print("OK  test_visibility: visibility-graph shortest path / arc smoothness / dual criteria units all pass")
-
-        # ── E. WS2 exact crossing-count layer (optional: needs ortools; honestly SKIP when unavailable) ──
-        try:
-            import ortools  # noqa: F401
-            has_ortools = True
-        except Exception:
-            has_ortools = False
-        if has_ortools:
-            for t in ("test_crossing_exact.py", "test_placement.py",
-                      "test_scalability.py"):
-                r = subprocess.run([sys.executable, os.path.join(root, "tests", t)],
-                                   capture_output=True, text=True)
-                if r.returncode != 0:
-                    failures.append(f"{t}: exit {r.returncode}\n"
-                                    f"{r.stdout}\n{r.stderr}")
-                else:
-                    print(f"OK  {t}: all pass")
-        else:
-            print("SKIP test_crossing_exact/test_placement: "
-                  "ortools unavailable (CI workflow installs the [solver] optional layer as backstop)")
-
-        # ── F. Manual-layout round-trip (ref-scrubbed): --from-layout identical replay + layout-diff ──
-        ex = EXAMPLES[0]
-        name = os.path.splitext(os.path.basename(ex))[0]
-        out_f = os.path.join(tmp, name + "-manual-f")
-        r_f = run_cli(ex, out_f, (), pitch=None)          # auto baseline (layer F self-contained)
-        if r_f.returncode != 0:
-            failures.append(f"manual-loop {ex}: auto baseline exit {r_f.returncode}")
-        else:
-            lay = load(out_f, "layout.json")
-            ident = {"viewBox": lay["viewBox"],
-                     "nodes": {v: {"x": p["x"], "y": p["y"]}
-                               for v, p in lay["nodes"].items()}}
-            ipath = os.path.join(tmp, "ci-ident-manual.json")
-            with open(ipath, "w", encoding="utf-8") as f:
-                json.dump(ident, f, ensure_ascii=False)
-            out_f2 = os.path.join(tmp, name + "-manual-f2")
-            r_f2 = run_cli(ex, out_f2, ("--from-layout", ipath), pitch=None)
-            geo_f = load(out_f2, "geometry_report.json")
-            lay_f = load(out_f2, "layout.json")
-            if r_f2.returncode != 0 or geo_f.get("fail", 0) != 0:
-                failures.append(f"manual-loop {ex}: identical manual layout exit "
-                                f"{r_f2.returncode} fail={geo_f.get('fail')}")
-            elif lay_f["nodes"] != lay["nodes"] or \
-                    lay_f["meta"].get("position_engine") != "manual":
-                failures.append(f"manual-loop {ex}: identical manual layout drift / engine not manual")
-            else:
-                dpath = os.path.join(tmp, "ci-layout-diff.json")
-                r_d = subprocess.run(
-                    [sys.executable, "-m", "stdraw", "layout-diff",
-                     os.path.join(out_f, "layout.json"),
-                     os.path.join(out_f2, "layout.json"),
-                     "--cld", ex, "--diff-out", dpath],
-                    capture_output=True, text=True)
-                try:
-                    with open(dpath, encoding="utf-8") as f:
-                        diff = json.load(f)
-                    assert (diff["node_level"] and diff["structural"]
-                            and diff["semantic"])
-                except Exception as e:
-                    failures.append(f"manual-loop layout-diff: {e}\n{r_d.stdout[-300:]}")
-                if not failures or all("manual-loop" not in x for x in failures):
-                    print("OK  manual-loop: --from-layout identical replay fail=0 + "
-                          "layout-diff all three layers present")
-
-        # ── F2. ref-scrubbed: --from-layout waypoints identical recompute (polyline-handle full chain) ──
-        # Fixture: since ref-scrubbed, polylines carry fixed type costs
-        # (arc > line > polyline), so the router rarely emits vg edges on
-        # its own -- the fixture instead uses **manually anchored waypoints**
-        # (isomorphic to the demo polyline-handle export), verifying the
-        # same full chain: waypoints anchored as-is fed back -> the same
-        # polyline with kind=waypoints (anchors recomputed onto box edges)
-        # + determinism holds.
-        lay_g = load(out_f, "layout.json")
-        man_base = {"viewBox": lay_g["viewBox"],
-                    "nodes": {v: {"x": p["x"], "y": p["y"]}
-                              for v, p in lay_g["nodes"].items()}}
-        e0 = lay_g["edges"][0]
-        a0n, b0n = nodes_of = (e0["a"], e0["b"])
-        p0 = lay_g["nodes"][a0n]
-        p1 = lay_g["nodes"][b0n]
-        mx = (p0["x"] + p1["x"]) / 2
-        my = (p0["y"] + p1["y"]) / 2
-        # Deterministic detour waypoints perpendicular to the edge (one per side, on the 2px grid)
-        dx, dy = p1["x"] - p0["x"], p1["y"] - p0["y"]
-        n = (dx * dx + dy * dy) ** 0.5 or 1.0
-        ux, uy = -dy / n, dx / n
-        wp = [[int(round((mx + ux * 70) / 2)) * 2, int(round((my + uy * 70) / 2)) * 2],
-              [int(round((mx - ux * 70) / 2)) * 2, int(round((my - uy * 70) / 2)) * 2]]
-        man_base["edges"] = [{"a": a0n, "b": b0n, "waypoints": wp}]
-        ipath2 = os.path.join(tmp, "ci-wp-manual.json")
-        with open(ipath2, "w", encoding="utf-8") as f:
-            json.dump(man_base, f, ensure_ascii=False)
-        out_w1 = os.path.join(tmp, name + "-wp-1")
-        out_w2 = os.path.join(tmp, name + "-wp-2")
-        r_w1 = run_cli(ex, out_w1, ("--from-layout", ipath2), pitch=None)
-        run_cli(ex, out_w2, ("--from-layout", ipath2), pitch=None)
-        lay_w = load(out_w1, "layout.json")
-        e_w = next((x for x in lay_w["edges"]
-                    if (x["a"], x["b"]) == (a0n, b0n)), None)
-        want_via = [[float(q[0]), float(q[1])] for q in wp]
-        if (not e_w or e_w["route"]["kind"] != "waypoints" or
-                e_w["route"].get("via") != want_via or
-                len(e_w["route"]["points"]) != len(want_via) + 2):
-            failures.append(f"manual-waypoints: recompute mismatch rc={r_w1.returncode} "
-                            f"kind={e_w['route']['kind'] if e_w else '?'}")
-        else:
-            for fn in ("layout.json", "demo-2d.html"):
-                with open(os.path.join(out_w1, fn), "rb") as a, \
-                     open(os.path.join(out_w2, fn), "rb") as b:
-                    if a.read() != b.read():
-                        failures.append(f"manual-waypoints: {fn} non-deterministic")
-            if not any("manual-waypoints" in x for x in failures):
-                print("OK  manual-waypoints: --from-layout waypoints identical recompute "
-                      "fail=0 + deterministic")
-
-        # ── G. Loop-dominant ring placement (ref-scrubbed): trigger / criteria / negatives / fallback ──
-        r = subprocess.run([sys.executable, os.path.join(root, "tests",
-                                                          "test_ring_layout.py")],
-                           capture_output=True, text=True)
-        if r.returncode != 0:
-            failures.append(f"test_ring_layout: exit {r.returncode}\n"
-                            f"{r.stdout}\n{r.stderr}")
-        else:
-            print("OK  test_ring_layout: ring trigger / criteria / negatives not misfired / determinism all pass")
-
-        # G2. debt-spiral real run: main loop forms a circle, 0 crossings, all ring-criteria gates pass
-        ds = os.path.join(root, "benchmarks/corpus/classic/debt-spiral.cld")
-        out_g = os.path.join(tmp, "debt-spiral-ring")
-        r_g = run_cli(ds, out_g, (), pitch=None)
-        if r_g.returncode != 0:
-            failures.append(f"ring debt-spiral: CLI exit {r_g.returncode}\n{r_g.stdout[-800:]}")
-        else:
-            lay_g = load(out_g, "layout.json")
-            cert_g = load(out_g, "certificate.json")
-            if lay_g["meta"].get("placement") != "ring-cycle" or \
-                    lay_g["meta"].get("position_engine") != "ring-construct":
-                failures.append("ring debt-spiral: ring placement not taken "
-                                f"(engine={lay_g['meta'].get('position_engine')})")
-            if cert_g["metrics"]["crossings"] != 0 or \
-                    cert_g.get("placement") != "ring-cycle":
-                failures.append(f"ring debt-spiral: crossings="
-                                f"{cert_g['metrics']['crossings']} placement="
-                                f"{cert_g.get('placement')}")
-            for k in RING_HARD_GATES:
-                if not cert_g["gates"].get(k, False):
-                    failures.append(f"ring debt-spiral: ring-criteria gate {k} FAIL")
-            if cert_g["grade"] != "best":
-                failures.append(f"ring debt-spiral: grade={cert_g['grade']}")
-            if not failures or all("debt-spiral" not in x for x in failures):
-                print("OK  ring debt-spiral: main loop circular (5 nodes), 0 crossings, best grade, "
-                      "all ring-criteria gates pass")
-
-        # G3. Negatives must not misfire: chain / tree / 13-node ring / two triangles + bridge -> ring must NOT trigger
-        # (ref-scrubbed: two triangles + bridge may enter column placement -- few loops + main-chain
-        # structure; the assertion only forbids ring)
-        neg_fixtures = {
-            "ci-neg-chain.cld": 'graph "链"\nvar a "A"\nvar b "B"\nvar c "C"\n'
-                                'var d "D"\na -> + b\nb -> + c\nc -> + d\n',
-            "ci-neg-tree.cld": 'graph "树"\nvar root "根"\nvar x1 "子一"\n'
-                               'var x2 "子二"\nroot -> + x1\nroot -> + x2\n',
-            "ci-neg-big-ring.cld": "graph \"大环\"\n" + "".join(
-                f'var v{i} "节点{i}"\n' for i in range(13)) + "".join(
-                f'v{i} -> + v{(i + 1) % 13}\n' for i in range(13)),
-            "ci-neg-two-tri.cld": 'graph "双三角"\nvar a1 "甲一"\nvar a2 "甲二"\n'
-                                  'var a3 "甲三"\nvar b1 "乙一"\nvar b2 "乙二"\n'
-                                  'var b3 "乙三"\na1 -> + a2\na2 -> + a3\n'
-                                  'a3 -> + a1\nb1 -> + b2\nb2 -> + b3\n'
-                                  'b3 -> + b1\na1 -> + b1\n',
-        }
-        for fn, text in neg_fixtures.items():
-            p = os.path.join(tmp, fn)
-            with open(p, "w", encoding="utf-8") as f:
-                f.write(text)
-            out_n = os.path.join(tmp, fn + "-out")
-            r_n = run_cli(p, out_n, (), pitch=None)
-            if r_n.returncode not in (0, 1):     # geometry fail is legacy semantics; exit 1 is legal
-                failures.append(f"ring negative {fn}: CLI exit {r_n.returncode}")
-                continue
-            lay_n = load(out_n, "layout.json")
-            if lay_n["meta"].get("position_engine") == "ring-construct":
-                failures.append(f"ring negative {fn}: ring placement misfired")
-        if not failures or all("ring negative" not in x for x in failures):
-            print("OK  ring negatives x4 (chain/tree/13-node ring/two triangles + bridge): ring not triggered "
-                  "(two triangles + bridge may enter column placement since ref-scrubbed; only ring is forbidden)")
-
-        # ── H. Layout aesthetics v2 (ref-scrubbed): column/symmetric trigger + R/B coloring + full corpus ──
-        r = subprocess.run([sys.executable, os.path.join(root, "tests",
-                                                          "test_layout_modes.py")],
-                           capture_output=True, text=True)
-        if r.returncode != 0:
-            failures.append(f"test_layout_modes: exit {r.returncode}\n"
-                            f"{r.stdout}\n{r.stderr}")
-        else:
-            print("OK  test_layout_modes: column/symmetric trigger, geometry, R/B coloring,"
-                  "crossings soft goal, determinism all pass")
-
-        # H2. Full classic corpus, 19 graphs: exit 0 + all best grade + all hard gates pass (new criteria)
-        corpus_dir = os.path.join(root, "benchmarks", "corpus", "classic")
-        n_ok = 0
-        for fn in sorted(os.listdir(corpus_dir)):
-            if not fn.endswith(".cld"):
-                continue
-            name = fn[:-4]
-            out_h = os.path.join(tmp, "H-" + name)
-            r_h = run_cli(os.path.join(corpus_dir, fn), out_h, (), pitch=None)
-            if r_h.returncode != 0:
-                failures.append(f"corpus {name}: CLI exit {r_h.returncode}\n"
-                                f"{r_h.stdout[-500:]}")
-                continue
-            cert_h = load(out_h, "certificate.json")
-            if cert_h["grade"] != "best":
-                failures.append(f"corpus {name}: grade={cert_h['grade']}")
-            for k in _hard_gates_for(cert_h):
-                if not cert_h["gates"].get(k, False):
-                    failures.append(f"corpus {name}: hard gate {k} FAIL")
-            if cert_h["metrics"]["crossings"] > 2:
-                failures.append(f"corpus {name}: crossings="
-                                f"{cert_h['metrics']['crossings']}")
-            n_ok += 1
-        print(f"OK  corpus full set {n_ok}/19: exit 0, best grade, all new-criteria hard gates pass")
-
-        # J. Anchor-criteria hard gate (ref-scrubbed second-review rework):
-        #    jacky: "the point where a line meets a box should prefer the
-        #    midpoint of each edge, never a corner" -- docs/layout-modes.md
-        #    §anchor criteria. Measured per graph: (1) corner hits = 0 (hard
-        #    gate for all engines); (2) in-band anchor ratio (edge midpoint
-        #    +/- 1/4 edge length): spine-wing (this card's domain) = 100%;
-        #    other engines locked to v0.7.2 baseline ratios (table below) to
-        #    prevent regressions -- ring-cycle inter-ring pairs / bowtie-vertex
-        #    +/-12px spoke corridors are registered legacy out-of-band cases
-        #    (a fix would shift deliverables and break the 18-graph
-        #    zero-drift hard gate; deferred to a later card).
-        BASELINE_BAND = {
-            # v0.7.2 baseline in-band ratios (band/total exact fractions, avoiding rounding misjudgment)
-            "arms-race": 8 / 8, "brand-flywheel": 14 / 16,
-            "bullwhip": 12 / 12, "burnout-attrition": 12 / 12,
-            "classic-cld-growth-and-burden": 26 / 26,   # spine-wing gate raised to 100%
-            "debt-spiral": 12 / 12, "eroding-goals": 8 / 12,
-            "fishing-collapse": 15 / 18, "fixes-that-fail": 10 / 10,
-            "induced-demand": 14 / 14, "learning-flywheel": 10 / 10,
-            "limits-to-growth": 14 / 14, "population-logistic": 12 / 12,
-            "renewable-resource": 14 / 14, "shifting-the-burden": 10 / 16,
-            "soil-erosion": 16 / 16, "tragedy-of-the-commons": 12 / 12,
-            "urban-migration": 16 / 16, "wage-price-spiral": 8 / 12,
-        }
-        n_anchor_ok = 0
-        for fn in sorted(os.listdir(corpus_dir)):
-            if not fn.endswith(".cld"):
-                continue
-            name = fn[:-4]
-            if not os.path.exists(os.path.join(tmp, "H-" + name,
-                                               "layout.json")):
-                continue
-            lay = load(os.path.join(tmp, "H-" + name), "layout.json")
-            ch = lay.get("meta", {}).get("cardH", 44.0)
-            total = band_in = corner = 0
-            worst = []
-            for e in lay["edges"]:
-                rt = e["route"]
-                for side, idx in (("a", 0), ("b", len(rt["points"]) - 1)):
-                    nd = lay["nodes"][e[side]]
-                    cx, cy, hw, hh = nd["x"], nd["y"], nd["w"] / 2.0, ch / 2.0
-                    p = rt["points"][idx]
-                    dxo, dyo = p[0] - cx, p[1] - cy
-                    on_x = abs(abs(dxo) - hw) <= abs(abs(dyo) - hh)
-                    total += 1
-                    if (abs(abs(dxo) - hw) < 0.75 and
-                            abs(abs(dyo) - hh) < 0.75):
-                        corner += 1
-                    if on_x:
-                        if abs(dyo) <= hh / 2 + 1e-6:
-                            band_in += 1
-                        elif len(worst) < 3:
-                            worst.append(f"{e['a']}->{e['b']}:{side}")
+                import ortools  # noqa: F401
+                has_ortools = True
+            except Exception:
+                has_ortools = False
+            if has_ortools:
+                for t in ("test_crossing_exact.py", "test_placement.py",
+                          "test_scalability.py"):
+                    r = subprocess.run([sys.executable, os.path.join(root, "tests", t)],
+                                       capture_output=True, text=True)
+                    if r.returncode != 0:
+                        failures.append(f"{t}: exit {r.returncode}\n"
+                                        f"{r.stdout}\n{r.stderr}")
                     else:
-                        if abs(dxo) <= hw / 2 + 1e-6:
-                            band_in += 1
-                        elif len(worst) < 3:
-                            worst.append(f"{e['a']}->{e['b']}:{side}")
-            # ref-scrubbed re-baseline: the +/-1/4 in-band ratio was the PROXY
-            # for "prefer midpoints, avoid corners" under the v0.7.2 caliber.
-            # The default attachment caliber is now the 16 standard anchor set
-            # (anchors.py); the hard gate = every delivered endpoint is a
-            # member of its box's 16-anchor set (certificate anchors_standard
-            # is the per-run gate; this corpus sweep re-asserts it file-by-
-            # file).  The in-band ratio stays REPORT-ONLY as honest evidence
-            # (measured post-snap ratios recorded in the card).
-            from stdraw.anchors import standard_anchors as _sa
-            eng = lay.get("meta", {}).get("engine", "")
-            ratio = band_in / total if total else 1.0
-            viol = 0
-            for e in lay["edges"]:
-                rt = e["route"]
-                for side, idx in (("a", 0), ("b", len(rt["points"]) - 1)):
-                    nd = lay["nodes"][e[side]]
-                    p = rt["points"][idx]
-                    pts16 = _sa(nd["x"], nd["y"], nd["w"] / 2.0, ch / 2.0)
-                    if not any(abs(ax - p[0]) <= 0.75 and
-                               abs(ay - p[1]) <= 0.75
-                               for _aid, ax, ay in pts16):
-                        viol += 1
-            if viol > 0:
-                failures.append(f"corpus {name}: {viol} endpoint(s) off the "
-                                f"16 standard anchor set (ref-scrubbed caliber)")
+                        print(f"OK  {t}: all pass")
             else:
-                n_anchor_ok += 1
-                print(f"OK  anchor criteria {name}: engine={eng} "
-                      f"standard-anchor membership 100% "
-                      f"(in-band report-only {band_in}/{total} = {ratio:.0%}, "
-                      f"corners {corner})")
-        if n_anchor_ok == 19:
-            print("OK  anchor criteria hard gate: 19/19 endpoints all on the "
-                  "16 standard anchor set (ref-scrubbed; in-band ratio is "
-                  "report-only since the band was the old proxy caliber)")
+                print("SKIP test_crossing_exact/test_placement: "
+                      "ortools unavailable (CI workflow installs the [solver] optional layer as backstop)")
 
-        # H3. R/B coloring criteria: wage R1 amber / B1 sky blue / multi-loop mixed-color neutral + polarity data retained
-        out_w = os.path.join(tmp, "H-wage")
-        run_cli(os.path.join(corpus_dir, "wage-price-spiral.cld"), out_w,
-                (), pitch=None)
-        lay_w = load(out_w, "layout.json")
-        by_pair = {(e["a"], e["b"]): e for e in lay_w["edges"]}
-        for pr, kinds, color in (
-                (("wages", "cost"), ["R"], "#d97706"),
-                (("cost", "prices"), ["R"], "#d97706"),
-                (("prices", "real_income"), ["B"], "#0284c7"),
-                (("demand", "prices"), ["B"], "#0284c7")):
-            e = by_pair[pr]
-            if e["loop_kinds"] != kinds or e["loop_color"] != color:
-                failures.append(f"R/B coloring {pr}: kinds={e['loop_kinds']} "
-                                f"color={e['loop_color']}")
-            if "polarity" not in e:
-                failures.append(f"R/B coloring {pr}: polarity data lost")
-        demo_w = open(os.path.join(out_w, "demo-2d.html"), encoding="utf-8").read()
-        if "data-pol" in demo_w:
-            failures.append("R/B coloring: demo still contains text badge data-pol")
-        if 'stroke="#d97706"' not in demo_w or 'stroke="#0284c7"' not in demo_w:
-            failures.append("R/B coloring: demo missing polarity amber / sky-blue coloring")
-        if 'stroke-dasharray="' in demo_w:
-            failures.append("polarity coloring: demo still has dashed edges "
-                            "(two-color caliber, jacky 2026-11-09: all solid)")
-        if 'stroke="#64748b"' in demo_w:
-            failures.append("polarity coloring: demo still has neutral-gray edges "
-                            "(two-color caliber, jacky 2026-11-09)")
-        print("OK  polarity coloring: edges colored by sign (+ amber / − sky blue), "
-              "all solid, text badges removed, polarity data retained")
-
-        # I. Demo deliverable freshness (ref-scrubbed rework, v0.7.1 lesson):
-        #    after the engine switched to spine-wing, demos/classic-cld-2d.html
-        #    was not re-rendered, so jacky's eyeball review still saw the old
-        #    ring-construct image and wrongly flagged "structural
-        #    inconsistency". Iron gate: the delivered demo must be
-        #    byte-identical to a fresh re-render by the current engine
-        #    (engine determinism is already proven by double runs, so a
-        #    byte-exact pin is valid).
-        fresh_out = os.path.join(tmp, "I-fresh-demo")
-        r_f = run_cli("examples/classic-cld-growth-and-burden.cld", fresh_out,
-                      ("--name", "classic-cld", "--skip-3d"), pitch=None)
-        if r_f.returncode != 0:
-            failures.append(f"demo freshness: CLI exit {r_f.returncode}\n"
-                            f"{r_f.stderr[-500:]}")
-        else:
-            committed = os.path.join(root, "demos", "classic-cld-2d.html")
-            with open(committed, "rb") as a, \
-                    open(os.path.join(fresh_out, "demo-2d.html"), "rb") as b:
-                if a.read() != b.read():
-                    failures.append(
-                        "demo freshness: demos/classic-cld-2d.html does not match a "
-                        "re-render by the current engine (deliverable stale -- rerun "
-                        "python -m stdraw layout examples/"
-                        "classic-cld-growth-and-burden.cld --name classic-cld"
-                        " --skip-3d and update the demo + docs/gallery screenshots)")
+            # ── F. Manual-layout round-trip (ref-scrubbed): --from-layout identical replay + layout-diff ──
+        mark("E: ortools exact tests (crossing/placement/scalability)")
+        if _on("F"):
+            ex = EXAMPLES[0]
+            name = os.path.splitext(os.path.basename(ex))[0]
+            out_f = os.path.join(tmp, name + "-manual-f")
+            r_f = run_cli(ex, out_f, (), pitch=None)          # auto baseline (layer F self-contained)
+            if r_f.returncode != 0:
+                failures.append(f"manual-loop {ex}: auto baseline exit {r_f.returncode}")
+            else:
+                lay = load(out_f, "layout.json")
+                ident = {"viewBox": lay["viewBox"],
+                         "nodes": {v: {"x": p["x"], "y": p["y"]}
+                                   for v, p in lay["nodes"].items()}}
+                ipath = os.path.join(tmp, "ci-ident-manual.json")
+                with open(ipath, "w", encoding="utf-8") as f:
+                    json.dump(ident, f, ensure_ascii=False)
+                out_f2 = os.path.join(tmp, name + "-manual-f2")
+                r_f2 = run_cli(ex, out_f2, ("--from-layout", ipath), pitch=None)
+                geo_f = load(out_f2, "geometry_report.json")
+                lay_f = load(out_f2, "layout.json")
+                if r_f2.returncode != 0 or geo_f.get("fail", 0) != 0:
+                    failures.append(f"manual-loop {ex}: identical manual layout exit "
+                                    f"{r_f2.returncode} fail={geo_f.get('fail')}")
+                elif lay_f["nodes"] != lay["nodes"] or \
+                        lay_f["meta"].get("position_engine") != "manual":
+                    failures.append(f"manual-loop {ex}: identical manual layout drift / engine not manual")
                 else:
-                    print("OK  demo freshness: demos/classic-cld-2d.html byte-identical "
-                          "to the current engine's re-render (ref-scrubbed anti-staleness gate)")
-                # Certificate deliverable under the same criteria (caught in
-                # ref-scrubbed closeout: demos/classic-certificate.json was stuck
-                # at the old ring-cycle 9-gate certificate) -- byte-exact pin.
-                committed_cert = os.path.join(root, "demos",
-                                              "classic-certificate.json")
-                with open(committed_cert, "rb") as a, \
-                        open(os.path.join(fresh_out, "certificate.json"),
-                             "rb") as b:
+                    dpath = os.path.join(tmp, "ci-layout-diff.json")
+                    r_d = subprocess.run(
+                        [sys.executable, "-m", "stdraw", "layout-diff",
+                         os.path.join(out_f, "layout.json"),
+                         os.path.join(out_f2, "layout.json"),
+                         "--cld", ex, "--diff-out", dpath],
+                        capture_output=True, text=True)
+                    try:
+                        with open(dpath, encoding="utf-8") as f:
+                            diff = json.load(f)
+                        assert (diff["node_level"] and diff["structural"]
+                                and diff["semantic"])
+                    except Exception as e:
+                        failures.append(f"manual-loop layout-diff: {e}\n{r_d.stdout[-300:]}")
+                    if not failures or all("manual-loop" not in x for x in failures):
+                        print("OK  manual-loop: --from-layout identical replay fail=0 + "
+                              "layout-diff all three layers present")
+
+            # ── F2. ref-scrubbed: --from-layout waypoints identical recompute (polyline-handle full chain) ──
+            # Fixture: since ref-scrubbed, polylines carry fixed type costs
+            # (arc > line > polyline), so the router rarely emits vg edges on
+            # its own -- the fixture instead uses **manually anchored waypoints**
+            # (isomorphic to the demo polyline-handle export), verifying the
+            # same full chain: waypoints anchored as-is fed back -> the same
+            # polyline with kind=waypoints (anchors recomputed onto box edges)
+            # + determinism holds.
+            lay_g = load(out_f, "layout.json")
+            man_base = {"viewBox": lay_g["viewBox"],
+                        "nodes": {v: {"x": p["x"], "y": p["y"]}
+                                  for v, p in lay_g["nodes"].items()}}
+            e0 = lay_g["edges"][0]
+            a0n, b0n = nodes_of = (e0["a"], e0["b"])
+            p0 = lay_g["nodes"][a0n]
+            p1 = lay_g["nodes"][b0n]
+            mx = (p0["x"] + p1["x"]) / 2
+            my = (p0["y"] + p1["y"]) / 2
+            # Deterministic detour waypoints perpendicular to the edge (one per side, on the 2px grid)
+            dx, dy = p1["x"] - p0["x"], p1["y"] - p0["y"]
+            n = (dx * dx + dy * dy) ** 0.5 or 1.0
+            ux, uy = -dy / n, dx / n
+            wp = [[int(round((mx + ux * 70) / 2)) * 2, int(round((my + uy * 70) / 2)) * 2],
+                  [int(round((mx - ux * 70) / 2)) * 2, int(round((my - uy * 70) / 2)) * 2]]
+            man_base["edges"] = [{"a": a0n, "b": b0n, "waypoints": wp}]
+            ipath2 = os.path.join(tmp, "ci-wp-manual.json")
+            with open(ipath2, "w", encoding="utf-8") as f:
+                json.dump(man_base, f, ensure_ascii=False)
+            out_w1 = os.path.join(tmp, name + "-wp-1")
+            out_w2 = os.path.join(tmp, name + "-wp-2")
+            r_w1 = run_cli(ex, out_w1, ("--from-layout", ipath2), pitch=None)
+            run_cli(ex, out_w2, ("--from-layout", ipath2), pitch=None)
+            lay_w = load(out_w1, "layout.json")
+            e_w = next((x for x in lay_w["edges"]
+                        if (x["a"], x["b"]) == (a0n, b0n)), None)
+            want_via = [[float(q[0]), float(q[1])] for q in wp]
+            if (not e_w or e_w["route"]["kind"] != "waypoints" or
+                    e_w["route"].get("via") != want_via or
+                    len(e_w["route"]["points"]) != len(want_via) + 2):
+                failures.append(f"manual-waypoints: recompute mismatch rc={r_w1.returncode} "
+                                f"kind={e_w['route']['kind'] if e_w else '?'}")
+            else:
+                for fn in ("layout.json", "demo-2d.html"):
+                    with open(os.path.join(out_w1, fn), "rb") as a, \
+                         open(os.path.join(out_w2, fn), "rb") as b:
+                        if a.read() != b.read():
+                            failures.append(f"manual-waypoints: {fn} non-deterministic")
+                if not any("manual-waypoints" in x for x in failures):
+                    print("OK  manual-waypoints: --from-layout waypoints identical recompute "
+                          "fail=0 + deterministic")
+
+            # ── G. Loop-dominant ring placement (ref-scrubbed): trigger / criteria / negatives / fallback ──
+        mark("F/F2: manual-layout round-trip + waypoints")
+        if _on("G"):
+            r = subprocess.run([sys.executable, os.path.join(root, "tests",
+                                                              "test_ring_layout.py")],
+                               capture_output=True, text=True)
+            if r.returncode != 0:
+                failures.append(f"test_ring_layout: exit {r.returncode}\n"
+                                f"{r.stdout}\n{r.stderr}")
+            else:
+                print("OK  test_ring_layout: ring trigger / criteria / negatives not misfired / determinism all pass")
+
+            # G2. debt-spiral real run: main loop forms a circle, 0 crossings, all ring-criteria gates pass
+            ds = os.path.join(root, "benchmarks/corpus/classic/debt-spiral.cld")
+            out_g = os.path.join(tmp, "debt-spiral-ring")
+            r_g = run_cli(ds, out_g, (), pitch=None)
+            if r_g.returncode != 0:
+                failures.append(f"ring debt-spiral: CLI exit {r_g.returncode}\n{r_g.stdout[-800:]}")
+            else:
+                lay_g = load(out_g, "layout.json")
+                cert_g = load(out_g, "certificate.json")
+                if lay_g["meta"].get("placement") != "ring-cycle" or \
+                        lay_g["meta"].get("position_engine") != "ring-construct":
+                    failures.append("ring debt-spiral: ring placement not taken "
+                                    f"(engine={lay_g['meta'].get('position_engine')})")
+                if cert_g["metrics"]["crossings"] != 0 or \
+                        cert_g.get("placement") != "ring-cycle":
+                    failures.append(f"ring debt-spiral: crossings="
+                                    f"{cert_g['metrics']['crossings']} placement="
+                                    f"{cert_g.get('placement')}")
+                for k in RING_HARD_GATES:
+                    if not cert_g["gates"].get(k, False):
+                        failures.append(f"ring debt-spiral: ring-criteria gate {k} FAIL")
+                if cert_g["grade"] != "best":
+                    failures.append(f"ring debt-spiral: grade={cert_g['grade']}")
+                if not failures or all("debt-spiral" not in x for x in failures):
+                    print("OK  ring debt-spiral: main loop circular (5 nodes), 0 crossings, best grade, "
+                          "all ring-criteria gates pass")
+
+            # G3. Negatives must not misfire: chain / tree / 13-node ring / two triangles + bridge -> ring must NOT trigger
+            # (ref-scrubbed: two triangles + bridge may enter column placement -- few loops + main-chain
+            # structure; the assertion only forbids ring)
+            neg_fixtures = {
+                "ci-neg-chain.cld": 'graph "链"\nvar a "A"\nvar b "B"\nvar c "C"\n'
+                                    'var d "D"\na -> + b\nb -> + c\nc -> + d\n',
+                "ci-neg-tree.cld": 'graph "树"\nvar root "根"\nvar x1 "子一"\n'
+                                   'var x2 "子二"\nroot -> + x1\nroot -> + x2\n',
+                "ci-neg-big-ring.cld": "graph \"大环\"\n" + "".join(
+                    f'var v{i} "节点{i}"\n' for i in range(13)) + "".join(
+                    f'v{i} -> + v{(i + 1) % 13}\n' for i in range(13)),
+                "ci-neg-two-tri.cld": 'graph "双三角"\nvar a1 "甲一"\nvar a2 "甲二"\n'
+                                      'var a3 "甲三"\nvar b1 "乙一"\nvar b2 "乙二"\n'
+                                      'var b3 "乙三"\na1 -> + a2\na2 -> + a3\n'
+                                      'a3 -> + a1\nb1 -> + b2\nb2 -> + b3\n'
+                                      'b3 -> + b1\na1 -> + b1\n',
+            }
+            for fn, text in neg_fixtures.items():
+                p = os.path.join(tmp, fn)
+                with open(p, "w", encoding="utf-8") as f:
+                    f.write(text)
+                out_n = os.path.join(tmp, fn + "-out")
+                r_n = run_cli(p, out_n, (), pitch=None)
+                if r_n.returncode not in (0, 1):     # geometry fail is legacy semantics; exit 1 is legal
+                    failures.append(f"ring negative {fn}: CLI exit {r_n.returncode}")
+                    continue
+                lay_n = load(out_n, "layout.json")
+                if lay_n["meta"].get("position_engine") == "ring-construct":
+                    failures.append(f"ring negative {fn}: ring placement misfired")
+            if not failures or all("ring negative" not in x for x in failures):
+                print("OK  ring negatives x4 (chain/tree/13-node ring/two triangles + bridge): ring not triggered "
+                      "(two triangles + bridge may enter column placement since ref-scrubbed; only ring is forbidden)")
+
+            # ── H. Layout aesthetics v2 (ref-scrubbed): column/symmetric trigger + R/B coloring + full corpus ──
+        mark("G: ring placement (test_ring_layout + debt-spiral + negatives)")
+        if _on("H"):
+            r = subprocess.run([sys.executable, os.path.join(root, "tests",
+                                                              "test_layout_modes.py")],
+                               capture_output=True, text=True)
+            if r.returncode != 0:
+                failures.append(f"test_layout_modes: exit {r.returncode}\n"
+                                f"{r.stdout}\n{r.stderr}")
+            else:
+                print("OK  test_layout_modes: column/symmetric trigger, geometry, R/B coloring,"
+                      "crossings soft goal, determinism all pass")
+
+            # H2. Full classic corpus, 19 graphs: exit 0 + all best grade + all hard gates pass (new criteria)
+        mark("H: test_layout_modes")
+        if _on("H2"):
+            corpus_dir = os.path.join(root, "benchmarks", "corpus", "classic")
+            n_ok = 0
+            for fn in sorted(os.listdir(corpus_dir)):
+                if not fn.endswith(".cld"):
+                    continue
+                name = fn[:-4]
+                out_h = os.path.join(tmp, "H-" + name)
+                r_h = run_cli(os.path.join(corpus_dir, fn), out_h, (), pitch=None)
+                if r_h.returncode != 0:
+                    failures.append(f"corpus {name}: CLI exit {r_h.returncode}\n"
+                                    f"{r_h.stdout[-500:]}")
+                    continue
+                cert_h = load(out_h, "certificate.json")
+                if cert_h["grade"] != "best":
+                    failures.append(f"corpus {name}: grade={cert_h['grade']}")
+                for k in _hard_gates_for(cert_h):
+                    if not cert_h["gates"].get(k, False):
+                        failures.append(f"corpus {name}: hard gate {k} FAIL")
+                if cert_h["metrics"]["crossings"] > 2:
+                    failures.append(f"corpus {name}: crossings="
+                                    f"{cert_h['metrics']['crossings']}")
+                n_ok += 1
+            print(f"OK  corpus full set {n_ok}/19: exit 0, best grade, all new-criteria hard gates pass")
+
+            # J. Anchor-criteria hard gate (ref-scrubbed second-review rework):
+        mark("H2: classic corpus 19 graphs (auto, 1 run each)")
+        if _on("J"):
+            corpus_dir = os.path.join(root, "benchmarks", "corpus", "classic")
+            #    jacky: "the point where a line meets a box should prefer the
+            #    midpoint of each edge, never a corner" -- docs/layout-modes.md
+            #    §anchor criteria. Measured per graph: (1) corner hits = 0 (hard
+            #    gate for all engines); (2) in-band anchor ratio (edge midpoint
+            #    +/- 1/4 edge length): spine-wing (this card's domain) = 100%;
+            #    other engines locked to v0.7.2 baseline ratios (table below) to
+            #    prevent regressions -- ring-cycle inter-ring pairs / bowtie-vertex
+            #    +/-12px spoke corridors are registered legacy out-of-band cases
+            #    (a fix would shift deliverables and break the 18-graph
+            #    zero-drift hard gate; deferred to a later card).
+            BASELINE_BAND = {
+                # v0.7.2 baseline in-band ratios (band/total exact fractions, avoiding rounding misjudgment)
+                "arms-race": 8 / 8, "brand-flywheel": 14 / 16,
+                "bullwhip": 12 / 12, "burnout-attrition": 12 / 12,
+                "classic-cld-growth-and-burden": 26 / 26,   # spine-wing gate raised to 100%
+                "debt-spiral": 12 / 12, "eroding-goals": 8 / 12,
+                "fishing-collapse": 15 / 18, "fixes-that-fail": 10 / 10,
+                "induced-demand": 14 / 14, "learning-flywheel": 10 / 10,
+                "limits-to-growth": 14 / 14, "population-logistic": 12 / 12,
+                "renewable-resource": 14 / 14, "shifting-the-burden": 10 / 16,
+                "soil-erosion": 16 / 16, "tragedy-of-the-commons": 12 / 12,
+                "urban-migration": 16 / 16, "wage-price-spiral": 8 / 12,
+            }
+            n_anchor_ok = 0
+            for fn in sorted(os.listdir(corpus_dir)):
+                if not fn.endswith(".cld"):
+                    continue
+                name = fn[:-4]
+                if not os.path.exists(os.path.join(tmp, "H-" + name,
+                                                   "layout.json")):
+                    continue
+                lay = load(os.path.join(tmp, "H-" + name), "layout.json")
+                ch = lay.get("meta", {}).get("cardH", 44.0)
+                total = band_in = corner = 0
+                worst = []
+                for e in lay["edges"]:
+                    rt = e["route"]
+                    for side, idx in (("a", 0), ("b", len(rt["points"]) - 1)):
+                        nd = lay["nodes"][e[side]]
+                        cx, cy, hw, hh = nd["x"], nd["y"], nd["w"] / 2.0, ch / 2.0
+                        p = rt["points"][idx]
+                        dxo, dyo = p[0] - cx, p[1] - cy
+                        on_x = abs(abs(dxo) - hw) <= abs(abs(dyo) - hh)
+                        total += 1
+                        if (abs(abs(dxo) - hw) < 0.75 and
+                                abs(abs(dyo) - hh) < 0.75):
+                            corner += 1
+                        if on_x:
+                            if abs(dyo) <= hh / 2 + 1e-6:
+                                band_in += 1
+                            elif len(worst) < 3:
+                                worst.append(f"{e['a']}->{e['b']}:{side}")
+                        else:
+                            if abs(dxo) <= hw / 2 + 1e-6:
+                                band_in += 1
+                            elif len(worst) < 3:
+                                worst.append(f"{e['a']}->{e['b']}:{side}")
+                # ref-scrubbed re-baseline: the +/-1/4 in-band ratio was the PROXY
+                # for "prefer midpoints, avoid corners" under the v0.7.2 caliber.
+                # The default attachment caliber is now the 16 standard anchor set
+                # (anchors.py); the hard gate = every delivered endpoint is a
+                # member of its box's 16-anchor set (certificate anchors_standard
+                # is the per-run gate; this corpus sweep re-asserts it file-by-
+                # file).  The in-band ratio stays REPORT-ONLY as honest evidence
+                # (measured post-snap ratios recorded in the card).
+                from stdraw.anchors import standard_anchors as _sa
+                eng = lay.get("meta", {}).get("engine", "")
+                ratio = band_in / total if total else 1.0
+                viol = 0
+                for e in lay["edges"]:
+                    rt = e["route"]
+                    for side, idx in (("a", 0), ("b", len(rt["points"]) - 1)):
+                        nd = lay["nodes"][e[side]]
+                        p = rt["points"][idx]
+                        pts16 = _sa(nd["x"], nd["y"], nd["w"] / 2.0, ch / 2.0)
+                        if not any(abs(ax - p[0]) <= 0.75 and
+                                   abs(ay - p[1]) <= 0.75
+                                   for _aid, ax, ay in pts16):
+                            viol += 1
+                if viol > 0:
+                    failures.append(f"corpus {name}: {viol} endpoint(s) off the "
+                                    f"16 standard anchor set (ref-scrubbed caliber)")
+                else:
+                    n_anchor_ok += 1
+                    print(f"OK  anchor criteria {name}: engine={eng} "
+                          f"standard-anchor membership 100% "
+                          f"(in-band report-only {band_in}/{total} = {ratio:.0%}, "
+                          f"corners {corner})")
+            if n_anchor_ok == 19:
+                print("OK  anchor criteria hard gate: 19/19 endpoints all on the "
+                      "16 standard anchor set (ref-scrubbed; in-band ratio is "
+                      "report-only since the band was the old proxy caliber)")
+
+            # H3. R/B coloring criteria: wage R1 amber / B1 sky blue / multi-loop mixed-color neutral + polarity data retained
+        mark("J: anchor-criteria sweep (reuses H2 outputs, no re-layout)")
+        if _on("H3"):
+            corpus_dir = os.path.join(root, "benchmarks", "corpus", "classic")
+            out_w = os.path.join(tmp, "H-wage")
+            run_cli(os.path.join(corpus_dir, "wage-price-spiral.cld"), out_w,
+                    (), pitch=None)
+            lay_w = load(out_w, "layout.json")
+            by_pair = {(e["a"], e["b"]): e for e in lay_w["edges"]}
+            for pr, kinds, color in (
+                    (("wages", "cost"), ["R"], "#d97706"),
+                    (("cost", "prices"), ["R"], "#d97706"),
+                    (("prices", "real_income"), ["B"], "#0284c7"),
+                    (("demand", "prices"), ["B"], "#0284c7")):
+                e = by_pair[pr]
+                if e["loop_kinds"] != kinds or e["loop_color"] != color:
+                    failures.append(f"R/B coloring {pr}: kinds={e['loop_kinds']} "
+                                    f"color={e['loop_color']}")
+                if "polarity" not in e:
+                    failures.append(f"R/B coloring {pr}: polarity data lost")
+            demo_w = open(os.path.join(out_w, "demo-2d.html"), encoding="utf-8").read()
+            if "data-pol" in demo_w:
+                failures.append("R/B coloring: demo still contains text badge data-pol")
+            if 'stroke="#d97706"' not in demo_w or 'stroke="#0284c7"' not in demo_w:
+                failures.append("R/B coloring: demo missing polarity amber / sky-blue coloring")
+            if 'stroke-dasharray="' in demo_w:
+                failures.append("polarity coloring: demo still has dashed edges "
+                                "(two-color caliber, jacky 2026-11-09: all solid)")
+            if 'stroke="#64748b"' in demo_w:
+                failures.append("polarity coloring: demo still has neutral-gray edges "
+                                "(two-color caliber, jacky 2026-11-09)")
+            print("OK  polarity coloring: edges colored by sign (+ amber / − sky blue), "
+                  "all solid, text badges removed, polarity data retained")
+
+            # I. Demo deliverable freshness (ref-scrubbed rework, v0.7.1 lesson):
+        mark("H3: R/B polarity coloring (1 re-layout)")
+        if _on("I"):
+            #    after the engine switched to spine-wing, demos/classic-cld-2d.html
+            #    was not re-rendered, so jacky's eyeball review still saw the old
+            #    ring-construct image and wrongly flagged "structural
+            #    inconsistency". Iron gate: the delivered demo must be
+            #    byte-identical to a fresh re-render by the current engine
+            #    (engine determinism is already proven by double runs, so a
+            #    byte-exact pin is valid).
+            fresh_out = os.path.join(tmp, "I-fresh-demo")
+            r_f = run_cli("examples/classic-cld-growth-and-burden.cld", fresh_out,
+                          ("--name", "classic-cld", "--skip-3d"), pitch=None)
+            if r_f.returncode != 0:
+                failures.append(f"demo freshness: CLI exit {r_f.returncode}\n"
+                                f"{r_f.stderr[-500:]}")
+            else:
+                committed = os.path.join(root, "demos", "classic-cld-2d.html")
+                with open(committed, "rb") as a, \
+                        open(os.path.join(fresh_out, "demo-2d.html"), "rb") as b:
                     if a.read() != b.read():
                         failures.append(
-                            "certificate freshness: demos/classic-certificate.json does "
-                            "not match a re-render by the current engine (deliverable "
+                            "demo freshness: demos/classic-cld-2d.html does not match a "
+                            "re-render by the current engine (deliverable stale -- rerun "
                             "python -m stdraw layout examples/"
                             "classic-cld-growth-and-burden.cld --name classic-cld"
-                            " --skip-3d and update demos/classic-certificate.json)")
+                            " --skip-3d and update the demo + docs/gallery screenshots)")
                     else:
-                        print("OK  certificate freshness: demos/classic-certificate.json "
-                              "byte-identical to the current engine's re-render (ref-scrubbed anti-staleness gate)")
+                        print("OK  demo freshness: demos/classic-cld-2d.html byte-identical "
+                              "to the current engine's re-render (ref-scrubbed anti-staleness gate)")
+                    # Certificate deliverable under the same criteria (caught in
+                    # ref-scrubbed closeout: demos/classic-certificate.json was stuck
+                    # at the old ring-cycle 9-gate certificate) -- byte-exact pin.
+                    committed_cert = os.path.join(root, "demos",
+                                                  "classic-certificate.json")
+                    with open(committed_cert, "rb") as a, \
+                            open(os.path.join(fresh_out, "certificate.json"),
+                                 "rb") as b:
+                        if a.read() != b.read():
+                            failures.append(
+                                "certificate freshness: demos/classic-certificate.json does "
+                                "not match a re-render by the current engine (deliverable "
+                                "python -m stdraw layout examples/"
+                                "classic-cld-growth-and-burden.cld --name classic-cld"
+                                " --skip-3d and update demos/classic-certificate.json)")
+                        else:
+                            print("OK  certificate freshness: demos/classic-certificate.json "
+                                  "byte-identical to the current engine's re-render (ref-scrubbed anti-staleness gate)")
 
-        # K. Language policy gate: repo-wide bilingual partition
-        #    (EN face CJK-free incl. code files, zh face prose-free).
-        r_lang = subprocess.run(
-            [sys.executable, os.path.join(root, "tests", "check_language_policy.py")],
-            capture_output=True, text=True, encoding="utf-8", errors="replace")
-        if r_lang.returncode != 0:
-            failures.append("language policy gate FAILED (see output above)")
-            print(r_lang.stdout)
-            print(r_lang.stderr)
-        else:
-            print("OK  " + r_lang.stdout.strip().splitlines()[-1])
+            # K. Language policy gate: repo-wide bilingual partition
+        mark("I: demo/certificate freshness (1 re-render)")
+        if _on("K"):
+            #    (EN face CJK-free incl. code files, zh face prose-free).
+            r_lang = subprocess.run(
+                [sys.executable, os.path.join(root, "tests", "check_language_policy.py")],
+                capture_output=True, text=True, encoding="utf-8", errors="replace")
+            if r_lang.returncode != 0:
+                failures.append("language policy gate FAILED (see output above)")
+                print(r_lang.stdout)
+                print(r_lang.stderr)
+            else:
+                print("OK  " + r_lang.stdout.strip().splitlines()[-1])
+
+        # Phase timing summary (observational, see mark() header)
+        mark("K: language policy gate")
+        mark("END")
+        total = sum(d for _, d in _PHASES)
+        print("\nPhase timing (local machine baseline / compare with GH runner):")
+        for label, d in _PHASES:
+            print(f"  {d:8.1f}s  {label}")
+        print(f"  {total:8.1f}s  TOTAL")
 
         if failures:
             print("\nFAILURES:")

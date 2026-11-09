@@ -12,31 +12,33 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Job split (2026-11-10 bottleneck-localization card): the single
+# "Full checks" step measured 941s-2809s across runs of identical content
+# (slow-VM lottery dominates the tail). Coverage-preserving split into
+# three parallel jobs; phases selected via STDRAW_CI_PHASES in
+# tests/ci_checks.py (_on() selector — local default stays all-phases).
+# Dependency pinning: C needs B outputs, F2 needs F, G2/G3 follow G,
+# J/H3 reuse H2 outputs — kept within one job each.
 jobs:
-  checks:
+  checks-core:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.13"]
-    steps: &ci_steps
+    steps:
       - uses: actions/checkout@v4
       - name: "Internal-leak sanitization gate"
         run: python scripts/check_internal_leaks.py
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.13"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - name: "Install (optional layers: solver + measure + render-check)"
+      - name: "Install core + render-check (playwright, DOM bounds layer)"
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[solver,measure]"
-          pip install playwright pytest
+          pip install -e ".[render-check]"
       - name: "Resolve playwright version"
         id: pwver
         run: echo "ver=$(pip show playwright | awk '/^Version:/ {print $2}')" >> "$GITHUB_OUTPUT"
-      - name: "Cache playwright chromium"
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: ms-playwright-${{ runner.os }}-${{ steps.pwver.outputs.ver }}
@@ -46,8 +48,82 @@ jobs:
         run: |
           stdraw --help
           python -m stdraw layout --help
-      - name: "Full checks: ortho byte-regression + auto hard gates + DOM bounds + determinism"
+      - name: "Core gates: ortho byte-regression + auto hard gates + DOM bounds + manual round-trip + ring + demo freshness"
+        env:
+          STDRAW_CI_PHASES: A,B,C,F,G,I
         run: python tests/ci_checks.py
+
+  checks-corpus:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Internal-leak sanitization gate"
+        run: python scripts/check_internal_leaks.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: "Install (stdlib-only corpus regression)"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      - name: "Corpus regression: dense n10 sampling + classic 19-graph corpus + anchor sweep + polarity"
+        env:
+          STDRAW_CI_PHASES: B2,H2,J,H3
+        run: python tests/ci_checks.py
+
+  checks-units:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Internal-leak sanitization gate"
+        run: python scripts/check_internal_leaks.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: "Install (solver layer: ortools exact tests)"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[solver]"
+          pip install pytest
+      - name: "Unit gates: visibility units + ortools exact + layout modes + language policy"
+        env:
+          STDRAW_CI_PHASES: D,E,H,K
+        run: python tests/ci_checks.py
+      - name: "Docs consistency gate (pytest wrapper, v0.7.15)"
+        run: pytest -q tests/test_docs_consistency.py
+
+  checks-pytest:
+    # Full pytest suite (6534e42) as its own parallel lane: heavy
+    # (~18min locally, scalability wall-clock dominates) and must not
+    # lengthen any other job.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Internal-leak sanitization gate"
+        run: python scripts/check_internal_leaks.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: "Install (full optional layers + pytest)"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[solver,measure,render-check]"
+          pip install pytest
+      - name: "Resolve playwright version"
+        id: pwver
+        run: echo "ver=$(pip show playwright | awk '/^Version:/ {print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ runner.os }}-${{ steps.pwver.outputs.ver }}
+      - name: "Playwright chromium (skips download on cache hit)"
+        run: playwright install chromium
       - name: "Full pytest suite (unit + regression + brute-force + scalability wall-clock + playwright font-env)"
         run: python -m pytest tests/ -q
       - name: "Module-level check scripts (execute at import; run directly, not via pytest)"
@@ -59,7 +135,19 @@ jobs:
     # 3.9 full-compatibility sweep: weekly schedule only, never on push/pr
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9"]
-    steps: *ci_steps
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Internal-leak sanitization gate"
+        run: python scripts/check_internal_leaks.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: "Install (full optional layers)"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[solver,measure,render-check]"
+          playwright install chromium
+      - name: "Full checks (all phases): ortho byte-regression + auto hard gates + DOM bounds + determinism"
+        run: python tests/ci_checks.py
