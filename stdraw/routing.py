@@ -2467,6 +2467,7 @@ class Router:
                     before = self._edge_stats(i, routes)
                     own_before = self._own_press(i, routes)
                     sib_before = self._sibling_cross(i, routes)
+                    before_coi = self._coincide_max_span(i, routes)
                     applied = False
                     cands = sorted(self._box_anchors(v),
                                    key=lambda q: (math.hypot(q[1] - p[0],
@@ -2564,7 +2565,8 @@ class Router:
                                   (after[4] is None or after[4] >= 4.0) and
                                   self._own_press(i, routes) <= own_before and
                                   self._sibling_cross(i, routes) <= sib_before and
-                                  self._cert_angle_ok(i, routes))
+                                  self._cert_angle_ok(i, routes) and
+                                  self._coincide_no_worse(i, routes, before_coi))
                             if os.environ.get("STDRAW_SNAP_DEBUG"):
                                 _c = dict(p=after[0] <= before[0],
                                           x=after[3] <= before[3],
@@ -2600,6 +2602,19 @@ class Router:
                         if applied:
                             break
                     if not applied:
+                        # ref-scrubbed tier 2: full-detour joint re-route from a
+                        # standard-anchor pair (see _snap_joint_detour) --
+                        # tier 1 moves only the endpoint + adjacent via, which
+                        # on dense detour polylines presses the line back into
+                        # its own box or across a sibling (random-n10-i05
+                        # N03->N08 end a measured: own 1>0 on every near
+                        # anchor, cascading into visual_crossings x4 /
+                        # lines_no_coincidence on the delivered graph).
+                        applied = self._snap_joint_detour(
+                            routes, occ, report, i, end)
+                        if applied:
+                            changed = True
+                    if not applied:
                         report["failures"].append(
                             {"edge": f"{a}->{b}", "end": "a" if end == 0 else "b"})
             if not changed:
@@ -2609,6 +2624,160 @@ class Router:
                                      for f in report["failures"]})
         report["failures"] = [{"edge": e, "end": n} for e, n in report["failures"]]
         return report
+
+    def _coincide_max_span(self, i, routes):
+        """Max adherence span (px) between edge i and any other edge.
+
+            Same source as the certificate's line_line_coincident accounting
+            (_pair_coincide_span), bbox-prefiltered for the per-candidate
+            cost of the anchor_snap gates (ref-scrubbed coincidence gate).
+        """
+        pts = routes[i]["points"]
+        sa = sample_polyline(pts)
+        il = (min(p[0] for p in sa), min(p[1] for p in sa))
+        ih = (max(p[0] for p in sa), max(p[1] for p in sa))
+        best = 0.0
+        for j, o in routes.items():
+            if j == i:
+                continue
+            sb = sample_polyline(o["points"])
+            jl = (min(p[0] for p in sb), min(p[1] for p in sb))
+            jh = (max(p[0] for p in sb), max(p[1] for p in sb))
+            if (il[0] - jh[0] > COINCIDE_THR or jl[0] - ih[0] > COINCIDE_THR or
+                    il[1] - jh[1] > COINCIDE_THR or jl[1] - ih[1] > COINCIDE_THR):
+                continue
+            s = max(span_one_way_segs(sa, list(zip(sb[:-1], sb[1:]))),
+                    span_one_way_segs(sb, list(zip(sa[:-1], sa[1:]))))
+            if s > best:
+                best = s
+        return best
+
+    def _coincide_no_worse(self, i, routes, before_coi):
+        """Coincidence gate for anchor_snap candidates (ref-scrubbed).
+
+            A candidate may never CREATE a visual-coincidence pair: when the
+            edge's current max adherence span is within the hard threshold,
+            the candidate must stay within it; when the edge is already in
+            violation, the candidate must not worsen it (monotone repair).
+            Zero-drift-safe for the classic domain: there the baseline has no
+            violation, and a snap candidate that would create one would have
+            shipped a lines_no_coincidence violation -- which the 21-graph
+            sweep proves never happened.
+        """
+        after_coi = self._coincide_max_span(i, routes)
+        if before_coi <= COINCIDE_SPAN + 1e-9:
+            return after_coi <= COINCIDE_SPAN + 1e-9
+        return after_coi <= before_coi + 1e-9
+
+    def _snap_joint_detour(self, routes, occ, report, i, end):
+        """ref-scrubbed tier 2: full-detour re-route anchored on the 16-anchor set.
+
+            Tier 1 (the sweeps) moves only the endpoint + its adjacent via,
+            preserving the delivered departure corridor.  On dense graphs the
+            detour corridor itself is the problem: every near anchor then
+            presses the shifted stub back into the own box (own-press gate)
+            or across a sibling lane, and the endpoint stays off-anchor --
+            the off-anchor long run is exactly what cascades into visual
+            crossings and coincident spans downstream.  This tier re-plans
+            the WHOLE edge as a visibility-graph route from a standard-anchor
+            PAIR (near box x far box, both nearest-first ladders, both
+            inflation tiers cl+VG_PAD / +PAIR_VG_OFF for lane separation),
+            so both endpoints land ON the standard anchor set by
+            construction.  Mutual pairs are excluded (their dedicated joint
+            lens snap keeps the mirror symmetry).  Acceptance = the same
+            full hard-gate set as the sweeps (press / clearance / anchor
+            angles both accountings / mutual separation / own-box
+            comparative / sibling fan crossings / coincidence no-worse) +
+            membership of both endpoints.  Deterministic: fixed ladder
+            order, no RNG.
+
+            Returns True and mutates routes/occ/report on success; restores
+            the delivered route byte-for-byte on failure.
+        """
+        a, b = self.edges[i]
+        if (min(a, b), max(a, b)) in self.mutual:
+            return False
+        if routes[i].get("kind") == "waypoints":
+            return False    # user-anchored waypoint edges keep their polyline
+        v = self.edges[i][end]
+        w = self.edges[i][1 - end]
+        idx = 0 if end == 0 else len(routes[i]["points"]) - 1
+        p = routes[i]["points"][idx]
+        q = routes[i]["points"][-1 - idx]
+        before = self._edge_stats(i, routes)
+        own_before = self._own_press(i, routes)
+        sib_before = self._sibling_cross(i, routes)
+        before_coi = self._coincide_max_span(i, routes)
+        rects = [n for vv, n in self.N.items() if vv not in (a, b)]
+        near = sorted(self._box_anchors(v),
+                      key=lambda q2: (math.hypot(q2[1] - p[0], q2[2] - p[1]),
+                                      q2[0]))
+        far = sorted(self._box_anchors(w),
+                     key=lambda q2: (math.hypot(q2[1] - q[0], q2[2] - q[1]),
+                                     q2[0]))
+        if not rects:
+            return False
+        infls = (self.cl + VG_PAD, self.cl + VG_PAD + PAIR_VG_OFF)
+        # Endpoint ORDER follows the EDGE direction: points[0] belongs to a,
+        # points[-1] to b (check.py gate 4 measures the departure at pts[0]
+        # against box a -- a reversed route ships both ends "off-border";
+        # measured on random-n10-i00 N03->N08).  The repaired end keeps its
+        # nearest-first ladder; the opposite end iterates its own ladder.
+        if end == 0:
+            ladders = ((near, far), (a, b))
+        else:
+            ladders = ((far, near), (a, b))
+        (lad_a, lad_b) = ladders[0]
+        for aid_a, ax, ay in lad_a:
+            if occ.get((ladders[1][0], aid_a)):
+                continue
+            for aid_b, bx, by in lad_b:
+                if occ.get((ladders[1][1], aid_b)):
+                    continue
+                for c in infls:
+                    route = _vis.plan_route([ax, ay], [bx, by], rects, c)
+                    if not route:
+                        continue
+                    pts_n = [list(pp) for pp in route["dense"]]
+                    if self._anchor_at(a, pts_n[0]) is None or \
+                            self._anchor_at(b, pts_n[-1]) is None:
+                        continue
+                    old = dict(routes[i])
+                    routes[i] = {"kind": "vg", "points": pts_n,
+                                 "press": 0, "min_clear": None, "cross": 0,
+                                 "cross_edges": 0, "ang_a": 0.0, "ang_b": 0.0,
+                                 "vg_corners": [list(pp) for pp in
+                                                route["corner_pts"]],
+                                 "vg_fillets": route["fillets"]}
+                    after = self._edge_stats(i, routes)
+                    ok = (after[0] <= before[0] and after[3] <= before[3] and
+                          (after[1] is None or
+                           after[1] >= self.cl - PRESS_MARGIN - 1e-6) and
+                          after[2] >= ANCHOR_MIN_DEG and
+                          (after[4] is None or after[4] >= 4.0) and
+                          self._own_press(i, routes) <= own_before and
+                          self._sibling_cross(i, routes) <= sib_before and
+                          self._cert_angle_ok(i, routes) and
+                          self._coincide_no_worse(i, routes, before_coi))
+                    if os.environ.get("STDRAW_SNAP_DEBUG"):
+                        print(f"  [snapdbg] JOINT {a}->{b} end={end} "
+                              f"anchors={aid_a}/{aid_b} infl={c:.1f} "
+                              f"press {after[0]}<={before[0]} "
+                              f"clr {after[1]} ang {after[2]:.1f} "
+                              f"cross {after[3]}<={before[3]} "
+                              f"own {self._own_press(i, routes)}"
+                              f"<={own_before} sib {self._sibling_cross(i, routes)}"
+                              f"<={sib_before} "
+                              f"-> {'OK' if ok else 'REJECT'}", file=sys.stderr)
+                    if ok:
+                        occ.setdefault((ladders[1][0], aid_a), set()).add(
+                            (i, 0 if end == 0 else 1))
+                        occ.setdefault((ladders[1][1], aid_b), set()).add(
+                            (i, 1 if end == 0 else 0))
+                        report["moved"] += 1
+                        return True
+                    routes[i] = old
+        return False
 
     def _snap_retry_conflicts(self, routes, occ, report):
         """Post-sweep repair: for an endpoint that failed all 16 anchors

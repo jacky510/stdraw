@@ -405,3 +405,46 @@ flip 前的梯门几何）。
   （layout/certificate/demo-2d，随引擎重渲，demos/ 新鲜度门同步）；
   其余 20 图逐字节零漂移（触发条件构造性排除：flip 已达标的 pair
   在模拟阶段即跳过）。
+
+### dense 吸附门径强化（ref-scrubbed B 项，`Router._snap_joint_detour` + coincidence 门）
+
+探针「任一回归整体回退」的口径下，本卡把 dense 图的吸附**做真**——回归越少，
+探针保留吸附的比例越高：
+
+- **coincidence 门**：每个吸附候选 acceptance 新增 `_coincide_no_worse`——候选
+  边对他边的最大贴合跨度（`_coincide_max_span`，与证书 line_line_coincident
+  同源同口径，bbox 预筛）不得从 <8px（COINCIDE_SPAN）变成 ≥8px（禁止**制造**
+  重合对）；已在违例状态的边要求单调不恶化。classic 域零重合基线不受影响
+  （候选若会制造重合，21 图 sweep 早已出现违例——字节零漂移实测）。
+- **joint-detour tier（tier-2）**：tier-1 全 16 锚被拒的端点，整边按可见图重排
+  ——`_vis.plan_route` 从「起点锚×终点锚」标准锚**对**出发（两端各自最近优先
+  阶梯 × 两档膨胀 cl+VG_PAD / +PAIR_VG_OFF 车道分离），两端点由构造**保证**
+  落在 16 锚集上。互指对与用户 waypoints 边不进 tier-2（镜像对称/用户折点由
+  专属通道保持）。验收=与 sweep 同一套全套硬门 + 端点成员 + coincidence 门。
+- **端点方向律**：tier-2 输出必须 `points[0]∈a 锚、points[-1]∈b 锚`（边方向序）
+  ——check.py 门 4 在 pts[0] 对框 a 量出发角，反向路线会把两端双双判成
+  off-border（random-n10-i00 N03→N08 实测教训）。
+- **实测效果（B1+B2 后、探针保留吸附路径）**：n10-i05 visual_crossings 4→1、
+  astd 1→0、coincidence 1→0；n10-i00 astd 2→0（off-border 双端清零）。classic
+  21 图 tier-2 零触发，逐字节零漂移。全量 random 语料探针保留/回退比例见卡
+  报告；阈值上限是否上调/取消由 jacky 依数据拍板。
+
+### 互指透镜到达角：放置联合优化探索归档（ref-scrubbed D 项，与 ref-scrubbed 互补）
+
+ref-scrubbed（`Router.lens_joint_reassign`）以**非镜像**锚指派恢复了 ≤10° 目标
+（classic-cld 四端 max 8.93°，见上节）。本卡在其落地前完成了放置+路由联合
+优化探索（离线工具 `benchmarks/tools/lens_placement_experiment.py`，不复跑），
+数据与该解法互补：
+
+- **镜像配对内的不可行性（已证，后被 lens_joint_reassign 精确突破）**：
+  镜像 golden 对的弦 dx 只能取 24±5.9px → 最坏倾角 13.8°（= ref-scrubbed 文档
+  中的锥形约束推导）；ctrl-only flip 下限 14.4°。
+- **放置对齐枚举（±24/±48/±72px × 两框，生产通道链口径）**：12 候选全部被
+  硬门拒——对齐位到达角可到 ~2-4° 但透镜分离跌到 4.5px（<12px SEP_FLOOR）；
+  +48 位出 2 fan 交叉+1 出发角违例；fundamental -24/-48 卡距跌到 11/0px。
+  ⇒「到达角 ≤10° + 分离 ≥12px + 16 锚口径」三角在**镜像配对+既有放置**下
+  不可满足——正是 lens_joint_reassign 放弃镜像约束的依据。
+- **共享锚受控放宽**：两弧共锚 ⇒ 贴附区分离 0px，撞 mutual_pairs_separated
+  （≥4px）与透镜禁并线规则——不可采纳（与 ref-scrubbed 的「带内+分离 ≥12px」
+  门共同证实分离约束不可松）。
+- 生产管线不引入放置移位通道（枚举从不采纳、纯耗时）；工具与数据留档。
