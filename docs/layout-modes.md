@@ -363,8 +363,12 @@ coincidence。而 classic 正本 classic-cld（E/N=13/8=1.62）吸附 21 图全�
 失败样例最大度（4）反而低于 classic-cld（7）——**任何静态标量密度阈值都无法
 既放行 classic-cld 又拦住 random n10**。故口径落地为：
 
-- **阈值**：`ANCHOR_SNAP_DENSE_E_OVER_N = 1.6`（E/N ≥ 1.6，即平均度 ≥ 3.2）
-  进入**探针模式**；低于阈值维持无条件吸附。
+- **阈值**：`ANCHOR_SNAP_DENSE_E_OVER_N = 1.6`（E/N ≥ 1.6，即平均度 ≥ 3.2）进入
+  **探针模式+整体延后记账**（端点无锚也算回归，回退同时证书记录 deferred）；
+  低于阈值同样走**退化撤回探针**（ref-scrubbed T5 卡，Copilot 复核发现的静默
+  变差漏洞）：吸附后复算交叉对数与 line-line coincidence，任一变差即回退——
+  但**端点无锚既不触发回退也不触发 deferred 记账**（低密度图的诚实无锚端点
+  仍由 `anchors_standard` 门如实计数，stderr 打印失败清单）。
 - **探针**：在工作副本上执行完整吸附，然后复算三硬门（普通交叉对数
   `final_crossing_pairs` / line-line coincidence 对数 / 端点锚成员——任一
   端点无锚即失败）；**零回归才保留吸附结果，任一回归整体回退到吸附前路由**
