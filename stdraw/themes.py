@@ -1,54 +1,77 @@
 # -*- coding: utf-8 -*-
 """Design tokens: the single source of truth for every color in stdraw's two
-themes (`light` and `dark`).
+themes (`light` and `dark`), plus the per-theme 3D parameter groups.
 
-Caliber (jacky 2026-11-08 ruling, task ref-scrubbed):
-  - `light` is the static-export baseline: its values are frozen literals —
-    byte-identity of the default (light) static pipeline depends on them, so
-    NEVER touch a light token without re-running the default-path sweep.
-  - `dark` follows the interactive viewer's measured slate look (do not
-    redesign the dark look; the values mirror viewer/index.html as shipped).
-  - R/B semantic pairs, one per theme: dark R=#fbbf24 (amber-400) /
-    B=#7dd3fc (sky-400); light R=#d97706 (amber-600) / B=#0284c7 (sky-600)
-    — deep shades on the white canvas for contrast.
+Caliber (UI-A "drafting room" spec, jacky 2026-11-11 ruling; spec original
+preserved in-repo at docs/ui-theme-spec-a.md):
+  - `light` was a frozen-literal static-export baseline through v0.7.x. The
+    UI-A spec replaces it as a DECLARED major-version baseline update (the
+    v0.8.0 face, spec section 5): landing it requires the default-path full
+    sweep and a version-closure card before any release claims it. It is a
+    declared re-baselining channel, not a silent-drift channel — the pins in
+    tests/test_theme_tokens.py and tests/test_render_bugs.py track the new
+    baseline.
+  - `dark` 2D (static export) follows the UI-A dark tier ("micro-blue ink"):
+    darker blue-leaning ground, NEUTRAL steel-gray container stroke and grid
+    (no more cyan collusion with the B ink), amber/sky kept as the only two
+    polar colors on the canvas.
+  - The interactive-viewer token block and the 3D DARK group are the shipped
+    look, FROZEN REGRESSION PINS (spec D5 / section 3.2: zero changes;
+    render3d.py's dark constants mirror DARK_3D verbatim).
+  - R/B semantic pairs, one per theme (UI-A): light R=#c2410c (vermilion) /
+    B=#1e6fae (drafting blue); dark R=#ffb454 / B=#6ec6ff. The polar inks are
+    the ONLY two colors in a delivered figure; everything else stays
+    neutral/ink. No token may introduce a third chromatic hue.
 
 Consumers:
   - Python static export: stdraw/render.py reads THEMES[...] via get().
   - Interactive viewer: viewer/themes.js is GENERATED from this module by
     viewer_js(); tests/test_theme_tokens.py pins the generated file byte-exact
     (drift gate: edit tokens here, regenerate, never hand-edit the .js).
+  - 3D layer: LIGHT_3D / DARK_3D are token definitions only in this landing
+    step; render3d.py consumption (light stage / dark freeze wiring) is a
+    follow-up card.
 """
 
 LIGHT = {
-    # ── static export (render.py) ────────────────────────────────────────
-    "page_bg": "#f8fafc",          # body background
-    "canvas_bg": "#fff",           # svg canvas background
-    "canvas_border": "#e2e8f0",    # svg canvas border
-    "panel_bg": "#fff",            # certificate / toolbar panels
-    "panel_border": "#e2e8f0",
+    # ── static export (render.py) — UI-A light tier ("tracing paper") ────
+    "page_bg": "#e9e4d8",          # page background (paper surround)
+    "canvas_bg": "#f7f3ea",        # svg canvas background (tracing paper)
+    "canvas_border": "#e2e8f0",    # unspecified by the UI-A table; kept
+    "panel_bg": "#f7f3ea",         # certificate panel (ink-sign base)
+    "panel_border": "#2a3644",     # certificate panel border (ink line)
     "leader_line": "#94a3b8",      # leader bars (ortho representation)
     "line": "#64748b",             # vertical lines + arrowheads (ortho)
-    "card_fill": "#fffbeb",        # node cards
-    "card_stroke": "#f59e0b",
-    "card_label": "#78350f",
-    "card_value": "#1f2937",
-    "ok": "#16a34a",
-    "bad": "#dc2626",
-    "note": "#64748b",
-    "grade": "#1d4ed8",
-    "toolbar_bg": "#fff",
+    "card_fill": "#fffdf6",        # node cards (paper white)
+    "card_stroke": "#2a3644",      # ink-line stroke (1.3px at render)
+    "card_label": "#22303f",       # label ink
+    "card_value": "#6e6a5e",       # muted secondary text (mono)
+    "ok": "#2f7d4f",               # pass / ink-seal green
+    "bad": "#dc2626",              # unspecified by the UI-A table; kept
+    "note": "#6e6a5e",             # muted notes
+    "grade": "#2f7d4f",            # grade seal (stamp color per spec)
+    "toolbar_bg": "#fff",          # unspecified by the UI-A table; kept
     "toolbar_border": "#e2e8f0",
     "btn_bg": "#f8fafc",
     "btn_border": "#cbd5e1",
     "btn_hover_bg": "#e2e8f0",
     "hint_text": "#64748b",
     "metrics_text": "#1f2937",
-    "edge_pos": "#d97706",         # '+' amber (two-color polarity rework)
-    "edge_neg": "#0284c7",         # '−' sky blue
+    "edge_pos": "#c2410c",         # '+' vermilion (UI-A light polar ink)
+    "edge_neg": "#1e6fae",         # '−' drafting blue (UI-A light polar ink)
     "neutral": "#64748b",          # defensive fallback only
-    "loop_r": "#d97706",           # R semantic, light tier (deep amber)
-    "loop_b": "#0284c7",           # B semantic, light tier (deep sky)
-    # ── interactive viewer (viewer/index.html) ──────────────────────────
+    "loop_r": "#c2410c",           # R semantic, light tier
+    "loop_b": "#1e6fae",           # B semantic, light tier
+    # UI-A new tokens ─────────────────────────────────────────────────────
+    "card_radius": 14,             # rounded card corners (three-tier large)
+    "canvas_grid": {               # canvas grid layer (new render feature)
+        "style": "dots",           # tracing-paper dot grid
+        "color": "#cfc7b4",
+        "spacing": 22,             # px between dots
+        "dot_radius": 1.1,
+    },
+    # ── interactive viewer (viewer/index.html) — unspecified by the UI-A ──
+    #    2D table; values kept from the shipped look.
     "scene_bg": "#f8fafc",
     "bar_bg": "rgba(248,250,252,.92)",
     "bar_border": "#e2e8f0",
@@ -87,35 +110,43 @@ LIGHT = {
 }
 
 DARK = {
-    # ── static export (render.py) — slate, mirrors the viewer look ──────
-    "page_bg": "#0b1220",
-    "canvas_bg": "#0f172a",
-    "canvas_border": "#334155",
-    "panel_bg": "#0f172a",
-    "panel_border": "#334155",
+    # ── static export (render.py) — UI-A dark tier ("micro-blue ink") ────
+    "page_bg": "#090d14",          # page background
+    "canvas_bg": "#0d131e",        # canvas (micro-blue ink, pressed deep)
+    "canvas_border": "#334155",    # unspecified by the UI-A table; kept
+    "panel_bg": "#0d131e",         # certificate panel base
+    "panel_border": "rgba(147,167,196,.45)",   # certificate border (steel)
     "leader_line": "#475569",
     "line": "#475569",
-    "card_fill": "#78350f",        # dark amber card (viewer tag.R family)
-    "card_stroke": "#f59e0b",
-    "card_label": "#fbbf24",
-    "card_value": "#f1f5f9",
+    "card_fill": "rgba(16,22,34,.92)",
+    "card_stroke": "#93a7c4",      # NEUTRAL steel gray (UI-A key fix: the
+                                   # old cyan stroke collided with the B ink)
+    "card_label": "#dfe7f2",       # ink
+    "card_value": "#8b98ab",       # muted
     "ok": "#4ade80",
-    "bad": "#f87171",
-    "note": "#64748b",
-    "grade": "#60a5fa",
-    "toolbar_bg": "#0f172a",
+    "bad": "#f87171",              # unspecified by the UI-A table; kept
+    "note": "#8b98ab",
+    "grade": "#4ade80",            # grade seal (stamp color per spec)
+    "toolbar_bg": "#0f172a",       # unspecified by the UI-A table; kept
     "toolbar_border": "#334155",
     "btn_bg": "#1e293b",
     "btn_border": "#334155",
     "btn_hover_bg": "#334155",
     "hint_text": "#64748b",
     "metrics_text": "#f1f5f9",
-    "edge_pos": "#fbbf24",         # '+' amber-400 (dark tier)
-    "edge_neg": "#7dd3fc",         # '−' sky-400 (dark tier)
+    "edge_pos": "#ffb454",         # '+' amber (UI-A dark polar ink)
+    "edge_neg": "#6ec6ff",         # '−' sky (UI-A dark polar ink)
     "neutral": "#475569",
-    "loop_r": "#fbbf24",           # R semantic, dark tier
-    "loop_b": "#7dd3fc",           # B semantic, dark tier
-    # ── interactive viewer — current shipped slate look, values frozen ──
+    "loop_r": "#ffb454",           # R semantic, dark tier
+    "loop_b": "#6ec6ff",           # B semantic, dark tier
+    # UI-A new tokens (mirror the light-tier keyset) ──────────────────────
+    "card_radius": 14,
+    "canvas_grid": {
+        "style": "lines",          # neutral steel line grid (no more cyan)
+        "color": "rgba(147,167,196,.10)",
+        "spacing": 24,             # px between lines
+    },
+    # ── interactive viewer — shipped slate look, FROZEN regression pins ──
     "scene_bg": "#0b0e14",
     "bar_bg": "rgba(11,14,20,.85)",
     "bar_border": "#263041",
@@ -154,8 +185,43 @@ DARK = {
 }
 
 THEMES = {"light": LIGHT, "dark": DARK}
-DEFAULT_STATIC_THEME = "light"    # static pipeline default (current production face)
-DEFAULT_VIEWER_THEME = "dark"     # viewer default (current shipped look)
+DEFAULT_STATIC_THEME = "light"    # static pipeline default (production face)
+DEFAULT_VIEWER_THEME = "dark"     # viewer default (shipped look, frozen)
+
+# ── 3D parameter groups (token definitions only in this landing step; the
+#    render3d.py consumption is a follow-up card) ───────────────────────────
+# LIGHT (UI-A spec section 3.1; structure unchanged, parameters only).
+LIGHT_3D = {
+    "scene_bg": "#f0ece1",         # stage / scene.background
+    "fog_color": "#ded8c9",        # fog target
+    "grid_major": "#d3ccbb",       # GridHelper major line
+    "grid_minor": "#c6bfad",       # GridHelper minor line
+    "card_fill": "#fffdf6",        # card texture fill
+    "card_stroke": "#2a3644",      # card texture stroke
+    "card_text": "#22303f",        # card label ink
+    "card_muted": "#6e6a5e",       # card secondary text
+    "tube_r": "#c2410c",           # '+' polarity tube/cone material
+    "tube_b": "#1e6fae",           # '−' polarity tube/cone material
+}
+
+# DARK — FROZEN REGRESSION PIN (UI-A spec D5 / section 3.2: zero changes).
+# Values mirror render3d.py's shipped constants verbatim (full mirror,
+# including tokens the spec table does not restate). Any byte change in the
+# dark 3D output is a pin break, not a restyle.
+DARK_3D = {
+    "scene_bg": "#0b1220",         # scene.background AND fog color (0x0b1220)
+    "fog_color": "#0b1220",
+    "grid_major": "#1e293b",       # GridHelper(1600, 32, 0x1e293b, ...)
+    "grid_minor": "#16233b",
+    "card_fill": "#1e293b",        # card family fill (0x1e293b)
+    "card_stroke": "#334155",      # card border line (0x334155)
+    "card_text": "#f1f5f9",        # label sprite text
+    "node_sprite": "#f59e0b",      # node sphere sprite (0xf59e0b)
+    "tube_r": "#fbbf24",           # '+' amber-400
+    "tube_b": "#7dd3fc",           # '−' sky-400
+}
+
+THEMES_3D = {"light": LIGHT_3D, "dark": DARK_3D}
 
 
 def get(name):
