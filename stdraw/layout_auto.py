@@ -23,6 +23,7 @@ from collections import defaultdict
 
 from . import textmetrics
 from . import timing as _timing
+from .visibility import reset_caches as _reset_route_caches
 from .anchors import ANCHOR_IDS, standard_anchors as _standard_anchors
 from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
                       ANCHOR_MIN_DEG, border_point)
@@ -86,7 +87,6 @@ class AutoConfig:
     target_w: int = 1280
     target_h: int = 680
     aspect_min: float = 1.5
-    park_y: int = 28           # parking strip for isolated nodes
 
 
 def _cycle_break(nodes, edges):
@@ -141,7 +141,7 @@ def _has_solver():
         return False
 
 
-def _solve_positions(nodes, rows, widths, cfg: AutoConfig, linestyle):
+def _solve_positions(nodes, rows, widths, cfg: AutoConfig, linestyle, edges):
     """Placement solver: CP-SAT available -> crossing-count + edge-length + regularity objective; otherwise the constructive method.
 
     Returns ({v: x_px}, engine, extra_meta) (box centers). y is decided by rows.
@@ -155,7 +155,7 @@ def _solve_positions(nodes, rows, widths, cfg: AutoConfig, linestyle):
 
     # edge endpoint row numbers (comparing crossings on the original y order would need real y; row numbers suffice)
     einfo = []
-    for (a, b) in EDGES_REF[0]:
+    for (a, b) in edges:
         einfo.append((a, b, row_of[a], row_of[b]))
 
     # WS5 scalability: proving CP-SAT global optimality does not scale to large graphs (after O(m^2) booleanization of crossing pairs, proof
@@ -180,13 +180,12 @@ def _solve_positions(nodes, rows, widths, cfg: AutoConfig, linestyle):
                 extra = {"solver_status": status,
                          "solver_det_budget": det_budget}
             return res, "cp-sat", extra
-    return _construct_positions(nodes, rows, widths, cfg), "construct", {}
+    return _construct_positions(nodes, rows, widths, cfg, edges), "construct", {}
 
 
 CP_SAT_DET_BUDGET = 8.0   # deterministic time budget (det units; measured on n20: ~=17s wall clock per 8 det)
 
 
-EDGES_REF = [()]   # module-level reference slot - injected by layout(), avoids a long parameter list
 
 
 def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid, det_budget=None):
@@ -266,7 +265,7 @@ def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid, det_budget=No
     return None, "no-solution"
 
 
-def _construct_positions(nodes, rows, widths, cfg):
+def _construct_positions(nodes, rows, widths, cfg, edges):
     """Constructive method: barycenter order + even in-row placement + row centering (deterministic)."""
     pos = {}
     order = {}
@@ -275,7 +274,7 @@ def _construct_positions(nodes, rows, widths, cfg):
     # simple barycenter sweeps (3 rounds, alternating up/down)
     row_of = {v: r for r, vs in enumerate(rows) for v in vs}
     neigh = defaultdict(list)
-    for (a, b) in EDGES_REF[0]:
+    for (a, b) in edges:
         neigh[a].append(b)
         neigh[b].append(a)
     for _ in range(3):
@@ -769,7 +768,7 @@ def _forced_arc_route(nodes_px, a, b, clearance):
     return best[1], best[2]
 
 
-def _ring_trial(plan, nodes, widths, card_h, cfg, why=None):
+def _ring_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     """Ring placement + routing trial: adopted only if every hard-gate proxy passes; otherwise None (fall back to layered, byte-for-byte unchanged).
 
     why: optional dict — receives the trial-gate outcome reason (mode
@@ -788,10 +787,10 @@ def _ring_trial(plan, nodes, widths, card_h, cfg, why=None):
         if why is not None:
             why["reason"] = reason
         return None
-    adj, _ = ringlayout._adjacency(EDGES_REF[0])
+    adj, _ = ringlayout._adjacency(edges)
     try:
         pos, y, meta = ringlayout.place_ring(plan, widths, card_h, cfg, adj,
-                                             EDGES_REF[0])
+                                             edges)
     except ringlayout.InfeasibleRing:
         return _why("trial: constructed placement infeasible (InfeasibleRing)")
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
@@ -804,11 +803,11 @@ def _ring_trial(plan, nodes, widths, card_h, cfg, why=None):
             gap_y = abs(y[a] - y[b]) - card_h
             if max(gap_x, gap_y) < cfg.min_gap - 2:      # rect_gap caliber (>=16 gate)
                 return _why("trial gate: card gap < 16 (rect_gap caliber)")
-    router = Router(nodes_px, EDGES_REF[0], cfg.clearance, cfg.pitch)
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
     routes = router.route_all()
     if router.final_crossing_pairs(routes) > 2:
         return _why("trial gate: router-theory crossings > 2")
-    eset = set(EDGES_REF[0])
+    eset = set(edges)
     for i, info in routes.items():
         if info.get("press", 0):
             return _why("trial gate: box press != 0")
@@ -817,8 +816,8 @@ def _ring_trial(plan, nodes, widths, card_h, cfg, why=None):
             return _why("trial gate: edge-box clearance < 16px")
         # anchor smoothing proxy (same caliber as check item 4)
         pts = info["points"]
-        for v, p_idx, n_idx in ((EDGES_REF[0][i][0], 0, 1),
-                                (EDGES_REF[0][i][1], len(pts) - 1, len(pts) - 2)):
+        for v, p_idx, n_idx in ((edges[i][0], 0, 1),
+                                (edges[i][1], len(pts) - 1, len(pts) - 2)):
             p = nodes_px[v]
             a0 = pts[p_idx]
             if (abs(abs(a0[0] - p[0]) - p[2] / 2) > abs(abs(a0[1] - p[1]) - p[3] / 2) + 1e-9
@@ -834,9 +833,9 @@ def _ring_trial(plan, nodes, widths, card_h, cfg, why=None):
             if math.degrees(math.acos(max(0.0, min(1.0, c)))) < ANCHOR_MIN_DEG:
                 return _why("trial gate: anchor smoothing < 20deg")
     # mutual-pair separation >=4px (F1 caliber)
-    for i in range(len(EDGES_REF[0])):
-        for j in range(i + 1, len(EDGES_REF[0])):
-            if EDGES_REF[0][i] != (EDGES_REF[0][j][1], EDGES_REF[0][j][0]):
+    for i in range(len(edges)):
+        for j in range(i + 1, len(edges)):
+            if edges[i] != (edges[j][1], edges[j][0]):
                 continue
             md = min_pair_dist(sample_polyline(routes[i]["points"]),
                                sample_polyline(routes[j]["points"]))
@@ -918,14 +917,13 @@ def _final_pairs(nodes_px, edges, routes, cfg):
     return router.final_crossing_pairs(routes)
 
 
-def _sym_trial(plan, nodes, widths, card_h, cfg, why=None):
+def _sym_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     """Bowtie-pair symmetric placement + routing trial gate: adopted only if the gate passes; otherwise None (fallback, byte-for-byte unchanged).
 
     why: optional dict — receives the trial-gate outcome reason (mode
     decision trace).
     """
     from . import symlayout
-    edges = EDGES_REF[0]
     try:
         pos, y, meta, constructed = symlayout.place_bowtie(plan, widths,
                                                            card_h, cfg, edges)
@@ -960,7 +958,7 @@ def _sym_trial(plan, nodes, widths, card_h, cfg, why=None):
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
-def _bowtie_trial(plan, nodes, widths, card_h, cfg, why=None):
+def _bowtie_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     """Bowtie-vertex symmetric placement + routing trial gate: adopted only if the gate passes; otherwise None (fallback, byte-for-byte unchanged).
 
     why: optional dict — receives the trial-gate outcome reason (mode
@@ -974,7 +972,6 @@ def _bowtie_trial(plan, nodes, widths, card_h, cfg, why=None):
     forbidden).
     """
     from . import bowtielayout
-    edges = EDGES_REF[0]
     try:
         pos, y, meta, constructed = bowtielayout.place_bowtie_vertex(
             plan, widths, card_h, cfg, edges)
@@ -1009,7 +1006,7 @@ def _bowtie_trial(plan, nodes, widths, card_h, cfg, why=None):
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
-def _spine_trial(plan, nodes, widths, card_h, cfg, why=None):
+def _spine_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     """Spine-wing placement + routing trial gate: adopted only if the gate passes; otherwise None (fallback, byte-for-byte unchanged).
 
     why: optional dict — receives the trial-gate outcome reason (mode
@@ -1023,7 +1020,6 @@ def _spine_trial(plan, nodes, widths, card_h, cfg, why=None):
     the Router candidate pool.
     """
     from . import spinewinglayout
-    edges = EDGES_REF[0]
     try:
         pos, y, meta, constructed = spinewinglayout.place_spine_wing(
             plan, widths, card_h, cfg, edges)
@@ -1050,7 +1046,7 @@ def _spine_trial(plan, nodes, widths, card_h, cfg, why=None):
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
-def _comb_trial(plan, nodes, widths, card_h, cfg, why=None):
+def _comb_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     """Comb-bilateral placement + routing trial gate: adopted only if every
     route is a straight line (the comb contract: column spine vertical +
     hub fan straight) AND the unified hard-gate proxy passes; otherwise None
@@ -1061,7 +1057,6 @@ def _comb_trial(plan, nodes, widths, card_h, cfg, why=None):
     Geometric ground truth = jacky's hand-pulled HDD supply-chain layout.
     """
     from . import comblayout
-    edges = EDGES_REF[0]
     try:
         pos, y, meta, constructed = comblayout.place_comb(plan, widths,
                                                           card_h, cfg)
@@ -1110,7 +1105,7 @@ def _comb_trial(plan, nodes, widths, card_h, cfg, why=None):
     return plan
 
 
-def _column_trial(plan, nodes, widths, card_h, cfg, why=None):
+def _column_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     """Column placement + routing trial gate: adopted only if the gate passes; otherwise None (fall back to layered, byte-for-byte unchanged).
 
     why: optional dict — receives the trial-gate outcome reason (mode
@@ -1118,7 +1113,6 @@ def _column_trial(plan, nodes, widths, card_h, cfg, why=None):
     """
     from . import columnlayout
     from .routing import min_pair_dist, sample_polyline
-    edges = EDGES_REF[0]
     adj = columnlayout._adjacency(edges)
     try:
         pos, y, meta, constructed = columnlayout.place_column(
@@ -1163,13 +1157,16 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     no hit / trial failure -> the existing layered path (byte-for-byte
     unchanged).
     """
-    global EDGES_REF
+    cfg = config or AutoConfig()
+    edges = tuple((e.a, e.b) for e in graph.edges)
+    # Cache lifecycle: module-level route/corner caches must never carry
+    # state across layouts (rounded-key aliasing would make batch results
+    # order-dependent); Router caches are instance-scoped, fresh per call.
+    _reset_route_caches()
     # T3: observational stage timing. No-op unless STDRAW_TIMING=1; the
     # report at the end goes to stderr only and never touches layout.json
     # (zero-behavior-change, ci_checks mark() style).
     _timing.start()
-    cfg = config or AutoConfig()
-    EDGES_REF = [tuple((e.a, e.b) for e in graph.edges)]
     nodes = graph.node_ids()
     adj = graph.adj_undirected()
     core = [v for v in nodes if adj[v]]
@@ -1249,7 +1246,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             from . import symlayout as _symlayout
             _sym = _symlayout.detect_bowtie(graph, why=_why_sym)
             if _sym is not None:
-                sym_plan = _sym_trial(_sym, nodes, widths, card_h, cfg,
+                sym_plan = _sym_trial(_sym, nodes, widths, card_h, cfg, edges,
                                       why=_tw_sym)
             _rule_hit("symmetric (shared-edge bowtie)", 1, _sym is not None,
                       sym_plan, _why_sym, _tw_sym)
@@ -1260,7 +1257,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             from . import bowtielayout as _bowtielayout
             _bw = _bowtielayout.detect_bowtie_vertex(graph, why=_why_bw)
             if _bw is not None:
-                bw_plan = _bowtie_trial(_bw, nodes, widths, card_h, cfg,
+                bw_plan = _bowtie_trial(_bw, nodes, widths, card_h, cfg, edges,
                                         why=_tw_bw)
             _rule_hit("bowtie-vertex", 1, _bw is not None, bw_plan,
                       _why_bw, _tw_bw)
@@ -1268,7 +1265,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             from . import spinewinglayout as _spinewinglayout
             _sw = _spinewinglayout.detect_spine_wing(graph, why=_why_sw)
             if _sw is not None:
-                sw_plan = _spine_trial(_sw, nodes, widths, card_h, cfg,
+                sw_plan = _spine_trial(_sw, nodes, widths, card_h, cfg, edges,
                                        why=_tw_sw)
             _rule_hit("spine-wing", 2, _sw is not None, sw_plan,
                       _why_sw, _tw_sw)
@@ -1284,7 +1281,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                 _col = _columnlayout.detect_column(graph, why=_why_col)
                 if _col is not None:
                     column_plan = _column_trial(_col, nodes, widths, card_h,
-                                                cfg, why=_tw_col)
+                                                cfg, edges, why=_tw_col)
                 _rule_hit("column-chain", 3, _col is not None, column_plan,
                           _why_col, _tw_col)
             else:
@@ -1314,13 +1311,13 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     "trial_gate": None})
                 _comb = None
             if _comb is not None:
-                comb_plan = _comb_trial(_comb, nodes, widths, card_h, cfg,
+                comb_plan = _comb_trial(_comb, nodes, widths, card_h, cfg, edges,
                                         why=_tw_comb)
                 _rule_hit("comb-bilateral", 2, True, comb_plan,
                           _why_comb, _tw_comb)
             if column_plan is None and comb_plan is None and _ring_detect is not None:
                 ring_plan = _ring_trial(_ring_detect, nodes, widths, card_h,
-                                        cfg, why=_tw_ring)
+                                        cfg, edges, why=_tw_ring)
                 _rule_hit("ring-cycle", 4, True, ring_plan,
                           _why_ring, _tw_ring)
             elif _ring_detect is None:
@@ -1405,7 +1402,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             pos_meta = rmeta
         else:
             # ② layering (cycle breaking + longest path + empty-layer compression)
-            _, dag = _cycle_break(core, EDGES_REF[0])
+            _, dag = _cycle_break(core, edges)
             layer = _layers(core, dag)
             nrow = max(layer.values()) + 1 if core else 1
             rows = [[v for v in core if layer[v] == r] for r in range(nrow)]
@@ -1413,7 +1410,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             _timing.mark("layering")
 
             # ③ placement
-            pos, engine, pos_meta = _solve_positions(core, rows, widths, cfg, linestyle)
+            pos, engine, pos_meta = _solve_positions(core, rows, widths, cfg, linestyle, edges)
 
             # y coordinates (even rows -> the foundation of the regularity gate)
             y = {v: cfg.top + r * cfg.pitch for r, vs in enumerate(rows) for v in vs}
@@ -1432,7 +1429,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             # ③b local polish (small graphs <=10 nodes): hill-climbing horizontal shifts on routing ground-truth total cost, explicitly
             # feeding routing feasibility (press/clearance/crossings) back into the placement layer
             if len(core) <= 10:
-                pos, _sc, _rt = _polish(core, EDGES_REF[0], rows, pos, y,
+                pos, _sc, _rt = _polish(core, edges, rows, pos, y,
                                         widths, card_h, cfg)
                 # -- WS3 routing-quality rework (random dense graphs: check1 crossings>2 / check3 clearance<16): when a routing hard gate fails, the
                 #    layout bottleneck is not the router (the graph is planar but the placement pushes topological interleaving pairs to 3+, and greedy
@@ -1441,7 +1438,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                 #    than the baseline). Gated trigger: layouts whose hard gates already pass (the entire classic domain, existing passing cases) get
                 #    zero perturbation, output byte-for-byte unchanged.
                 _r0 = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
-                             EDGES_REF[0], cfg.clearance, cfg.pitch)
+                             edges, cfg.clearance, cfg.pitch)
                 _routes0 = _r0.route_all()
                 _pairs0 = _r0.final_crossing_pairs(_routes0)
                 _clrbad0 = sum(1 for _i in _routes0.values()
@@ -1456,7 +1453,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     # expands the stair candidate pool - gated path only; the normal path (including polish's _route_total) keeps the historical
                     # candidate pool, zero perturbation for passing cases.
                     _rq = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
-                                 EDGES_REF[0], cfg.clearance, cfg.pitch, quality=True)
+                                 edges, cfg.clearance, cfg.pitch, quality=True)
                     _routesA = _rq.joint_reroute(dict(_routes0))
                     _pairsA = _rq.final_crossing_pairs(_routesA)
                     _clrbadA = sum(1 for _i in _routesA.values()
@@ -1472,13 +1469,13 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                         _best = ((_pairsA, _clrbadA, _angbadA, _pressbadA), pos, y, rows, _routesA)
                     # The layout layer's second move: deterministic (row, order) reorder -> 24px repack -> hard-gate polish
                     # -> routing -> joint reroute
-                    _order2 = _reorder_rows(EDGES_REF[0], rows)
+                    _order2 = _reorder_rows(edges, rows)
                     _pos2 = _repack_x(_order2, widths, cfg)
                     _y2 = dict(y)
                     for _r, _vs in enumerate(_order2):
                         for _v in _vs:
                             _y2[_v] = cfg.top + _r * cfg.pitch
-                    _pos2, _sc2, _rt2 = _polish(core, EDGES_REF[0], _order2, _pos2,
+                    _pos2, _sc2, _rt2 = _polish(core, edges, _order2, _pos2,
                                                 _y2, widths, card_h, cfg,
                                                 hard_gates=True)
                     # ref-scrubbed: isolated nodes are not in rows (delivered on the top parking strip); the gated reorder reorders only core -
@@ -1487,7 +1484,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     for _v in deg0:
                         _pos2.setdefault(_v, pos[_v])
                     _r2 = Router({v: (_pos2[v], _y2[v], widths[v], card_h)
-                                  for v in nodes}, EDGES_REF[0], cfg.clearance, cfg.pitch,
+                                  for v in nodes}, edges, cfg.clearance, cfg.pitch,
                                  quality=True)
                     _rt2 = _r2.route_all()
                     _rt2 = _r2.joint_reroute(dict(_rt2))
@@ -1511,7 +1508,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
 
     # ④ routing (straight/arc first-class, boxes do not press lines) + WS3 theoretical caliber (final-route crossing pairs)
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
-    router = Router(nodes_px, EDGES_REF[0], cfg.clearance, cfg.pitch)
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
     routes = router.route_all()
     if _routes_final is not None:
         routes = _routes_final
@@ -1519,7 +1516,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # ref-scrubbed constructed-route injection (column closed arcs / bowtie mirror-symmetry arcs): these edges skip the candidate pool and are
     # delivered with the constructed geometry (the trial gate has already rechecked the hard gates); the injection must happen before
     # final_crossing_pairs so the dual crossing accounting (check11) includes the constructed routes.
-    for i, (a, b) in enumerate(EDGES_REF[0]):
+    for i, (a, b) in enumerate(edges):
         cr = constructed.get((a, b))
         if cr is None:
             continue
@@ -1535,8 +1532,8 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # happen before final_crossing_pairs, so the dual crossing accounting (check11) includes the waypoints.
     manual_wps = {}
     if manual is not None:
-        manual_wps = _manual_waypoints(manual, EDGES_REF[0])
-    for i, (a, b) in enumerate(EDGES_REF[0]):
+        manual_wps = _manual_waypoints(manual, edges)
+    for i, (a, b) in enumerate(edges):
         wps = manual_wps.get((a, b))
         if not wps:
             continue
@@ -1578,9 +1575,9 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     manual_styles = {}
     arc_ctrls = {}
     if manual is not None:
-        manual_styles = _manual_edge_styles(manual, EDGES_REF[0])
-        arc_ctrls = _manual_arc_ctrls(manual, EDGES_REF[0])
-    for i, (a, b) in enumerate(EDGES_REF[0]):
+        manual_styles = _manual_edge_styles(manual, edges)
+        arc_ctrls = _manual_arc_ctrls(manual, edges)
+    for i, (a, b) in enumerate(edges):
         if manual_wps.get((a, b)):
             continue
         st = manual_styles.get((a, b))
@@ -1635,7 +1632,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # no leniency.
     manual_anchors = {}
     if manual is not None:
-        manual_anchors = _manual_anchors(manual, EDGES_REF[0])
+        manual_anchors = _manual_anchors(manual, edges)
     if manual_anchors:
         from .routing import quad_points as _quad_points
 
@@ -1645,7 +1642,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     return (p[1], p[2])
             raise ValueError(f"anchor id not resolvable: {aid!r}")   # guarded by _manual_anchors
 
-        for i, (a, b) in enumerate(EDGES_REF[0]):
+        for i, (a, b) in enumerate(edges):
             sel = manual_anchors.get((a, b))
             if not sel:
                 continue
@@ -1724,7 +1721,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # shared lanes). Constructed routes and user-anchored waypoint edges are untouched; only edges involved in coincident pairs are rerouted,
     # on the condition that the hard gates do not regress (press/clearance/anchor/crossing count).
     _frozen = set()
-    for i, (a, b) in enumerate(EDGES_REF[0]):
+    for i, (a, b) in enumerate(edges):
         if constructed.get((a, b)) is not None or manual_wps.get((a, b)) \
                 or manual_styles.get((a, b)) or manual_anchors.get((a, b)):
             _frozen.add(i)
@@ -1768,7 +1765,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # shared with the JS preview layer), so anchor_snap has nothing to move
     # on them: they are neither re-anchored nor counted as snap failures
     # (their anchored state is the documented waypoints caliber).
-    _density = len(EDGES_REF[0]) / max(len(nodes), 1)
+    _density = len(edges) / max(len(nodes), 1)
     _snap_deferred = None
     if _density >= ANCHOR_SNAP_DENSE_E_OVER_N:
         # ref-scrubbed finalize (approved 2026-11-09): density-gated
@@ -1860,7 +1857,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     _LOOP_COLORS = {"R": "#d97706", "B": "#0284c7"}   # R=amber, B=sky blue (online convention)
 
     edges_out = []
-    for i, (a, b) in enumerate(EDGES_REF[0]):
+    for i, (a, b) in enumerate(edges):
         info = routes[i]
         kinds = sorted(_edge_loops.get((a, b), ()))
         loop_color = (_LOOP_COLORS[kinds[0]] if len(set(kinds)) == 1

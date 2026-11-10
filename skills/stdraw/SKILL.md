@@ -64,7 +64,6 @@ pip install "stdraw[solver]"
 | `grade` | Meaning | What you may tell the user |
 |---|---|---|
 | `best` | hard gates all pass + 0 crossings | "hard gates pass, zero crossings" (auto-v2: crossings are minimized, not theorem-guaranteed; ortho recipe: theorem-guaranteed) |
-| `second` | hard gates all pass + ≤2 crossings (coords in cert) | report crossing count + coords |
 | `3d` | 3D delivery (rotate freely; projection crossings solved by camera) | no 2D crossing claim |
 | `uncertified` | everything else — honestly ungraded | **never** dress this up as success |
 

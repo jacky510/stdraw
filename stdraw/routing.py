@@ -32,6 +32,18 @@ ARC_K_MIN = 0.12
 ARC_K_MAX = 0.50
 
 
+def _dbg(msg_fn):
+    """Central STDRAW_SNAP_DEBUG stderr printer.
+
+    Env switch checked dynamically at call time; msg_fn is a callable so
+    lazily-built messages (and any routing stats they need) cost nothing
+    when the switch is off. All snap-stage debug prints go through this
+    one place.
+    """
+    if os.environ.get("STDRAW_SNAP_DEBUG"):
+        print(msg_fn(), file=sys.stderr)
+
+
 def adaptive_arc_k(dist):
     """Chord-length-adaptive arc curvature coefficient (ref-scrubbed aesthetics v3).
 
@@ -1836,10 +1848,8 @@ class Router:
                                   alpha, B, m))
             cands.sort(key=lambda c: (c[0][0], c[0][2], -c[0][1])
                        if enhanced_gates else c[0])
-            if os.environ.get("STDRAW_SNAP_DEBUG"):
-                print(f"  [flipdbg] pair={key} cur_m={cur_m} ncands={len(cands)} "
-                      f"best_meet={next((c[0] for c in cands if c[0][0] == 0), None)}",
-                      file=sys.stderr)
+            _dbg(lambda: f"  [flipdbg] pair={key} cur_m={cur_m} ncands={len(cands)} "
+                         f"best_meet={next((c[0] for c in cands if c[0][0] == 0), None)}")
             stats_before = {i: self._edge_stats(i, routes)
                             for i in (i1, i2)}
             own_before = ({i: self._own_press(i, routes) for i in (i1, i2)}
@@ -1888,14 +1898,15 @@ class Router:
                 for i in (i1, i2):
                     ok = _gates.edge_gate_check(
                         self, i, routes, _base, _pol, msep_floor=sep_floor)
-                    if os.environ.get("STDRAW_SNAP_DEBUG"):
+                    def _flip_gate_msg():
                         pr, clr, ang, cross, msep = self._edge_stats(i, routes)
                         pr0, clr0, ang0, cross0, msep0 = stats_before[i]
-                        print(f"  [flipdbg] {i} alpha={alpha} B={B} ok={ok} "
-                              f"pr={pr}<={pr0} clr={clr} ang={ang:.1f} "
-                              f"msep={msep}>={sep_floor:.1f} "
-                              f"own={self._own_press(i, routes)}"
-                              f"<={own_before[i] if own_before else '?'}", file=sys.stderr)
+                        return (f"  [flipdbg] {i} alpha={alpha} B={B} ok={ok} "
+                                f"pr={pr}<={pr0} clr={clr} ang={ang:.1f} "
+                                f"msep={msep}>={sep_floor:.1f} "
+                                f"own={self._own_press(i, routes)}"
+                                f"<={own_before[i] if own_before else '?'}")
+                    _dbg(_flip_gate_msg)
                     if not ok:
                         break
                 if ok:
@@ -2310,13 +2321,11 @@ class Router:
             s2 = self._side_of(ends[1][2], routes[i1]["points"][pidx[(i1, key[1])]])
             s3 = self._side_of(ends[2][2], routes[i2]["points"][pidx[(i2, key[0])]])
             s4 = self._side_of(ends[3][2], routes[i2]["points"][pidx[(i2, key[1])]])
-            if os.environ.get("STDRAW_SNAP_DEBUG"):
-                print(f"  [lensdbg] {key} s={s1}/{s2} vs {s3}/{s4} "
-                      f"N0={self.N.get(key[0])} N1={self.N.get(key[1])} "
-                      f"e{self.edges[i1]} e{self.edges[i2]} "
-                      f"p1={routes[i1]['points'][pidx[(i1, key[0])]]} "
-                      f"p3={routes[i2]['points'][pidx[(i2, key[0])]]}",
-                      file=sys.stderr)
+            _dbg(lambda: f"  [lensdbg] {key} s={s1}/{s2} vs {s3}/{s4} "
+                         f"N0={self.N.get(key[0])} N1={self.N.get(key[1])} "
+                         f"e{self.edges[i1]} e{self.edges[i2]} "
+                         f"p1={routes[i1]['points'][pidx[(i1, key[0])]]} "
+                         f"p3={routes[i2]['points'][pidx[(i2, key[0])]]}")
             if s1 != s3 or s2 != s4:
                 continue
             sep_ok_floor = 12.0
@@ -2379,8 +2388,7 @@ class Router:
                     break
                 box_pairs[v] = (low, high)
             if not ok_plan:
-                if os.environ.get("STDRAW_SNAP_DEBUG"):
-                    print(f"  [lensdbg] {key} ok_plan=False", file=sys.stderr)
+                _dbg(lambda: f"  [lensdbg] {key} ok_plan=False")
                 continue
             # which arc is "low" per current offsets on box key[0]
             cx0, cy0, hw0, hh0 = self.N[key[0]]
@@ -2476,16 +2484,15 @@ class Router:
                             break
                     if ok:
                         break
-                if os.environ.get("STDRAW_SNAP_DEBUG"):
-                    print(f"  [lensdbg] {key} golden={golden} ok={ok} sep={sep} "
-                          f"floor={sep_ok_floor:.2f} "
-                          f"own1={self._own_press(i1, routes)}<={before_own[i1]} "
-                          f"own2={self._own_press(i2, routes)}<={before_own[i2]} "
-                          f"sib1={self._sibling_cross(i1, routes)}<={before_sib[i1]} "
-                          f"sib2={self._sibling_cross(i2, routes)}<={before_sib[i2]} "
-                          f"cert1={self._cert_angle_ok(i1, routes)} "
-                          f"cert2={self._cert_angle_ok(i2, routes)} "
-                          f"assign={assign} rejects={seen}", file=sys.stderr)
+                _dbg(lambda: f"  [lensdbg] {key} golden={golden} ok={ok} sep={sep} "
+                             f"floor={sep_ok_floor:.2f} "
+                             f"own1={self._own_press(i1, routes)}<={before_own[i1]} "
+                             f"own2={self._own_press(i2, routes)}<={before_own[i2]} "
+                             f"sib1={self._sibling_cross(i1, routes)}<={before_sib[i1]} "
+                             f"sib2={self._sibling_cross(i2, routes)}<={before_sib[i2]} "
+                             f"cert1={self._cert_angle_ok(i1, routes)} "
+                             f"cert2={self._cert_angle_ok(i2, routes)} "
+                             f"assign={assign} rejects={seen}")
                 if ok:
                     for _i, v, end, aid in assign:
                         occ.setdefault((v, aid), set()).add(
@@ -2493,9 +2500,8 @@ class Router:
                     report["moved"] += 4
                     report.setdefault("lens_pairs", []).append(
                         (key[0], key[1]))
-                    if os.environ.get("STDRAW_SNAP_DEBUG"):
-                        print(f"  [lensdbg] {key} APPLIED golden={golden} "
-                              f"assign={assign}", file=sys.stderr)
+                    _dbg(lambda: f"  [lensdbg] {key} APPLIED golden={golden} "
+                                 f"assign={assign}")
                     break
                 for i in (i1, i2):
                     routes[i]["points"] = [list(q) for q in saved[i][0]]
@@ -2710,7 +2716,7 @@ class Router:
                                                     sib={i: sib_before},
                                                     coi={i: before_coi}),
                                 _gates.SNAP)
-                            if os.environ.get("STDRAW_SNAP_DEBUG"):
+                            def _snap_gate_msg():
                                 _c = dict(p=after[0] <= before[0],
                                           x=after[3] <= before[3],
                                           cl=(after[1] is None or after[1] >= self.cl - PRESS_MARGIN - 1e-6),
@@ -2719,17 +2725,17 @@ class Router:
                                           ow=self._own_press(i, routes) <= own_before,
                                           sb=self._sibling_cross(i, routes) <= sib_before,
                                           ct=self._cert_angle_ok(i, routes))
-                                print(f"  [snapdbg] {a}->{b} end={end} "
-                                      f"anchor={aid} press {after[0]}<={before[0]} "
-                                      f"clr {after[1]} ang {after[2]:.1f} "
-                                      f"cross {after[3]}<={before[3]} "
-                                      f"msep {after[4]} own {self._own_press(i, routes)}"
-                                      f"<={own_before} sib {self._sibling_cross(i, routes)}"
-                                      f"<={sib_before} occ {bool(occ.get((v, aid)))} "
-                                      f"cert {self._cert_angle_ok(i, routes)} "
-                                      f"comp {_c} "
-                                      f"-> {'OK' if ok else 'REJECT'}",
-                                      file=sys.stderr)
+                                return (f"  [snapdbg] {a}->{b} end={end} "
+                                        f"anchor={aid} press {after[0]}<={before[0]} "
+                                        f"clr {after[1]} ang {after[2]:.1f} "
+                                        f"cross {after[3]}<={before[3]} "
+                                        f"msep {after[4]} own {self._own_press(i, routes)}"
+                                        f"<={own_before} sib {self._sibling_cross(i, routes)}"
+                                        f"<={sib_before} occ {bool(occ.get((v, aid)))} "
+                                        f"cert {self._cert_angle_ok(i, routes)} "
+                                        f"comp {_c} "
+                                        f"-> {'OK' if ok else 'REJECT'}")
+                            _dbg(_snap_gate_msg)
                             if ok:
                                 occ.setdefault((v, aid), set()).add((i, end))
                                 report["moved"] += 1
@@ -2952,16 +2958,15 @@ class Router:
                                             sib={i: sib_before},
                                             coi={i: before_coi}),
                         _gates.SNAP)
-                    if os.environ.get("STDRAW_SNAP_DEBUG"):
-                        print(f"  [snapdbg] JOINT {a}->{b} end={end} "
-                              f"anchors={aid_a}/{aid_b} infl={c:.1f} "
-                              f"press {after[0]}<={before[0]} "
-                              f"clr {after[1]} ang {after[2]:.1f} "
-                              f"cross {after[3]}<={before[3]} "
-                              f"own {self._own_press(i, routes)}"
-                              f"<={own_before} sib {self._sibling_cross(i, routes)}"
-                              f"<={sib_before} "
-                              f"-> {'OK' if ok else 'REJECT'}", file=sys.stderr)
+                    _dbg(lambda: f"  [snapdbg] JOINT {a}->{b} end={end} "
+                                 f"anchors={aid_a}/{aid_b} infl={c:.1f} "
+                                 f"press {after[0]}<={before[0]} "
+                                 f"clr {after[1]} ang {after[2]:.1f} "
+                                 f"cross {after[3]}<={before[3]} "
+                                 f"own {self._own_press(i, routes)}"
+                                 f"<={own_before} sib {self._sibling_cross(i, routes)}"
+                                 f"<={sib_before} "
+                                 f"-> {'OK' if ok else 'REJECT'}")
                     if ok:
                         occ.setdefault((ladders[1][0], aid_a), set()).add(
                             (i, 0 if end == 0 else 1))
@@ -2983,7 +2988,6 @@ class Router:
         ladder; committed only when BOTH endpoints pass the full delivery
         hard-gate set (same accounting as the sweeps).  One bounded round.
         """
-        eidx = {(e, n): None for e in []}  # placeholder no-op
         for fail in list(report["failures"]):
             target = None
             for i in sorted(routes):
@@ -3164,10 +3168,9 @@ class Router:
                         occ.setdefault((v, jaid2), set()).add((j, jend))
                         occ.setdefault((v, aid), set()).add((i, end))
                         report["moved"] += 2
-                        if os.environ.get("STDRAW_SNAP_DEBUG"):
-                            print(f"  [snapdbg] retry {fail['edge']}:{fail['end']} "
-                                  f"-> {aid}; blocker {self.edges[j]} gave way "
-                                  f"{jaid}->{jaid2}", file=sys.stderr)
+                        _dbg(lambda: f"  [snapdbg] retry {fail['edge']}:{fail['end']} "
+                                     f"-> {aid}; blocker {self.edges[j]} gave way "
+                                     f"{jaid}->{jaid2}")
                         done = True
                         break
                     # rollback both (i tried every anchor against this jalt)

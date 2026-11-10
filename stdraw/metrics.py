@@ -841,8 +841,10 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # Crossing caliber adjustment: crossings_zero demoted from hard gate to
     # report item (<=2 crossings allowed when placement regularity holds —
     # "some line intersection is acceptable; order and elegance come first");
-    # grading semantics unchanged (best = all hard gates + 0 crossings,
-    # second = all hard gates + <=2 crossings).
+    # grading semantics (best = all hard gates + 0 crossings; the former
+    # second tier was removed in v0.7.15+ as a logically unreachable dead
+    # branch: every counted crossing also counts in visual_crossings, so
+    # hard_ok already forces 0).
     if ring_mode:
         # Ring caliber gates: on-ring equal spacing CV + template fit error
         # (within 2px quantization tolerance ~= 0)
@@ -1024,11 +1026,6 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         grade = "best"
         grade_note = ("all hard gates passed (box press 0 / clearance >=16 / "
                       "anchors smooth / regularity) + 0 line crossings")
-    elif hard_ok and dual_ok and metrics["crossings"] <= 2:
-        grade = "second"
-        grade_note = ("all hard gates passed + <= 2 crossings (details "
-                      "recorded in the certificate for review); on conflict, "
-                      "keep hard gates, release crossings")
     elif not dual_ok:
         grade = "uncertified"
         grade_note = (f"dual crossing accounting mismatch (routing theory "

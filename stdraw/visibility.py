@@ -407,6 +407,20 @@ def plan_route(src, dst, rects, c):
 _ROUTE_CACHE = {}
 
 
+def reset_caches():
+    """Clear both module-level caches (called at the start of every layout()).
+
+    Cache keys round coordinates to 0.001px, so a key is a lossy map: two
+    different geometries can alias one key, and a cross-layout cache hit
+    would make same-process batch results depend on the processing order.
+    Resetting per layout keeps every graph's output independent of what ran
+    before it in the same process. Router-level caches are instance-scoped
+    (a fresh Router is built inside every layout/trial) and need no reset.
+    """
+    _ROUTE_CACHE.clear()
+    _CORNER_VIS_CACHE.clear()
+
+
 def _plan_route(src, dst, rects, c):
     """plan_route implementation (no cache). Returns a dict, or None when unreachable."""
     src, dst = tuple(src), tuple(dst)
