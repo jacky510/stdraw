@@ -36,8 +36,14 @@ def _grid_layer(W, H, T):
         return ""
     return (f'<defs><pattern id="stdraw-grid" width="{spacing:g}" '
             f'height="{spacing:g}" patternUnits="userSpaceOnUse">{tile}</pattern></defs>'
+            # pointer-events:none — the grid is paint-only. As an SVG child it
+            # would otherwise sit above the interactive hit layer (#stdraw-hits,
+            # inserted at svg.firstChild by the drag script) and swallow every
+            # edge hit-test (hover / segment drag / double-click style cycle
+            # all dead). Regression-probed by tests/probe_interactive.py's
+            # elementFromPoint hit gate.
             f'<rect x="0" y="0" width="{W:g}" height="{H:g}" '
-            f'fill="url(#stdraw-grid)"/>')
+            f'fill="url(#stdraw-grid)" pointer-events="none"/>')
 
 
 def _cert_css(T):
@@ -452,10 +458,11 @@ h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canva
 .ok{{color:{T["ok"]}}} .bad{{color:{T["bad"]}}} .note{{color:{T["note"]};font-size:12px}}
 .grade{{color:{T["grade"]}}}
 .stdraw-toolbar{{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:8px 12px;background:{T["toolbar_bg"]};border:1px solid {T["toolbar_border"]};border-radius:8px;font-size:13px;max-width:1280px}}
-.stdraw-toolbar button{{padding:4px 14px;border:1px solid {T["btn_border"]};border-radius:6px;background:{T["btn_bg"]};cursor:pointer;font-size:13px}}
+.stdraw-toolbar button{{padding:4px 14px;border:1px solid {T["btn_border"]};border-radius:6px;background:{T["btn_bg"]};color:{T["btn_text"]};cursor:pointer;font-size:13px}}
 .stdraw-toolbar button:hover{{background:{T["btn_hover_bg"]}}}
 .stdraw-hint{{color:{T["hint_text"]};font-size:12px}}
 #stdraw-metrics{{font-weight:600;color:{T["metrics_text"]}}}
+#stdraw-svg{{--stdraw-chrome-b:{T["edge_neg"]};--stdraw-chrome-r:{T["edge_pos"]}}}
 #stdraw-svg [data-node]{{cursor:grab}}
 #stdraw-svg [data-node] rect{{touch-action:none}}
 #stdraw-svg [data-node].dragging{{cursor:grabbing}}
