@@ -53,7 +53,7 @@ Local dev interpreter: `<user-home>/AppData/Local/Programs/Python/Python312/pyth
 
 - Changing the `tests/baselines/` frozen baselines or ortho-v1 frozen behavior — unless the card explicitly requires "re-baselining" and states the basis (only with same-file precedent)
 - Touching the publishing face (`README*` / `demos/` / `docs/gallery/` / `skills/stdraw/SKILL.md`) without publishing-face acceptance
-- Relaxing certificate hard-gate thresholds or changing the grade semantics (best/second/3d/uncertified) — never tune gates to let a figure pass
+- Relaxing certificate hard-gate thresholds or changing the grade semantics (best/3d/uncertified) — never tune gates to let a figure pass
 - Copying the default-side `systems-thinking-diagram` skill canonical copy into the repo (pointers only, see the header)
 - Bumping the version number (`pyproject.toml` / README badges / the "Version" section of this file) as a side effect — **since ref-scrubbed, version closure is unified through a dedicated "version closure card"**, no scattered bumps
 - Shared-main-tree discipline: `<user-home>/Projects/stdraw` main tree often has multiple cards' in-flight changes — **never commit files that are not on your own card's list**; commits always go through a temporary clone (precedent ref-scrubbed)
@@ -330,13 +330,13 @@ models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
   <= 2 crossings allowed when placement regularity holds) and
   `row_align_ge_060`; `visual_crossings_zero` moved from reports to the
   hard-gate set in v0.7.12 (grading: a fan-X drawing grades `second` at
-  most, not `best`);
+  most, not `best`; the `second` tier was removed in v0.7.15+ — logically
+  unreachable dead branch);
 - **grade**:
 
 | grade | semantics |
 |---|---|
 | `best` | all placement hard gates pass + 0 line crossings (auto recipe: an optimization result, not a theorem guarantee; ortho recipe: theorem-guaranteed) |
-| `second` | all placement hard gates pass + <= 2 crossings (`crossing_details` gives coordinates for review) |
 | `3d` | 3D dimension-lift delivery (when the 2D layer is inapplicable or abandoned) |
 | `uncertified` | everything else — **honestly ungraded**. This is not an error; it is the honest boundary |
 
@@ -349,7 +349,7 @@ Typical assertions (agent / CI alike):
 
 ```python
 cert = json.load(open("out/certificate.json", encoding="utf-8"))
-assert cert["grade"] == "best"            # or >= "second" as needed
+assert cert["grade"] == "best"
 geo = json.load(open("out/geometry_report.json", encoding="utf-8"))
 assert geo["summary"]["fail"] == 0
 audit = json.load(open("out/loops_audit.json", encoding="utf-8"))
