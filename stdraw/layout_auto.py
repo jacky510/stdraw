@@ -1890,7 +1890,11 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                 _edge_loops[(a, b)].add(kind)
             elif (b, a) in _eset_dir:
                 _edge_loops[(b, a)].add(kind)
-    _LOOP_COLORS = {"R": "#d97706", "B": "#0284c7"}   # R=amber, B=sky blue (online convention)
+    # R/B semantic colors now read from the theme tokens (UI-A re-wiring,
+    # card ② of the token landing: rendered strokes and layout.json metadata
+    # share one source again; light tier = vermilion / drafting blue).
+    from .themes import LIGHT as _THEME_LIGHT
+    _LOOP_COLORS = {"R": _THEME_LIGHT["loop_r"], "B": _THEME_LIGHT["loop_b"]}
 
     edges_out = []
     for i, (a, b) in enumerate(edges):
