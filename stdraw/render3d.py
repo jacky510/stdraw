@@ -2,6 +2,13 @@
 """3D rendering layer: layout3d results -> standalone HTML (three.js r128,
 zero network dependency).
 
+Dark-3D caliber (UI-A spec D5 / docs/ui-theme-spec-a.md section 3.2, jacky
+2026-11-11 ruling): every dark color used below is a FROZEN REGRESSION PIN —
+zero changes allowed; the authoritative mirror of those values is
+stdraw/themes.py DARK_3D. The UI-A LIGHT_3D group (stage/fog/grid/card/tube
+colors) is already defined there; consuming it for a light 3D stage is a
+follow-up card, and until then the dark output must stay byte-identical.
+
 three.js is referenced relatively via assets/three.min.js (in the spirit of
 zero inline dependencies: shared with the viewer from one in-repo assets
 directory, avoiding re-inlining 600KB into every demo).

@@ -151,8 +151,8 @@ class TestLoopColoring(unittest.TestCase):
             encoding="utf-8").read())
         html = render_auto_html(v4, "wage")
         self.assertNotIn("data-pol", html)          # badge group no longer emitted
-        self.assertIn('stroke="#d97706"', html)     # '+' edges amber
-        self.assertIn('stroke="#0284c7"', html)     # '−' edges sky blue
+        self.assertIn('stroke="#c2410c"', html)     # '+' edges vermilion (UI-A light ink)
+        self.assertIn('stroke="#1e6fae"', html)     # '−' edges drafting blue (UI-A light ink)
         self.assertNotIn('stroke-dasharray="', html)   # two-color caliber: all solid
         self.assertNotIn('stroke="#64748b"', html)     # no neutral-gray edges
 
