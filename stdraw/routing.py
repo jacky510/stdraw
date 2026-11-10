@@ -2574,8 +2574,9 @@ class Router:
         Endpoints for which no anchor passes the gates stay untouched and
         are reported in the returned report (honest degradation; the
         certificate's anchors_standard gate counts them).  Waypoint-kind
-        edges are exempt from both: their endpoints keep the border-point
-        caliber and are not counted as failures.  Deterministic:
+        edges are exempt from both: their endpoints already sit on the
+        16-anchor set by construction (layout_auto override caliber) and
+        are not counted as failures.  Deterministic:
         fixed order + fixed ladder, no RNG.
         """
         occ = {}
@@ -2601,17 +2602,14 @@ class Router:
                 a, b = self.edges[i]
                 if routes[i].get("kind") == "waypoints":
                     # User-anchored waypoint edges are FROZEN here (same
-                    # exemption as tier 2 below): their delivered endpoints are
-                    # the box-edge border points aimed at the first/last
-                    # waypoint (layout_auto waypoints override caliber), which
-                    # by construction sit 3px OUTSIDE the inset 16-anchor
-                    # rectangle -- re-anchoring them onto a standard anchor
-                    # would break both the border caliber and the
-                    # export->--from-layout recompute round-trip.  They are
-                    # also NOT reported as snap failures: an unanchored
-                    # user-anchored endpoint is the honest delivered state,
-                    # not a snap defect (counting it would force the dense
-                    # probe into a wholesale deferral).
+                    # exemption as tier 2 below): their delivered endpoints
+                    # already sit ON the 16-anchor set by construction
+                    # (layout_auto waypoints override caliber: endpoint =
+                    # standard anchor nearest to the border point aimed at
+                    # the first/last waypoint), so there is nothing left for
+                    # the snap to move.  They are also NOT reported as snap
+                    # failures: a delivered anchored endpoint is the honest
+                    # state, not a snap defect.
                     continue
                 _ua = routes[i].get("ua_ends") or {}
                 for end, v in ((0, a), (1, b)):
@@ -3037,6 +3035,13 @@ class Router:
             for j in sorted(routes):
                 if j == i or done:
                     continue
+                # T2 note: waypoint-kind endpoints MAY give way here -- the
+                # plan-A position is the nearest FEASIBLE member of the
+                # 16-anchor set, and the give-way ladder (nearest-first over
+                # the same 16-set) preserves that membership while resolving
+                # anchor conflicts with the failed endpoint (uncontested
+                # drags deliver the literal nearest anchor, identical to the
+                # JS preview).
                 ja, jb = self.edges[j]
                 if v not in (ja, jb):
                     continue

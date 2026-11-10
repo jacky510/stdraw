@@ -300,17 +300,22 @@ def main():
                         for fn in ("layout.json", "certificate.json",
                                    "demo-2d.html"))
             ok("G3 waypoints layout deterministic (byte-identical x2)", det_w)
-            # anchor caliber: first/last points sit on their own box border (borderPoint oriented toward the first/last waypoint)
+            # anchor caliber (T2 plan A): first/last points are members of
+            # their box's 16 standard anchor set (anchors.py) -- the same
+            # membership the certificate anchors_standard hard gate enforces
+            from stdraw.anchors import standard_anchors as _std16
             ea = lay_w["nodes"][vg_edge["a"]]
-            p0 = pts_w[0]
-            ok("G4 anchor on a-side box border",
-               abs(math.hypot(abs(abs(p0[0] - ea["x"]) - ea["w"] / 2),
-                              abs(abs(p0[1] - ea["y"]) - lay_w["meta"]["cardH"] / 2))) < 0.9
-               or (abs(p0[0] - ea["x"]) <= ea["w"] / 2 + 0.6 and
-                   abs(abs(p0[1] - ea["y"]) - lay_w["meta"]["cardH"] / 2) < 0.6) or
-               (abs(p0[1] - ea["y"]) <= lay_w["meta"]["cardH"] / 2 + 0.6 and
-                abs(abs(p0[0] - ea["x"]) - ea["w"] / 2) < 0.6),
-               f"p0={p0} a={ea}")
+            eb = lay_w["nodes"][vg_edge["b"]]
+            _chh = lay_w["meta"]["cardH"] / 2.0
+            _pts16_a = _std16(ea["x"], ea["y"], ea["w"] / 2.0, _chh)
+            _pts16_b = _std16(eb["x"], eb["y"], eb["w"] / 2.0, _chh)
+            p0, pl = pts_w[0], pts_w[-1]
+            ok("G4 waypoints endpoints in 16-anchor set (a+b)",
+               any(abs(ax - p0[0]) <= 0.75 and abs(ay - p0[1]) <= 0.75
+                   for _i, ax, ay in _pts16_a) and
+               any(abs(bx - pl[0]) <= 0.75 and abs(by - pl[1]) <= 0.75
+                   for _i, bx, by in _pts16_b),
+               f"p0={p0} pl={pl} a={ea} b={eb}")
             # layout-diff works on waypoints layouts (third leg of the full chain)
             dpath_w = os.path.join(tmp, "wp-diff.json")
             r_dw = run(["layout-diff", os.path.join(out_auto, "layout.json"),
