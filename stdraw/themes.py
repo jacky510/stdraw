@@ -188,8 +188,8 @@ THEMES = {"light": LIGHT, "dark": DARK}
 DEFAULT_STATIC_THEME = "light"    # static pipeline default (production face)
 DEFAULT_VIEWER_THEME = "dark"     # viewer default (shipped look, frozen)
 
-# ── 3D parameter groups (token definitions only in this landing step; the
-#    render3d.py consumption is a follow-up card) ───────────────────────────
+# ── 3D parameter groups (consumed by stdraw/render3d.py; the dark output is
+#    a FROZEN byte pin — see the DARK_3D note) ──────────────────────────────
 # LIGHT (UI-A spec section 3.1; structure unchanged, parameters only).
 LIGHT_3D = {
     "scene_bg": "#f0ece1",         # stage / scene.background
@@ -202,6 +202,15 @@ LIGHT_3D = {
     "card_muted": "#6e6a5e",       # card secondary text
     "tube_r": "#c2410c",           # '+' polarity tube/cone material
     "tube_b": "#1e6fae",           # '−' polarity tube/cone material
+    # chrome completion (not restated by the spec 3.1 table; values reuse the
+    # light ink/paper family — no third chromatic hue on the 3D canvas):
+    "node_sprite": "#2a3644",      # node sphere sprite — ink dot (dark ships
+                                   # amber #f59e0b; light keeps the two-polar-
+                                   # inks-only caliber, so the marker is ink)
+    "ui_text": "#22303f",          # toolbar/body text (card_text family)
+    "ui_muted": "#6e6a5e",         # secondary info text (card_muted family)
+    "ui_accent": "#2a3644",        # active solid button — ink fill
+    "ui_accent_text": "#fffdf6",   # active solid button text — paper
 }
 
 # DARK — FROZEN REGRESSION PIN (UI-A spec D5 / section 3.2: zero changes).
@@ -219,9 +228,20 @@ DARK_3D = {
     "node_sprite": "#f59e0b",      # node sphere sprite (0xf59e0b)
     "tube_r": "#fbbf24",           # '+' amber-400
     "tube_b": "#7dd3fc",           # '−' sky-400
+    # chrome completion — shipped literals, frozen (render3d.py byte pin):
+    "ui_text": "#e2e8f0",          # toolbar/body text
+    "ui_muted": "#94a3b8",         # secondary info text
+    "ui_accent": "#2563eb",        # active solid button
+    "ui_accent_text": "#e2e8f0",   # equals ui_text: the dark active-button CSS
+                                   # carries no color property (byte pin), so
+                                   # render3d.py omits it when these match
 }
 
 THEMES_3D = {"light": LIGHT_3D, "dark": DARK_3D}
+DEFAULT_3D_THEME = "dark"          # 3D shipped look frozen (spec D5 byte pin);
+                                   # the 3D demo only goes light on an explicit
+                                   # --theme light (an in-page toggle would
+                                   # change the dark demo's bytes)
 
 
 def get(name):

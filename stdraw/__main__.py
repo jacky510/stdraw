@@ -25,7 +25,7 @@ from .check import geometry_report_to_file
 from .metrics import certificate, scene_from_planar
 from .loops import loops_audit
 from .render import render_html
-from .themes import DEFAULT_STATIC_THEME, THEMES
+from .themes import DEFAULT_3D_THEME, DEFAULT_STATIC_THEME, THEMES, THEMES_3D
 from .layout3d import SOLIDS, layout3d
 from .render3d import render_3d_html
 from .delivery import strip_delivery_metadata, stamp_cli_deliverable
@@ -106,6 +106,9 @@ def main(argv=None):
     ap.add_argument("--name", default="", help="graph name (default: the DSL graph name)")
     ap.add_argument("--theme", default=DEFAULT_STATIC_THEME, choices=sorted(THEMES),
                     help="2D demo HTML theme (default: light = the current production face)")
+    ap.add_argument("--theme-3d", default=DEFAULT_3D_THEME, choices=sorted(THEMES_3D),
+                    help="3D demo theme (default: dark = the frozen shipped look; "
+                         "light = the UI-A light stage)")
     ap.add_argument("--exact", action="store_true",
                     help="WS2 exact crossing-number layer: B&B squeeze computes cr(G) and writes the "
                          "certificate exactness block (proven_optimal/gap; requires the optional "
@@ -295,8 +298,8 @@ def main(argv=None):
         note = ("deterministic placement: slots + minimum-total-edge-length assignment; "
                 "no crossing promise in 3D, projection crossings are solved by the camera")
         with open(hp, "w", encoding="utf-8") as f:
-            f.write(render_3d_html(gd, layouts, name, note))
-        print(f"      demo -> {hp} (must live in the same tree as assets/three.min.js relative path)")
+            f.write(render_3d_html(gd, layouts, name, note, theme=a.theme_3d))
+        print(f"      demo -> {hp} (theme {a.theme_3d}; must live in the same tree as assets/three.min.js relative path)")
     # ── compare-auto: automatic-layout comparison for the same graph (dual certificates) ──
     if a.from_layout and a.compare_auto:
         cmp_dir = a.outdir.rstrip("/\\") + "-compare-auto"
