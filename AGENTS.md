@@ -434,9 +434,40 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.7.15** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.7.16** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
+
+- **v0.7.16 version closure** (≤10-node optimization line T1–T6 + validation
+  tier re-plan):
+  (a) **manual loop closure** (T1/T2): `--from-layout` reads back
+  `edges[].anchors` so user-designated endpoints land on the 16-anchor
+  standard set (±0.1px, straight/arc/waypoint route classes alike);
+  waypoint & free-edge endpoints default to the standard anchor nearest the
+  first/last bend direction (JS preview and CLI recompute parity ±0.5px);
+  documented boundary: a contested anchor can settle differently in the
+  preview vs recompute frames;
+  (b) **observational stage timing** (T3): `STDRAW_TIMING=1` emits per-stage
+  wall-clock to stderr, zero output drift off/on (classic 21 + random n4
+  25/25 sha-identical);
+  (c) **gate unification** (T4): repair-pass delivery gates collected into
+  `stdraw/gates.py` (pure refactor, 41/41 layouts byte-identical);
+  (d) **snap degradation revert at every density** (T5): the dense branch's
+  worsening-revert probe now also guards the sub-1.6 threshold — a snap that
+  worsens the hard-gate picture is no longer delivered silently;
+  (e) **code hygiene** (T6): snap-debug prints folded into env-gated `_dbg()`,
+  `EDGES_REF` module global made explicit, route caches cleared at
+  `layout()` start (same-process batch order independence), unreachable
+  `second` grade branch removed (old certificates with `grade=second` still
+  read back as valid);
+  (f) **validation tiers re-planned** (`docs/validation-tiers.md`): full
+  byte-identical gate scoped to n ≤ 20 (61 figures); n21–30 reserved as the
+  ZCODE upgrade tier (acceptance brief `docs/zcode-upgrade-brief.md`);
+  n > 30 figures are out of the verification envelope — for larger diagrams
+  we recommend driving Graphviz directly (`benchmarks/tools/run_graphviz.py`
+  is the same-source evaluation harness);
+  full-series verification: 86/101 corpus pairs sha256-identical, 0 drift;
+  151 tests green.
 
 - **v0.7.15 version closure** (dense snap gate path; complements the lens
   joint re-assign landed in v0.7.13's window): **routing gate-path
