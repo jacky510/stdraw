@@ -97,8 +97,9 @@ Iron rule: stdraw never claims arbitrary graphs are 0-crossing. Relay grades as-
 - Small graphs: pass `--pitch 62` to clear the min-gap gate.
 - `demo-3d.html` needs the repo's `assets/three.min.js` at the relative path.
 - `loops_audit.json` `problems` must be 0 before trusting declared loops.
-- Loop polarity is shown by edge color (single-loop R amber `#d97706` /
-B sky `#0284c7`, mixed/acyclic neutral, negative edges dashed) - no letter
+- Loop polarity is shown by edge color (light theme: single-loop R vermilion `#c2410c` /
+B drafting blue `#1e6fae`; dark theme `#ffb454` / `#6ec6ff` - single source
+`stdraw/themes.py`; mixed/acyclic neutral, negative edges dashed) - no letter
 badges. Manual touch-up loop: drag nodes in `demo-2d.html`, export layout,
 re-run with `--from-layout` (waypoints included) - see AGENTS.md.
 - All outputs are deterministic — safe to commit; re-runs diff clean.

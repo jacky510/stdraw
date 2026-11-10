@@ -267,9 +267,9 @@ geometrically equivalent (mirror images).
   declared loops it belongs to) and `loop_color`; the polarity data in
   `certificate.json` / `loops_audit.json` is unchanged.
 - **Coloring (deterministic rules)**:
-  - Edge in exactly one declared loop -> that loop kind's color: **R = amber
-    `#d97706`, B = sky `#0284c7`** (hues aligned with the online convention
-    `--am:#ffc94d / --bl:#7cc7ff`, darkened for white-background readability;
+  - Edge in exactly one declared loop -> that loop kind's color: **R = vermilion
+    `#c2410c`, B = drafting blue `#1e6fae`** (UI-A light tier; dark tier
+    `#ffb454` / `#6ec6ff`; single source `stdraw/themes.py`;
     black-and-white printing may ignore per jacky);
   - Edge in multiple loops of the same kind -> that color;
   - Edge in loops of different kinds (e.g. brand-flywheel's

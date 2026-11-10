@@ -36,7 +36,7 @@ pip install stdraw
 - **锚点带内硬门（v0.7.3）**：交付锚点带内口径（边中点 ±1/4 带、转角命中恒 0）落进 CI 逐图硬门——spine-wing 图须 100% 带内；互环对带内钳制过不了硬门时走确定性带内局部重定线（带内锚候选 + 嵌套弧逃生门 + 自家框内部检查）；其余引擎锁 v0.7.2 基线比例（ring 互环走廊 / bowtie ±12px 辐条走廊为在册遗留）——详见 [docs/layout-modes.md](docs/layout-modes.md)；
 - **布局美学 v3.1（v0.7.1，jacky 手拉样本定调）**：**纵柱+翼位模式（spine-wing）**——存在「中枢对」（某条边的两端点共享 ≥3 个公共邻居，构成中线翼位带）且次级簇可镜像配对的图（如 classic-cld 增长极限×转嫁负担，以 jacky 手拉布局为基准）走**纵柱+中线翼位排布**——中枢对严格垂直居轴、翼位压水平中线、翼外镜像对上下对称；确定性触发判定（中枢对公共邻居数 + rest 簇可配对 + 主链长度占比 ≤0.5），等价证书门（纵柱 x 对齐 ≤2px / 中线贴靠 ≤2px / 镜像 ≤2px）；语料 sweep 仅 classic-cld 一张切换，其余 18 张逐字节零漂移——详见 [docs/layout-modes.md](docs/layout-modes.md)；
 - **布局美学 v3（v0.7.0，jacky 手拉样本定调）**：**领结共点模式（bowtie-vertex）**——拓扑恰为「两个简单环共享一个节点」的图（如通胀工资螺旋，以 jacky 手拉布局为基准）走**双轴镜像排布**——共享节点居画布正中心、两环各占上下半平面、镜像行对称，全直线布线（互环辐条走 ±12px 平行双线走廊）；**线-框连接点口径收紧**——锚点钳制到每条边中点 ±1/4 边长带内（转角整体排除、命中数恒 0），同节点同侧多线按入射角在中点两侧对称展开；**弧度参数化**——鼓出 = min(6 + 0.06·弦长, 40) px（短边小弯、长边封顶），同一对称结构内弧度统一档——详见 [docs/layout-modes.md](docs/layout-modes.md)；
-- **布局美学 v2（v0.6.0，jacky 全图定调「规律优先」）**：长链/少环图（主环 ≤4）走**纵列排布**——主链纵向对齐一列、支路挂近邻侧列、主链闭合边构造为左侧大弧（圆环感）；领结图（双三角共边，如学习飞轮）走**镜像对称排布**（共享边居纵轴 + 左右顶点镜像，线型一致硬规则：轴边直线 + 侧边全弧）；回路边**按极性着色**（R=琥珀 `#d97706`、B=天蓝 `#0284c7`、多环异色/非环边中性灰，负极性虚线），替代 R/B 文字徽标；**同构骨架 → 同布局模板**（WL 结构色驱动槽位指派，不依赖声明环 id）；交叉与行对齐从硬门降为**报告项软目标**（秩序与优美优先），排布规律类仍为硬门——详见 [docs/layout-modes.md](docs/layout-modes.md)；
+- **布局美学 v2（v0.6.0，jacky 全图定调「规律优先」）**：长链/少环图（主环 ≤4）走**纵列排布**——主链纵向对齐一列、支路挂近邻侧列、主链闭合边构造为左侧大弧（圆环感）；领结图（双三角共边，如学习飞轮）走**镜像对称排布**（共享边居纵轴 + 左右顶点镜像，线型一致硬规则：轴边直线 + 侧边全弧）；回路边**按极性着色**（UI-A 浅色档 R=朱红 `#c2410c`、B=制图蓝 `#1e6fae`，深色档 `#ffb454`/`#6ec6ff`，唯一出处 `stdraw/themes.py`；多环异色/非环边中性灰，负极性虚线），替代 R/B 文字徽标；**同构骨架 → 同布局模板**（WL 结构色驱动槽位指派，不依赖声明环 id）；交叉与行对齐从硬门降为**报告项软目标**（秩序与优美优先），排布规律类仍为硬门——详见 [docs/layout-modes.md](docs/layout-modes.md)；
 - **WS3 布线数学**：绕障是**可证最短**——障碍按净距膨胀后，在角点可见性图上跑精确 Dijkstra 最短路（图上最优）；折角以相切圆弧平滑（G1 切线连续、曲率有界、逐弧净距复核）；交叉按**双口径**复检——路由理论口径（最终路线）必须等于交付坐标几何复检，不一致拒发证书；R/B 极性标记随局部切线确定性放置，不遮字不压线；
 - **ortho-v1（经典配方，可选）**：平面嵌入 + st 编号 + 可见性表示，可平面图的线全竖直、**0 交叉有定理保证**（行为冻结，逐字节回归保护，供生产调用方 pin 用）；
 - **诚实分级**：拿不到证书就如实说拿不到——**绝不宣称任意图 0 交叉**（auto-v2 的交叉数是目标函数最小化项，不是定理保证）；
@@ -54,11 +54,11 @@ pip install stdraw
 
 <table>
   <tr>
-    <td><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout, edges colored by sign (+ amber / − sky, all solid)" width="420"/></a></td>
+    <td><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout, edges colored by sign (+ vermilion / − drafting blue, all solid)" width="420"/></a></td>
     <td><a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout, polarity tubes + cone arrowheads" width="420"/></a></td>
   </tr>
   <tr>
-    <td><strong>2D · auto-v2 纵柱+翼位布局</strong>（增长极限×转嫁负担，8n/13e，中央纵柱+中线翼位带+右翼镜像对、0 交叉；边按符号双色：+ 琥珀 / − 天蓝，全实线）</td>
+    <td><strong>2D · auto-v2 纵柱+翼位布局</strong>（增长极限×转嫁负担，8n/13e，中央纵柱+中线翼位带+右翼镜像对、0 交叉；边按符号双色：+ 朱红 / − 制图蓝，全实线）</td>
     <td><strong>3D · 球面排布</strong>（任意角度旋转，投影交叉由相机解决；两色极性管+每边锥形箭头）</td>
   </tr>
   <tr>
@@ -283,7 +283,7 @@ loop R1 "采纳扩散" "R" [rate, adopters, word]
 
 | 配方 | 线型 | 保证 | 适用 |
 |---|---|---|---|
-| `auto-v2`（默认） | 直线/弧线一等（`--linestyle straight\|arc`） | 硬质量门 + 交叉最小化（CP-SAT 可选 `pip install "stdraw[solver]"`）；按结构选排布模式：环形（回路主导）/ 纵列（长链少环）/ 镜像对称（领结），各带模式口径规律门；回路边 R=琥珀/B=天蓝着色、负边虚线 | 一般 CLD / 教学 / 报告 |
+| `auto-v2`（默认） | 直线/弧线一等（`--linestyle straight\|arc`） | 硬质量门 + 交叉最小化（CP-SAT 可选 `pip install "stdraw[solver]"`）；按结构选排布模式：环形（回路主导）/ 纵列（长链少环）/ 镜像对称（领结），各带模式口径规律门；回路边 R=朱红/B=制图蓝着色（浅色档）、负边虚线 | 一般 CLD / 教学 / 报告 |
 | `ortho-v1`（`--recipe ortho`） | 全竖直正交 | 可平面图 0 交叉定理保证（**行为冻结**，CI 逐字节回归） | 生产调用方 pin / 正交风格偏好 |
 
 ## Agent 集成
