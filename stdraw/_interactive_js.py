@@ -24,7 +24,9 @@
 #     marks the edge "user-anchored" — afterwards node drags only re-anchor
 #     endpoints and keep user waypoints; the exported layout JSON carries
 #     edges[].waypoints, and CLI --from-layout recomputes under the same
-#     caliber (anchors = box border facing the first/last waypoint);
+#     caliber (endpoints = standard anchor nearest to the border point
+#     facing the first/last waypoint; JS + Python one shared rule, so the
+#     anchors_standard hard gate holds after a manual tweak);
 #   - v0.7.7 per-edge style cycle: double-click a line to cycle
 #     auto -> straight -> arc -> free -> auto (>=10px hover hit zone,
 #     pointer cursor + highlight; double-click never disturbs node drags);
@@ -334,6 +336,52 @@ function nearestAnchorId(v, px, py) {
   }
   return best ? best[1] : null;
 }
+function nearestAnchorPt(n, px, py) {
+  // Nearest standard anchor COORDINATES of node n to (px,py); tie-break
+  // mirrors Python anchors.nearest_anchor (lower ANCHOR_IDS index wins).
+  var pts = stdAnchors(n), best = null;
+  for (var k = 0; k < pts.length; k++) {
+    var d = Math.hypot(pts[k][1] - px, pts[k][2] - py);
+    if (best === null || d < best[0] - 1e-9) best = [d, pts[k][1], pts[k][2]];
+  }
+  return best ? [best[1], best[2]] : null;
+}
+function anchorOccupied(v, ax, ay, excludeEdge) {
+  // Does another edge's endpoint already sit on anchor (ax,ay) of box v?
+  // (0.75px = the same membership tolerance as the certificate gate.)
+  for (var i = 0; i < edges.length; i++) {
+    if (i === excludeEdge) continue;
+    var e2 = edges[i], m2 = e2.pts.length;
+    if (e2.a === v && Math.abs(e2.pts[0][0] - ax) <= 0.75 &&
+        Math.abs(e2.pts[0][1] - ay) <= 0.75) return true;
+    if (e2.b === v && Math.abs(e2.pts[m2 - 1][0] - ax) <= 0.75 &&
+        Math.abs(e2.pts[m2 - 1][1] - ay) <= 0.75) return true;
+  }
+  return false;
+}
+function stdAnchorToward(n, toward, edgeIdx) {
+  // Waypoint/free endpoint caliber (T2 plan A): border point aimed at the
+  // first/last fold direction, snapped to the nearest standard anchor of
+  // the SAME box that is not already held by another edge's endpoint
+  // (nearest-feasible; falls back to the plain nearest when all 16 are
+  // occupied). Python counterpart: layout_auto waypoints override +
+  // anchor_snap give-way (same 16-set ladder). Uncontested drags deliver
+  // the literal nearest anchor on BOTH sides -- identical endpoints; a
+  // contested anchor may resolve to different (still on-set) slots and is
+  // reported honestly by the certificate either way.
+  var bp = anchor(n, toward);
+  var pts = stdAnchors(n).map(function (p) {
+    return [Math.hypot(p[1] - bp[0], p[2] - bp[1]), p[1], p[2]];
+  }).sort(function (u, w) { return u[0] - w[0]; });
+  var vid = null;
+  Object.keys(nodes).forEach(function (k) { if (nodes[k] === n) vid = k; });
+  for (var k = 0; k < pts.length; k++) {
+    if (!anchorOccupied(vid, pts[k][1], pts[k][2], edgeIdx)) {
+      return [pts[k][1], pts[k][2]];
+    }
+  }
+  return [pts[0][1], pts[0][2]];
+}
 // userAnchored: edgeIdx -> {0: aid | 1: aid} — explicitly designated
 // standard anchors (endpoint drag release / anchor click / applyLayout).
 // user-anchored semantics: after designation, node drags only RE-PROJECT
@@ -559,14 +607,15 @@ function forcedArc(i) {
   e.corners = null;
 }
 function reanchorFree(i) {
-  // free mode: exact polyline over the user fold points; endpoints = box
-  // borders facing the first/last fold point (same caliber as waypoints)
+  // free mode: exact polyline over the user fold points; endpoints =
+  // standard anchor nearest to the border point facing the first/last fold
+  // point (same caliber as waypoints + CLI --from-layout, T2 plan A)
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
   var wps = freeWps[i];
   if (!wps || !wps.length) { forcedStraight(i); return; }
-  var pts = [endPt(i, 0, anchor(A, wps[0]))];
+  var pts = [endPt(i, 0, stdAnchorToward(A, wps[0], i))];
   pts = pts.concat(wps.map(cp));
-  pts.push(endPt(i, 1, anchor(B, wps[wps.length - 1])));
+  pts.push(endPt(i, 1, stdAnchorToward(B, wps[wps.length - 1], i)));
   e.pts = pts;
   e.corners = null;
 }
@@ -722,10 +771,11 @@ function pinEdge(i) {
   var via = cs.slice(1, -1).map(cp);
   if (via.length < 1) return;
   var A = nodes[e.a], B = nodes[e.b];
-  // Same caliber as CLI --from-layout: anchor = box border facing the first/last waypoint
-  var pts = [endPt(i, 0, anchor(A, via[0]))];
+  // Same caliber as CLI --from-layout (T2 plan A): endpoint = standard
+  // anchor nearest to the border point facing the first/last waypoint
+  var pts = [endPt(i, 0, stdAnchorToward(A, via[0], i))];
   pts = pts.concat(via);
-  pts.push(endPt(i, 1, anchor(B, via[via.length - 1])));
+  pts.push(endPt(i, 1, stdAnchorToward(B, via[via.length - 1], i)));
   e.pts = pts;
   e.corners = pts.map(cp);
   pinned[i] = true;
@@ -1087,8 +1137,8 @@ function applyUserWps(i, wps) {
     e.pts = [endPt(i, 0, anchor(A, [B.x, B.y])), endPt(i, 1, anchor(B, [A.x, A.y]))];
     return;
   }
-  e.pts = [endPt(i, 0, anchor(nodes[e.a], wps[0]))].concat(wps.map(cp))
-           .concat([endPt(i, 1, anchor(nodes[e.b], wps[wps.length - 1]))]);
+  e.pts = [endPt(i, 0, stdAnchorToward(nodes[e.a], wps[0], i))].concat(wps.map(cp))
+           .concat([endPt(i, 1, stdAnchorToward(nodes[e.b], wps[wps.length - 1], i))]);
 }
 function effectiveWps(i) {
   if ((styles[i] || 'auto') === 'free') return (freeWps[i] || []).map(cp);

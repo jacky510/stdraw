@@ -26,6 +26,7 @@ from . import timing as _timing
 from .anchors import ANCHOR_IDS, standard_anchors as _standard_anchors
 from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
                       ANCHOR_MIN_DEG, border_point)
+from .anchors import nearest_anchor as _nearest_anchor
 
 # ref-scrubbed finalize (approved 2026-11-09): edge/node density at or
 # above which anchor_snap runs in gate-guarded probe mode (see the snap block
@@ -1492,9 +1493,9 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             info["ctrl"] = list(cr["ctrl"])
         routes[i] = info
     # ref-scrubbed: user-anchored waypoint override (demo-2d bend-handle export) - these edges skip the candidate pool; the delivered route is
-    # built as "anchor = box edge aimed at the first/last waypoint + waypoints as-is", and the geometry/certificate recheck scores the same
-    # points honestly (no leniency). The override must happen before final_crossing_pairs, so the dual crossing accounting (check11)
-    # includes the waypoints.
+    # built as "endpoint = standard anchor nearest to the border point aimed at the first/last waypoint + waypoints as-is" (the anchors_standard
+    # hard gate holds by construction), and the geometry/certificate recheck scores the same points honestly (no leniency). The override must
+    # happen before final_crossing_pairs, so the dual crossing accounting (check11) includes the waypoints.
     manual_wps = {}
     if manual is not None:
         manual_wps = _manual_waypoints(manual, EDGES_REF[0])
@@ -1503,10 +1504,25 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         if not wps:
             continue
         A, B = nodes_px[a], nodes_px[b]
-        pa = border_point(A[0], A[1], A[2] / 2.0, A[3] / 2.0,
-                          wps[0][0] - A[0], wps[0][1] - A[1])
-        pb = border_point(B[0], B[1], B[2] / 2.0, B[3] / 2.0,
-                          wps[-1][0] - B[0], wps[-1][1] - B[1])
+        # T2 caliber (plan A, jacky-approved): endpoint = the standard anchor
+        # nearest to the border point aimed at the first/last waypoint
+        # (anchors.py 16-point set). If a sibling edge needs the same anchor,
+        # anchor_snap's give-way machinery moves the waypoint endpoint along
+        # the same 16-set ladder -- so the delivered endpoint is always the
+        # nearest FEASIBLE member of the set and the anchors_standard hard
+        # gate holds wherever the drag is uncontested. The JS preview mirrors
+        # the SAME rule for the common case (reanchorFree / pinEdge /
+        # applyUserWps via stdAnchorToward: nearest standard anchor not
+        # already held by another edge's endpoint), so preview and CLI
+        # deliver identical endpoints on uncontested drags.
+        pa_bp = border_point(A[0], A[1], A[2] / 2.0, A[3] / 2.0,
+                             wps[0][0] - A[0], wps[0][1] - A[1])
+        pa = _nearest_anchor(A[0], A[1], A[2] / 2.0, A[3] / 2.0,
+                             pa_bp[0], pa_bp[1])[1:]
+        pb_bp = border_point(B[0], B[1], B[2] / 2.0, B[3] / 2.0,
+                             wps[-1][0] - B[0], wps[-1][1] - B[1])
+        pb = _nearest_anchor(B[0], B[1], B[2] / 2.0, B[3] / 2.0,
+                             pb_bp[0], pb_bp[1])[1:]
         pts = [list(pa)] + [[float(px), float(py)] for px, py in wps] + [list(pb)]
         dedup = [pts[0]]
         for q in pts[1:]:
@@ -1659,12 +1675,12 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # not only the interactive layer.  Gate-checked nearest-anchor assignment
     # with per-(node, anchor) occupancy + fixpoint sweeps (see
     # Router.anchor_snap for the algorithm path); runs across every auto
-    # engine -- a static render may not show any off-grid endpoint.  One
-    # frozen exception: user-anchored waypoint edges (bend-handle exports)
-    # keep their border-point endpoints aimed at the first/last waypoint --
-    # those are 3px outside the inset anchor rectangle by construction, so
-    # they are neither moved nor counted as snap failures (their unanchored
-    # state is the documented waypoints caliber, graded honestly).
+    # engine -- a static render may not show any off-grid endpoint.
+    # Waypoint-kind edges (bend-handle exports) deliver their endpoints ON
+    # the 16-anchor set by construction (snap-to-nearest-anchor caliber
+    # shared with the JS preview layer), so anchor_snap has nothing to move
+    # on them: they are neither re-anchored nor counted as snap failures
+    # (their anchored state is the documented waypoints caliber).
     _density = len(EDGES_REF[0]) / max(len(nodes), 1)
     _snap_deferred = None
     if _density >= ANCHOR_SNAP_DENSE_E_OVER_N:
