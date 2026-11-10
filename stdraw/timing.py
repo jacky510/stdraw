@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Observational stage timing for the auto layout pipeline (T3, card t_4560b221).
+"""Observational stage timing for the auto layout pipeline (stage-timing layer).
 
 Enable with STDRAW_TIMING=1 (checked per layout() call at start()); anything
 else is a hard no-op: no bookkeeping, no output, and layout.json bytes are
