@@ -134,6 +134,7 @@ var edges = D.edges.map(function (e) {
   pts = pts.map(cp);
   return {a: e.a, b: e.b, pol: e.pol, arc: arc,
           ctrl0: arc ? cp(e.ctrl) : null,
+          ctrl: arc ? cp(e.ctrl) : null,
           pa0: cp(pts[0]), pb0: cp(pts[pts.length - 1]),
           via: (e.via && e.via.length >= 3) ? e.via.map(cp) : null,
           corners: (e.via && e.via.length >= 3) ? e.via.map(cp) : null,
@@ -402,7 +403,24 @@ function userAnchorPt(i, end) {
 }
 function endPt(i, end, fallback) {
   var p = userAnchorPt(i, end);
-  return p || fallback;
+  if (p) return p;
+  // Caliber: the undesignated sibling end of a user-anchored edge snaps to
+  // the standard anchor nearest to the border point aimed at the opposite
+  // box (same 16-set nearest-anchor family as the waypoint/free endpoints
+  // and the CLI --from-layout unspecified-end snap -- the preview endpoint
+  // then matches the CLI rerender instead of a raw border point).
+  var ua2 = userAnchored[i];
+  if (ua2 && ua2[end === 0 ? 1 : 0]) {
+    var e2 = edges[i];
+    var nOwn = nodes[end === 0 ? e2.a : e2.b];
+    var nOpp = nodes[end === 0 ? e2.b : e2.a];
+    // aim at the designated sibling end when present (the CLI snap aims at
+    // the same point -- identical nearest-anchor resolution)
+    var aim = userAnchorPt(i, end === 0 ? 1 : 0) ||
+              (nOpp ? [nOpp.x, nOpp.y] : null);
+    if (nOwn && aim) return stdAnchorToward(nOwn, aim, i);
+  }
+  return fallback;
 }
 function reanchor(i) {
   var e = edges[i], A = nodes[e.a], B = nodes[e.b];
@@ -411,6 +429,7 @@ function reanchor(i) {
   pts[0] = endPt(i, 0, anchor(A, inner ? pts[1] : [B.x, B.y]));
   pts[pts.length - 1] = endPt(i, 1, anchor(B, inner ? pts[pts.length - 2] : [A.x, A.y]));
   e.pts = pts;
+  e.ctrl = null;   // re-anchor keeps waypoints / shape, never an arc ctrl
 }
 
 // ── JS-side preview router (visibility-graph shortest path, same mathematical caliber as visibility.py) ──
@@ -540,10 +559,11 @@ function previewRoute(i) {
   var pa = endPt(i, 0, anchor(A, [B.x, B.y]));
   var pb = endPt(i, 1, anchor(B, [A.x, A.y]));
   var rects = rectsFor(e.a, e.b);
-  if (visible(pa, pb, rects, CL)) { e.pts = [pa, pb]; e.corners = null; return; }
+  if (visible(pa, pb, rects, CL)) { e.pts = [pa, pb]; e.ctrl = null; e.corners = null; return; }
   var path = vgShortest(pa, pb, rects, VG_C);
   if (path && path.length >= 2) {
     e.pts = shortcut(path, rects, VG_C);
+    e.ctrl = null;   // non-arc kind: no live ctrl
     e.corners = (e.pts.length >= 3) ? e.pts.map(cp) : null;
     return;
   }
@@ -559,6 +579,7 @@ function arcFollow(i) {
   var ctrl = [e.ctrl0[0] + ((pa[0] - e.pa0[0]) + (pb[0] - e.pb0[0])) / 2,
               e.ctrl0[1] + ((pa[1] - e.pa0[1]) + (pb[1] - e.pb0[1])) / 2];
   e.pts = quad(pa, ctrl, pb, 12);
+  e.ctrl = ctrl;   // live ctrl: exported for the CLI arc replay (final form)
   e.corners = null;
 }
 // ── v0.7.7 forced geometries (per-edge style cycle; same math caliber as
@@ -568,6 +589,7 @@ function forcedStraight(i) {
   var pa = endPt(i, 0, anchor(A, [B.x, B.y]));
   var pb = endPt(i, 1, anchor(B, [A.x, A.y]));
   e.pts = [pa, pb];
+  e.ctrl = null;   // non-arc kind: no live ctrl
   e.corners = null;
 }
 function adaptiveArcK(d) {
@@ -604,6 +626,7 @@ function forcedArc(i) {
     if (best === null || key < best[0]) best = [key, pts, ctrl];
   });
   e.pts = best[1];
+  e.ctrl = best[2];   // live ctrl: exported for the CLI arc replay (final form)
   e.corners = null;
 }
 function reanchorFree(i) {
@@ -617,6 +640,7 @@ function reanchorFree(i) {
   pts = pts.concat(wps.map(cp));
   pts.push(endPt(i, 1, stdAnchorToward(B, wps[wps.length - 1], i)));
   e.pts = pts;
+  e.ctrl = null;   // non-arc kind: no live ctrl
   e.corners = null;
 }
 function reroute(i) {
@@ -1352,6 +1376,35 @@ function arcEpPts(e, end, pt) {
 function clampVB(x, y) {
   return [Math.max(4, Math.min(VB[2] - 4, x)), Math.max(4, Math.min(VB[3] - 4, y))];
 }
+function finishUaDesignation(i, end, coordEnd) {
+  // CLI-parity finalization of an endpoint designation: (1) keep the live
+  // arc ctrl in sync -- it exports in final form (edges[].ctrl) and the CLI
+  // replays it verbatim; (2) snap the undesignated sibling end to the
+  // standard anchor nearest the border point aimed at the designated end
+  // (the same caliber as the CLI --from-layout unspecified-end snap); (3)
+  // rebuild the arc geometry from the resolved endpoints. Later node drags
+  // re-run reroute(), whose endPt() resolves the same endpoints.
+  var e = edges[i];
+  var sib = end === 0 ? 1 : 0;
+  if (e.arc && e.ctrl0 && e.pa0 && e.pb0) {
+    var fromU = end === 0 ? e.pa0 : e.pb0;
+    e.ctrl = [e.ctrl0[0] + (coordEnd[0] - fromU[0]),
+              e.ctrl0[1] + (coordEnd[1] - fromU[1])];
+  }
+  if (userAnchored[i] && userAnchored[i][sib]) return;
+  var vSib = sib === 0 ? e.a : e.b;
+  var nSib = nodes[vSib];
+  if (!nSib || !coordEnd) return;
+  var sibCoord = stdAnchorToward(nSib, coordEnd, i);
+  if (e.arc && e.ctrl) {
+    var pa = (end === 0) ? coordEnd : sibCoord;
+    var pb = (end === 0) ? sibCoord : coordEnd;
+    e.pts = quad(pa, e.ctrl, pb, 12);
+    e.corners = null;
+  } else {
+    e.pts[sib === 0 ? 0 : e.pts.length - 1] = sibCoord;
+  }
+}
 function assignAnchor(v, aid, ax, ay) {
   // Explicit designation (anchor click): the clicked standard anchor goes to
   // the incident edge endpoint nearest to it (deterministic single winner;
@@ -1369,6 +1422,7 @@ function assignAnchor(v, aid, ax, ay) {
   userAnchored[i2] = userAnchored[i2] || {};
   userAnchored[i2][end2] = aid;
   edges[i2].pts[end2 === 0 ? 0 : edges[i2].pts.length - 1] = [ax, ay];
+  finishUaDesignation(i2, end2, [ax, ay]);
   updateEdge(i2);
   updateEndpointHandles(i2);
   renderAnchors();
@@ -1687,6 +1741,7 @@ function onUp(ev) {
       var arcU = arcEpPts(eU, endU, coordU);
       if (arcU) eU.pts = arcU;
       else eU.pts[endU === 0 ? 0 : eU.pts.length - 1] = coordU;
+      finishUaDesignation(eiU, endU, coordU);
     }
     drag = null;
     setEpVis(eiU, false);   // ref-scrubbed: drag over, dots hide again
@@ -1791,6 +1846,18 @@ function buildLayout() {
     var hasUa = !!(ua && (ua[0] || ua[1]));
     if (st !== 'auto' || (wps && wps.length) || hasUa) {
       var it = {a: e.a, b: e.b, style: st};
+      // Caliber: an endpoint-anchored edge whose live route is an arc must
+      // export its arc kind -- style 'auto' loses the kind and the CLI
+      // rerender re-resolves the edge into a raw right-angle polyline
+      // (preview smooth curve != rerender). The live ctrl travels with it in
+      // final form: the CLI replays the exact same quad (pa, ctrl, pb)
+      // instead of re-deriving a forced arc, so the preview curve and the
+      // rerender are the same geometry family (lens arcs included).
+      if (st === 'auto' && hasUa && !(wps && wps.length) && e.arc && e.ctrl) {
+        it.style = 'arc';
+        it.ctrl = [Math.round(e.ctrl[0] * 10) / 10,
+                   Math.round(e.ctrl[1] * 10) / 10];
+      }
       if (wps && wps.length) it.waypoints = wps;
       // ref-scrubbed: explicit standard-anchor designations travel with the
       // export (viewer round-trip via __stdrawApplyLayout edge_anchors)
@@ -1843,6 +1910,7 @@ function reset() {
     // v0.7.11 per-edge isolation on the restore path as well
     try {
     e.pts = e.base.map(cp);
+    e.ctrl = (e.arc && e.ctrl0) ? cp(e.ctrl0) : null;   // restore live ctrl too
     e.corners = e.via ? e.via.map(cp) : null;
     var g = visG(i);
     if (!g) return;
@@ -1927,6 +1995,19 @@ window.__stdrawApplyLayout = function (spec) {
     if (ANCHOR_IDS.indexOf(uas[k].src) >= 0) rec[0] = uas[k].src;
     if (ANCHOR_IDS.indexOf(uas[k].dst) >= 0) rec[1] = uas[k].dst;
     if (rec[0] !== undefined || rec[1] !== undefined) userAnchored[i] = rec;
+  });
+  // Final-form arc ctrl replay (export edges[].ctrl mirror): applied before
+  // the re-anchor round so arcFollow translates from THIS base (identity on
+  // an unchanged layout) instead of re-deriving a forced arc.
+  var ecs = spec.edge_ctrl || {};
+  Object.keys(ecs).forEach(function (k) {
+    var i = edgeIdxByKey(k), c = ecs[k];
+    if (i === null || !edges[i] || !Array.isArray(c) || c.length !== 2 ||
+        !isFinite(+c[0]) || !isFinite(+c[1])) return;
+    edges[i].arc = true;
+    edges[i].ctrl0 = [+c[0], +c[1]];
+    edges[i].ctrl = [+c[0], +c[1]];
+    if (styles[i] !== 'arc') styles[i] = 'arc';
   });
   edges.forEach(function (e, i) { safeRerouteUpdate(i, 'applyLayout re-anchor'); });
   rebuildAllEndpointHandles();

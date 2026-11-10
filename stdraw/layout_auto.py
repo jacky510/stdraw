@@ -656,6 +656,43 @@ def _manual_edge_styles(manual, edges):
     return out
 
 
+def _manual_arc_ctrls(manual, edges):
+    """--from-layout final-form arc ctrl (export edges[].ctrl): {(a,b): [x,y]}.
+
+    Only meaningful together with style "arc": the exported ctrl is the
+    viewer's LIVE arc control point (already endpoint-translated to final
+    form), so the replay uses it as-is instead of re-deriving a forced arc
+    (the forced-arc family cannot clear an interposed box on a short chord
+    that the baseline lens/adaptive arc clears). Validation mirrors
+    _manual_edge_styles; entries without a valid [x, y] are dropped.
+    Deterministic: same input, same output.
+    """
+    out = {}
+    raw = manual.get("edges")
+    if raw is None:
+        return out
+    if not isinstance(raw, list):
+        raise ValueError("manual layout edges must be a [{a,b,style}] list")
+    eset = set(edges)
+    for it in raw:
+        if not isinstance(it, dict):
+            raise ValueError(f"unrecognized manual layout edge entry: {it!r}")
+        a, b = it.get("a"), it.get("b")
+        if (a, b) not in eset:
+            raise ValueError(f"manual layout styles reference an edge not in the graph: {a}->{b}")
+        if it.get("style") != "arc":
+            continue
+        ctrl = it.get("ctrl")
+        if ctrl is None:
+            continue
+        if (not isinstance(ctrl, (list, tuple)) or len(ctrl) != 2
+                or not all(isinstance(v, (int, float)) and math.isfinite(v)
+                           for v in ctrl)):
+            raise ValueError(f"ctrl of edge {a}->{b} must be an [x, y] pair of finite numbers")
+        out[(a, b)] = [float(ctrl[0]), float(ctrl[1])]
+    return out
+
+
 def _manual_anchors(manual, edges):
     """--from-layout per-edge user anchor designations (T1): {(a,b): sel}.
 
@@ -1539,8 +1576,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # carried by waypoints above. These edges skip the candidate pool; the
     # geometry/certificate recheck scores them honestly (no leniency).
     manual_styles = {}
+    arc_ctrls = {}
     if manual is not None:
         manual_styles = _manual_edge_styles(manual, EDGES_REF[0])
+        arc_ctrls = _manual_arc_ctrls(manual, EDGES_REF[0])
     for i, (a, b) in enumerate(EDGES_REF[0]):
         if manual_wps.get((a, b)):
             continue
@@ -1555,11 +1594,30 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                          "press": 0, "min_clear": None, "cross": 0,
                          "cross_edges": 0, "ang_a": 0.0, "ang_b": 0.0}
         elif st == "arc":
-            pts, ctrl = _forced_arc_route(nodes_px, a, b, cfg.clearance)
-            routes[i] = {"kind": "arc", "points": [list(p) for p in pts],
-                         "press": 0, "min_clear": None, "cross": 0,
-                         "cross_edges": 0, "ang_a": 0.0, "ang_b": 0.0,
-                         "ctrl": list(ctrl)}
+            arc_ctrl = arc_ctrls.get((a, b))
+            if arc_ctrl is not None:
+                # final-form exported ctrl: replay the viewer's live quad
+                # verbatim on the facing-border chord (the T1 pass below
+                # re-projects the endpoints onto their resolved anchors and
+                # keeps this ctrl untouched -- no further translation)
+                from .routing import quad_points as _qp_ctrl
+                A, B = nodes_px[a], nodes_px[b]
+                pa = border_point(A[0], A[1], A[2] / 2.0, A[3] / 2.0,
+                                  B[0] - A[0], B[1] - A[1])
+                pb = border_point(B[0], B[1], B[2] / 2.0, B[3] / 2.0,
+                                  A[0] - B[0], A[1] - B[1])
+                pts = _qp_ctrl(pa, arc_ctrl, pb)
+                routes[i] = {"kind": "arc", "points": [list(p) for p in pts],
+                             "ctrl": [float(arc_ctrl[0]), float(arc_ctrl[1])],
+                             "ctrl_final": True,
+                             "press": 0, "min_clear": None, "cross": 0,
+                             "cross_edges": 0, "ang_a": 0.0, "ang_b": 0.0}
+            else:
+                pts, ctrl = _forced_arc_route(nodes_px, a, b, cfg.clearance)
+                routes[i] = {"kind": "arc", "points": [list(p) for p in pts],
+                             "press": 0, "min_clear": None, "cross": 0,
+                             "cross_edges": 0, "ang_a": 0.0, "ang_b": 0.0,
+                             "ctrl": list(ctrl)}
     if manual_styles and from_meta is not None:
         from_meta["styled_edges"] = len(manual_styles)
     # T1: user-specified standard anchors (demo-2d endpoint
@@ -1604,17 +1662,46 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             r["ua_ends"] = _ua
             pts = r["points"]
             pa0, pb0 = list(pts[0]), list(pts[-1])
-            pa = list(_anchor_xy(A, sel["src"])) if "src" in sel else pa0
-            pb = list(_anchor_xy(B, sel["dst"])) if "dst" in sel else pb0
+            # Caliber: the designated end lands EXACTLY on its standard
+            # anchor; the unspecified sibling end snaps to the standard
+            # anchor nearest to the border point aimed at the designated
+            # end (same 16-set nearest-anchor family as the waypoint/free
+            # endpoint override -- anchors_standard then holds by
+            # construction even when the underlying route is a raw
+            # border-point lane polyline). Contested slots are resolved
+            # downstream by anchor_snap's give-way ladder.
+            pa = list(_anchor_xy(A, sel["src"])) if "src" in sel else None
+            pb = list(_anchor_xy(B, sel["dst"])) if "dst" in sel else None
+            if pa is None:
+                pa_bp = border_point(A[0], A[1], A[2] / 2.0, A[3] / 2.0,
+                                     (pb or pb0)[0] - A[0], (pb or pb0)[1] - A[1])
+                pa = list(_nearest_anchor(A[0], A[1], A[2] / 2.0, A[3] / 2.0,
+                                          pa_bp[0], pa_bp[1])[1:])
+            if pb is None:
+                pb_bp = border_point(B[0], B[1], B[2] / 2.0, B[3] / 2.0,
+                                     pa[0] - B[0], pa[1] - B[1])
+                pb = list(_nearest_anchor(B[0], B[1], B[2] / 2.0, B[3] / 2.0,
+                                          pb_bp[0], pb_bp[1])[1:])
             if r["kind"] == "arc":
-                ctrl0 = r.get("ctrl") or [(pa0[0] + pb0[0]) / 2.0,
-                                          (pa0[1] + pb0[1]) / 2.0]
-                ctrl = [ctrl0[0] + ((pa[0] - pa0[0]) + (pb[0] - pb0[0])) / 2.0,
-                        ctrl0[1] + ((pa[1] - pa0[1]) + (pb[1] - pb0[1])) / 2.0]
-                n = max(len(pts) - 1, 2)
-                r["points"] = [[float(x), float(y)]
-                               for x, y in _quad_points(pa, ctrl, pb, n)]
-                r["ctrl"] = ctrl
+                if r.get("ctrl_final"):
+                    # exported final-form ctrl: the viewer's live quad is
+                    # replayed verbatim on the resolved anchor endpoints --
+                    # no further translation (that is the preview==rerender
+                    # contract)
+                    ctrl = [float(c) for c in r["ctrl"]]
+                    n = max(len(pts) - 1, 2)
+                    r["points"] = [[float(x), float(y)]
+                                   for x, y in _quad_points(pa, ctrl, pb, n)]
+                    r["ctrl"] = ctrl
+                else:
+                    ctrl0 = r.get("ctrl") or [(pa0[0] + pb0[0]) / 2.0,
+                                              (pa0[1] + pb0[1]) / 2.0]
+                    ctrl = [ctrl0[0] + ((pa[0] - pa0[0]) + (pb[0] - pb0[0])) / 2.0,
+                            ctrl0[1] + ((pa[1] - pa0[1]) + (pb[1] - pb0[1])) / 2.0]
+                    n = max(len(pts) - 1, 2)
+                    r["points"] = [[float(x), float(y)]
+                                   for x, y in _quad_points(pa, ctrl, pb, n)]
+                    r["ctrl"] = ctrl
             else:
                 if r["kind"] == "vg":
                     r.pop("vg_corners", None)
