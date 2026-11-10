@@ -22,6 +22,7 @@ import sys
 from collections import defaultdict
 
 from . import textmetrics
+from .anchors import ANCHOR_IDS, standard_anchors as _standard_anchors
 from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
                       ANCHOR_MIN_DEG, border_point)
 
@@ -39,6 +40,8 @@ def _clone_route(rt):
     the fields anchor_snap mutates; used by the dense-probe revert path)."""
     c = dict(rt)
     c["points"] = [list(p) for p in rt["points"]]
+    if rt.get("ua_ends") is not None:
+        c["ua_ends"] = dict(rt["ua_ends"])
     if rt.get("ctrl") is not None:
         c["ctrl"] = list(rt["ctrl"])
     if rt.get("vg_corners") is not None:
@@ -648,6 +651,47 @@ def _manual_edge_styles(manual, edges):
             raise ValueError(f"unrecognized line style for edge {a}->{b}: {st!r}")
         if st in ("straight", "arc"):
             out[(a, b)] = st
+    return out
+
+
+def _manual_anchors(manual, edges):
+    """--from-layout per-edge user anchor designations (T1): {(a,b): sel}.
+
+    sel = {"src": aid | (absent), "dst": aid | (absent)} — the export
+    artifact of the demo-2d endpoint drag / anchor click (edges[].anchors,
+    viewer userAnchored semantics). Validation mirrors _manual_waypoints:
+    (a,b) must be a graph edge and every anchor id must be in
+    anchors.ANCHOR_IDS; entries with neither src nor dst are dropped.
+    Deterministic: same input, same output.
+    """
+    out = {}
+    raw = manual.get("edges")
+    if raw is None:
+        return out
+    if not isinstance(raw, list):
+        raise ValueError("manual layout edges must be a [{a,b,anchors}] list")
+    eset = set(edges)
+    for it in raw:
+        if not isinstance(it, dict):
+            raise ValueError(f"unrecognized manual layout edge entry: {it!r}")
+        a, b = it.get("a"), it.get("b")
+        if (a, b) not in eset:
+            raise ValueError(f"manual layout anchors reference an edge not in the graph: {a}->{b}")
+        anc = it.get("anchors")
+        if anc is None:
+            continue
+        if not isinstance(anc, dict):
+            raise ValueError(f"anchors of edge {a}->{b} must be an object {{src, dst}}")
+        sel = {}
+        for end_key in ("src", "dst"):
+            aid = anc.get(end_key)
+            if aid is None:
+                continue
+            if aid not in ANCHOR_IDS:
+                raise ValueError(f"unknown anchor id for edge {a}->{b} ({end_key}): {aid!r}")
+            sel[end_key] = aid
+        if sel:
+            out[(a, b)] = sel
     return out
 
 
@@ -1490,13 +1534,83 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                          "ctrl": list(ctrl)}
     if manual_styles and from_meta is not None:
         from_meta["styled_edges"] = len(manual_styles)
+    # T1 (card t_2ce56c63): user-specified standard anchors (demo-2d endpoint
+    # drag / anchor click export, edges[].anchors). A designated endpoint is
+    # placed EXACTLY on the standard anchor coordinate (anchors.py caliber)
+    # and the edge joins the frozen set below (same family as the manual-
+    # waypoint freeze) so the later repair passes leave it untouched.
+    # Straight / arc / waypoint routes all honor the designation; an arc ctrl
+    # translates with the mean endpoint delta (viewer arcEpPts caliber); the
+    # unspecified end keeps its existing route endpoint (viewer endPt
+    # fallback caliber). A designated endpoint on a vg polyline collapses the
+    # route to the straight line between the (possibly moved) endpoints --
+    # corner/fillet geometry would be stale after an endpoint move, and the
+    # recheck grades the result honestly. Same geometry/certificate recheck,
+    # no leniency.
+    manual_anchors = {}
+    if manual is not None:
+        manual_anchors = _manual_anchors(manual, EDGES_REF[0])
+    if manual_anchors:
+        from .routing import quad_points as _quad_points
+
+        def _anchor_xy(A, aid):
+            for p in _standard_anchors(A[0], A[1], A[2] / 2.0, A[3] / 2.0):
+                if p[0] == aid:
+                    return (p[1], p[2])
+            raise ValueError(f"anchor id not resolvable: {aid!r}")   # guarded by _manual_anchors
+
+        for i, (a, b) in enumerate(EDGES_REF[0]):
+            sel = manual_anchors.get((a, b))
+            if not sel:
+                continue
+            A, B = nodes_px[a], nodes_px[b]
+            r = routes[i]
+            # T1: per-end user designation marker -- anchor_snap / lens joint
+            # passes treat these ends as frozen (never re-anchored, never
+            # counted as snap failures), same family as waypoint-kind edges.
+            _ua = {}
+            if "src" in sel:
+                _ua[0] = sel["src"]
+            if "dst" in sel:
+                _ua[1] = sel["dst"]
+            r["ua_ends"] = _ua
+            pts = r["points"]
+            pa0, pb0 = list(pts[0]), list(pts[-1])
+            pa = list(_anchor_xy(A, sel["src"])) if "src" in sel else pa0
+            pb = list(_anchor_xy(B, sel["dst"])) if "dst" in sel else pb0
+            if r["kind"] == "arc":
+                ctrl0 = r.get("ctrl") or [(pa0[0] + pb0[0]) / 2.0,
+                                          (pa0[1] + pb0[1]) / 2.0]
+                ctrl = [ctrl0[0] + ((pa[0] - pa0[0]) + (pb[0] - pb0[0])) / 2.0,
+                        ctrl0[1] + ((pa[1] - pa0[1]) + (pb[1] - pb0[1])) / 2.0]
+                n = max(len(pts) - 1, 2)
+                r["points"] = [[float(x), float(y)]
+                               for x, y in _quad_points(pa, ctrl, pb, n)]
+                r["ctrl"] = ctrl
+            else:
+                if r["kind"] == "vg":
+                    r.pop("vg_corners", None)
+                    r.pop("vg_fillets", None)
+                    r["kind"] = "line"
+                pts[0] = [float(pa[0]), float(pa[1])]
+                pts[-1] = [float(pb[0]), float(pb[1])]
+                if r["kind"] == "waypoints":
+                    dedup = [pts[0]]
+                    for q in pts[1:]:
+                        if math.dist(dedup[-1], q) > 0.5:
+                            dedup.append(q)
+                    r["points"] = dedup
+    if manual_anchors and from_meta is not None:
+        from_meta["anchor_edges"] = len(manual_anchors)
+        from_meta["user_anchors"] = {f"{a}->{b}": dict(sel)
+                                     for (a, b), sel in sorted(manual_anchors.items())}
     # ref-scrubbed: directed rerouting for line-line visual coincidence - a backstop fix for fan-out edges hugging the same corridor (stair/lane
     # shared lanes). Constructed routes and user-anchored waypoint edges are untouched; only edges involved in coincident pairs are rerouted,
     # on the condition that the hard gates do not regress (press/clearance/anchor/crossing count).
     _frozen = set()
     for i, (a, b) in enumerate(EDGES_REF[0]):
         if constructed.get((a, b)) is not None or manual_wps.get((a, b)) \
-                or manual_styles.get((a, b)):
+                or manual_styles.get((a, b)) or manual_anchors.get((a, b)):
             _frozen.add(i)
     routes = router.coincide_reroute(routes, frozen=_frozen)
     # ref-scrubbed connection-point caliber: delivery-layer anchors are clamped to the edge-midpoint +/-1/4 band (corners excluded, per-edge

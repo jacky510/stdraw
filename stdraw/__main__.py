@@ -46,9 +46,12 @@ def load_manual_layout(path: str) -> dict:
     Accepts a full layout.json or the demo-2d.html "Export layout" subset
     ({nodes: {id: {x,y}|[x,y]}, viewBox}). source records the file name for
     meta provenance.
-    Optionally edges: [{a, b, waypoints: [[x,y],...]}] — waypoints manually
-    anchored by the user on demo-2d bend handles; --from-layout recomputes
-    them under the same caliber.
+    Optionally edges: [{a, b, waypoints: [[x,y],...], anchors: {src, dst}}] —
+    waypoints manually anchored by the user on demo-2d bend handles and
+    explicitly designated standard anchors (endpoint drag / anchor click,
+    viewer userAnchored semantics); --from-layout recomputes them under the
+    same caliber (anchors land exactly on anchors.py coordinates and join
+    the frozen set; the certificate records the anchor source honestly).
     """
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)

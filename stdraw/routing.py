@@ -1983,6 +1983,8 @@ class Router:
                 continue
             if r1.get("ctrl") is None or r2.get("ctrl") is None:
                 continue
+            if r1.get("ua_ends") or r2.get("ua_ends"):
+                continue    # T1: designated ends never re-anchor
             ends = []
             for i, v in ((i1, key[0]), (i1, key[1]), (i2, key[0]), (i2, key[1])):
                 e = self.edges[i]
@@ -2303,6 +2305,9 @@ class Router:
                 continue
             if r1.get("ctrl") is None or r2.get("ctrl") is None:
                 continue
+            if r1.get("ua_ends") or r2.get("ua_ends"):
+                continue    # T1: a user-designated end keeps its anchor --
+                            # the joint mirror re-anchoring would drift it
             # ends: (edge_idx, end_idx, box) for each arc on each box
             ends = []
             for i, v in ((i1, key[0]), (i1, key[1]), (i2, key[0]), (i2, key[1])):
@@ -2608,7 +2613,14 @@ class Router:
                     # not a snap defect (counting it would force the dense
                     # probe into a wholesale deferral).
                     continue
+                _ua = routes[i].get("ua_ends") or {}
                 for end, v in ((0, a), (1, b)):
+                    if _ua.get(end):
+                        # T1: user-designated standard anchor (manual-layout
+                        # edges[].anchors) -- never re-anchored, never counted
+                        # as a snap failure (per-end exemption, same family
+                        # as the waypoint-kind freeze above).
+                        continue
                     idx = 0 if end == 0 else len(routes[i]["points"]) - 1
                     p = routes[i]["points"][idx]
                     if self._anchor_at(v, p) is not None:
@@ -2878,6 +2890,9 @@ class Router:
             Returns True and mutates routes/occ/report on success; restores
             the delivered route byte-for-byte on failure.
         """
+        if routes[i].get("ua_ends"):
+            return False   # T1: the whole-edge replan would displace the
+                           # user-designated end(s) -- exempt like waypoints
         a, b = self.edges[i]
         if (min(a, b), max(a, b)) in self.mutual:
             return False
@@ -3026,6 +3041,8 @@ class Router:
                 if v not in (ja, jb):
                     continue
                 jend = 0 if ja == v else 1
+                if (routes[j].get("ua_ends") or {}).get(jend):
+                    continue    # T1: the blocker's designated end cannot give way
                 jidx = 0 if jend == 0 else len(routes[j]["points"]) - 1
                 jp = routes[j]["points"][jidx]
                 jaid = self._anchor_at(v, jp)

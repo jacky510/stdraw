@@ -310,7 +310,17 @@ id 顺序）驱动；同构图的对应节点同色 → 对应槽位。已验证
 - **user-anchored 重投影**：显式指派（拖拽吸附/点击/`__stdrawApplyLayout`
   `edge_anchors`）后，节点拖动只把端点**重投影到同一锚位**（按 live 几何
   重算坐标），不漂移；导出 layout 的 `edges[].anchors {src,dst}` 随
-  Export layout 语义走（viewer 回放恢复；CLI `--from-layout` 暂不消费该键）。
+  Export layout 语义走（viewer 回放恢复；T1 起 CLI `--from-layout` 亦消费
+  该键，见下条）。
+- **CLI 读回（T1，2026-11-11）**：`--from-layout` 读回 `edges[].anchors`：指定端
+  直接落到对应标准锚点坐标（±0.1px 交付），该边加入冻结集合
+  （与手动 waypoints 的 G4 冻结同族；`anchor_snap` tier-1/tier-2、lens
+  joint 系列按端豁免，路由 dict 带 `ua_ends` 标记）；直线/弧线/折点三种
+  route kind 都遵守指定，弧 ctrl 按端点位移均值平移（viewer `arcEpPts`
+  口径）；校验与 `_manual_waypoints` 镜像（边必须在图中、锚点 id ∈
+  `ANCHOR_IDS`，否则 exit 2）；证书 `from_layout.user_anchors` 如实记录
+  锚点来源（auto vs user）。auto 路径字节不变。回归：
+  `tests/test_manual_anchors.py`。
 
 ## 交付层默认吸附 16 标准锚点集（ref-scrubbed，`Router.anchor_snap`）
 
