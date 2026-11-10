@@ -30,8 +30,12 @@ from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
 from .anchors import nearest_anchor as _nearest_anchor
 
 # ref-scrubbed finalize (approved 2026-11-09): edge/node density at or
-# above which anchor_snap runs in gate-guarded probe mode (see the snap block
-# in layout()).  Measured basis: random n10 corpus E/N = 1.60 (dense; n10-i05
+# above which anchor_snap's revert probe also counts unplaceable endpoints
+# as a regression (whole-snap deferral, recorded on the certificate).  Below
+# the threshold the probe still reverts on a measured crossings/coincidence
+# worsening (T5, all densities), but endpoint failures neither revert nor
+# defer -- see the snap block in layout().
+# Measured basis: random n10 corpus E/N = 1.60 (dense; n10-i05
 # regresses: crossings 0->2 / coincidence / 1 endpoint unanchored), classic
 # corpus <= 1.62 (classic-cld snaps clean) -- the probe keeps snapping any
 # dense graph that passes the hard gates with zero regressions.
@@ -40,7 +44,7 @@ ANCHOR_SNAP_DENSE_E_OVER_N = 1.6
 
 def _clone_route(rt):
     """Deep copy of one route dict (points/ctrl/vg_corners/vg_fillets only --
-    the fields anchor_snap mutates; used by the dense-probe revert path)."""
+    the fields anchor_snap mutates; used by the probe revert path)."""
     c = dict(rt)
     c["points"] = [list(p) for p in rt["points"]]
     if rt.get("ua_ends") is not None:
@@ -1767,6 +1771,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # (their anchored state is the documented waypoints caliber).
     _density = len(edges) / max(len(nodes), 1)
     _snap_deferred = None
+    _snap_reverted = False
     if _density >= ANCHOR_SNAP_DENSE_E_OVER_N:
         # ref-scrubbed finalize (approved 2026-11-09): density-gated
         # snap probe.  A static scalar density threshold cannot separate the
@@ -1782,7 +1787,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         # the pre-snap routes and record an honest deferral (the certificate
         # reports the deferral with its measured reason and the gate stays
         # measured -- no gate fudging; dense-snap specialization is a
-        # follow-up card).  Low-density graphs keep the unconditional snap.
+        # follow-up card).  Low-density graphs run the same probe with a
+        # lighter accounting: crossings / coincidence worsening still reverts,
+        # but endpoint failures neither revert nor defer (see the else branch
+        # below -- the deferral semantics stay dense-only).
         _pre_pairs = router.final_crossing_pairs(routes)
         _pre_coincide = len(router._route_coincide_pairs(routes))
         _pre_routes = {i: _clone_route(routes[i]) for i in routes}
@@ -1811,23 +1819,51 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                   f"(dense probe, E/N={_density:.2f}, zero gate regressions)",
                   file=sys.stderr)
     else:
+        # T5 (ref-scrubbed card): the degradation-revert probe now covers
+        # EVERY density, not only E/N >= 1.6.  The low-density snap keeps its
+        # unconditional character (same candidate ladder, same gates), but it
+        # is no longer blind: crossings / line-line coincidence are recounted
+        # on the snapped routes and any worsening reverts to the pre-snap
+        # routes (measured reason on stderr).  Endpoint snap failures alone
+        # do NOT trigger a revert or a deferral here: "unplaceable endpoints
+        # defer the whole snap" stays a dense-only behavior (an honest
+        # unanchored endpoint keeps being reported by the certificate's
+        # anchors_standard gate instead).
+        _pre_pairs = router.final_crossing_pairs(routes)
+        _pre_coincide = len(router._route_coincide_pairs(routes))
+        _pre_routes = {i: _clone_route(routes[i]) for i in routes}
+        _timing.mark("anchor_snap.gate_eval_pre")
         _snap_report = router.anchor_snap(routes)
-        _timing.mark("anchor_snap")
-        if _snap_report["failures"]:
-            print(f"[stdraw] anchor_snap: {_snap_report['moved']} endpoints snapped, "
-                  f"{len(_snap_report['failures'])} endpoint(s) could not be placed "
-                  f"on a standard anchor: {_snap_report['failures'][:5]}",
-                  file=sys.stderr)
+        _timing.mark("anchor_snap.snap")
+        _regress = []
+        _post_pairs = router.final_crossing_pairs(routes)
+        if _post_pairs > _pre_pairs:
+            _regress.append(f"crossings {_pre_pairs}->{_post_pairs}")
+        _post_coincide = len(router._route_coincide_pairs(routes))
+        if _post_coincide > _pre_coincide:
+            _regress.append(f"line_coincidence {_pre_coincide}->{_post_coincide}")
+        _timing.mark("anchor_snap.gate_eval_post")
+        if _regress:
+            routes = _pre_routes
+            _snap_reverted = True
+            print(f"[stdraw] anchor_snap REVERTED (E/N={_density:.2f}): "
+                  f"{'; '.join(_regress)} -- pre-snap routes kept", file=sys.stderr)
+        else:
+            if _snap_report["failures"]:
+                print(f"[stdraw] anchor_snap: {_snap_report['moved']} endpoints snapped, "
+                      f"{len(_snap_report['failures'])} endpoint(s) could not be placed "
+                      f"on a standard anchor: {_snap_report['failures'][:5]}",
+                      file=sys.stderr)
     # ref-scrubbed: re-run the lens arrival channel AFTER snapping -- snap moves
     # lens arc endpoints/ctrl, so the arrival-normal caliber (<=10 deg) and the
     # pair separation may degrade.  The flip re-derives ctrl only (endpoints
     # stay on their anchors -> anchors_standard membership preserved) and is
     # strict-improvement + hard-gate guarded; enhanced_gates switches to the
     # anchor-snap gate accounting (see Router.mutual_arrival_flip).  Skipped
-    # on deferral: the reverted routes already passed the pre-snap flip above,
-    # and re-flipping unsnapped routes under the enhanced accounting would
-    # perturb the honest pre-snap state.
-    if _snap_deferred is None:
+    # on deferral (dense) or revert (any density): the restored routes already
+    # passed the pre-snap flip above, and re-flipping unsnapped routes under
+    # the enhanced accounting would perturb the honest pre-snap state.
+    if _snap_deferred is None and not _snap_reverted:
         # ref-scrubbed: joint anchor re-assignment for lens pairs whose
         # post-snap flip still exceeds the arrival target (non-mirrored
         # joint assignments; strict improvement only, else untouched).

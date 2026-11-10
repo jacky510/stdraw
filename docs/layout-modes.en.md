@@ -492,8 +492,15 @@ classic-cld's (7) — **no static scalar density threshold can both pass
 classic-cld and block random n10**. The landed caliber:
 
 - **Threshold**: `ANCHOR_SNAP_DENSE_E_OVER_N = 1.6` (E/N >= 1.6, i.e. average
-  degree >= 3.2) switches snap into **probe mode**; below the threshold the
-  snap stays unconditional.
+  degree >= 3.2) switches snap into **probe mode + whole-snap deferral
+  accounting** (unanchored endpoints count as regressions; the revert also
+  records a deferred entry on the certificate).  Below the threshold the snap
+  runs the same **degradation-revert probe** (T5 card, closing the
+  silent-worsening hole found in review): crossings / line-line coincidence
+  are recounted on the snapped routes and any worsening reverts — but an
+  unanchored endpoint neither triggers a revert nor a deferral record there
+  (a sparse graph's honest unanchored endpoints keep being counted by the
+  `anchors_standard` gate, with the failure list on stderr).
 - **Probe**: run the full snap on a working copy, then re-evaluate three hard
   gates (plain crossing pairs via `final_crossing_pairs` / line-line
   coincidence pairs / endpoint anchor membership — any unanchored endpoint
