@@ -719,9 +719,14 @@ styleEl.textContent = '#stdraw-handles circle.stdraw-wp{fill:#fff;stroke:#475569
   // svg pointerdown handler against the LIVE anchor coordinates instead, so
   // hovering a dot keeps the node hover alive and the dots cannot flicker).
   '#stdraw-anchors{pointer-events:none}' +
-  '#stdraw-anchors circle.stdraw-anchor{fill:#fff;stroke:#0284c7;stroke-width:1.1;opacity:0.9}' +
-  '#stdraw-anchors circle.stdraw-anchor.pinned{fill:#0284c7;stroke:#075985}' +
-  '#stdraw-anchors circle.stdraw-anchor.near{fill:#fbbf24;stroke:#d97706}' +
+  // Chrome polar inks read the THEMES tokens through CSS custom properties
+  // (--stdraw-chrome-b = T["edge_neg"], --stdraw-chrome-r = T["edge_pos"],
+  // declared on #stdraw-svg by render.py per tier) — the legacy hardcoded
+  // palette (#0284c7/#fbbf24/#d97706/#075985) leaked the pre-UI-A polar inks
+  // onto the live canvas. No hardcoded polar colors here anymore.
+  '#stdraw-anchors circle.stdraw-anchor{fill:#fff;stroke:var(--stdraw-chrome-b);stroke-width:1.1;opacity:0.9}' +
+  '#stdraw-anchors circle.stdraw-anchor.pinned{fill:var(--stdraw-chrome-b);stroke:var(--stdraw-chrome-b)}' +
+  '#stdraw-anchors circle.stdraw-anchor.near{fill:var(--stdraw-chrome-r);stroke:var(--stdraw-chrome-r)}' +
   // ref-scrubbed: per-edge ENDPOINT drag handles. The 9px invisible hit circle
   // sits in the TOPMOST layer (#stdraw-eps appended last), so an endpoint
   // press always resolves to the endpoint drag BEFORE the 12px segment hit
@@ -730,7 +735,7 @@ styleEl.textContent = '#stdraw-handles circle.stdraw-wp{fill:#fff;stroke:#475569
   // ref-scrubbed: the VISIBLE handle dot is hidden by default (jacky: dots in
   // the rendered graph are visual noise); it fades in only while its edge is
   // hovered or its endpoint is being dragged (.vis class, see setEpVis).
-  '#stdraw-eps circle.stdraw-ep{fill:#fff;stroke:#0284c7;stroke-width:1.6;cursor:move;pointer-events:all;opacity:0;transition:opacity .12s}' +
+  '#stdraw-eps circle.stdraw-ep{fill:#fff;stroke:var(--stdraw-chrome-b);stroke-width:1.6;cursor:move;pointer-events:all;opacity:0;transition:opacity .12s}' +
   '#stdraw-eps circle.stdraw-ep.vis{opacity:1}' +
   '#stdraw-eps circle.stdraw-eps-hit{fill:rgba(255,255,255,0);stroke:none;cursor:move;pointer-events:all}' +
   '.stdraw-tip{position:absolute;z-index:9;background:#1f2937;color:#fff;' +
