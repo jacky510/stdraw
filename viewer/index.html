@@ -12,8 +12,15 @@
         --st-tag-r-bg:#78350f;--st-tag-r-text:#fbbf24;--st-tag-b-bg:#0c3a55;--st-tag-b-text:#7dd3fc;
         --st-fallback-card-bg:#111827;--st-fallback-card-border:#334155;--st-fallback-title:#fbbf24;
         --st-fallback-code-bg:#1e293b;--st-fallback-code-text:#7dd3fc;
-        --st-edge-p:#22d3ee;--st-edge-m:#fb923c}
+        --st-edge-p:#22d3ee;--st-edge-m:#fb923c;
+        /* canvas grid fallbacks: none until applyCssTheme() feeds the token */
+        --st-grid-image:none;--st-grid-size:auto}
   html,body{margin:0;height:100%;overflow:hidden;background:var(--st-scene-bg);font-family:"Microsoft YaHei",system-ui,sans-serif}
+  /* Canvas grid layer (UI-A spec 4.2): CSS equivalent of the static export's
+     SVG <pattern> — radial-gradient dots (light tier) / cross line-gradients
+     (dark tier), fed from the theme's canvas_grid token via applyCssTheme().
+     Visible behind the WebGL stage before init and on the fallback face. */
+  body{background-image:var(--st-grid-image,none);background-size:var(--st-grid-size,auto)}
   #c{display:block;width:100%;height:100%}
   .bar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:12px;
        padding:10px 16px;background:var(--st-bar-bg);border-bottom:1px solid var(--st-bar-border);
@@ -1171,6 +1178,21 @@ const THEME_CSS_VARS = {
 function applyCssTheme(){
   const T = TH(), r = document.documentElement.style;
   for(const k in THEME_CSS_VARS){ const v = T[THEME_CSS_VARS[k]]; if(v !== undefined) r.setProperty("--st-"+k, v); }
+  // Canvas grid (UI-A spec 4.2): CSS equivalent of the static SVG pattern.
+  const g = T.canvas_grid;
+  if(g && g.spacing && g.color){
+    const s = g.spacing + "px";
+    let img;
+    if(g.style === "dots"){
+      const rd = (g.dot_radius != null ? g.dot_radius : 1.1) + "px";
+      img = "radial-gradient(circle, " + g.color + " " + rd + ", transparent " + rd + ")";
+    }else{
+      img = "linear-gradient(to right, " + g.color + " 1px, transparent 1px),"
+          + "linear-gradient(to bottom, " + g.color + " 1px, transparent 1px)";
+    }
+    r.setProperty("--st-grid-image", img);
+    r.setProperty("--st-grid-size", s);
+  }
   document.documentElement.dataset.theme = THEME;
   const b = document.getElementById("btnTheme");
   if(b) b.textContent = "Theme: " + (THEME === "dark" ? "Dark" : "Light");

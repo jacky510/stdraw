@@ -127,12 +127,12 @@ class TestLoopColoring(unittest.TestCase):
         for a, b in (("wages", "cost"), ("cost", "prices"),
                      ("prices", "wages")):
             self.assertEqual(by_pair[(a, b)]["loop_kinds"], ["R"], (a, b))
-            self.assertEqual(by_pair[(a, b)]["loop_color"], "#d97706", (a, b))
+            self.assertEqual(by_pair[(a, b)]["loop_color"], "#c2410c", (a, b))
         # B1 [prices, real_income, demand]: all on-loop edges sky blue
         for a, b in (("prices", "real_income"), ("real_income", "demand"),
                      ("demand", "prices")):
             self.assertEqual(by_pair[(a, b)]["loop_kinds"], ["B"], (a, b))
-            self.assertEqual(by_pair[(a, b)]["loop_color"], "#0284c7", (a, b))
+            self.assertEqual(by_pair[(a, b)]["loop_color"], "#1e6fae", (a, b))
 
     def test_mixed_loop_edge_neutral(self):
         # brand-flywheel: ad_effect->awareness belongs to both R1(R) and B1(B) -> neutral
@@ -155,6 +155,57 @@ class TestLoopColoring(unittest.TestCase):
         self.assertIn('stroke="#1e6fae"', html)     # '−' edges drafting blue (UI-A light ink)
         self.assertNotIn('stroke-dasharray="', html)   # two-color caliber: all solid
         self.assertNotIn('stroke="#64748b"', html)     # no neutral-gray edges
+
+    def test_ui_a_render_layer(self):
+        # UI-A render wiring (spec section 4, items 1/2/3/6): rounded cards,
+        # canvas grid pattern, ink-sign certificate panel.
+        from stdraw.render import render_auto_html, render_html
+        g, v4 = self._layout_edges(open(
+            "benchmarks/corpus/classic/wage-price-spiral.cld",
+            encoding="utf-8").read())
+        html = render_auto_html(v4, "wage", cert=None)
+        self.assertIn('rx="14"', html)                      # card radius from token
+        self.assertIn('<pattern id="stdraw-grid"', html)    # grid defs present
+        self.assertIn('fill="url(#stdraw-grid)"', html)
+        self.assertIn('width="22"', html)                   # light tier: 22px dots
+        html_dark = render_auto_html(v4, "wage", cert=None, theme="dark")
+        self.assertIn('rx="14"', html_dark)
+        self.assertIn('stroke="rgba(147,167,196,.10)"', html_dark)  # dark: line grid
+        self.assertNotIn('<circle cx="11"', html_dark)      # dark tier has no dots
+        # ink-sign certificate panel (square frame + stamp + sign table)
+        cert = {
+            "metrics": {"crossings": 0, "visual_crossings": 0, "box_press_1px": 0,
+                        "edge_box_min_clear": 16.0, "anchor_violations": 0,
+                        "avg_edge_length": 100.0, "min_card_gap": 36.0,
+                        "line_kind_counts": {}, "row_align_rate": 0.5,
+                        "spacing_cv": 0.1, "column_snap24_rate": 0.5},
+            "gates": {}, "gates_passed": "0/0", "grade": "best",
+            "grade_note": "n", "placement": "spine-wing",
+            "reports": {}, "honest_notes": []}
+        html_cert = render_auto_html(v4, "wage", cert=cert)
+        self.assertIn('class="cert-sign"', html_cert)
+        self.assertIn('<span class="stamp">best</span>', html_cert)
+        self.assertIn("QUALITY CERTIFICATE", html_cert)
+        self.assertIn(">GATES<", html_cert)
+        self.assertIn("border-radius:0", html_cert)         # square ink-sign frame
+        self.assertIn("system-ui", html_cert)               # label font
+        self.assertIn("ui-monospace", html_cert)            # value font
+        # non-best grades get the muted stamp (honest, not dressed up)
+        cert_bad = dict(cert, grade="uncertified")
+        html_mut = render_auto_html(v4, "wage", cert=cert_bad)
+        self.assertIn('<span class="stamp stamp-mut">uncertified</span>', html_mut)
+        # ortho path: same skin (grid + radius + square panel); plain vertical
+        # edges (no "route" key) so render_html does not dispatch to auto.
+        n_edges = len(v4["edges"])
+        v4_ortho = {"viewBox": v4["viewBox"], "nodes": v4["nodes"],
+                    "edges": [{"x": 50 + 10 * i, "y1": 0, "y2": 100,
+                               "arrow": [50 + 10 * i, 100, 1]}
+                              for i in range(n_edges)],
+                    "meta": {"cardH": 44}, "bars": {}}
+        html_ortho = render_html(v4_ortho, "w")
+        self.assertIn('rx="14"', html_ortho)
+        self.assertIn('fill="url(#stdraw-grid)"', html_ortho)
+        self.assertIn("border-radius:0", html_ortho)
 
 
 if __name__ == "__main__":

@@ -726,10 +726,10 @@ def main():
             lay_w = load(out_w, "layout.json")
             by_pair = {(e["a"], e["b"]): e for e in lay_w["edges"]}
             for pr, kinds, color in (
-                    (("wages", "cost"), ["R"], "#d97706"),
-                    (("cost", "prices"), ["R"], "#d97706"),
-                    (("prices", "real_income"), ["B"], "#0284c7"),
-                    (("demand", "prices"), ["B"], "#0284c7")):
+                    (("wages", "cost"), ["R"], "#c2410c"),
+                    (("cost", "prices"), ["R"], "#c2410c"),
+                    (("prices", "real_income"), ["B"], "#1e6fae"),
+                    (("demand", "prices"), ["B"], "#1e6fae")):
                 e = by_pair[pr]
                 if e["loop_kinds"] != kinds or e["loop_color"] != color:
                     failures.append(f"R/B coloring {pr}: kinds={e['loop_kinds']} "
@@ -739,8 +739,9 @@ def main():
             demo_w = open(os.path.join(out_w, "demo-2d.html"), encoding="utf-8").read()
             if "data-pol" in demo_w:
                 failures.append("R/B coloring: demo still contains text badge data-pol")
-            if 'stroke="#d97706"' not in demo_w or 'stroke="#0284c7"' not in demo_w:
-                failures.append("R/B coloring: demo missing polarity amber / sky-blue coloring")
+            if 'stroke="#c2410c"' not in demo_w or 'stroke="#1e6fae"' not in demo_w:
+                failures.append("R/B coloring: demo missing polarity vermilion / "
+                                "drafting-blue coloring (UI-A light inks)")
             if 'stroke-dasharray="' in demo_w:
                 failures.append("polarity coloring: demo still has dashed edges "
                                 "(two-color caliber, jacky 2026-11-09: all solid)")

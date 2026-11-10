@@ -14,6 +14,76 @@ EDGE_COLOR_NEG = LIGHT["edge_neg"]
 NEUTRAL_COLOR = LIGHT["neutral"]  # defensive fallback only (DSL edges always carry a sign)
 
 
+def _grid_layer(W, H, T):
+    """Canvas grid layer (UI-A spec section 4.2): an SVG `<defs><pattern>` +
+    a full-canvas backdrop rect emitted FIRST (beneath every other element).
+    Parameters come from the theme's `canvas_grid` token — light = tracing-
+    paper dot grid, dark = neutral steel line grid. No token -> no layer."""
+    g = T.get("canvas_grid") or {}
+    style = g.get("style")
+    spacing = g.get("spacing", 22)
+    color = g.get("color")
+    if not style or not color:
+        return ""
+    if style == "dots":
+        r = g.get("dot_radius", 1.1)
+        tile = (f'<circle cx="{spacing / 2:g}" cy="{spacing / 2:g}" '
+                f'r="{r:g}" fill="{color}"/>')
+    elif style == "lines":
+        tile = (f'<path d="M {spacing} 0 L 0 0 0 {spacing}" fill="none" '
+                f'stroke="{color}" stroke-width="1"/>')
+    else:
+        return ""
+    return (f'<defs><pattern id="stdraw-grid" width="{spacing:g}" '
+            f'height="{spacing:g}" patternUnits="userSpaceOnUse">{tile}</pattern></defs>'
+            f'<rect x="0" y="0" width="{W:g}" height="{H:g}" '
+            f'fill="url(#stdraw-grid)"/>')
+
+
+def _cert_css(T):
+    """Certificate panel skin, UI-A ink-sign form (spec D3): SQUARE corners
+    (the panel must NOT follow the rounded cards), label rows system-ui
+    12.5px/600, value rows ui-monospace 10.5px (same both tiers)."""
+    mono = ("ui-monospace,SFMono-Regular,Menlo,Consolas,monospace")
+    return (
+        f'.cert{{margin-top:12px;padding:10px 14px;background:{T["panel_bg"]};'
+        f'border:1.4px solid {T["panel_border"]};border-radius:0;font-size:13px;'
+        f'max-width:1280px}}'
+        f'.cert-head{{display:flex;align-items:baseline;justify-content:space-between;'
+        f'gap:12px;border-bottom:1.4px solid {T["panel_border"]};'
+        f'padding-bottom:6px;margin-bottom:8px}}'
+        f'.cert-title{{font-family:system-ui,sans-serif;font-size:12.5px;'
+        f'font-weight:600;letter-spacing:3px}}'
+        f'.cert-sub{{font-family:{mono};font-size:10.5px;color:{T["note"]}}}'
+        f'.cert-sign{{border-collapse:collapse;margin:0 0 8px}}'
+        f'.cert-sign td{{border:1px solid {T["panel_border"]};padding:3px 12px}}'
+        f'.cert-sign td.lbl{{font-family:system-ui,sans-serif;font-size:12.5px;'
+        f'font-weight:600}}'
+        f'.cert-sign td.val{{font-family:{mono};font-size:10.5px}}'
+        f'.stamp{{display:inline-block;border:2px solid {T["ok"]};color:{T["ok"]};'
+        f'padding:1px 12px;font-family:system-ui,sans-serif;font-size:14px;'
+        f'font-weight:700;letter-spacing:2px;text-transform:uppercase;'
+        f'transform:rotate(-2deg)}}'
+        f'.stamp-mut{{border-color:{T["note"]};color:{T["note"]}}}'
+        f'.cert-detail table{{border-collapse:collapse;margin:4px 0}}'
+        f'.cert-detail td{{border:1px solid {T["panel_border"]};padding:2px 10px}}'
+        f'.cert-detail td:first-child{{font-family:system-ui,sans-serif;'
+        f'font-size:12.5px;font-weight:600}}'
+        f'.cert-detail td:not(:first-child){{font-family:{mono};font-size:10.5px}}'
+        f'.cert-detail h4{{font-family:system-ui,sans-serif;font-size:12.5px;'
+        f'font-weight:600;margin:8px 0 2px}}'
+    )
+
+
+def _cert_head(grade, sub):
+    """Ink-sign head: title + stamp-style grade (best = seal green, anything
+    else = muted — the honest grade is never dressed up as a pass)."""
+    stamp_cls = "stamp" if grade == "best" else "stamp stamp-mut"
+    return (f'<div class="cert-head"><span class="cert-title">'
+            f'QUALITY CERTIFICATE</span><span class="cert-sub">{html.escape(sub)}</span>'
+            f'<span class="{stamp_cls}">{html.escape(grade)}</span></div>')
+
+
 def render_html(v4: dict, graph_name: str = "", cert: dict = None,
                 loops_report: dict = None, labels: dict = None,
                 values: dict = None, theme: str = DEFAULT_STATIC_THEME) -> str:
@@ -30,6 +100,8 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
 
     parts = []
     parts.append(f'<svg viewBox="0 0 {W} {H}" font-family="Microsoft YaHei,sans-serif">')
+    # Canvas grid layer (UI-A): dots (light) / lines (dark), beneath everything
+    parts.append(_grid_layer(W, H, T))
     # Leader bars (horizontal lines at card row centers, spanning only their
     # own associated line columns)
     for v, (b0, b1) in bars.items():
@@ -49,7 +121,7 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
         label = html.escape(labels.get(v, v))
         value = html.escape(values.get(v, ""))
         parts.append(f'<g><rect x="{x - w / 2:.0f}" y="{y - card_h / 2:.0f}" width="{w}" '
-                     f'height="{card_h}" rx="7" fill="{T["card_fill"]}" stroke="{T["card_stroke"]}" '
+                     f'height="{card_h}" rx="{T["card_radius"]}" fill="{T["card_fill"]}" stroke="{T["card_stroke"]}" '
                      f'stroke-width="1.5"/>'
                      f'<text x="{x:.0f}" y="{y - card_h / 2 + 17:.0f}" text-anchor="middle" '
                      f'font-size="{meta.get("fs", [12.5, 14])[0]}" fill="{T["card_label"]}">{label}</text>')
@@ -70,7 +142,8 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
         rows = "".join(
             f'<tr><td>{k}</td><td class="{_cls(v)}">{_mark(v)}</td></tr>'
             for k, v in cert["gates"].items())
-        cert_html = f'''<div class="cert"><h3>Quality certificate (rechecked on delivered coordinates)</h3>
+        cert_html = f'''<div class="cert">{_cert_head(cert["grade"], "rechecked on delivered coordinates · ortho-v1 theorem guarantee")}
+<div class="cert-detail">
 <table>
 <tr><td>Crossings</td><td>{m["crossings"]}</td></tr>
 <tr><td>Line piercing unrelated cards (0px)</td><td>{m["occlusions_true_0px"]}</td></tr>
@@ -83,6 +156,7 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
 <h4>Gates {cert["gates_passed"]}</h4><table>{rows}</table>
 <p class="grade">Grade: <b>{cert["grade"]}</b> — {html.escape(cert["grade_note"])}</p>
 <p class="note">{html.escape(" / ".join(cert.get("honest_notes", [])))}</p>
+</div>
 </div>'''
     loops_html = ""
     if loops_report:
@@ -106,8 +180,7 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
 <style>
 body{{margin:16px;background:{T["page_bg"]};font-family:Microsoft YaHei,sans-serif}}
 h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canvas_border"]};border-radius:8px;max-width:1280px}}
-.cert{{margin-top:12px;padding:10px 14px;background:{T["panel_bg"]};border:1px solid {T["panel_border"]};border-radius:8px;font-size:13px;max-width:1280px}}
-.cert table{{border-collapse:collapse}} .cert td{{border:1px solid {T["panel_border"]};padding:2px 10px}}
+{_cert_css(T)}
 .ok{{color:{T["ok"]}}} .bad{{color:{T["bad"]}}} .note{{color:{T["note"]};font-size:12px}}
 .grade{{color:{T["grade"]}}}
 </style>
@@ -180,6 +253,9 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     parts = []
     parts.append(f'<svg id="stdraw-svg" viewBox="0 0 {W} {H}" '
                  f'font-family="Microsoft YaHei,sans-serif">')
+    # Canvas grid layer (UI-A): dots (light) / lines (dark), beneath every
+    # edge/card; static geometry, untouched by the interactive drag layer.
+    parts.append(_grid_layer(W, H, T))
     # R/B text badges removed (each edge's sign is now expressed by two-color
     # edge coloring: '+' amber / '−' sky blue, all solid).
     # Polarity data stays in layout.json / certificate.json.
@@ -192,7 +268,7 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         value = html.escape(values.get(v, ""))
         parts.append(f'<g data-node="{html.escape(v, quote=True)}">'
                      f'<rect x="{x - w / 2:.0f}" y="{y - card_h / 2:.0f}" width="{w}" '
-                     f'height="{card_h}" rx="7" fill="{T["card_fill"]}" stroke="{T["card_stroke"]}" '
+                     f'height="{card_h}" rx="{T["card_radius"]}" fill="{T["card_fill"]}" stroke="{T["card_stroke"]}" '
                      f'stroke-width="1.5"/>'
                      f'<text x="{x:.0f}" y="{y + 4:.0f}" text-anchor="middle" '
                      f'dominant-baseline="middle" '
@@ -314,7 +390,29 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                   '&nbsp;&nbsp;'
                   '<svg width="28" height="10" style="vertical-align:middle" aria-hidden="true">'
                   f'<line x1="2" y1="5" x2="26" y2="5" stroke="{T["edge_neg"]}" stroke-width="4"/></svg> <b>−</b></p>')
-        cert_html = f'''<div class="cert"><h3>Quality certificate (rechecked on delivered coordinates · auto-v2 hard gates)</h3>
+        # Ink-sign summary (UI-A spec D3/§4.3): two-column label/value table,
+        # square outer frame (styled in _cert_css), stamp-style grade.
+        cv_val = m.get("spacing_cv")
+        if cv_val is None:
+            cv_val = m.get("ring_spacing_cv")
+        cv_text = "—" if cv_val is None else cv_val
+        mode_val = placement or "layered"
+        sign_rows = (
+            f'<tr><td class="lbl">GRADE</td><td class="val">'
+            f'<span class="{"stamp" if cert["grade"] == "best" else "stamp stamp-mut"}">'
+            f'{html.escape(cert["grade"])}</span></td></tr>'
+            f'<tr><td class="lbl">GATES</td><td class="val">{cert["gates_passed"]}</td></tr>'
+            f'<tr><td class="lbl">CROSSINGS</td><td class="val">{m["crossings"]}</td></tr>'
+            f'<tr><td class="lbl">PRESS</td><td class="val">{m["box_press_1px"]}</td></tr>'
+            f'<tr><td class="lbl">CLEAR</td><td class="val">{m["edge_box_min_clear"]}</td></tr>'
+            f'<tr><td class="lbl">CV</td><td class="val">{cv_text}</td></tr>'
+            f'<tr><td class="lbl">MODE</td><td class="val">{html.escape(mode_val)}</td></tr>')
+        cert_html = f'''<div class="cert">{_cert_head(cert["grade"], "rechecked on delivered coordinates · auto-v2 hard gates")}
+<table class="cert-sign">
+{sign_rows}
+</table>
+<div class="cert-detail">
+<h4>Metrics</h4>
 <table>
 {metric_rows}
 </table>
@@ -324,6 +422,7 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
 <p class="grade">Grade: <b>{cert["grade"]}</b> — {html.escape(cert["grade_note"])}</p>
 {legend}
 <p class="note">{html.escape(" / ".join(cert.get("honest_notes", [])))}</p>
+</div>
 </div>'''
     loops_html = ""
     if loops_report:
@@ -349,8 +448,7 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
 <style>
 body{{margin:16px;background:{T["page_bg"]};font-family:Microsoft YaHei,sans-serif}}
 h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canvas_border"]};border-radius:8px;max-width:1280px}}
-.cert{{margin-top:12px;padding:10px 14px;background:{T["panel_bg"]};border:1px solid {T["panel_border"]};border-radius:8px;font-size:13px;max-width:1280px}}
-.cert table{{border-collapse:collapse}} .cert td{{border:1px solid {T["panel_border"]};padding:2px 10px}}
+{_cert_css(T)}
 .ok{{color:{T["ok"]}}} .bad{{color:{T["bad"]}}} .note{{color:{T["note"]};font-size:12px}}
 .grade{{color:{T["grade"]}}}
 .stdraw-toolbar{{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:8px 12px;background:{T["toolbar_bg"]};border:1px solid {T["toolbar_border"]};border-radius:8px;font-size:13px;max-width:1280px}}
