@@ -22,6 +22,7 @@ import sys
 from collections import defaultdict
 
 from . import textmetrics
+from . import timing as _timing
 from .anchors import ANCHOR_IDS, standard_anchors as _standard_anchors
 from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
                       ANCHOR_MIN_DEG, border_point)
@@ -1125,6 +1126,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     unchanged).
     """
     global EDGES_REF
+    # T3: observational stage timing. No-op unless STDRAW_TIMING=1; the
+    # report at the end goes to stderr only and never touches layout.json
+    # (zero-behavior-change, ci_checks mark() style).
+    _timing.start()
     cfg = config or AutoConfig()
     EDGES_REF = [tuple((e.a, e.b) for e in graph.edges)]
     nodes = graph.node_ids()
@@ -1141,6 +1146,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                                      value_pad=cfg.value_pad_extra)
         widths[v], heights[v] = w, h
     card_h = max(heights.values()) if heights else cfg.card_h
+    _timing.mark("card_metrics")
 
     # ②③ placement: --from-layout manual coordinates, or automatic layering + placement
     _routes_final = None
@@ -1156,6 +1162,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         pos, y, rows, from_meta = _manual_positions(nodes, widths, manual)
         deg0 = []
         engine, pos_meta = "manual", {}
+        _timing.mark("manual_positions")
     else:
         # ②'' layout aesthetics v2 (ref-scrubbed, jacky's 2026-11-05 direction for the whole graph): mode priority =
         #  symmetric (shared-edge bowtie, the learning-flywheel family) -> bowtie-vertex (two loops sharing one node)
@@ -1299,6 +1306,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                                            "triggered — layered layering + "
                                            "placement (byte-stable default)"),
                                 "trial_gate": None})
+        _timing.mark("mode_detection_trials")
         constructed = {}
         if sym_plan is not None:
             spos, sy, smeta, sconstructed = sym_plan["placed"]
@@ -1364,6 +1372,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             nrow = max(layer.values()) + 1 if core else 1
             rows = [[v for v in core if layer[v] == r] for r in range(nrow)]
             rows = [r for r in rows if r]
+            _timing.mark("layering")
 
             # ③ placement
             pos, engine, pos_meta = _solve_positions(core, rows, widths, cfg, linestyle)
@@ -1380,6 +1389,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     pos[v] = int(round((cur + widths[v] / 2) / snap)) * snap
                     y[v] = cfg.park_y
                     cur += widths[v] + cfg.min_gap
+            _timing.mark("placement_cp_sat")
 
             # ③b local polish (small graphs <=10 nodes): hill-climbing horizontal shifts on routing ground-truth total cost, explicitly
             # feeding routing feasibility (press/clearance/crossings) back into the placement layer
@@ -1459,6 +1469,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     elif _best[0] < _gate0:
                         pos, y, rows = _best[1], _best[2], _best[3]
                         _routes_final = _best[4]
+            _timing.mark("polish_gated_reorder")
 
     # ④ routing (straight/arc first-class, boxes do not press lines) + WS3 theoretical caliber (final-route crossing pairs)
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
@@ -1466,6 +1477,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     routes = router.route_all()
     if _routes_final is not None:
         routes = _routes_final
+    _timing.mark("route_final")
     # ref-scrubbed constructed-route injection (column closed arcs / bowtie mirror-symmetry arcs): these edges skip the candidate pool and are
     # delivered with the constructed geometry (the trial gate has already rechecked the hard gates); the injection must happen before
     # final_crossing_pairs so the dual crossing accounting (check11) includes the constructed routes.
@@ -1534,7 +1546,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                          "ctrl": list(ctrl)}
     if manual_styles and from_meta is not None:
         from_meta["styled_edges"] = len(manual_styles)
-    # T1 (card t_2ce56c63): user-specified standard anchors (demo-2d endpoint
+    # T1: user-specified standard anchors (demo-2d endpoint
     # drag / anchor click export, edges[].anchors). A designated endpoint is
     # placed EXACTLY on the standard anchor coordinate (anchors.py caliber)
     # and the edge joins the frozen set below (same family as the manual-
@@ -1604,6 +1616,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         from_meta["anchor_edges"] = len(manual_anchors)
         from_meta["user_anchors"] = {f"{a}->{b}": dict(sel)
                                      for (a, b), sel in sorted(manual_anchors.items())}
+    _timing.mark("manual_injection")
     # ref-scrubbed: directed rerouting for line-line visual coincidence - a backstop fix for fan-out edges hugging the same corridor (stair/lane
     # shared lanes). Constructed routes and user-anchored waypoint edges are untouched; only edges involved in coincident pairs are rerouted,
     # on the condition that the hard gates do not regress (press/clearance/anchor/crossing count).
@@ -1613,6 +1626,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                 or manual_styles.get((a, b)) or manual_anchors.get((a, b)):
             _frozen.add(i)
     routes = router.coincide_reroute(routes, frozen=_frozen)
+    _timing.mark("repair:coincide")
     # ref-scrubbed connection-point caliber: delivery-layer anchors are clamped to the edge-midpoint +/-1/4 band (corners excluded, per-edge
     # hard-gate recheck); multiple anchors on the same side of the same node are then evenly spread by incidence angle (no stacking).
     # ref-scrubbed: the enhanced channel (ctrl-following stair + in-band local rerouting of mutual pairs) is enabled only for spine-wing
@@ -1622,7 +1636,9 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # baseline ratio against regression, and out-of-band fixes go to a later card.
     routes = router.midband_reanchor(routes, frozen=_frozen,
                                      enhanced=(engine == "spine-construct"))
+    _timing.mark("repair:midband")
     routes = router.fan_spread(routes, frozen=_frozen)
+    _timing.mark("repair:fan_spread")
     # ref-scrubbed rework (1): mutual-pair "straight-feasible" candidates join the cost allocation (§WS3 polyline = last resort - when a
     # straight line is feasible the polyline does not steal the score). The poly side lanes produced by the in-band backstop
     # (_reroute_pair_band) are rechecked here: if a straight candidate among the 4 edge-midpoint anchors of the two boxes is feasible and
@@ -1631,10 +1647,12 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # byte-for-byte unchanged (structural zero drift).
     if engine == "spine-construct":
         routes = router.mutual_straight_reroute(routes, frozen=_frozen)
+        _timing.mark("repair:mutual_straight")
     # ref-scrubbed: mutual-pair lens arrival channel -- flip the pair's shared
     # arc bulge when that turns both arrows into near-normal arrivals
     # (gate-guarded; untouched routes returned byte-for-byte otherwise).
     routes = router.mutual_arrival_flip(routes, frozen=_frozen)
+    _timing.mark("repair:arrival_flip_pre")
     # ref-scrubbed: default endpoint snapping to the 16 standard per-box anchor
     # set (anchors.py caliber) -- jacky 2026-11-09: the standard connection
     # points are the DEFAULT attachment caliber of every rendered endpoint,
@@ -1668,7 +1686,9 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         _pre_pairs = router.final_crossing_pairs(routes)
         _pre_coincide = len(router._route_coincide_pairs(routes))
         _pre_routes = {i: _clone_route(routes[i]) for i in routes}
+        _timing.mark("anchor_snap.gate_eval_pre")
         _snap_report = router.anchor_snap(routes)
+        _timing.mark("anchor_snap.snap")
         _regress = []
         _post_pairs = router.final_crossing_pairs(routes)
         if _post_pairs > _pre_pairs:
@@ -1678,6 +1698,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             _regress.append(f"line_coincidence {_pre_coincide}->{_post_coincide}")
         if _snap_report["failures"]:
             _regress.append(f"{len(_snap_report['failures'])} endpoint(s) unanchored")
+        _timing.mark("anchor_snap.gate_eval_post")
         if _regress:
             routes = _pre_routes
             _snap_deferred = {"density_en": round(_density, 2),
@@ -1691,6 +1712,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                   file=sys.stderr)
     else:
         _snap_report = router.anchor_snap(routes)
+        _timing.mark("anchor_snap")
         if _snap_report["failures"]:
             print(f"[stdraw] anchor_snap: {_snap_report['moved']} endpoints snapped, "
                   f"{len(_snap_report['failures'])} endpoint(s) could not be placed "
@@ -1711,7 +1733,9 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         # joint assignments; strict improvement only, else untouched).
         routes = router.lens_joint_reassign(
             routes, _snap_report.get("lens_pairs", []))
+        _timing.mark("repair:lens_joint_reassign")
         routes = router.mutual_arrival_flip(routes, enhanced_gates=True)
+        _timing.mark("repair:arrival_flip_post")
     router_pairs = router.final_crossing_pairs(routes)
 
     # ref-scrubbed R/B loop coloring: edge -> the set of declared-loop kinds it belongs to (deterministic rules in docs/layout-modes.md):
@@ -1949,4 +1973,6 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         },
     }
     from .delivery import stamp_coordinates_only
+    _timing.mark("delivery")
+    _timing.finish()
     return stamp_coordinates_only(v4)

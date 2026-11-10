@@ -2,7 +2,7 @@
 """T1 regression: --from-layout reads back user-specified standard anchors
 (edges[].anchors, the demo-2d endpoint drag / anchor click export).
 
-Probe written BEFORE the fix (falsification leg, card t_2ce56c63): the
+Probe written BEFORE the fix (falsification leg, T1): the
 current engine ignores edges[].anchors on --from-layout, so tests 1-6 are
 expected RED pre-fix and GREEN post-fix. Caliber (jacky 2026-11-11 task
 sheet): a user-designated endpoint lands EXACTLY on the corresponding
