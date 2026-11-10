@@ -44,6 +44,7 @@ ZH_TEXT_FILES = [
     "docs/crossing-exact.md",
     "docs/ortools-comparison.md",
     "docs/dsl-spec-v0.1.zh-CN.md",
+    "docs/validation-tiers.md",
 ]
 
 # Model-content exemptions: node / loop labels from the classic corpus demo.
