@@ -303,6 +303,10 @@ def scene_from_auto(v4: dict) -> dict:
             # ref-scrubbed: deterministic mode-decision audit trail (which rule
             # hit, why, trial gate, legacy band exemption)
             "mode_decision_trace": v4["meta"].get("mode_decision_trace"),
+            # T1: --from-layout provenance (anchor source auto vs user) --
+            # present only on the manual path; the auto path carries None
+            # (scene-level pass-through, output bytes unchanged).
+            "from_layout": v4["meta"].get("from_layout"),
             # line-kind statistics (arc > straight > polyline hierarchy report)
             "line_kinds": [e["route"].get("kind") for e in v4["edges"]],
             }
@@ -1055,6 +1059,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         # the trigger-template audit trail (None for scenes without the trace,
         # e.g. hand-built scenes in tests).
         "mode_decision_trace": scene.get("mode_decision_trace"),
+        # T1: --from-layout anchor provenance (auto vs user) — emitted only
+        # when present (the manual path); the auto certificate stays
+        # byte-for-byte unchanged.
+        **({"from_layout": scene["from_layout"]}
+           if scene.get("from_layout") else {}),
         "metrics": metrics,
         "gates": g,
         "gates_passed": f"{g_pass}/{len(g)}",
