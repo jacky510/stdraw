@@ -432,140 +432,160 @@
     "n": 50,
     "m": 80,
     "seed": 9200,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i01.cld",
     "n": 50,
     "m": 80,
     "seed": 9201,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i02.cld",
     "n": 50,
     "m": 80,
     "seed": 9202,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i03.cld",
     "n": 50,
     "m": 80,
     "seed": 9203,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i04.cld",
     "n": 50,
     "m": 80,
     "seed": 9204,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i05.cld",
     "n": 50,
     "m": 80,
     "seed": 9205,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i06.cld",
     "n": 50,
     "m": 80,
     "seed": 9206,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i07.cld",
     "n": 50,
     "m": 80,
     "seed": 9207,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i08.cld",
     "n": 50,
     "m": 80,
     "seed": 9208,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i09.cld",
     "n": 50,
     "m": 80,
     "seed": 9209,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i10.cld",
     "n": 50,
     "m": 80,
     "seed": 9210,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i11.cld",
     "n": 50,
     "m": 80,
     "seed": 9211,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i12.cld",
     "n": 50,
     "m": 80,
     "seed": 9212,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i13.cld",
     "n": 50,
     "m": 80,
     "seed": 9213,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i14.cld",
     "n": 50,
     "m": 80,
     "seed": 9214,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i15.cld",
     "n": 50,
     "m": 80,
     "seed": 9215,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i16.cld",
     "n": 50,
     "m": 80,
     "seed": 9216,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i17.cld",
     "n": 50,
     "m": 80,
     "seed": 9217,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i18.cld",
     "n": 50,
     "m": 80,
     "seed": 9218,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    },
    {
     "file": "random-n50-i19.cld",
     "n": 50,
     "m": 80,
     "seed": 9219,
-    "planar": false
+    "planar": false,
+    "tier": "retired"
    }
   ]
  },
