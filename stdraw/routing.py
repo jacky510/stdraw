@@ -17,6 +17,7 @@ import sys
 import itertools
 
 from . import visibility as _vis
+from . import gates as _gates
 from .anchors import standard_anchors as _std_anchors
 
 CLEARANCE = 16          # minimum edge-box clearance (v0.2 hard-gate accounting)
@@ -1319,17 +1320,13 @@ class Router:
                                      pts2[idx][1]]
                 ok = True
                 for i2, _e, _p in ents:
-                    pr, clr, ang, cross, msep = self._edge_stats(i2, routes)
-                    pr0, clr0, ang0, cross0, msep0 = stats_before[i2]
-                    if pr > pr0 or cross > cross0:
+                    # T4: unified delivery-gate caliber (docs/routing-gates.md G-FAN;
+                    # no own-box check -- registered caliber gap)
+                    if not _gates.edge_gate_check(
+                            self, i2, routes,
+                            _gates.GateBaseline(stats={i2: stats_before[i2]}),
+                            _gates.FAN_SPREAD):
                         ok = False
-                    if clr is not None and clr < self.cl - 1e-6:
-                        ok = False
-                    if ang < ANCHOR_MIN_DEG:
-                        ok = False
-                    if msep is not None and msep < 4.0:
-                        ok = False
-                    if not ok:
                         break
                 if ok:
                     break
@@ -1444,13 +1441,12 @@ class Router:
         st_j0 = self._edge_stats(j, routes)
 
         def gates_ok():
+            # T4: unified delivery-gate caliber (docs/routing-gates.md G-PAIR-BAND)
             for k2, st0 in ((i, st_i0), (j, st_j0)):
-                s = self._edge_stats(k2, routes)
-                if (s[0] > st0[0] or s[3] > st0[3] or
-                        (s[1] is not None and s[1] < self.cl - 1e-6) or
-                        s[2] < ANCHOR_MIN_DEG or
-                        (s[4] is not None and s[4] < 4.0) or
-                        not self._own_box_ok(k2, routes)):
+                if not _gates.edge_gate_check(
+                        self, k2, routes,
+                        _gates.GateBaseline(stats={k2: st0}),
+                        _gates.PAIR_BAND):
                     return False
             return True
 
@@ -1562,24 +1558,18 @@ class Router:
                         continue          # WS3: the total score must strictly beat the current route
                     old = routes[i]
                     routes[i] = info
+                    # T4: unified delivery-gate caliber (docs/routing-gates.md
+                    # G-MUTUAL-STRAIGHT): press==0 absolute; per-edge crossing cap
+                    # (i: the replaced route's _evaluate cross; j: the pre-change
+                    # _edge_stats cross -- two accountings, preserved verbatim).
                     ok = True
-                    for k2, st0 in ((i, None), (j, st_j0)):
-                        st = self._edge_stats(k2, routes)
-                        if st[0] > 0:
-                            ok = False    # hard gate: box press
-                        elif (st[1] is not None and st[1] < self.cl - 1e-6):
-                            ok = False    # hard gate: clearance
-                        elif st[2] < ANCHOR_MIN_DEG:
-                            ok = False    # hard gate: anchor smoothness
-                        elif st[4] is not None and st[4] < 4.0:
-                            ok = False    # hard gate: mutual-pair separation
-                        elif not self._own_box_ok(k2, routes):
-                            ok = False    # hard gate: own box
-                        elif k2 == i and st[3] > cur_cross:
-                            ok = False    # hard gate: crossing count must not increase
-                        elif k2 == j and st[3] > st0[3]:
-                            ok = False    # sibling-edge crossing count must not increase
-                        if not ok:
+                    for k2 in (i, j):
+                        if not _gates.edge_gate_check(
+                                self, k2, routes,
+                                _gates.GateBaseline(cross_cap={i: cur_cross,
+                                                               j: st_j0[3]}),
+                                _gates.MUTUAL_STRAIGHT):
+                            ok = False
                             break
                     routes[i] = old
                     if ok and (best is None or sc < best[0] - EPS):
@@ -1639,11 +1629,12 @@ class Router:
                     changed = True
             if changed:
                 routes[i]["points"] = pts
-                after = self._edge_stats(i, routes)
-                ok = (after[0] <= before[0] and after[3] <= before[3] and
-                      (after[1] is None or after[1] >= self.cl - 1e-6) and
-                      after[2] >= ANCHOR_MIN_DEG and
-                      (after[4] is None or after[4] >= 4.0))
+                # T4: unified delivery-gate caliber (docs/routing-gates.md
+                # G-MIDBAND-T0; no own-box check -- registered caliber gap)
+                ok = _gates.edge_gate_check(
+                    self, i, routes,
+                    _gates.GateBaseline(stats={i: before}),
+                    _gates.MIDBAND_TIER0)
                 if ok:
                     baseline_done = True
                 else:
@@ -1697,12 +1688,11 @@ class Router:
                     pts = quad_points(pts[0], ctrl, pts[-1])
                     routes[i]["ctrl"] = ctrl
                 routes[i]["points"] = pts
-                after = self._edge_stats(i, routes)
-                ok = (after[0] <= before[0] and after[3] <= before[3] and
-                      (after[1] is None or after[1] >= self.cl - 1e-6) and
-                      after[2] >= ANCHOR_MIN_DEG and
-                      (after[4] is None or after[4] >= 4.0) and
-                      self._own_box_ok(i, routes))
+                # T4: unified delivery-gate caliber (docs/routing-gates.md G-MIDBAND-T1)
+                ok = _gates.edge_gate_check(
+                    self, i, routes,
+                    _gates.GateBaseline(stats={i: before}),
+                    _gates.MIDBAND_CLAMP)
                 if ok:
                     break
                 routes[i]["points"] = before_pts
@@ -1886,19 +1876,21 @@ class Router:
                     inf["points"] = quad_points(inf["points"][0],
                                                 [cx, cy], inf["points"][-1])
                     inf["ctrl"] = [cx, cy]
+                # T4: unified delivery-gate caliber (docs/routing-gates.md
+                # G-ARRIVAL): the legacy/enhanced clearance + own-box caliber
+                # split is expressed by the policy pair below (no caliber change).
+                _pol = (_gates.ARRIVAL_ENHANCED if enhanced_gates
+                        else _gates.ARRIVAL_LEGACY)
+                _base = _gates.GateBaseline(
+                    stats=dict(stats_before),
+                    own=dict(own_before) if own_before else {})
                 ok = True
                 for i in (i1, i2):
-                    pr, clr, ang, cross, msep = self._edge_stats(i, routes)
-                    pr0, clr0, ang0, cross0, msep0 = stats_before[i]
-                    ok = (pr <= pr0 and cross <= cross0
-                          and (clr is None or
-                               clr >= (self.cl - 1e-6 if not enhanced_gates
-                                       else self.cl - PRESS_MARGIN - 1e-6))
-                          and ang >= ANCHOR_MIN_DEG
-                          and (msep is None or msep >= sep_floor)
-                          and (self._own_box_ok(i, routes) if not enhanced_gates
-                               else self._own_press(i, routes) <= own_before[i]))
+                    ok = _gates.edge_gate_check(
+                        self, i, routes, _base, _pol, msep_floor=sep_floor)
                     if os.environ.get("STDRAW_SNAP_DEBUG"):
+                        pr, clr, ang, cross, msep = self._edge_stats(i, routes)
+                        pr0, clr0, ang0, cross0, msep0 = stats_before[i]
                         print(f"  [flipdbg] {i} alpha={alpha} B={B} ok={ok} "
                               f"pr={pr}<={pr0} clr={clr} ang={ang:.1f} "
                               f"msep={msep}>={sep_floor:.1f} "
@@ -2090,19 +2082,15 @@ class Router:
                             sample_polyline(routes[i2]["points"], step=4))
                         if sep is None or sep < 12.0:
                             continue
+                        # T4: unified delivery-gate caliber (docs/routing-gates.md G-LENS-JOINT)
                         ok = True
                         for i in (i1, i2):
-                            st = self._edge_stats(i, routes)
-                            if (st[0] > before_stats[i][0]
-                                    or st[3] > before_stats[i][3]
-                                    or (st[1] is not None and
-                                        st[1] < self.cl - PRESS_MARGIN - 1e-6)
-                                    or st[2] < ANCHOR_MIN_DEG
-                                    or self._own_press(i, routes) > before_own[i]
-                                    or self._sibling_cross(i, routes)
-                                    > before_sib[i]
-                                    or not self._cert_angle_ok(i, routes)
-                                    or not self._anchors_in_band(i, routes)):
+                            if not _gates.edge_gate_check(
+                                    self, i, routes,
+                                    _gates.GateBaseline(stats=dict(before_stats),
+                                                        own=dict(before_own),
+                                                        sib=dict(before_sib)),
+                                    _gates.LENS_JOINT):
                                 ok = False
                                 break
                         if ok:
@@ -2467,18 +2455,17 @@ class Router:
                         sample_polyline(routes[i2]["points"], step=4))
                     if sep is None or sep < sep_ok_floor:
                         continue
+                    # T4: unified delivery-gate caliber (docs/routing-gates.md G-LENS-PAIR)
                     ok = True
                     for i in (i1, i2):
-                        st = self._edge_stats(i, routes)
-                        st0 = before_stats[i]
-                        if (st[0] > st0[0] or st[3] > st0[3] or
-                                (st[1] is not None and
-                                 st[1] < self.cl - PRESS_MARGIN - 1e-6) or
-                                st[2] < ANCHOR_MIN_DEG or
-                                self._own_press(i, routes) > before_own[i] or
-                                self._sibling_cross(i, routes) > before_sib[i] or
-                                not self._cert_angle_ok(i, routes)):
+                        if not _gates.edge_gate_check(
+                                self, i, routes,
+                                _gates.GateBaseline(stats=dict(before_stats),
+                                                    own=dict(before_own),
+                                                    sib=dict(before_sib)),
+                                _gates.LENS_PAIR):
                             if os.environ.get("STDRAW_SNAP_DEBUG"):
+                                st = self._edge_stats(i, routes)
                                 seen.append(
                                     f"e{i}:own{self._own_press(i, routes)}"
                                     f"/sib{self._sibling_cross(i, routes)}"
@@ -2715,23 +2702,14 @@ class Router:
                             if new_ctrl is not None:
                                 routes[i]["ctrl"] = new_ctrl
                             after = self._edge_stats(i, routes)
-                            # clearance at the CI/certificate accounting (raw
-                            # border rect >= CLEARANCE): the router's
-                            # _edge_stats measures to the 1px-inflated rect, so
-                            # the inflated threshold is CLEARANCE - 1 -- the
-                            # certificate (raw >= 16) stays authoritative and
-                            # anchor feasibility is not lost to the margin
-                            # convention (population-logistic n-g2: inflated
-                            # 15.79 = raw 16.79).
-                            ok = (after[0] <= before[0] and after[3] <= before[3] and
-                                  (after[1] is None or
-                                   after[1] >= self.cl - PRESS_MARGIN - 1e-6) and
-                                  after[2] >= ANCHOR_MIN_DEG and
-                                  (after[4] is None or after[4] >= 4.0) and
-                                  self._own_press(i, routes) <= own_before and
-                                  self._sibling_cross(i, routes) <= sib_before and
-                                  self._cert_angle_ok(i, routes) and
-                                  self._coincide_no_worse(i, routes, before_coi))
+                            # T4: unified delivery-gate caliber (docs/routing-gates.md G-SNAP)
+                            ok = _gates.edge_gate_check(
+                                self, i, routes,
+                                _gates.GateBaseline(stats={i: before},
+                                                    own={i: own_before},
+                                                    sib={i: sib_before},
+                                                    coi={i: before_coi}),
+                                _gates.SNAP)
                             if os.environ.get("STDRAW_SNAP_DEBUG"):
                                 _c = dict(p=after[0] <= before[0],
                                           x=after[3] <= before[3],
@@ -2966,15 +2944,14 @@ class Router:
                                  "vg_fillets": [dict(f) for f in
                                                 route["fillets"]]}
                     after = self._edge_stats(i, routes)
-                    ok = (after[0] <= before[0] and after[3] <= before[3] and
-                          (after[1] is None or
-                           after[1] >= self.cl - PRESS_MARGIN - 1e-6) and
-                          after[2] >= ANCHOR_MIN_DEG and
-                          (after[4] is None or after[4] >= 4.0) and
-                          self._own_press(i, routes) <= own_before and
-                          self._sibling_cross(i, routes) <= sib_before and
-                          self._cert_angle_ok(i, routes) and
-                          self._coincide_no_worse(i, routes, before_coi))
+                    # T4: unified delivery-gate caliber (docs/routing-gates.md G-SNAP)
+                    ok = _gates.edge_gate_check(
+                        self, i, routes,
+                        _gates.GateBaseline(stats={i: before},
+                                            own={i: own_before},
+                                            sib={i: sib_before},
+                                            coi={i: before_coi}),
+                        _gates.SNAP)
                     if os.environ.get("STDRAW_SNAP_DEBUG"):
                         print(f"  [snapdbg] JOINT {a}->{b} end={end} "
                               f"anchors={aid_a}/{aid_b} infl={c:.1f} "
@@ -3098,15 +3075,13 @@ class Router:
                             jnp[jj1] = [jnp[jj1][0] + jdxa, jnp[jj1][1] + jdya]
                         jnp[jidx2] = [jax, jay]
                         routes[j]["points"] = jnp
-                        jst = self._edge_stats(j, routes)
-                        ok_j = (jst[0] <= jbs[0] and jst[3] <= jbs[3] and
-                                (jst[1] is None or
-                                 jst[1] >= self.cl - PRESS_MARGIN - 1e-6) and
-                                jst[2] >= ANCHOR_MIN_DEG and
-                                (jst[4] is None or jst[4] >= 4.0) and
-                                self._own_press(j, routes) <= jownb and
-                                self._sibling_cross(j, routes) <= jsibb and
-                                self._cert_angle_ok(j, routes))
+                        # T4: unified delivery-gate caliber (docs/routing-gates.md G-SNAP-RETRY)
+                        ok_j = _gates.edge_gate_check(
+                            self, j, routes,
+                            _gates.GateBaseline(stats={j: jbs},
+                                                own={j: jownb},
+                                                sib={j: jsibb}),
+                            _gates.SNAP_RETRY)
                         if ok_j:
                             jalt = (jaid2, [list(q) for q in jnp])
                             break
@@ -3174,15 +3149,13 @@ class Router:
                         routes[i]["points"] = new_pts
                         if new_ctrl is not None:
                             routes[i]["ctrl"] = new_ctrl
-                        st = self._edge_stats(i, routes)
-                        ok_i = (st[0] <= before[0] and st[3] <= before[3] and
-                                (st[1] is None or
-                                 st[1] >= self.cl - PRESS_MARGIN - 1e-6) and
-                                st[2] >= ANCHOR_MIN_DEG and
-                                (st[4] is None or st[4] >= 4.0) and
-                                self._own_press(i, routes) <= own_before and
-                                self._sibling_cross(i, routes) <= sib_before and
-                                self._cert_angle_ok(i, routes))
+                        # T4: unified delivery-gate caliber (docs/routing-gates.md G-SNAP-RETRY)
+                        ok_i = _gates.edge_gate_check(
+                            self, i, routes,
+                            _gates.GateBaseline(stats={i: before},
+                                                own={i: own_before},
+                                                sib={i: sib_before}),
+                            _gates.SNAP_RETRY)
                         if ok_i:
                             applied_i = True
                             break
