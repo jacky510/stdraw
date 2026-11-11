@@ -43,6 +43,160 @@
   "legacy_band_exemption": {
    "triggered": false,
    "detail": "spine-wing: 100% in-band enforced (enhanced re-anchor channel active, no legacy exemption)"
+  },
+  "ring_candidates": {
+   "note": "observability probe only: all candidate main rings with the selection-key inputs; the selection key is frozen (D3 pending jacky's ruling)",
+   "selection_key": "(-k, chord_crossings, ring order)",
+   "alternative_key": "(chord_crossings, -k, ring order)",
+   "candidates": [
+    {
+     "k": 3,
+     "chord_crossings": 0,
+     "declared_loop": "R1",
+     "ring": [
+      "rate",
+      "adopters",
+      "word"
+     ],
+     "selected": false
+    },
+    {
+     "k": 3,
+     "chord_crossings": 0,
+     "declared_loop": "B1",
+     "ring": [
+      "rate",
+      "adopters",
+      "potential"
+     ],
+     "selected": false
+    },
+    {
+     "k": 3,
+     "chord_crossings": 0,
+     "declared_loop": "B2",
+     "ring": [
+      "rate",
+      "adopters",
+      "crowding"
+     ],
+     "selected": false
+    },
+    {
+     "k": 3,
+     "chord_crossings": 0,
+     "declared_loop": "R2",
+     "ring": [
+      "quickfix",
+      "sideeffect",
+      "crowding"
+     ],
+     "selected": false
+    },
+    {
+     "k": 3,
+     "chord_crossings": 0,
+     "declared_loop": null,
+     "ring": [
+      "adopters",
+      "crowding",
+      "rate"
+     ],
+     "selected": false
+    },
+    {
+     "k": 4,
+     "chord_crossings": 0,
+     "declared_loop": null,
+     "ring": [
+      "adopters",
+      "crowding",
+      "rate",
+      "potential"
+     ],
+     "selected": true
+    },
+    {
+     "k": 4,
+     "chord_crossings": 0,
+     "declared_loop": null,
+     "ring": [
+      "adopters",
+      "crowding",
+      "rate",
+      "word"
+     ],
+     "selected": false
+    },
+    {
+     "k": 3,
+     "chord_crossings": 0,
+     "declared_loop": null,
+     "ring": [
+      "adopters",
+      "potential",
+      "rate"
+     ],
+     "selected": false
+    },
+    {
+     "k": 4,
+     "chord_crossings": 0,
+     "declared_loop": null,
+     "ring": [
+      "adopters",
+      "potential",
+      "rate",
+      "word"
+     ],
+     "selected": false
+    },
+    {
+     "k": 3,
+     "chord_crossings": 0,
+     "declared_loop": null,
+     "ring": [
+      "adopters",
+      "rate",
+      "word"
+     ],
+     "selected": false
+    },
+    {
+     "k": 3,
+     "chord_crossings": 0,
+     "declared_loop": null,
+     "ring": [
+      "crowding",
+      "quickfix",
+      "sideeffect"
+     ],
+     "selected": false
+    }
+   ],
+   "selected": {
+    "k": 4,
+    "chord_crossings": 0,
+    "declared_loop": null,
+    "ring": [
+     "adopters",
+     "crowding",
+     "rate",
+     "potential"
+    ]
+   },
+   "alternative_winner": {
+    "k": 4,
+    "chord_crossings": 0,
+    "declared_loop": null,
+    "ring": [
+     "adopters",
+     "crowding",
+     "rate",
+     "potential"
+    ]
+   },
+   "would_switch": false
   }
  },
  "metrics": {
@@ -178,5 +332,9 @@
   "mirror_err": 0
  },
  "interactive": "yes",
- "drag_layer": "yes"
+ "drag_layer": "yes",
+ "caliber": "v2-hardgates",
+ "grade_semantics": "v2-hardgates caliber: best = 0 line crossings AND all placement-specific hard gates AND anchors_standard AND visual_crossings_zero AND dual crossing accounting; else uncertified (honest no-grade). Soft targets (crossings <= 2, row alignment) are layout objective-function report items, NOT certificate gates. Tokens: best | uncertified (2D certificate field); the 3d tier in the docs describes the 3D delivery path. second was removed in v0.7.15+ (logically unreachable). Single source: docs/grading-contract.md",
+ "blocking_gates": [],
+ "deliverable": true
 }

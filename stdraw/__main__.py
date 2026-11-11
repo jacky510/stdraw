@@ -209,6 +209,10 @@ def main(argv=None):
             with open(hp, "w", encoding="utf-8") as f:
                 f.write(render_html(v4, name, cert, lr, labels, values, a.theme))
             print(f"      demo -> {hp} (theme {a.theme})")
+            print("[BANNED / D0] ortho-v1 output is NOT a deliverable: "
+                  "vertical orthogonal wires, box-over-line / card occlusion, "
+                  "no polarity layer. Use auto-v2. Frozen baseline kept for "
+                  "CI regression only.")
             if rc:
                 sys.exit(1)
     else:
@@ -264,7 +268,8 @@ def main(argv=None):
                   f"coverage={exactness['coverage']}")
         cert = certificate_auto(scene_from_auto(v4), graph_name=name, layer="2D",
                                 graph=g, exactness=exactness,
-                                interactive="yes", drag_layer="yes")
+                                interactive="yes", drag_layer="yes",
+                                deliverable=True)
         p = w("certificate.json", cert)
         m = cert["metrics"]
         print(f"[4/6] certificate: crossings {m['crossings']} / box press {m['box_press_1px']} / "

@@ -225,7 +225,7 @@ def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
                       "never poses as a finished product")
 
     cert = {
-        "tool": "stdraw", "version": "0.1.0", "layer": layer,
+        "tool": "stdraw", "version": _PKG_VERSION, "layer": layer,
         "graph": graph_name,
         "n": len(ids), "m": len(edges),
         "coords": "delivered/rounded",     # all verification runs on delivered coordinates
@@ -244,6 +244,27 @@ def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
     # CLI passes yes/yes; library callers grading bare coordinates get no/no.
     cert["interactive"] = interactive
     cert["drag_layer"] = drag_layer
+    # Caliber confession (D1=C, WorkBuddy task 2026-11-11): additive
+    # self-describing fields only -- no existing key or value is touched.
+    # render.py consumes grade/gates/gates_passed/grade_note/metrics, so the
+    # demo-2d.html bytes do not change (evidence line E8).
+    cert["recipe"] = "ortho-v1"
+    cert["caliber"] = "v1-legacy"
+    cert["grade_semantics"] = (
+        "v1-legacy caliber: best = 0 crossings AND min_gap >= 16 AND "
+        "cv <= 0.35; second = placement ok AND <= 2 crossings (legacy "
+        "branch kept byte-compatible, logically near-unreachable); else "
+        "uncertified. Gate set/count differs from auto-v2 (v2-hardgates): "
+        "read caliber before interpreting grade. Single source: "
+        "docs/grading-contract.md")
+    cert["blocking_gates"] = [k for k, v in g.items() if v is False]
+    cert["placement"] = "ortho-v1"
+    cert["deliverable"] = False
+    cert["blocked_reason"] = (
+        "vertical-orthogonal layout banned (D0): box-over-line / leader-bar "
+        "occlusion is structural in visibility representation and repeatedly "
+        "unfixable; pin-safe CI regression baseline only")
+    cert["blocked_by"] = "D0"
     return cert
 
 
@@ -356,7 +377,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                      gates: Optional[dict] = None,
                      notes: Optional[List[str]] = None,
                      graph=None, exactness: Optional[dict] = None,
-                     interactive: str = "no", drag_layer: str = "no") -> dict:
+                     interactive: str = "no", drag_layer: str = "no",
+                     deliverable: bool = False) -> dict:
     """v2 quality certificate: five metrics + new hard gates + honest grading.
     All verification runs on delivered coordinates.
 
@@ -1184,7 +1206,68 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # Delivery-face confession (same caliber as certificate()):
     out["interactive"] = interactive
     out["drag_layer"] = drag_layer
+    # Caliber confession (D1=C, WorkBuddy task 2026-11-11): additive
+    # self-describing fields; grading implementation untouched.
+    out["caliber"] = "v2-hardgates"
+    out["grade_semantics"] = (
+        "v2-hardgates caliber: best = 0 line crossings AND all "
+        "placement-specific hard gates AND anchors_standard AND "
+        "visual_crossings_zero AND dual crossing accounting; else "
+        "uncertified (honest no-grade). Soft targets (crossings <= 2, row "
+        "alignment) are layout objective-function report items, NOT "
+        "certificate gates. Tokens: best | uncertified (2D certificate "
+        "field); the 3d tier in the docs describes the 3D delivery path. "
+        "second was removed in v0.7.15+ (logically unreachable). Single "
+        "source: docs/grading-contract.md")
+    out["blocking_gates"] = [k for k, v in g.items() if v is False]
+    out["deliverable"] = bool(deliverable)
+    # D3 observability probe (S2-1, WorkBuddy task 2026-11-11): every
+    # candidate main ring with the exact selection-key inputs, recorded on
+    # the CERTIFICATE trace only (the layout meta trace stays byte-stable;
+    # detection re-runs are deterministic and side-effect free).
+    cand = _ring_candidates_block(graph)
+    if cand is not None:
+        tr = dict(out.get("mode_decision_trace") or {})
+        tr["ring_candidates"] = cand
+        out["mode_decision_trace"] = tr
     return out
+
+
+def _ring_candidates_block(graph):
+    """D3 observability probe (WorkBuddy task 2026-11-11, S2-1): re-run the
+    deterministic ring detection and record EVERY candidate main ring with
+    the exact selection-key inputs, plus which ring the alternative key
+    (chord crossings first) would pick. Recording only: the selection key
+    itself is frozen (S2-3 pending jacky's D3 ruling)."""
+    if graph is None:
+        return None
+    from .ringlayout import detect_ring
+    why: dict = {}
+    detect_ring(graph, why=why)
+    rows = why.get("candidates")
+    if not rows:
+        return None
+    sel = next((r for r in rows if r.get("selected")), None)
+    alt = min(rows, key=lambda r: (r["chord_crossings"], -r["k"],
+                                   r["ring"]))
+
+    def _brief(r):
+        return {"k": r["k"], "chord_crossings": r["chord_crossings"],
+                "declared_loop": r["declared_loop"], "ring": r["ring"]}
+
+    return {
+        "note": ("observability probe only: all candidate main rings with "
+                 "the selection-key inputs; the selection key is frozen "
+                 "(D3 pending jacky's ruling)"),
+        "selection_key": "(-k, chord_crossings, ring order)",
+        "alternative_key": "(chord_crossings, -k, ring order)",
+        "candidates": [{k: r[k] for k in
+                        ("k", "chord_crossings", "declared_loop", "ring",
+                         "selected")} for r in rows],
+        "selected": _brief(sel) if sel else None,
+        "alternative_winner": _brief(alt),
+        "would_switch": bool(sel and sel["ring"] != alt["ring"]),
+    }
 
 
 _EXACT_SCOPE_NOTE = (
