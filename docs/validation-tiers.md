@@ -152,3 +152,23 @@ Z1/Z2 并入 `docs/zcode-upgrade-brief.md` 任务书，启用时再开卡。）
 | D2 修订 | graphviz 接入形态 | **不接入 graphviz 后端**（方案 B 否决、整条后端路线不建、G1/G2 不建）；文档推荐用户对 >20 节点图自行用 graphviz（`benchmarks/tools/run_graphviz.py` 同源评测工具）。§3 作废、§6 去掉 G1/G2/Z1/Z2 行 |
 | D3 | ZCODE 验收数字 | **n30 全 20 张 P50 ≤ 3min / P95 ≤ 6min / max ≤ 10min、0 例触 30min 红线**，写进 `docs/zcode-upgrade-brief.md` 任务书存档备用；Z1/Z2 实现卡本轮不建 |
 | D4 | 收口全量门范围 | **A 档 61 图双腿 + n30 抽样 5 张（i00/i04/i09/i14/i19）**，每行为卡收口跑一次，不上 CI（`sweep_tiers.py --tier full` 即此门） |
+
+## 8. 解释器口径（2026-11-11 返修卡 t_c0c4a1c0 整改落地）
+
+**全量对拍 sweep（`sweep_tiers.py`）必须用含 ortools 的解释器跑**（实测口径：
+`C:/Users/jacky/AppData/Local/Programs/Python/Python312/python.exe`，ortools 9.15）。
+原因：分层 cp-sat 引擎只在含 ortools 的解释器下生效；无 ortools 的解释器（如仓
+.venv）走 construct 回退引擎——t_875e2949 的「59 图零回归」表即在回退口径下复算，
+未能覆盖 t_47e514bb 视觉验收在分层真实路径上发现 i00 压框 4→25 / 擦边 0→4 回归。
+
+工具侧防再犯（已落地）：
+- `sweep_index.json` 记录 `_meta.engine_caliber`（`cp-sat-layered` /
+  `fallback-construct`）与 `interpreter`，每图另记 `rec.engine`（layout.json
+  `meta.position_engine`），逐字节对比表自带口径标注；
+- 无 ortools 时启动打 **DEGRADED ENGINE CALIBER** 横幅（stdout+sweep.log）；
+- 同一 leg 中途换解释器续跑（mixed-caliber resume）显式 WARNING；
+- `--compare` 双腿口径不一致时打 WARNING（跨口径字节对比无意义）。
+
+`tests/ci_checks.py` 同批整改：无 ortools 时开头打 DEGRADED 横幅、结尾摘要附
+`engine caliber: fallback-construct (DEGRADED — cp-sat layered path NOT covered)`
+——绿色但降级，先报可见缺陷。
