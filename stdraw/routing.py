@@ -71,6 +71,12 @@ ROUND_GUARD = 0.15     # conservative margin for delivery rounding (0.1px): bord
 COINCIDE_THR = 1.0          # distance <1px counts as adherence (same source as the certificate accounting)
 COINCIDE_SPAN = 8.0         # accumulated adherence must exceed 8px to count as "visual coincidence" (endpoint meeting exempted)
 FAN_STEP = 18.0             # uniform spread step for multiple anchors on the same node side (ref-scrubbed rule 3)
+# Edge placement rules v1 (edgerules preset candidates): honest fixed
+# penalties for bending away from the rule geometry -- arc on the
+# non-rule side / straight where a B line wants its golden-point arc.
+# Hard gates (press / crossings) still dominate via their own weights.
+ARC_NEAR_PENALTY = 25.0
+STRAIGHT_ON_B_PENALTY = 60.0
 ARRIVAL_TARGET_DEG = 10.0   # ref-scrubbed: mutual-lens arrow-normal target (card-suggested; hard-gating pending owner decision)
 MIN_FROZEN_ANCHOR_SEP = 8.0  # ref-scrubbed: fan slots must clear frozen anchors on the same side by at least this (px)
 REANCHOR_STEP = 4.0         # ref-scrubbed midband_reanchor ladder-clamping step
@@ -295,18 +301,25 @@ class Router:
     """Plan a route for each edge from the node box positions on the canvas. Deterministic: fixed candidate order + fixed scoring."""
 
     def __init__(self, nodes: dict, edges: list, clearance=CLEARANCE, pitch=80,
-                 quality=False):
+                 quality=False, presets=None):
         """nodes: {id: (x,y,w,h)} center + size; edges: [(a,b)] directed.
 
             quality=False (default): the legacy candidate pool, output byte-for-byte identical to v0.4.x;
             quality=True: WS3-Q routing-quality rework extends the candidate pool (multi-row stair) -- enabled only on
             the gated re-layout path after the layout-layer routing hard gate fails; never enters the normal layout path.
+            presets: edge placement rules v1 (edgerules.assign) — {edge idx:
+            preset}.  When present for an edge, candidates are generated
+            ONLY between the pre-assigned standard-anchor endpoints
+            (docs/edge-placement-rules-v1.md: anchors are decided before
+            routing; the router still scores honestly between line / arc
+            (rule side first) / vg / lane fallbacks).
         """
         self.N = {v: (p[0], p[1], p[2] / 2.0, p[3] / 2.0) for v, p in nodes.items()}
         self.edges = list(edges)
         self.cl = clearance
         self.pitch = pitch
         self.quality = quality
+        self.presets = dict(presets) if presets else None
         mutual = set()
         for a, b in edges:
             if (b, a) in set(edges) and a < b:
@@ -398,6 +411,8 @@ class Router:
     # -- candidate generation --
     def _candidates(self, a, b, idx):
         """Fixed-order candidates: straight -> arc (left/right x curvature) -> detour channels, x anchor variants."""
+        if self.presets and idx in self.presets:
+            return self._preset_candidates(a, b, idx)
         cands = []
         key = (min(a, b), max(a, b))
         # F1 lens double-arc: both directions of a mutual pair take the same arc side sign (their reference frames are opposite -> geometrically opposite arcs,
@@ -586,6 +601,58 @@ class Router:
                                 cands.append(("wrap", pts_w, pa_w, pb_w))
         return cands
 
+    def _preset_candidates(self, a, b, idx):
+        """Edge placement rules v1 candidate pool: endpoints are FIXED to
+        the pre-assigned standard anchors (edgerules preset); candidates
+        differ only in geometry between them.  Fixed order, deterministic:
+        rule geometry first (line / arc rule side, penalty 0), rule-bend
+        fallbacks next (arc other side / straight where B wants an arc,
+        honest fixed penalties), then the obstacle-avoidance machinery
+        (vg from the fixed endpoints, horizontal lanes) as last resort.
+        The 6th tuple element is a rule-preference penalty honored by
+        _evaluate (legacy candidates carry no 6th element -> 0.0)."""
+        p = self.presets[idx]
+        pa, pb = list(p["pa"]), list(p["pb"])
+        cands = []
+        dist = math.hypot(pb[0] - pa[0], pb[1] - pa[1]) or 1.0
+        ux, uy = norm(-(pb[1] - pa[1]), pb[0] - pa[0])
+        ks = tuple(dict.fromkeys((adaptive_arc_k(dist),) + ARC_KS))
+
+        def arc(s, pen):
+            for k in ks:
+                ctrl = [(pa[0] + pb[0]) / 2 + ux * k * dist * s,
+                        (pa[1] + pb[1]) / 2 + uy * k * dist * s]
+                cands.append(("arc", quad_points(pa, ctrl, pb), pa, pb, ctrl, pen))
+
+        arc_style = p["style"] in ("arc", "lens_a", "lens_b")
+        if arc_style:
+            arc(p["arc_side"], 0.0)
+            arc(-p["arc_side"], ARC_NEAR_PENALTY)
+            cands.append(("line", [pa, pb], pa, pb, None, STRAIGHT_ON_B_PENALTY))
+        else:
+            cands.append(("line", [pa, pb], pa, pb, None, 0.0))
+            arc(1, ARC_NEAR_PENALTY)
+            arc(-1, ARC_NEAR_PENALTY)
+        # visibility-graph detours from the FIXED endpoints (only when the
+        # straight chord is blocked -- same trigger as the legacy pool)
+        rects = [n for v, n in self.N.items() if v not in (a, b)]
+        if rects:
+            c_vg = self.cl + VG_PAD
+            blocked = any(_vis.seg_rect_distance(pa, pb, rect) < c_vg - 1e-6
+                          for rect in rects)
+            if blocked:
+                route = _vis.plan_route(pa, pb, rects, c_vg)
+                if route:
+                    cands.append(("vg", route["dense"], pa, pb, route, 0.0))
+        # horizontal inter-row lanes from the fixed endpoints (last resort)
+        if abs(pb[1] - pa[1]) > 4:
+            lane = (pa[1] + pb[1]) / 2
+            for off in (0, -30, 30, -60, 60, -90, 90):
+                mx = (pa[0] + pb[0]) / 2 + off
+                cands.append(("poly", [pa, [pa[0], lane], [mx, lane],
+                                       [pb[0], lane], pb], pa, pb, None, 0.0))
+        return cands
+
     # -- candidate evaluation --
     def _evaluate(self, cand, a, b, routed_segs, sib_samples=None):
         """Return (score, info); info carries press/clearance/crossing/anchor-angle/mutual-separation details.
@@ -692,8 +759,13 @@ class Router:
         if mutual_pair:
             # F1 tightened clearance: separation candidates must not sacrifice the edge-box clearance gate (total weight 150*gap)
             clr_def *= 5.0
+        # Edge placement rules v1: preset candidates carry a 6th element =
+        # rule-preference penalty (arc on the non-rule side / straight where
+        # B wants an arc).  Added on TOP of the honest geometry scoring so
+        # the hard gates (press / crossings) still dominate (spec §4 order).
+        rule_pen = cand[5] if len(cand) > 5 else 0.0
         score = (4000 * press + 40 * cross + 30.0 * clr_def + 0.01 * length +
-                 PAIR_SEP_W * sep_def + kind_pref)
+                 PAIR_SEP_W * sep_def + kind_pref + rule_pen)
         # Anchor smoothness: angle between the departure/entry direction and the box-border tangent
         ang_a = self._anchor_angle(a, pa, pts[0], pts[1])
         ang_b = self._anchor_angle(b, pb, pts[-1], pts[-2])
