@@ -434,10 +434,21 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.7.16** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.8.0** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
 
+- **v0.8.0 version closure** (UI-A theme baseline; declared major-version
+  visual baseline, spec = docs/ui-theme-spec-a.md): 2D light ("tracing
+  paper") and dark ("midnight ink") token tables redefined in
+  `stdraw/themes.py` (new `card_radius` / `canvas_grid` tokens plus
+  `LIGHT_3D` / `DARK_3D` parameter groups); card corner radius 14;
+  dotted canvas grid (render-layer only, edge hit layer un-occluded);
+  certificate panel restyled as an engineering title block, square
+  corners kept; 3D light stage added (structure unchanged), 3D dark
+  frozen byte-for-byte; demos + docs/gallery re-rendered on the new
+  light tier; CHANGELOG.md introduced with the 0.8.0 entry as the
+  first declared changelog record.
 - **v0.7.16 version closure** (≤10-node optimization line T1–T6 + validation
   tier re-plan):
   (a) **manual loop closure** (T1/T2): `--from-layout` reads back
