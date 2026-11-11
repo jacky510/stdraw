@@ -56,13 +56,25 @@ C -> + F
 """
 
 
-def _run(cld_text):
+def _run(cld_text, manual=None):
+    """Drive the pipeline.  Default: the MANUAL path (--from-layout
+    equivalent) -- since edge placement rules v1 the AUTO path assigns
+    standard anchors by construction and never runs anchor_snap (spec §8),
+    so the snap revert mechanics (retained for manual layouts) are
+    exercised on the manual path."""
     g = parse(cld_text)
     err = io.StringIO()
     old = sys.stderr
     sys.stderr = err
     try:
-        v4 = recipes_run("auto-v2", g, AutoConfig(), "straight")
+        if manual is None:
+            from stdraw.layout_auto import layout as _layout
+            v4 = _layout(g, AutoConfig(), "straight")
+            nodes = {k: {"x": p["x"], "y": p["y"]}
+                     for k, p in v4["nodes"].items()}
+            manual = {"nodes": nodes, "viewBox": None, "source": "t5-test"}
+        from stdraw.layout_auto import layout
+        v4 = layout(g, AutoConfig(), "straight", manual=manual)
     finally:
         sys.stderr = old
     return v4, err.getvalue()
@@ -136,6 +148,49 @@ def _inject_guaranteed_crossing(router, routes):
 
 def test_probe_threshold_unchanged():
     assert ANCHOR_SNAP_DENSE_E_OVER_N == 1.6
+
+
+def _run_auto(cld_text):
+    """The AUTO path under edge placement rules v1 (snap skipped)."""
+    g = parse(cld_text)
+    from stdraw.layout_auto import layout
+    err = io.StringIO()
+    old = sys.stderr
+    sys.stderr = err
+    try:
+        v4 = layout(g, AutoConfig(), "straight")
+    finally:
+        sys.stderr = old
+    return v4, err.getvalue()
+
+
+def test_auto_path_skips_snap_by_construction(monkeypatch):
+    """Edge placement rules v1: on the LAYERED auto path anchor_snap is
+    never called (endpoints pre-assigned to standard anchors by edgerules);
+    on the constructed engines (v1-exempt, e.g. this ring graph) the legacy
+    snap keeps running.  Either way every delivered endpoint lands on the
+    16-anchor set."""
+    calls = []
+    monkeypatch.setattr(Router, "anchor_snap",
+                        lambda self, routes, max_sweeps=4:
+                        calls.append(1) or real_snap(self, routes, max_sweeps))
+    v4, err = _run_auto(CLD)
+    placement = v4["meta"].get("placement")
+    if placement == "layered":
+        assert not calls
+    else:                      # constructed engine: v1-exempt, legacy snap
+        assert calls
+    from stdraw.anchors import standard_anchors
+    for e in v4["edges"]:
+        for end, node in (("a", e["a"]), ("b", e["b"])):
+            p = v4["nodes"][node]
+            pts = {(ax, ay) for _, ax, ay in
+                   standard_anchors(p["x"], p["y"], p["w"] / 2.0,
+                                    v4["meta"].get("cardH", 42) / 2.0)}
+            ep = e["anchors"][end]
+            assert any(abs(ep[0] - ax) < 0.6 and abs(ep[1] - ay) < 0.6
+                       for ax, ay in pts), \
+                f"endpoint {ep} not on {node}'s standard anchor set"
 
 
 def test_low_density_revert_on_degrading_snap(monkeypatch):
