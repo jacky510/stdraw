@@ -75,8 +75,8 @@ def engine_caliber():
     whether the layered cp-sat engine or the construct fallback engine
     produces every recorded result.  Recorded into sweep_index.json so a
     zero-regression table can never again silently compare two different
-    engine calibers (blind spot measured on card t_875e2949's sweep vs
-    the ortools-path visual acceptance t_47e514bb).
+    engine calibers (blind spot measured on an earlier sweep vs
+    the ortools-path visual acceptance run).
     """
     try:
         import ortools  # noqa: F401
@@ -113,7 +113,7 @@ def run_leg(tier, legdir, budget, log):
     if calib == "fallback-construct":
         banner = ("DEGRADED ENGINE CALIBER: ortools absent in %s — every graph below renders "
                   "with the construct FALLBACK engine; the cp-sat layered path is NOT covered "
-                  "by this leg (known blind spot: t_875e2949 sweep vs t_47e514bb acceptance). "
+                  "by this leg (known blind spot: an earlier sweep vs its visual acceptance). "
                   "Rerun under an ortools interpreter before quoting zero-regression numbers."
                   % sys.executable)
         print("!" * 24 + " DEGRADED " + "!" * 24)
@@ -180,7 +180,7 @@ def compare(index_path_a, index_path_b):
             and meta_a.get("engine_caliber") != meta_b.get("engine_caliber")):
         print("WARNING: the two legs were produced under DIFFERENT engine calibers "
               "(%s vs %s) — byte comparisons across calibers are meaningless "
-              "(t_875e2949 blind spot). Re-run both legs under the same interpreter."
+              "(known sweep-caliber blind spot). Re-run both legs under the same interpreter."
               % (meta_a.get("engine_caliber"), meta_b.get("engine_caliber")))
     missing = sorted(set(a) - set(b)) + sorted(set(b) - set(a))
     drift = []

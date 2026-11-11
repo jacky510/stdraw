@@ -153,13 +153,13 @@ Z1/Z2 并入 `docs/zcode-upgrade-brief.md` 任务书，启用时再开卡。）
 | D3 | ZCODE 验收数字 | **n30 全 20 张 P50 ≤ 3min / P95 ≤ 6min / max ≤ 10min、0 例触 30min 红线**，写进 `docs/zcode-upgrade-brief.md` 任务书存档备用；Z1/Z2 实现卡本轮不建 |
 | D4 | 收口全量门范围 | **A 档 61 图双腿 + n30 抽样 5 张（i00/i04/i09/i14/i19）**，每行为卡收口跑一次，不上 CI（`sweep_tiers.py --tier full` 即此门） |
 
-## 8. 解释器口径（2026-11-11 返修卡 t_c0c4a1c0 整改落地）
+## 8. 解释器口径（2026-11-11 返修整改落地）
 
 **全量对拍 sweep（`sweep_tiers.py`）必须用含 ortools 的解释器跑**（实测口径：
-`C:/Users/jacky/AppData/Local/Programs/Python/Python312/python.exe`，ortools 9.15）。
+含 ortools 9.15 的系统级解释器，本机绝对路径不落发布面）。
 原因：分层 cp-sat 引擎只在含 ortools 的解释器下生效；无 ortools 的解释器（如仓
-.venv）走 construct 回退引擎——t_875e2949 的「59 图零回归」表即在回退口径下复算，
-未能覆盖 t_47e514bb 视觉验收在分层真实路径上发现 i00 压框 4→25 / 擦边 0→4 回归。
+.venv）走 construct 回退引擎——早期一次「59 图零回归」表即在回退口径下复算，
+未能覆盖同期视觉验收在分层真实路径上发现 i00 压框 4→25 / 擦边 0→4 回归。
 
 工具侧防再犯（已落地）：
 - `sweep_index.json` 记录 `_meta.engine_caliber`（`cp-sat-layered` /
