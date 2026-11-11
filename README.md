@@ -279,9 +279,14 @@ Honest grading semantics (iron rule: **never pass off a non-certificate as one**
 | Grade | Definition (auto-v2) |
 |---|---|
 | **`best`** | all hard gates pass (box-over-line 0 / clearance ≥ 16 / smooth anchors / regular arrangement) + 0 crossings |
-| **`second`** | all hard gates pass + ≤ 2 crossings (coords in the certificate for review; when gates and crossings conflict, gates win) |
 | **`3d`** | dimension-lift to 3D: rotate freely, no spatial crossings, projection crossings solved by the camera |
 | **`uncertified`** | everything else — honestly ungraded |
+
+Grade semantics single source: [docs/grading-contract.md](docs/grading-contract.md) —
+auto-v2 emits `best` / `uncertified` only (caliber `v2-hardgates`; `second` was removed in
+v0.7.15+ and survives only in the v1-legacy ortho caliber, whose output is **banned as a
+deliverable**, ruling D0). Crossings ≤ 2 / row alignment remain layout soft targets, not
+certificate gates.
 
 `geometry_report.json` (geometry self-checks in CI-gate form; the CLI exits 1 on fail) can be used directly as a regression gate.
 

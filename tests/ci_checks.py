@@ -194,14 +194,14 @@ def main():
         return 1
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(root)
-    # Engine-caliber self-check (edge-rules-v1 rework card t_c0c4a1c0): every
+    # Engine-caliber self-check (edge-rules-v1 rework card): every
     # stdraw render below runs `sys.executable -m stdraw ...`, so ortools
     # availability HERE decides whether the auto-v2 gates exercise the cp-sat
     # layered engine or the construct fallback.  Without ortools the run is
     # still allowed to pass (fallback caliber is a legitimate CI mode) but the
     # degraded caliber is reported LOUDLY, top and bottom — a silent green run
-    # on the fallback path is what let the t_875e2949 zero-regression table
-    # miss the t_47e514bb acceptance regression on the real layered path.
+    # on the fallback path is what let a prior card's zero-regression table
+    # miss the acceptance regression on the real layered path.
     try:
         import ortools  # noqa: F401
         _caliber = "cp-sat-layered"
@@ -628,6 +628,23 @@ def main():
                                     f"{r_h.stdout[-500:]}")
                     continue
                 cert_h = load(out_h, "certificate.json")
+                # Known uncertified regression fixture (ring-cycle
+                # chord-crossing counterexample, corpus note in the .cld
+                # header): grade=uncertified / crossings=1 is the CORRECT
+                # outcome -- never tune gates to make it pass (this branch
+                # institutionalizes the counterexample assertion).
+                if name == "success-to-the-successful":
+                    if cert_h["grade"] != "uncertified":
+                        failures.append(f"corpus {name}: counterexample "
+                                        f"fixture must stay uncertified "
+                                        f"(got {cert_h['grade']})")
+                    if cert_h["metrics"]["crossings"] != 1:
+                        failures.append(f"corpus {name}: counterexample "
+                                        f"fixture must keep crossings=1 "
+                                        f"(got "
+                                        f"{cert_h['metrics']['crossings']})")
+                    n_ok += 1
+                    continue
                 if cert_h["grade"] != "best":
                     failures.append(f"corpus {name}: grade={cert_h['grade']}")
                 for k in _hard_gates_for(cert_h):
@@ -836,6 +853,46 @@ def main():
 
         # Phase timing summary (observational, see mark() header)
         mark("K: language policy gate")
+
+        # ── L. D0 delivery gate: no vertical-orthogonal page may ship ──
+        # (WorkBuddy task 2026-11-11, jacky's ortho ban, ruling D0.)  The
+        # ortho-v1 recipe itself stays frozen for gate A; this gate blocks
+        # the DELIVERY EXIT: scripts/check_no_ortho_delivery.py must pass
+        # demos/ (all auto-v2) and must FLAG a fresh ortho output dir.
+        if _on("L"):
+            scan = os.path.join(root, "scripts", "check_no_ortho_delivery.py")
+            r_d = subprocess.run(
+                [sys.executable, scan, "--dir", os.path.join(root, "demos")],
+                capture_output=True, text=True, encoding="utf-8",
+                errors="replace")
+            if r_d.returncode != 0:
+                failures.append("D0 gate: scanner flagged demos/ as "
+                                "containing a vertical-orthogonal "
+                                "deliverable\n" + r_d.stdout + r_d.stderr)
+            else:
+                print("OK  D0 gate: demos/ clean (no vertical-orthogonal "
+                      "deliverable)")
+            ortho_out = os.path.join(tmp, "L-ortho-d0-scan")
+            r_o = run_cli("examples/limits-to-growth.cld", ortho_out,
+                          ("--recipe", "ortho", "--skip-3d"))
+            if r_o.returncode != 0:
+                failures.append(f"D0 gate: ortho control render exit "
+                                f"{r_o.returncode}\n{r_o.stderr[-300:]}")
+            else:
+                r_s = subprocess.run(
+                    [sys.executable, scan, "--dir", ortho_out],
+                    capture_output=True, text=True, encoding="utf-8",
+                    errors="replace")
+                if r_s.returncode != 1:
+                    failures.append(
+                        "D0 gate: scanner must FLAG a fresh ortho output "
+                        f"dir (exit {r_s.returncode}, expected 1)\n"
+                        + r_s.stdout + r_s.stderr)
+                else:
+                    print("OK  D0 gate: fresh ortho output dir correctly "
+                          "flagged as non-deliverable (exit 1)")
+
+        mark("L: D0 no-ortho-delivery gate (2 scans + 1 ortho render)")
         mark("END")
         total = sum(d for _, d in _PHASES)
         print("\nPhase timing (local machine baseline / compare with GH runner):")
