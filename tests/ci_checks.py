@@ -194,6 +194,26 @@ def main():
         return 1
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(root)
+    # Engine-caliber self-check (edge-rules-v1 rework card t_c0c4a1c0): every
+    # stdraw render below runs `sys.executable -m stdraw ...`, so ortools
+    # availability HERE decides whether the auto-v2 gates exercise the cp-sat
+    # layered engine or the construct fallback.  Without ortools the run is
+    # still allowed to pass (fallback caliber is a legitimate CI mode) but the
+    # degraded caliber is reported LOUDLY, top and bottom — a silent green run
+    # on the fallback path is what let the t_875e2949 zero-regression table
+    # miss the t_47e514bb acceptance regression on the real layered path.
+    try:
+        import ortools  # noqa: F401
+        _caliber = "cp-sat-layered"
+    except Exception:
+        _caliber = "fallback-construct"
+    if _caliber == "fallback-construct":
+        print("=" * 72)
+        print("DEGRADED ENGINE CALIBER: ortools absent — all auto-v2 gates below "
+              "run the construct FALLBACK engine; the cp-sat layered path is NOT "
+              "covered by this run. Rerun under an ortools interpreter "
+              "(e.g. py -3.12) before quoting full-path green.")
+        print("=" * 72)
     failures = []
     tmp = tempfile.mkdtemp(prefix="stdraw-ci-")
     try:
@@ -829,6 +849,9 @@ def main():
                 print(" -", f)
             return 1
         print("\nAll CI checks passed.")
+        print(f"engine caliber: {_caliber}"
+              + ("" if _caliber == "cp-sat-layered" else
+                 "  (DEGRADED — cp-sat layered path NOT covered by this run)"))
         return 0
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
