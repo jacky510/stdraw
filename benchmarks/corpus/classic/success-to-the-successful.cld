@@ -1,0 +1,49 @@
+# ============================================================
+# 富者愈富 / Success to the Successful
+# 出自 Senge《第五项修炼》九个系统基模之一，此处由本会话独立构造为 .cld DSL。
+#
+# 回归夹具注记（2026-11-11 ring-cycle 弦交叉回归，WorkBuddy 优化任务书 S0-4）：
+#   预期 auto-v2 默认配方 crossings=1 / grade=uncertified —— 这是正确结论，
+#   不是 bug；主环选择 key=(-k, cross, canonical) 覆盖数优先于弦交叉数（E7）。
+#   绝不允许为让此图拿到 best 而调任何阈值或硬门。
+#
+# 情境：两个主体 A、B 争夺同一份稀缺资源，分配规则按既往绩效倾斜。
+#   R1 —— A 分得资源↑ → A 绩效↑ → 下次分得更多（增强）
+#   R2 —— B 分得资源↑ → B 绩效↑ → 下次分得更多（增强）
+#   R3 —— 跨主体耦合大环：A 资源↑ → A 绩效↑ → B 资源↓ → B 绩效↓ → A 资源↑
+#          两条负边 ⇒ 偶数 ⇒ 增强环，解释「差距自我放大 / 赢家通吃」。
+#   pool 为外生资源池（无入边）、gap 为结果指标（无出边），二者不构成回路。
+# ============================================================
+graph "富者愈富 · 赢家通吃"
+
+var pool     "稀缺资源池"
+var a_alloc  "A 分得资源" @group side_a
+var a_perf   "A 绩效"     @group side_a
+var b_alloc  "B 分得资源" @group side_b
+var b_perf   "B 绩效"     @group side_b
+var gap      "绩效差距"
+
+# --- 外生供给：同一资源池同时喂给两个主体（不成环） ---
+pool -> + a_alloc
+pool -> + b_alloc
+
+# --- R1 / R2：各自的资源-绩效自我增强环（双向边对） ---
+a_alloc -> + a_perf @loops R1,R3
+a_perf  -> + a_alloc @loops R1
+b_alloc -> + b_perf @loops R2,R3
+b_perf  -> + b_alloc @loops R2
+
+# --- 跨主体挤占：按绩效分配，一方强则另一方弱 ---
+a_perf -> - b_alloc @loops R3
+b_perf -> - a_alloc @loops R3
+
+# --- 结果指标：差距随 A 走高、随 B 走高而收窄（不成环） ---
+a_perf -> + gap
+b_perf -> - gap
+
+loop R1 "A 自我增强" "R" [a_alloc, a_perf]
+loop R2 "B 自我增强" "R" [b_alloc, b_perf]
+loop R3 "赢家通吃放大环" "R" [a_alloc, a_perf, b_alloc, b_perf]
+
+group side_a "主体 A"
+group side_b "主体 B"

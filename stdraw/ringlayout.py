@@ -312,15 +312,21 @@ def detect_ring(graph, why=None):
                                      "family belongs to comb-bilateral")
                 return None
     best = None
+    cand_rows = []                    # D3 observability probe (S2-1)
     for seq, lid, pol in eligible:
         cross = _crossing_count(_chord_segments(seq, edges))
         # Main ring = max-coverage ring (the truly dominant loop); same coverage: zero chord crossings first -> lexicographic
         key = (-len(seq), cross, _canonical(seq))
+        cand_rows.append({"k": len(seq), "chord_crossings": cross,
+                          "declared_loop": lid, "ring": list(seq)})
         if best is None or key < best[0]:
             best = (key, seq, lid, pol, cross)
     _, ring, lid, pol, cross = best
     residuals = [v for v in core if v not in set(ring)]
     if why is not None:
+        for row in cand_rows:
+            row["selected"] = (row["ring"] == list(ring))
+        why["candidates"] = cand_rows
         why["reason"] = (f"loop-dominated (trigger="
                          f"{'cover' if cover_ok else 'ratio'}), main ring "
                          f"k={len(ring)}, chord crossings={cross}")

@@ -69,6 +69,12 @@ pip install "stdraw[solver]"
 
 Iron rule: stdraw never claims arbitrary graphs are 0-crossing. Relay grades as-is.
 
+Caliber rule: read `certificate.json.caliber` before interpreting `grade` —
+auto-v2 (`v2-hardgates`) emits only `best` / `uncertified`; `second` exists only in the
+v1-legacy ortho caliber, whose output is **banned as a deliverable** (ruling D0:
+vertical-orthogonal pages are CI-regression baselines only). Single source:
+[docs/grading-contract.md](docs/grading-contract.md).
+
 ## Integrating Into an Existing Web App
 
 **Do**
