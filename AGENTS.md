@@ -148,7 +148,11 @@ content.
    - **Crossings and row alignment are report items (soft targets)**: when
      placement regularity holds, <= 2 crossings are allowed (order and
      elegance first); grading semantics unchanged — "best" still requires
-     0 crossings;
+     0 crossings. Grading single source: `docs/grading-contract.md` —
+     auto-v2 (caliber `v2-hardgates`) emits `best` / `uncertified` only
+     (`second` removed in v0.7.15+, survives only in the v1-legacy ortho
+     caliber, which is banned as a deliverable by ruling D0); read
+     `certificate.json.caliber` before interpreting `grade`;
    - **R/B polarity coloring** (replacing letter badges): single-loop edges
      R = amber `#d97706`, B = sky blue `#0284c7`; multi-loop mixed-kind or
      non-loop edges neutral gray `#64748b`; negative-polarity edges dashed
@@ -415,7 +419,13 @@ Honest conclusions (wins stated as wins, losses as losses):
   the roadmap;
 - ortho-v1 allows "unrelated wires occluded under cards" (cards opaque, the
   v0.1 design caliber), honestly counted in the certificate; auto-v2's
-  box-over-line is a hard gate = 0;
+  box-over-line is a hard gate = 0. **Delivery ban (ruling D0, 2026-11-11):
+  vertical-orthogonal (ortho-v1) output is NOT a deliverable** —
+  box-over-line / leader-bar occlusion is structural in visibility
+  representation and repeatedly unfixable; the frozen baseline stays only
+  for CI byte-regression; enforced by `scripts/check_no_ortho_delivery.py`
+  (CI gate) plus the certificate's `deliverable: false` / `blocked_by: D0`
+  confession; see `docs/grading-contract.md` section 4;
 - The 3D layer makes no 2D crossing promise;
 - Random sparse graphs n>=20: positioned as the best incumbent within the
   8det budget (not proven optimal); routing box press / clearance follow
