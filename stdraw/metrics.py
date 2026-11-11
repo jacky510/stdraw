@@ -288,6 +288,8 @@ def scene_from_auto(v4: dict) -> dict:
             # ref-scrubbed finalize: dense-snap deferral pass-through (None on
             # normal graphs) -- certificate_auto annotates anchors_standard.
             "anchor_snap_deferred": v4["meta"].get("anchor_snap_deferred"),
+            # edge placement rules v1 pass-through (certificate records it)
+            "edge_rules": v4["meta"].get("edge_rules"),
             "line_style": v4["meta"].get("line_style", "straight"),
             "deg0": set(v4["meta"].get("deg0", [])),
             # ring placement caliber: certificate picks metrics per placement mode
@@ -1061,6 +1063,10 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         # byte-for-byte unchanged.
         **({"from_layout": scene["from_layout"]}
            if scene.get("from_layout") else {}),
+        # edge placement rules v1 certificate block (spec §6): emitted only
+        # when the decision layer ran (auto path); violations recorded,
+        # grading untouched (D4-A).
+        **({"edge_rules": scene["edge_rules"]} if scene.get("edge_rules") else {}),
         "metrics": metrics,
         "gates": g,
         "gates_passed": f"{g_pass}/{len(g)}",

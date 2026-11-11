@@ -1512,9 +1512,135 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
 
     # ④ routing (straight/arc first-class, boxes do not press lines) + WS3 theoretical caliber (final-route crossing pairs)
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
-    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+    # Edge placement rules v1 (docs/edge-placement-rules-v1.md): on the
+    # AUTO path (manual=None) every endpoint is pre-assigned to a standard
+    # anchor by the edgerules decision layer BEFORE routing (spec §2:
+    # first the anchors, then the lines).  Manual layouts keep the legacy
+    # routing (user authority over endpoints).
+    er_kinds = None
+    er_presets = None
+    er_report = None
+    # Scope: v1 governs the LAYERED engine path only ("cp-sat" / "construct"
+    # placements).  The constructed placement engines (ring / column / comb /
+    # spine / symmetric / bowtie) deliver their own disciplined geometry with
+    # registered anchor calibers and CI-frozen behavior -- pre-assigning
+    # generic anchors there fights the construction and breaks the frozen
+    # gates (measured: whole classic corpus uncertified).  Their exemption is
+    # documented in docs/edge-placement-rules-v1.md §14/§15.
+    if manual is None and engine in ("cp-sat", "construct"):
+        from . import edgerules as _er
+        er_kinds = _er.loop_edge_kinds(getattr(graph, "loops", []), edges)
+        er_presets, er_report = _er.assign(nodes_px, edges, er_kinds)
+        # spec §4: hard gates rank above the rules — presets whose fixed
+        # chord would make a hard gate unachievable (tangential exit /
+        # un-detourable press) fall back to the legacy candidate pool with
+        # an honest violation record.
+        _er_drop = _er.validate_presets(nodes_px, edges, er_presets, cfg.clearance)
+        if _er_drop:
+            for _i in sorted(_er_drop):
+                er_report["violations"].append(
+                    {"edge": "%s->%s" % (edges[_i][0], edges[_i][1]), "rule": 0,
+                     "detail": "hard-gate precedence: preset dropped, legacy pool used"})
+                er_presets.pop(_i, None)
+
+    def _er_gate_tuple(rt_obj, rts):
+        """Hard-gate tuple used to compare deliveries honestly: hard-gate
+        BREACHES are absolute (press / clearance / anchor-angle / crossings
+        over budget) and rank above the raw counts (spec §4: all hard gates
+        are equal-rank; any breach dominates a breach-free delivery).
+        Breach COUNTS rank above the raw crossing count -- ordering the raw
+        crossings first let a delivery with fewer crossings but strictly
+        worse breach counts (press 8 / angle 12 vs 3 / 6, measured on
+        random-n20-i00) win the comparison, so the graph-level exemption
+        could never fire."""
+        from .routing import ANCHOR_MIN_DEG
+        prs = rt_obj.final_crossing_pairs(rts)
+        clrbad = sum(1 for _i in rts.values()
+                     if _i.get("min_clear") is not None
+                     and _i["min_clear"] < cfg.clearance - 1e-6)
+        angbad = sum(1 for _i in rts.values()
+                     if min(_i.get("ang_a", ANCHOR_MIN_DEG),
+                            _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
+        pressbad = sum(1 for _i in rts.values() if _i.get("press", 0))
+        return (pressbad > 0, clrbad > 0, angbad > 0, prs > 2,
+                pressbad, clrbad, angbad, prs)
+
+    def _er_involved_edges(rt_obj, rts):
+        """Edge indices involved in final crossing pairs (spec §5 step 7)."""
+        items = sorted(rts.items())
+        inv = set()
+        for a in range(len(items)):
+            ia, info_a = items[a]
+            ea = rt_obj.edges[ia]
+            for b in range(a + 1, len(items)):
+                ib, info_b = items[b]
+                eb = rt_obj.edges[ib]
+                if ea[0] in eb or ea[1] in eb:
+                    continue
+                if rt_obj._poly_cross(info_a["points"], info_b["points"]):
+                    inv.add(ia)
+                    inv.add(ib)
+        return sorted(inv)
+
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch, presets=er_presets)
     routes = router.route_all()
-    if _routes_final is not None:
+    if er_presets is not None:
+        # spec §5 step 7: bounded deterministic local re-enumeration for
+        # edges still involved in crossings (<= 3 rounds; each round's
+        # candidate pool includes the joint_reroute fallback machinery).
+        _er_best = (_er_gate_tuple(router, routes), er_presets, routes)
+        for _er_round in (1, 2, 3):
+            _er_inv = _er_involved_edges(router, _er_best[2])
+            if not _er_inv:
+                break
+            from . import edgerules as _er
+            _er_alts = _er.alternate_presets(nodes_px, edges, er_kinds,
+                                             _er_best[1], _er_inv, _er_round)
+            if _er_alts is None:
+                break
+            _r2 = Router(nodes_px, edges, cfg.clearance, cfg.pitch,
+                         presets=_er_alts)
+            _rt2 = _r2.joint_reroute(_r2.route_all())
+            if _er_gate_tuple(_r2, _rt2) < _er_best[0]:
+                _er_best = (_er_gate_tuple(_r2, _rt2), _er_alts, _rt2)
+        er_presets, routes = _er_best[1], _er_best[2]
+        er_report = dict(er_report, violations=er_report["violations"] + _er.audit_delivery(er_presets, routes, edges))
+        # spec §4 (graph level): honest comparison against the FULL legacy
+        # delivery (route_all + repair chain).  The legacy repair passes are
+        # what historically fix press/clearance after route_all, so a bare
+        # route_all comparison would misjudge.  Probe replicates the chain;
+        # on fallback the main repair section re-runs the real chain from
+        # scratch (probe result discarded -> legacy bytes stay identical).
+        _router_lg = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+        _rt_lg = _router_lg.route_all()
+        if _routes_final is not None:
+            # gated reorder won at placement time: the honest legacy baseline
+            # is ITS delivery (deep-copied — the probe passes mutate routes)
+            _rt_lg = {_i: _clone_route(_r) for _i, _r in _routes_final.items()}
+        _frz = set()
+        for _i, (_ea, _eb) in enumerate(edges):
+            if constructed.get((_ea, _eb)) is not None:
+                _frz.add(_i)
+        _rt_lg = _router_lg.coincide_reroute(_rt_lg, frozen=_frz)
+        _rt_lg = _router_lg.midband_reanchor(_rt_lg, frozen=_frz)
+        _rt_lg = _router_lg.fan_spread(_rt_lg, frozen=_frz)
+        _rt_lg = _router_lg.mutual_arrival_flip(_rt_lg, frozen=_frz)
+        _snap_rep = _router_lg.anchor_snap(_rt_lg)
+        if _snap_rep is not None:
+            _rt_lg = _router_lg.lens_joint_reassign(
+                _rt_lg, _snap_rep.get("lens_pairs", []))
+            _rt_lg = _router_lg.mutual_arrival_flip(_rt_lg, enhanced_gates=True)
+        if _er_gate_tuple(_router_lg, _rt_lg) < _er_gate_tuple(router, routes):
+            er_report["exempt"] = True
+            er_report["violations"].append(
+                {"edge": "*", "rule": 0,
+                 "detail": "graph-level exemption: legacy delivery wins the hard-gate tuple"})
+            er_presets = None
+            router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+            routes = router.route_all()
+            if _routes_final is not None:
+                routes = _routes_final
+    elif _routes_final is not None:
         routes = _routes_final
     _timing.mark("route_final")
     # ref-scrubbed constructed-route injection (column closed arcs / bowtie mirror-symmetry arcs): these edges skip the candidate pool and are
@@ -1731,25 +1857,30 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             _frozen.add(i)
     routes = router.coincide_reroute(routes, frozen=_frozen)
     _timing.mark("repair:coincide")
-    # ref-scrubbed connection-point caliber: delivery-layer anchors are clamped to the edge-midpoint +/-1/4 band (corners excluded, per-edge
-    # hard-gate recheck); multiple anchors on the same side of the same node are then evenly spread by incidence angle (no stacking).
-    # ref-scrubbed: the enhanced channel (ctrl-following stair + in-band local rerouting of mutual pairs) is enabled only for spine-wing
-    # placement - the ring/bowtie baselines have registered out-of-band anchors (mutual-pair baseline fallback), and the fix would change
-    # their delivered bytes (including the viewBox dx shift knock-on), conflicting with this card's "the other 18 graphs byte-for-byte zero
-    # drift" hard gate -> this card fixes only spine-wing (classic-cld); the other engines get their CI anchor gate locked to the v0.7.2
-    # baseline ratio against regression, and out-of-band fixes go to a later card.
-    routes = router.midband_reanchor(routes, frozen=_frozen,
-                                     enhanced=(engine == "spine-construct"))
-    _timing.mark("repair:midband")
-    routes = router.fan_spread(routes, frozen=_frozen)
-    _timing.mark("repair:fan_spread")
+    if er_presets is None:
+        # ref-scrubbed connection-point caliber: delivery-layer anchors are clamped to the edge-midpoint +/-1/4 band (corners excluded, per-edge
+        # hard-gate recheck); multiple anchors on the same side of the same node are then evenly spread by incidence angle (no stacking).
+        # ref-scrubbed: the enhanced channel (ctrl-following stair + in-band local rerouting of mutual pairs) is enabled only for spine-wing
+        # placement - the ring/bowtie baselines have registered out-of-band anchors (mutual-pair baseline fallback), and the fix would change
+        # their delivered bytes (including the viewBox dx shift knock-on), conflicting with this card's "the other 18 graphs byte-for-byte zero
+        # drift" hard gate -> this card fixes only spine-wing (classic-cld); the other engines get their CI anchor gate locked to the v0.7.2
+        # baseline ratio against regression, and out-of-band fixes go to a later card.
+        routes = router.midband_reanchor(routes, frozen=_frozen,
+                                         enhanced=(engine == "spine-construct"))
+        _timing.mark("repair:midband")
+        routes = router.fan_spread(routes, frozen=_frozen)
+        _timing.mark("repair:fan_spread")
+    else:
+        # edge placement rules v1: on-side multi-line distribution is
+        # decided by rules 2/5/6 BEFORE routing (spec §8 retirement).
+        _timing.mark("repair:edgerules_retired_midband_fan")
     # ref-scrubbed rework (1): mutual-pair "straight-feasible" candidates join the cost allocation (§WS3 polyline = last resort - when a
     # straight line is feasible the polyline does not steal the score). The poly side lanes produced by the in-band backstop
     # (_reroute_pair_band) are rechecked here: if a straight candidate among the 4 edge-midpoint anchors of the two boxes is feasible and
     # scores better overall, replace it (quickfix->crowding measured: a 298px polyline -> a 101px natural straight line).
     # Enabled only in the spine-construct domain (classic-cld the only hit): the other engines never enter the new code path, output
     # byte-for-byte unchanged (structural zero drift).
-    if engine == "spine-construct":
+    if engine == "spine-construct" and er_presets is None:
         routes = router.mutual_straight_reroute(routes, frozen=_frozen)
         _timing.mark("repair:mutual_straight")
     # ref-scrubbed: mutual-pair lens arrival channel -- flip the pair's shared
@@ -1772,7 +1903,16 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     _density = len(edges) / max(len(nodes), 1)
     _snap_deferred = None
     _snap_reverted = False
-    if _density >= ANCHOR_SNAP_DENSE_E_OVER_N:
+    if er_presets is not None:
+        # edge placement rules v1: endpoints are already on the standard
+        # 16-anchor set BY CONSTRUCTION (rules 1-9 assigned them before
+        # routing) -- anchor_snap has nothing left to move (spec §8:
+        # "delete the snap pass, keep at most the check"; the
+        # anchors_standard gate still
+        # verifies membership honestly on delivered coordinates).
+        _snap_report = {"moved": 0, "failures": [], "lens_pairs": []}
+        _timing.mark("anchor_snap.edgerules_by_construction")
+    elif _density >= ANCHOR_SNAP_DENSE_E_OVER_N:
         # ref-scrubbed finalize (approved 2026-11-09): density-gated
         # snap probe.  A static scalar density threshold cannot separate the
         # classic corpus (classic-cld E/N = 13/8 = 1.62, snaps clean -- 21/21
@@ -1863,7 +2003,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # on deferral (dense) or revert (any density): the restored routes already
     # passed the pre-snap flip above, and re-flipping unsnapped routes under
     # the enhanced accounting would perturb the honest pre-snap state.
-    if _snap_deferred is None and not _snap_reverted:
+    if er_presets is None and _snap_deferred is None and not _snap_reverted:
         # ref-scrubbed: joint anchor re-assignment for lens pairs whose
         # post-snap flip still exceeds the arrival target (non-mirrored
         # joint assignments; strict improvement only, else untouched).
@@ -2101,6 +2241,9 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             # ref-scrubbed finalize: honest dense-snap deferral record (None
             # when snap applied) -- certificate annotates the gate with it.
             "anchor_snap_deferred": _snap_deferred,
+            # edge placement rules v1 certificate block (spec §6): rule
+            # violations recorded honestly; v1 does NOT enter the grading.
+            "edge_rules": er_report,
             "solver_available": _has_solver(),
             **pos_meta,
             "routing_math": ("visibility-graph Dijkstra shortest path (clearance-"
