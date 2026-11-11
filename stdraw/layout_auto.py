@@ -1547,7 +1547,12 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         """Hard-gate tuple used to compare deliveries honestly: hard-gate
         BREACHES are absolute (press / clearance / anchor-angle / crossings
         over budget) and rank above the raw counts (spec §4: all hard gates
-        are equal-rank; any breach dominates a breach-free delivery)."""
+        are equal-rank; any breach dominates a breach-free delivery).
+        Breach COUNTS rank above the raw crossing count -- ordering the raw
+        crossings first let a delivery with fewer crossings but strictly
+        worse breach counts (press 8 / angle 12 vs 3 / 6, measured on
+        random-n20-i00) win the comparison, so the graph-level exemption
+        could never fire."""
         from .routing import ANCHOR_MIN_DEG
         prs = rt_obj.final_crossing_pairs(rts)
         clrbad = sum(1 for _i in rts.values()
@@ -1558,7 +1563,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                             _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
         pressbad = sum(1 for _i in rts.values() if _i.get("press", 0))
         return (pressbad > 0, clrbad > 0, angbad > 0, prs > 2,
-                prs, clrbad, angbad, pressbad)
+                pressbad, clrbad, angbad, prs)
 
     def _er_involved_edges(rt_obj, rts):
         """Edge indices involved in final crossing pairs (spec §5 step 7)."""
