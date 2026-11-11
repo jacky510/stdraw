@@ -385,6 +385,43 @@ def main() -> int:
                             f"{' -> '.join(rows)} != code "
                             f"{' -> '.join(chain)}")
 
+    # -- grading-token single-source check (WorkBuddy task 2026-11-11) ------
+    # Canonical facts are the CODE (docs/grading-contract.md is the prose
+    # single source): the v2 certificate_auto emits grade tokens
+    # best/uncertified; `second` survives only inside the v1-legacy ortho
+    # certificate(); `3d` is the docs-level 3D-delivery tier.  Every doc
+    # that presents grading tiers must (a) not present `second` as a
+    # current tier and (b) reference the single source docs/grading-
+    # contract.md.  AGENTS.md is a protected file whose grading mentions
+    # are historical changelog entries (second-removal notes): only the
+    # single-source rule applies there.
+    GRADE_DOC_FILES = [
+        "README.md", "README_zh-CN.md", "AGENTS.md", "skills/stdraw/SKILL.md",
+    ]
+    CONTRACT_REF = "docs/grading-contract.md"
+
+    def grade_doc_problems(path: str) -> list:
+        text = read(path)
+        issues = []
+        if CONTRACT_REF not in text:
+            issues.append("no " + CONTRACT_REF + " single-source reference")
+        if path != "AGENTS.md":
+            for m in re.finditer(r"`second`", text):
+                ctx = text[max(0, m.start() - 120): m.end() + 120]
+                if not re.search(r"remov|legacy|unreach|histor|v0\.7\.15|"
+                                 r"移除|遗留|历史", ctx, re.I):
+                    issues.append("`second` presented as a current grade "
+                                  "tier (removed in v0.7.15+; v1-legacy "
+                                  "ortho caliber only)")
+                    break
+        return issues
+
+    for path in GRADE_DOC_FILES:
+        issues = grade_doc_problems(path)
+        if issues:
+            problems.append(f"{path}: grading-tier drift ("
+                            + "; ".join(issues) + ")")
+
     for f in fixed:
         print(f"FIX  {f}")
     if problems:
