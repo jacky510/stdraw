@@ -654,12 +654,16 @@ class Router:
         return cands
 
     # -- candidate evaluation --
-    def _evaluate(self, cand, a, b, routed_segs, sib_samples=None):
+    def _evaluate(self, cand, a, b, routed_segs, sib_samples=None, honest=False):
         """Return (score, info); info carries press/clearance/crossing/anchor-angle/mutual-separation details.
 
                 routed_segs: {j: (list of routed segments, list of per-segment bboxes)} (precomputed by route_all).
                 F1: when the minimum spacing between a mutual pair (a<->b) and its already-routed sibling edge (b,a) is < PAIR_SEP_MIN,
                 apply a heavy linear penalty (the shared-endpoint exemption no longer masks coincidence -- separation is measured directly on sampled point distances).
+                honest=True (edge placement rules v1 preset pool): own-box interior clipping and inset off-border endpoints are
+                scored honestly (press += 1 per clipped own box) instead of rejecting the candidate outright -- the rejection
+                forced a hard-coded clean fallback (press=0 / ang=0.0) that blinded the hard-gate tuple (measured:
+                random-n20-i00 delivered 25 presses / 4 grazing arrivals annotated as clean).
         """
         kind, pts, pa, pb = cand[0], cand[1], cand[2], cand[3]
         samples = sample_polyline(pts)
@@ -703,8 +707,16 @@ class Router:
                 min_clr = min(min_clr, d)
         clr_def = max(0.0, self.cl - min_clr) if min_clr < 1e9 else 0.0
         # Own box: endpoints must land on the box border; all other sample points must stay out of the box interior (incl. 1px margin)
+        # honest mode (v1 preset pool): inset endpoints are legal; own-box interior clipping is added to press (metrics counts
+        # own-box presses in box_press_1px) instead of rejecting the candidate outright.
         for v, endp in ((a, pa), (b, pb)):
             cx, cy, hw, hh = self.N[v]
+            if honest:
+                for (px, py) in samples[1:-1]:
+                    if dist_point_rect(px, py, cx, cy, hw + PRESS_MARGIN, hh + PRESS_MARGIN) <= ROUND_GUARD:
+                        press += 1
+                        break
+                continue
             if dist_point_rect(endp[0], endp[1], cx, cy, hw, hh) > 0.75:
                 return (1e9, None)
             interior = False
@@ -3297,7 +3309,8 @@ class Router:
                         sib = sample_polyline(rpts, step=12)
                 best = None
                 for cand in self._candidates(a, b, i):
-                    sc, info = self._evaluate(cand, a, b, routed_segs, sib)
+                    sc, info = self._evaluate(cand, a, b, routed_segs, sib,
+                                              honest=self.presets is not None)
                     if info is not None and (best is None or sc < best[0] - EPS):
                         best = (sc, cand, info)
                 if best is None:

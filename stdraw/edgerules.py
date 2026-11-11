@@ -539,10 +539,15 @@ def _finalize(i, a, b, style, aid_a, aid_b, sd_a, sd_b, ntab):
 
 def audit_delivery(presets, routes, edges):
     """Compare delivered routes with the presets and record violations:
+      rule 2 — the delivered route presses another box or arrives/
+               departs at a tangential (< ANCHOR_MIN_DEG) angle (the
+               candidate pool could not avoid it between the fixed
+               endpoints; recorded honestly, hard gates still grade it);
       rule 3 — a B line's arc fell back to a polyline/vg route;
       rule 4 — the delivered arc bulges to the near side (the far side
                candidate lost to press/crossings in scoring).
     Returns the violation list."""
+    from .routing import ANCHOR_MIN_DEG
     out = []
     for i, p in sorted(presets.items()):
         info = routes.get(i)
@@ -560,6 +565,16 @@ def audit_delivery(presets, routes, edges):
             if _ctrl_sign_of(pts[0], pts[-1], ctrl) != p["arc_side"]:
                 out.append({"edge": _ename(edges, i), "rule": 4,
                             "detail": "near-side bulge used (far side crossed/pressed)"})
+        press = info.get("press") or 0
+        if press:
+            out.append({"edge": _ename(edges, i), "rule": 2,
+                        "detail": "delivered route presses %d box(es)" % press})
+        ang_a, ang_b = info.get("ang_a"), info.get("ang_b")
+        for end, ang in (("a", ang_a), ("b", ang_b)):
+            if ang is not None and ang < ANCHOR_MIN_DEG:
+                out.append({"edge": _ename(edges, i), "rule": 2,
+                            "detail": "delivered %s-end arrival angle %.1f deg < %d (tangential)"
+                                      % (end, ang, ANCHOR_MIN_DEG)})
     return out
 
 
@@ -596,12 +611,19 @@ def validate_presets(nodes_px, edges, presets, clearance):
             drop.add(i)
             continue
         bad_angle = False
-        for v, anchor, other in ((a, p["a_anchor"], pb), (b, p["b_anchor"], pa)):
-            t = ntab[v]
-            hw, hh = boxes[v][2], boxes[v][3]
-            ax, ay = t[anchor]
-            on_x = abs(abs(ax - boxes[v][0]) - hw) <= 1e-6
-            tx, ty = (0.0, 1.0) if on_x else (1.0, 0.0)
+        # The tangent side is taken from the preset's assigned side (the
+        # decision layer knows it exactly).  Guessing it from coordinates
+        # against the RAW half extents is wrong: the standard 16-anchor set
+        # lives on the rectangle inset by ANCHOR_INSET (3px), so an e/w
+        # anchor never satisfies |ax-cx|==hw and was mis-judged with a
+        # horizontal tangent -- shallow grazing chords (7-16 deg vs the TRUE
+        # vertical border) passed as "smooth" (measured: random-n20-i00
+        # 4 grazing arrivals delivered).  e/w border -> vertical tangent;
+        # n/s border -> horizontal tangent (metrics caliber).
+        for v, side, anchor, other in ((a, p["a_side"], pa, pb),
+                                       (b, p["b_side"], pb, pa)):
+            ax, ay = anchor
+            tx, ty = (0.0, 1.0) if side in ("e", "w") else (1.0, 0.0)
             dvx, dvy = other[0] - ax, other[1] - ay
             dl = _m.hypot(dvx, dvy) or 1.0
             ang = _m.degrees(_m.acos(max(0.0, min(1.0,

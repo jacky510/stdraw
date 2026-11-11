@@ -412,3 +412,15 @@ auto 路径（manual=None，边规则 v1 生效）实况：
 - **作用域裁定**（§15 实测）：v1 只接管分层引擎路径（`cp-sat` / `construct`）；构造类布局引擎豁免、行为逐字节不变。
 - **语料对拍**（A 档 n≤20 全量，59 图）：before/after 双克隆全量快照对拍，grade 升降级分布与逐图字节对比见交付清单（`grade-change-table.json`）；构造引擎豁免图逐字节一致；`visual_crossings_zero` 硬门照旧。
 - **决策点 D1–D4**：全选建议 A 项（次级位=黄金点不扩锚体系 / 同型互连对保持透镜 / 左右边分摊接受 / 规则违反只记录不进等级）。
+
+## 18. 返修记录（视觉验收 FAIL → 修复，2026-11-11）
+
+视觉验收（random-n20-i00，ortools 分层引擎口径）判 FAIL：真压他框 4→25、擦边到达/离开角 0→4（anchors_smooth True→False）。独立复算 + 插桩定位出三个叠加缺陷，全部位于 v1 新增层（legacy 路径零触碰）：
+
+1. **inset 锚切线误判（`edgerules.validate_presets`）**：标准 16 点锚全部落在内缩 3px（`ANCHOR_INSET`）矩形上，原实现用 `|ax−cx|==hw`（几何半宽）猜锚所在边，e/w 锚永远判不中 → 擦边弦按水平切线算成 82.9°「平滑」放行（实测 i00 4 处 7.1°–15.4° 擦边全部漏拦）。修复：切线边直接取决策层已知的 `a_side`/`b_side`（精确，无坐标猜测）。
+2. **假净兜底信息（`routing.Router.route_all`）**：内缩端点 + 擦边弦贴边穿自家盒内区 → `_evaluate` 按「自家盒内区一票拒绝」把全部候选拒掉 → 兜底交付**硬编码 press=0 / ang=0.0 的假净信息**，门元组对交付劣化失明。修复：preset 模式（`self.presets` 非空）下候选评分改 honest 模式——自家盒内区从拒绝改为诚实计入 press（与证书 box_press_1px 口径一致），绕行/弧候选真实参与竞争；legacy 模式（presets=None）行为逐字节不变。
+3. **门元组排序缺陷（`layout_auto._er_gate_tuple`）**：raw crossings 排在三个违例计数之前，i00 实测 v1（press 8 / 擦边 12）全面劣于 legacy 探针（3 / 6）却因 crossings 22<29 判 v1 胜 → 图级豁免永不触发，违反其 docstring 声明的「breach 支配」语义。修复：违例计数提到 raw crossings 之前。
+
+另按返修要求 3 补诚实记录：`audit_delivery` 新增 rule-2 记录（交付 press>0、到达/离开角 <20° 逐条入证书 `edge_rules.violations`）。
+
+**修复后实测（i00，同解释器同命令，独立复算口径）**：真压他框 25→**4**（= main 基线 4，逐边对拍全等）；擦边角 4→**0**；`anchors_smooth` **True**；demo-2d.html 与 main **逐字节一致**，layout.json 仅差 `edge_rules` 注记。路径：validate 拦下 3 条擦边 preset（rule-0 记录）→ 剩余 preset 诚实评分仍劣于 legacy → 图级豁免按 spec §4 接管（exempt=True + 全量降级记录 17 条）。**取舍**：i00 单图 crossings/非标准锚等 v1 改善项随豁免回落 main 水平（30/39/64）——硬门绝对优先（spec §4 即此设计）；分支级改善项由其余分层引擎图（i01/i05 等收敛图，v1 保留不豁免）承载。

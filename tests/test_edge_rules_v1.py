@@ -235,5 +235,77 @@ def test_loop_edge_kinds():
     assert ks2 == ["R", "R", "R", "N"]
 
 
+# ------------------------------------------------------------------
+# §4 hard-gate precedence: inset-anchor tangent fix + honest delivery
+# ------------------------------------------------------------------
+
+def test_validate_drops_grazing_chord_on_inset_anchor():
+    # A sits directly above B; the preset's b end is an e-side anchor
+    # (vertical border).  The chord is nearly vertical -> tangential
+    # arrival vs the TRUE border tangent.  The old coordinate-guessing
+    # test (|ax-cx|==hw) missed it because the 16-anchor set is inset
+    # 3px, judged the e anchor with a horizontal tangent and kept the
+    # preset (measured: random-n20-i00 delivered 4 grazing arrivals).
+    nodes = {"A": box(400, 200), "B": box(385, 400)}
+    edges = [("A", "B")]
+    ta = edgerules._geom_tables(nodes)
+    preset = {"pa": list(ta["A"]["s"]), "pb": list(ta["B"]["e"]),
+              "a_anchor": "s", "b_anchor": "e",
+              "a_side": "s", "b_side": "e",
+              "style": "line", "arc_side": 1}
+    drop = edgerules.validate_presets(nodes, edges, {0: preset}, 16.0)
+    assert drop == {0}
+    # control: a w-side (also vertical-border) chord leaving perpendicular
+    # to its own side's expectation stays above the threshold -> kept
+    preset2 = dict(preset, pb=list(ta["B"]["w"]), b_anchor="w", b_side="w")
+    drop2 = edgerules.validate_presets(nodes, edges, {0: preset2}, 16.0)
+    assert drop2 == set()
+
+
+def test_preset_pool_delivers_honest_info_for_unavoidable_press():
+    # A above B with C wedged between: the preset chord pierces C.  The
+    # pre-fix own-box rejection discarded every candidate and the
+    # hard-coded clean fallback delivered a straight chord annotated
+    # press=0 / ang=0.0, blinding the hard-gate tuple.  The delivery must
+    # now carry honest measurements (press > 0 here, real anchor angles)
+    # with the preset endpoints preserved -- the graph-level exemption
+    # then sees the real breach and falls back to the legacy pool.
+    nodes = {"A": box(400, 200), "B": box(400, 620), "C": box(400, 410)}
+    edges = [("A", "B")]
+    ta = edgerules._geom_tables(nodes)
+    preset = {"pa": list(ta["A"]["s"]), "pb": list(ta["B"]["n"]),
+              "a_anchor": "s", "b_anchor": "n",
+              "a_side": "s", "b_side": "n",
+              "style": "line", "arc_side": 1}
+    router = Router(nodes, edges, 16.0, 56, presets={0: preset})
+    routes = router.route_all()
+    info = routes[0]
+    assert math.hypot(info["points"][0][0] - preset["pa"][0],
+                      info["points"][0][1] - preset["pa"][1]) < 1e-6
+    assert math.hypot(info["points"][-1][0] - preset["pb"][0],
+                      info["points"][-1][1] - preset["pb"][1]) < 1e-6
+    # honest, not the fake-clean signature
+    assert not (info["kind"] == "line" and not info["press"]
+                and info["ang_a"] == 0.0 and info["ang_b"] == 0.0)
+    assert info["press"] > 0      # the chord corridor really presses C
+
+
+def test_audit_records_press_and_angle_degradations():
+    nodes = {"A": box(400, 200), "B": box(400, 400)}
+    edges = [("A", "B")]
+    presets, _ = assign(nodes, edges, ["N"])
+    p = presets[0]
+    fake = {"kind": "line", "points": [p["pa"], p["pb"]],
+            "press": 2, "ang_a": 7.1, "ang_b": 90.0}
+    viol = edgerules.audit_delivery(presets, {0: fake}, edges)
+    rules = sorted(v["rule"] for v in viol)
+    assert 2 in rules
+    assert any("presses 2 box(es)" in v["detail"] for v in viol)
+    assert any("a-end arrival angle 7.1" in v["detail"] for v in viol)
+    clean = {"kind": "line", "points": [p["pa"], p["pb"]],
+             "press": 0, "ang_a": 90.0, "ang_b": 90.0}
+    assert edgerules.audit_delivery(presets, {0: clean}, edges) == []
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
