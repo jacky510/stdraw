@@ -444,7 +444,7 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.8.0** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.8.1** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
 

@@ -9,7 +9,7 @@ Three-layer architecture:
 Honest tiering promise: if a certificate cannot be obtained we say so; we never claim 0 crossings for arbitrary graphs.
 """
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 from .model import Graph, Node, Edge, Loop, Group
 from .dsl import parse, dumps

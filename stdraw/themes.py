@@ -132,7 +132,7 @@ DARK = {
     "btn_bg": "#1e293b",
     "btn_border": "#334155",
     "btn_hover_bg": "#334155",
-    "hint_text": "#64748b",
+    "hint_text": "#94a3b8",
     "metrics_text": "#f1f5f9",
     "edge_pos": "#ffb454",         # '+' amber (UI-A dark polar ink)
     "edge_neg": "#6ec6ff",         # '−' sky (UI-A dark polar ink)
