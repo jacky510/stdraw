@@ -737,6 +737,91 @@ def _manual_anchors(manual, edges):
     return out
 
 
+# Manual-mode mutual-pair separation floor: same caliber as geometry check 12 /
+# metrics mutual_pairs_separated (a lens pair closer than this reads as merged).
+MANUAL_PAIR_SEP_MIN = 4.0
+
+
+def _manual_gate_fallback(nodes_px, edges, routes, styled, clearance):
+    """Hard-gate evaluation of manual-injected user-styled routes.
+
+    For every edge whose route was replaced by the manual injection (user
+    style and/or user anchor designation -- the ``styled`` key set), scores
+    the DELIVERED geometry with the same accounting as the geometry gates:
+
+      1. box press (1px margin; own-box samples within 6px of either
+         endpoint are exempt -- the attachment zone, identical to check 2);
+      2. edge-box clearance (foreign boxes, >= clearance px);
+      3. mutual-pair separation (both directions user-styled and closer
+         than MANUAL_PAIR_SEP_MIN -> the pair reads as one merged line).
+
+    Returns ``{edge_index: reason}`` for breaching edges (mutual-pair
+    breaches are recorded on both directions).  Deterministic; pure
+    (routes are only read).
+    """
+    from .routing import PRESS_MARGIN, dist_point_rect, min_pair_dist, sample_polyline
+
+    breaches = {}
+    dense = {}
+    # nodes_px values are (cx, cy, full_width, full_height) -- the Router
+    # divides by 2 internally; this evaluator does the same here.
+    boxes = {v: (xy[0], xy[1], xy[2] / 2.0, xy[3] / 2.0)
+             for v, xy in nodes_px.items()}
+    for i, (a, b) in enumerate(edges):
+        if (a, b) not in styled:
+            continue
+        pts = routes[i]["points"]
+        d = sample_polyline([(float(p[0]), float(p[1])) for p in pts])
+        dense[i] = d
+        q0, q1 = pts[0], pts[-1]
+        hit = None
+        for v, (cx, cy, hw, hh) in boxes.items():
+            own = v in (a, b)
+            for (px, py) in d[1:-1]:
+                if own and (((px - q0[0]) ** 2 + (py - q0[1]) ** 2) <= 36.0 or
+                            ((px - q1[0]) ** 2 + (py - q1[1]) ** 2) <= 36.0):
+                    continue
+                if dist_point_rect(px, py, cx, cy,
+                                   hw + PRESS_MARGIN, hh + PRESS_MARGIN) <= 0:
+                    hit = f"box press {v} ({'own' if own else 'foreign'})"
+                    break
+            if hit:
+                break
+        if hit:
+            breaches[i] = hit
+    for i, (a, b) in enumerate(edges):
+        if i in breaches or (a, b) not in styled:
+            continue
+        worst = None
+        for v, (cx, cy, hw, hh) in boxes.items():
+            if v in (a, b):
+                continue
+            for (px, py) in dense[i]:
+                dd = dist_point_rect(px, py, cx, cy, hw, hh)
+                if worst is None or dd < worst:
+                    worst = dd
+        if worst is not None and worst < clearance - 1e-6:
+            breaches[i] = f"clearance {worst:.1f}px < {clearance:g}px"
+    idx = {(a, b): i for i, (a, b) in enumerate(edges)}
+    seen_pairs = set()
+    for (a, b) in styled:
+        key = (min(a, b), max(a, b))
+        if key in seen_pairs or (b, a) not in styled:
+            continue
+        seen_pairs.add(key)
+        i, j = idx[(a, b)], idx[(b, a)]
+        if i not in dense or j not in dense:
+            continue
+        md = min_pair_dist(dense[i], dense[j])
+        if md is None or md < MANUAL_PAIR_SEP_MIN:
+            why = ("mutual-pair separation "
+                   f"{0.0 if md is None else round(md, 1)}px < {MANUAL_PAIR_SEP_MIN:g}px"
+                   if md is not None else "mutual-pair separation unknown")
+            breaches.setdefault(i, why)
+            breaches.setdefault(j, why)
+    return breaches
+
+
 def _forced_arc_route(nodes_px, a, b, clearance):
     """Deterministic forced-arc geometry (v0.7.7 style replay, Python side).
 
@@ -1584,6 +1669,14 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
 
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch, presets=er_presets)
     routes = router.route_all()
+    # manual mode: snapshot the engine's own delivery BEFORE the user-style /
+    # user-anchor injection below replaces routes.  Injected routes that breach
+    # a hard gate (box press / clearance / mutual-pair separation) fall back to
+    # this snapshot deterministically (see _manual_gate_fallback); gate-clean
+    # user styles are honored untouched, so benign manual layouts stay
+    # byte-for-byte identical.
+    _manual_base = ({i: _clone_route(r) for i, r in routes.items()}
+                    if manual is not None else None)
     if er_presets is not None:
         # spec §5 step 7: bounded deterministic local re-enumeration for
         # edges still involved in crossings (<= 3 rounds; each round's
@@ -1846,6 +1939,50 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         from_meta["anchor_edges"] = len(manual_anchors)
         from_meta["user_anchors"] = {f"{a}->{b}": dict(sel)
                                      for (a, b), sel in sorted(manual_anchors.items())}
+    # Manual-mode hard-gate fallback (user authority ends where hard gates
+    # begin): score every user-styled / user-anchored route with the same
+    # accounting as the geometry gates; breaching routes fall back to the
+    # engine's own delivery (snapshot taken before the injection) so the
+    # router's mutual-pair lens offset / press avoidance / clearance
+    # machinery delivers gate-clean geometry.  Gate-clean user styles are
+    # honored untouched -- benign manual layouts stay byte-identical.
+    if manual is not None and _manual_base is not None:
+        _styled = {(a, b) for (a, b) in edges
+                   if (manual_styles.get((a, b)) or manual_anchors.get((a, b)))
+                   and not manual_wps.get((a, b))}
+        if _styled:
+            _fb = _manual_gate_fallback(nodes_px, edges, routes, _styled,
+                                        cfg.clearance)
+            if _fb:
+                _fb_edges = []
+                for i in sorted(_fb):
+                    a, b = edges[i]
+                    rec = {"edge": f"{a}->{b}", "reason": _fb[i]}
+                    if manual_styles.get((a, b)):
+                        rec["user_style"] = manual_styles[(a, b)]
+                    if manual_anchors.get((a, b)):
+                        rec["user_anchors"] = dict(manual_anchors[(a, b)])
+                    if arc_ctrls.get((a, b)):
+                        rec["user_ctrl"] = list(arc_ctrls[(a, b)])
+                    manual_styles.pop((a, b), None)
+                    manual_anchors.pop((a, b), None)
+                    arc_ctrls.pop((a, b), None)
+                    routes[i] = _clone_route(_manual_base[i])
+                    _fb_edges.append(rec)
+                if from_meta is not None:
+                    from_meta["manual_fallback"] = _fb_edges
+                    if "styled_edges" in from_meta:
+                        from_meta["styled_edges"] = len(manual_styles)
+                    if "anchor_edges" in from_meta:
+                        from_meta["anchor_edges"] = len(manual_anchors)
+                    if "user_anchors" in from_meta:
+                        from_meta["user_anchors"] = {
+                            f"{a}->{b}": dict(sel)
+                            for (a, b), sel in sorted(manual_anchors.items())}
+                print("[stdraw] manual fallback: user-styled routes breached "
+                      "hard gates; engine routing took over: " +
+                      "; ".join(f"{e['edge']} ({e['reason']})"
+                                for e in _fb_edges))
     _timing.mark("manual_injection")
     # ref-scrubbed: directed rerouting for line-line visual coincidence - a backstop fix for fan-out edges hugging the same corridor (stair/lane
     # shared lanes). Constructed routes and user-anchored waypoint edges are untouched; only edges involved in coincident pairs are rerouted,
