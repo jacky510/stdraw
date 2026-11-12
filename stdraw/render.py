@@ -185,7 +185,7 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
 <title>stdraw 2D · {html.escape(graph_name)}</title>
 <style>
 body{{margin:16px;background:{T["page_bg"]};font-family:Microsoft YaHei,sans-serif}}
-h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canvas_border"]};border-radius:8px;max-width:1280px}}
+h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canvas_border"]};border-radius:8px;width:auto;height:auto;max-width:1280px;max-height:calc(100vh - 96px);margin:0 auto;display:block}}
 {_cert_css(T)}
 .ok{{color:{T["ok"]}}} .bad{{color:{T["bad"]}}} .note{{color:{T["note"]};font-size:12px}}
 .grade{{color:{T["grade"]}}}
@@ -453,7 +453,7 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
 <title>stdraw 2D · {html.escape(graph_name)}</title>
 <style>
 body{{margin:16px;background:{T["page_bg"]};font-family:Microsoft YaHei,sans-serif}}
-h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canvas_border"]};border-radius:8px;max-width:1280px}}
+h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canvas_border"]};border-radius:8px;width:auto;height:auto;max-width:1280px;max-height:calc(100vh - 96px);margin:0 auto;display:block}}
 {_cert_css(T)}
 .ok{{color:{T["ok"]}}} .bad{{color:{T["bad"]}}} .note{{color:{T["note"]};font-size:12px}}
 .grade{{color:{T["grade"]}}}
