@@ -85,6 +85,20 @@ function edgeD(pts) {
   return 'M ' + pts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ');
 }
 // ── v0.7.7 per-edge hover hit zones (>=10px, pointer cursor, highlight) ──
+// DOM-geometry hover truth: which edge (if any) is under the cursor right
+// now. The hit band, the visible line and this edge's floating preview all
+// carry data-edge, so elementFromPoint + closest covers every interaction
+// surface. Boundary events alone are NOT hover truth here: when the
+// floating preview pops up under a stationary cursor, Chromium recomputes
+// hover and fires a spurious mouseleave on the edge even though the
+// pointer never moved (2026-11-12 probe A0b: hover_edge=None).
+var hoverEdge = null;
+function cursorOnEdge(i) {
+  if (!lastCursor) return false;
+  var el = document.elementFromPoint(lastCursor[0], lastCursor[1]);
+  var g = el && el.closest ? el.closest('[data-edge]') : null;
+  return !!(g && +g.getAttribute('data-edge') === i);
+}
 function bindEdgeHover(i, el) {
   // Hover wiring shared by the hit path AND the visible line: in the real
   // render the visible stroke sits on top of the 12px hit band, so edge
@@ -92,9 +106,18 @@ function bindEdgeHover(i, el) {
   // line targets the visible path; the rest of the band targets the hit
   // path). Derived state: highlight + floating bendpoint preview +
   // segment-orientation cursor.
-  el.addEventListener('mouseenter', function () { hlEdge(i, true); });
+  el.addEventListener('mouseenter', function () {
+    if (hoverEdge !== null && hoverEdge !== i) hlEdge(hoverEdge, false);
+    hlEdge(i, true);
+    hoverEdge = i;
+  });
   el.addEventListener('mouseleave', function () {
-    hlEdge(i, false);
+    // Decide from live geometry, not from the event: the pointer may still
+    // be on this edge — including on its floating preview handle (which
+    // just popped up under a stationary cursor and caused this very event).
+    var on = cursorOnEdge(i);
+    hlEdge(i, on);
+    if (!on && hoverEdge === i) hoverEdge = null;
     // NOTE: the inline segment cursor is deliberately NOT cleared here.
     // Showing the floating handle under a stationary cursor makes the
     // browser fire mouseleave right after mousemove (hover recompute);
@@ -1163,7 +1186,16 @@ function floatHandle() {
 // hides it. Pure DOM geometry, no timers-on-events races.
 window.addEventListener('mousemove', function (ev) { lastCursor = [ev.clientX, ev.clientY]; });
 setInterval(function () {
-  if (!floatC || floatC.style.display === 'none' || !lastCursor) return;
+  if (!lastCursor) return;
+  // Authoritative hover cleanup: a pointer that leaves an edge without a
+  // boundary event (e.g. the preview handle it was parked on vanished while
+  // the cursor stayed put) would leave highlight + endpoint dots stuck on —
+  // re-check the highlighted edge from live geometry every tick.
+  if (!drag && hoverEdge !== null && !cursorOnEdge(hoverEdge)) {
+    hlEdge(hoverEdge, false);
+    hoverEdge = null;
+  }
+  if (!floatC || floatC.style.display === 'none') return;
   // Probe the CURRENT cursor position (window-tracked; the parked handle
   // position would self-lock). Exclude the handle itself from the probe
   // via pointer-events:none — no visual flicker.

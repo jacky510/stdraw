@@ -869,6 +869,17 @@ def main():
                     "return e.a + '->' + e.b;})()" % cand)
                 if pg.evaluate("window.__stdrawArcFlag(%d)" % cand):
                     continue
+                # straight auto edges only: the drag-away caliber below
+                # asserts "adopt geometry + exactly ONE new fold point",
+                # which by design holds for a straight auto edge (no
+                # corners to adopt). A vg/via polyline edge (the fixture
+                # edge rate->adopters is one, by construction) legally
+                # adopts its router corners first — a richer semantic,
+                # not a regression; the 1-point assertion would mismatch
+                # it without any product bug.
+                if len(pg.evaluate(
+                        "window.__stdrawEdgePts(%d)" % cand)) != 2:
+                    continue
                 p = pg.evaluate(JS_PICK, [cand])
                 if p:
                     picked, ek0, EIDX = p, key, cand
