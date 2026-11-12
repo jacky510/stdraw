@@ -356,6 +356,189 @@ def main():
                 "(transparent outcome recorded, see detail)",
                 dt.get("painted") is True and dt.get("all") is True
                 and dt.get("restored") is True, str(dt))
+            # == 2026-11-12 endpoint hit-test root fix (jacky: endpoint handles
+            # hard to grab) -- two regressions, one chain ==
+            # (1) screen-space radius floor: the old fixed r=9 was in viewBox
+            #     units while the svg caps at max-width:1280px, so dense graphs
+            #     rendered the grab zone at ~5-6 screen px. The radius must be
+            #     scale-compensated to keep >=10px on screen.
+            rr = pg.evaluate("window.__stdrawEpHitRadii()")
+            chk("endpoint hit radius floored at 10px on screen "
+                "(scale-compensated, not viewBox-fixed)",
+                bool(rr["radii"]) and rr["minScreen"] >= 9.5,
+                f"scale={rr['scale']:.3f} min_r_screen="
+                f"{rr['minScreen']:.2f}px n={len(rr['radii'])}")
+            # (2) nearest-wins arbitration: every edge's endpoint circle is
+            #     alive at once and nearby anchors sit only ~4-5px apart, so
+            #     the old DOM-order resolution grabbed the LATER edge's
+            #     endpoint instead of the nearer one. A real-mouse press
+            #     landing inside TWO circles must grab the NEARER endpoint.
+            cands = pg.evaluate("""() => {
+              const cs = [...document.querySelectorAll(
+                '#stdraw-eps .stdraw-eps-hit')];
+              const out = [];
+              for (let a = 0; a < cs.length; a++) {
+                for (let b = a + 1; b < cs.length; b++) {
+                  const ax = +cs[a].getAttribute('cx'),
+                        ay = +cs[a].getAttribute('cy'),
+                        bx = +cs[b].getAttribute('cx'),
+                        by = +cs[b].getAttribute('cy');
+                  const dab = Math.hypot(bx - ax, by - ay);
+                  const rmin = Math.min(+cs[a].getAttribute('r'),
+                                        +cs[b].getAttribute('r'));
+                  if (dab > rmin * 1.4 || dab < 0.5) continue;
+                  out.push({ax, ay, bx, by, dab, rmin,
+                    A: {edge: +cs[a].getAttribute('data-edge'),
+                        end: +cs[a].getAttribute('data-end')},
+                    B: {edge: +cs[b].getAttribute('data-edge'),
+                        end: +cs[b].getAttribute('data-end')}});
+                }
+              }
+              out.sort((u, w) => u.dab - w.dab);
+              return out.slice(0, 20);
+            }""")
+            chk("overlapping endpoint-circle pair exists in demo "
+                "(overlap is realistic, arbitration is load-bearing)",
+                bool(cands), f"candidates={len(cands or [])}")
+            picked_c = None
+            fallback_c = None
+            for c in (cands or []):
+                # press point closer to A but inside BOTH circles:
+                # dA = 0.4*dab, dB = 0.6*dab <= 0.84*rmin < rmin (dab<=1.4rmin)
+                f = 0.4 * c["dab"] / c["rmin"]
+                px = c["ax"] + (c["bx"] - c["ax"]) / c["dab"] * c["rmin"] * f
+                py = c["ay"] + (c["by"] - c["ay"]) / c["dab"] * c["rmin"] * f
+                near = pg.evaluate("window.__stdrawNearestEpHit(%r, %r)"
+                                   % (px, py))
+                if not near or near["edge"] != c["A"]["edge"]:
+                    continue
+                top = pg.evaluate("""([vx, vy]) => {
+                  const svg = document.getElementById('stdraw-svg');
+                  const r = svg.getBoundingClientRect();
+                  const VB = svg.viewBox.baseVal;
+                  const cx = r.x + (vx - VB.x) / VB.width * r.width;
+                  const cy = r.y + (vy - VB.y) / VB.height * r.height;
+                  const el = document.elementFromPoint(cx, cy);
+                  return (el && el.classList &&
+                          el.classList.contains('stdraw-eps-hit'))
+                    ? {edge: +el.getAttribute('data-edge'),
+                       end: +el.getAttribute('data-end')} : null;
+                }""", [px, py])
+                disc = bool(top) and (top["edge"], top["end"]) != \
+                    (c["A"]["edge"], c["A"]["end"])
+                if disc:
+                    picked_c = (c, px, py, top)
+                    break
+                if fallback_c is None:
+                    fallback_c = (c, px, py, top)   # contract-only fallback
+            if picked_c is None:
+                picked_c = fallback_c
+            if picked_c:
+                c, px, py, top = picked_c
+                hx, hy = _to_screen(pg, px, py)
+                pg.mouse.move(hx, hy)
+                pg.mouse.down()
+                pg.wait_for_timeout(40)
+                ds = pg.evaluate("window.__stdrawDragState()")
+                grabbed = bool(ds) and "ep" in ds.get("keys", []) and \
+                    ds.get("edge") == c["A"]["edge"]
+                pg.mouse.move(hx + 4, hy + 3, steps=2)
+                pg.mouse.up()
+                pg.wait_for_timeout(150)
+                chk("press inside two endpoint circles grabs the NEARER one "
+                    "(nearest-wins, not DOM order)",
+                    grabbed,
+                    f"A={c['A']} B={c['B']} dab={c['dab']:.1f} "
+                    f"topmost_at_press={top} drag={ds}")
+            else:
+                chk("press inside two endpoint circles grabs the NEARER one "
+                    "(nearest-wins, not DOM order)", False,
+                    f"no usable candidate among {len(cands or [])} "
+                    "(nearestEpHit disagreed with every A-biased press)")
+            # == 2026-11-12 arc endpoint-drag jump regression: grabbing an arc
+            # endpoint after the live curve drifted from the load-time base
+            # (any node drag in between) must NOT teleport the curve — ctrl
+            # translates incrementally per frame (live base), and the frozen
+            # base re-syncs at every gesture finalize (freezeArcBase).
+            arc_idx = pg.evaluate(
+                "(function(){for(var i=0;i<window.__stdrawEdgePts().length;"
+                "i++) if(window.__stdrawArcFlag(i)) return i; return -1;})()")
+            chk("arc edge available in demo for jump regression",
+                arc_idx >= 0, f"idx={arc_idx}")
+
+            def _fit_ctrl(pts):
+                # quad samples: p(0.5) = 0.25*pa + 0.5*c + 0.25*pb -> recover c
+                pa, pb = pts[0], pts[-1]
+                m = pts[len(pts) // 2]
+                return [2 * m[0] - 0.5 * (pa[0] + pb[0]),
+                        2 * m[1] - 0.5 * (pa[1] + pb[1])]
+
+            def _arc_grab_dctrl(pg, arc_idx, move_dx, move_dy):
+                """grab endpoint-0 handle, move a few px. Returns
+                (|dctrl| px relative to the PRE-GRAB live ctrl,
+                 endpoint displacement [dx, dy] relative to pre-grab,
+                 pre_pts, post_pts) or (None, None, None, None)."""
+                h = [q for q in pg.evaluate(
+                    "window.__stdrawEndpointHandles()")
+                    if q[0] == arc_idx and q[1] == 0]
+                if not h:
+                    return None, None, None, None
+                hx, hy = _to_screen(pg, h[0][2], h[0][3])
+                pre_pts = pg.evaluate(
+                    f"window.__stdrawEdgePts({arc_idx})")
+                ctrl_pre = _fit_ctrl(pre_pts)
+                pg.mouse.move(hx, hy)
+                pg.mouse.down()
+                pg.mouse.move(hx + move_dx, hy + move_dy, steps=1)
+                pg.wait_for_timeout(60)
+                post_pts = pg.evaluate(
+                    f"window.__stdrawEdgePts({arc_idx})")
+                ctrl_post = _fit_ctrl(post_pts)
+                dc = math.hypot(ctrl_post[0] - ctrl_pre[0],
+                                ctrl_post[1] - ctrl_pre[1])
+                dd = [post_pts[0][0] - pre_pts[0][0],
+                      post_pts[0][1] - pre_pts[0][1]]
+                return dc, dd, pre_pts, post_pts
+
+            if arc_idx >= 0:
+                pg.click("#stdraw-reset")
+                pg.wait_for_timeout(150)
+                ea = pg.evaluate(
+                    "(function(){var d=JSON.parse(document.getElementById("
+                    "'stdraw-data').textContent);return d.edges[%d].a;})()"
+                    % arc_idx)
+                acx, acy = _node_center(pg, ea)
+                _drag(pg, acx, acy, 36, 24, steps=3, settle=30)
+                dc, dd, _pp, _q = _arc_grab_dctrl(pg, arc_idx, 3, 2)
+                if dc is None:
+                    chk("arc endpoint drag: ctrl moves incrementally "
+                        "(no stale-base teleport)", False, "no ep handle")
+                else:
+                    end_ok = math.hypot(dd[0] - 3, dd[1] - 2) < 2.5
+                    chk("arc endpoint drag: ctrl moves incrementally, curve "
+                        "does NOT teleport (stale-base fix)",
+                        dc < 8.0 and end_ok,
+                        f"|dctrl|={dc:.1f}px after a 3px move "
+                        f"(pre-fix teleports by the whole accumulated "
+                        f"divergence), endpoint_follows={end_ok}")
+                    # phase 2: release (snap + re-freeze), drag the node again,
+                    # re-grab — proves the release re-synced the frozen base
+                    pg.mouse.up()
+                    pg.wait_for_timeout(150)
+                    acx2, acy2 = _node_center(pg, ea)
+                    _drag(pg, acx2, acy2, -20, -12, steps=2, settle=30)
+                    dc2, dd2, _p2, _q2 = _arc_grab_dctrl(pg, arc_idx, 3, 2)
+                    if dc2 is None:
+                        chk("arc endpoint re-grab after release stays coherent",
+                            False, "no ep handle")
+                    else:
+                        end_ok2 = math.hypot(dd2[0] - 3, dd2[1] - 2) < 2.5
+                        pg.mouse.up()
+                        pg.wait_for_timeout(150)
+                        chk("arc endpoint re-grab after release+node drag "
+                            "stays coherent (base re-frozen at release)",
+                            dc2 < 8.0 and end_ok2,
+                            f"|dctrl|={dc2:.1f}px, endpoint_follows={end_ok2}")
             # pick a probe edge: on-line hit + open canvas at the midpoint.
             # ref-scrubbed: since v0.7.11 the visible `g[data-edge]` line paints
             # ABOVE the 12px hit band (bindEdgeHover wires hover to BOTH), so

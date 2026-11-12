@@ -513,6 +513,7 @@ function forcedStraight(i) {
   e.pts = [pa, pb];
   e.ctrl = null;   // non-arc kind: no live ctrl
   e.corners = null;
+  freezeArcBase(e);   // sync ctrl0=null too: a later arcFollow must degrade honestly, not replay a stale load-time ctrl
 }
 function adaptiveArcK(d) {
   // same parameterization as routing.adaptive_arc_k
@@ -550,6 +551,7 @@ function forcedArc(i) {
   e.pts = best[1];
   e.ctrl = best[2];   // live ctrl: exported for the CLI arc replay (final form)
   e.corners = null;
+  freezeArcBase(e);   // ctrl0/pa0/pb0 follow the fresh ctrl: a later arcFollow translates from the state the user actually sees
 }
 function reanchorFree(i) {
   // free mode: exact polyline over the user fold points; endpoints =
@@ -1287,41 +1289,113 @@ function updateEndpointHandles(i) {
 function rebuildAllEndpointHandles() {
   edges.forEach(function (e, i) { updateEndpointHandles(i); });
 }
+// ── 2026-11-12 endpoint hit-test root fix (jacky: endpoint handles hard to
+// grab) ── two compounding root causes in the old chain:
+// (a) overlap arbitration was DOM ORDER: every edge's hit circle is alive at
+//     once, and a press landing between two nearby endpoints resolved to the
+//     LATER edge in document order, not the NEARER one (adjacent anchors of
+//     one box, e.g. e vs e-g1, sit only ~4-5px apart — inside both circles).
+//     The fix arbitrates by distance (nearest wins; tie -> lower edge index).
+// (b) the 9px radius was in viewBox units: render.py caps the svg at
+//     max-width:1280px while dense graphs ship viewBox widths far above
+//     1280, so the effective ON-SCREEN radius shrank to ~5-6px. The fix
+//     floors the screen-space radius (EP_HIT_MIN_SCREEN) by compensating
+//     for the current getScreenCTM scale, clamped to [9, 30] viewBox units.
+var EP_HIT_MIN_SCREEN = 10;   // px: minimum on-screen endpoint hit radius
+function nearestEpHit(x, y) {
+  // nearest-wins arbitration over ALL endpoint hit circles (deterministic:
+  // distance, then lower edge index, then lower end). Returns
+  // {edge, end, el, d} or null when no circle covers (x, y).
+  var best = null;
+  epsLayer.querySelectorAll('.stdraw-eps-hit').forEach(function (c) {
+    var dx = +c.getAttribute('cx') - x, dy = +c.getAttribute('cy') - y;
+    var d = Math.hypot(dx, dy);
+    if (d > +c.getAttribute('r') + 0.5) return;
+    var edge = +c.getAttribute('data-edge'), end = +c.getAttribute('data-end');
+    if (best === null || d < best.d - 1e-9 ||
+        (d <= best.d + 1e-9 && (edge < best.edge ||
+          (edge === best.edge && end < best.end)))) {
+      best = {d: d, edge: edge, end: end, el: c};
+    }
+  });
+  return best;
+}
+function syncEpHitRadius() {
+  // keep the endpoint hit radius >= EP_HIT_MIN_SCREEN px on screen:
+  // viewBox-unit radius = clamp(floor / scale, 9, 30); scale from the live
+  // getScreenCTM (re-run on window resize). Visible dots keep r=3.5.
+  var m = svg.getScreenCTM ? svg.getScreenCTM() : null;
+  var scale = (m && m.a) ? m.a : 1;
+  var r = Math.max(9, Math.min(30, EP_HIT_MIN_SCREEN / scale)).toFixed(1);
+  epsLayer.querySelectorAll('.stdraw-eps-hit').forEach(function (c) {
+    c.setAttribute('r', r);
+  });
+}
+window.addEventListener('resize', syncEpHitRadius);
 edges.forEach(function (e, i) { ensureEpEls(i); });
 function arcEpPts(e, end, pt) {
-  // endpoint moved on an arc: re-derive the sampled Bezier from the frozen
-  // control state, translating ctrl in lockstep with the endpoint delta
-  // (tangent-preserving; same caliber as arcFollow's mean translation)
-  if (!(e.arc && e.ctrl0 && e.pa0 && e.pb0)) return null;
-  var from = end === 0 ? e.pa0 : e.pb0;
-  var other = end === 0 ? e.pb0 : e.pa0;
-  var ctrl = [e.ctrl0[0] + (pt[0] - from[0]), e.ctrl0[1] + (pt[1] - from[1])];
+  // endpoint moved on an arc: translate the LIVE ctrl by THIS move's endpoint
+  // delta (grab-state coherent incremental translation). The old frozen-load
+  // base (ctrl0/pa0/pb0 from construction time) teleported the whole curve
+  // whenever the live arc had drifted from the load geometry (any node drag
+  // in between): the first pointermove after grabbing applied the entire
+  // accumulated divergence at once — the user-visible "line jumps while
+  // dragging an endpoint" bug (jacky 2026-11-12 report, root cause: stale
+  // freeze base; fix + freezeArcBase re-sync at every gesture finalize).
+  if (!(e.arc && e.ctrl && e.pts.length >= 2)) return null;
+  var from = e.pts[end === 0 ? 0 : e.pts.length - 1];
+  var other = e.pts[end === 0 ? e.pts.length - 1 : 0];
+  var ctrl = [e.ctrl[0] + (pt[0] - from[0]), e.ctrl[1] + (pt[1] - from[1])];
   var pa = end === 0 ? pt : other;
   var pb = end === 0 ? other : pt;
   return quad(pa, ctrl, pb, 12);
 }
+function freezeArcBase(e) {
+  // re-freeze the arcFollow translation base (ctrl0/pa0/pb0) from the LIVE
+  // state. Called whenever arc geometry is finalized outside arcFollow
+  // (endpoint drag release / anchor assign / forcedArc / forcedStraight):
+  // the construction-time-only freeze went stale after the first user
+  // gesture, and the next node drag translated ctrl from a base that no
+  // longer matched the visible curve — same jump family as arcEpPts above.
+  // arcFollow itself stays per-frame continuous; only the base is re-anchored.
+  if (!e || !e.arc) return;
+  e.ctrl0 = e.ctrl ? cp(e.ctrl) : null;
+  if (e.pts.length >= 2) {
+    e.pa0 = cp(e.pts[0]);
+    e.pb0 = cp(e.pts[e.pts.length - 1]);
+  }
+}
 function clampVB(x, y) {
   return [Math.max(4, Math.min(VB[2] - 4, x)), Math.max(4, Math.min(VB[3] - 4, y))];
 }
-function finishUaDesignation(i, end, coordEnd) {
+function finishUaDesignation(i, end, coordEnd, fromPt) {
   // CLI-parity finalization of an endpoint designation: (1) keep the live
   // arc ctrl in sync -- it exports in final form (edges[].ctrl) and the CLI
-  // replays it verbatim; (2) snap the undesignated sibling end to the
-  // standard anchor nearest the border point aimed at the designated end
-  // (the same caliber as the CLI --from-layout unspecified-end snap); (3)
-  // rebuild the arc geometry from the resolved endpoints. Later node drags
-  // re-run reroute(), whose endPt() resolves the same endpoints.
+  // replays it verbatim; the ctrl is translated by the designated endpoint's
+  // delta from fromPt (default: the CURRENT endpoint position, i.e. delta 0
+  // on the drag-release path where pts[end] already sits on coordEnd — the
+  // drag itself already carried the ctrl; anchor-click passes the pre-click
+  // position so the one-shot delta lands once); (2) snap the undesignated
+  // sibling end to the standard anchor nearest the border point aimed at the
+  // designated end (the same caliber as the CLI --from-layout unspecified-end
+  // snap); (3) rebuild the arc geometry from the resolved endpoints and
+  // re-freeze the arc base so later node drags translate from a coherent
+  // state. Later node drags re-run reroute(), whose endPt() resolves the
+  // same endpoints.
   var e = edges[i];
   var sib = end === 0 ? 1 : 0;
-  if (e.arc && e.ctrl0 && e.pa0 && e.pb0) {
-    var fromU = end === 0 ? e.pa0 : e.pb0;
-    e.ctrl = [e.ctrl0[0] + (coordEnd[0] - fromU[0]),
-              e.ctrl0[1] + (coordEnd[1] - fromU[1])];
+  if (e.arc && e.ctrl) {
+    var fromU = fromPt || e.pts[end === 0 ? 0 : e.pts.length - 1];
+    e.ctrl = [e.ctrl[0] + (coordEnd[0] - fromU[0]),
+              e.ctrl[1] + (coordEnd[1] - fromU[1])];
   }
-  if (userAnchored[i] && userAnchored[i][sib]) return;
+  if (userAnchored[i] && userAnchored[i][sib]) {
+    if (e.arc) freezeArcBase(e);
+    return;
+  }
   var vSib = sib === 0 ? e.a : e.b;
   var nSib = nodes[vSib];
-  if (!nSib || !coordEnd) return;
+  if (!nSib || !coordEnd) { if (e.arc) freezeArcBase(e); return; }
   var sibCoord = stdAnchorToward(nSib, coordEnd, i);
   if (e.arc && e.ctrl) {
     var pa = (end === 0) ? coordEnd : sibCoord;
@@ -1331,6 +1405,7 @@ function finishUaDesignation(i, end, coordEnd) {
   } else {
     e.pts[sib === 0 ? 0 : e.pts.length - 1] = sibCoord;
   }
+  if (e.arc) freezeArcBase(e);
 }
 function assignAnchor(v, aid, ax, ay) {
   // Explicit designation (anchor click): the clicked standard anchor goes to
@@ -1348,8 +1423,13 @@ function assignAnchor(v, aid, ax, ay) {
   var i2 = best[1], end2 = best[2];
   userAnchored[i2] = userAnchored[i2] || {};
   userAnchored[i2][end2] = aid;
-  edges[i2].pts[end2 === 0 ? 0 : edges[i2].pts.length - 1] = [ax, ay];
-  finishUaDesignation(i2, end2, [ax, ay]);
+  // capture the PRE-CLICK endpoint so finishUaDesignation translates the arc
+  // ctrl by exactly this one-shot delta (the drag-release path instead
+  // carries the delta frame by frame and passes no fromPt)
+  var endIx2 = end2 === 0 ? 0 : edges[i2].pts.length - 1;
+  var preP = edges[i2].pts[endIx2].slice();
+  edges[i2].pts[endIx2] = [ax, ay];
+  finishUaDesignation(i2, end2, [ax, ay], preP);
   updateEdge(i2);
   updateEndpointHandles(i2);
   renderAnchors();
@@ -1368,20 +1448,27 @@ function onDown(ev) {
   // ── ref-scrubbed endpoint drag: the topmost #stdraw-eps hit circles claim
   // the press BEFORE the edge hit band (drag-line = segment translation) and
   // before the floating preview. Hit priority is structural + asserted by
-  // the probe (drag state keys contain 'ep').
-  var he = t && t.closest ? t.closest('.stdraw-eps-hit, .stdraw-ep') : null;
-  if (he) {
-    var eiE = +he.getAttribute('data-edge'), endE = +he.getAttribute('data-end');
-    if (edges[eiE]) {
-      var peE = svgPoint(ev);
-      if (peE) {
-        drag = {ep: true, edge: eiE, end: endE, start: [peE.x, peE.y], ev: ev};
-        setEpVis(eiE, true);   // ref-scrubbed: show the dragged endpoint's handles
-        try { he.setPointerCapture(ev.pointerId); } catch (eE0) {}
-        ev.preventDefault();
-        ev.stopPropagation();
-        return;
-      }
+  // the probe (drag state keys contain 'ep'). 2026-11-12 root fix: which
+  // endpoint wins an overlapping press is decided by NEAREST-WINS distance
+  // arbitration (nearestEpHit), not DOM order — see the block comment at
+  // nearestEpHit; the target-based branch below is only a fallback for
+  // synthetic events without usable coordinates.
+  var peE = svgPoint(ev);
+  var heN = peE ? nearestEpHit(peE.x, peE.y) : null;
+  if (!heN && t && t.closest) {
+    var he0 = t.closest('.stdraw-eps-hit, .stdraw-ep');
+    if (he0) heN = {edge: +he0.getAttribute('data-edge'),
+                    end: +he0.getAttribute('data-end'), el: he0};
+  }
+  if (heN) {
+    if (!peE) peE = svgPoint(ev);
+    if (edges[heN.edge] && peE) {
+      drag = {ep: true, edge: heN.edge, end: heN.end, start: [peE.x, peE.y], ev: ev};
+      setEpVis(heN.edge, true);   // ref-scrubbed: show the dragged endpoint's handles
+      try { heN.el.setPointerCapture(ev.pointerId); } catch (eE0) {}
+      ev.preventDefault();
+      ev.stopPropagation();
+      return;
     }
   }
   // ── ref-scrubbed anchor click-to-assign: while a box's anchors are shown, a
@@ -1670,6 +1757,7 @@ function onUp(ev) {
       else eU.pts[endU === 0 ? 0 : eU.pts.length - 1] = coordU;
       finishUaDesignation(eiU, endU, coordU);
     }
+    if (eU.arc) freezeArcBase(eU);   // re-sync even without an anchor hit: the drag carried the ctrl, the base must follow
     drag = null;
     setEpVis(eiU, false);   // ref-scrubbed: drag over, dots hide again
     updateEdge(eiU);
@@ -2057,6 +2145,20 @@ window.__stdrawEndpointHandles = function () {
   });
   return out;
 };
+// 2026-11-12 hit-test root-fix probes: nearest-wins arbitration + screen-radius floor
+window.__stdrawNearestEpHit = function (x, y) {
+  var h = nearestEpHit(x, y);
+  return h ? {edge: h.edge, end: h.end, d: h.d} : null;
+};
+window.__stdrawEpHitRadii = function () {
+  var m = svg.getScreenCTM ? svg.getScreenCTM() : null;
+  var scale = (m && m.a) ? m.a : 1, out = [];
+  epsLayer.querySelectorAll('.stdraw-eps-hit').forEach(function (c) {
+    out.push(+c.getAttribute('r'));
+  });
+  return {scale: scale, radii: out, minScreen: Math.min.apply(null,
+          out.map(function (r) { return r * scale; }).concat([Infinity]))};
+};
 // v0.7.9 probe/integration hooks: per-card rendered geometry + manual re-anchor
 window.__stdrawNodeGeom = function (v) {
   return v ? {x: nodes[v].x, y: nodes[v].y, w: nodes[v].w, h: nodes[v].h}
@@ -2076,6 +2178,7 @@ if (btnA) {
 }
 rebuildHandles();
 rebuildAllEndpointHandles();   // ref-scrubbed: initial endpoint handle placement
+syncEpHitRadius();             // 2026-11-12: floor the on-screen endpoint hit radius for the actual render scale
 refreshMetrics();
 // v0.7.9 initial font-environment sync: run now (the script sits after the
 // SVG in the DOM, so layout is available) and again on window load (late
