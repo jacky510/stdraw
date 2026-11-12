@@ -16,6 +16,12 @@ Per-graph assertions (real pointer events, not direct JS calls):
      graph shortest path + shortcut, same caliber c=16/17.5), proving the
      bend points are recomputed frame by frame rather than pinned (the
      regression gate for jacky issue 2);
+     endpoints use the delivery-caliber anchor: ray border exit clamped into
+     the edge-midpoint +/- half-card band (mirror of the interactive layer's
+     borderPoint = routing.border_point + Router.midband_reanchor) on
+     per-node DOM geometry (window.__stdrawNodeGeom; v0.7.9 per-card height
+     replaced the global cardH, so the delivered layout.json no longer
+     describes node boxes);
   B. forced vg scenario: drag a third node onto the midpoint of some straight
      edge -> that edge becomes a polyline (preview obstacle avoidance) and
      matches the recompute; keep dragging away -> still consistent (the old
@@ -75,12 +81,37 @@ _pin_local_stdraw()
 MANUAL_DIR = os.environ.get("STDRAW_MANUAL_SWEEP_DIR", "")
 
 
+def _border_point_midband(cx, cy, hw, hh, toward):
+    """Delivery-caliber border anchor (mirror of the interactive layer's
+    borderPoint, which documents itself as 'routing.border_point +
+    Router.midband_reanchor'): ray-determined border exit, then the anchor is
+    clamped along that border's tangent into the edge-midpoint +/- half-card
+    band (orthogonal exits land on the midpoint, diagonal exits pulled back
+    into the band, corners excluded). The planning-layer stdraw.routing
+    .border_point used here previously does NOT clamp, so the probe's
+    expected anchors drifted from the delivered preview anchors the moment
+    the midband caliber landed."""
+    dx, dy = toward[0] - cx, toward[1] - cy
+    if dx == 0 and dy == 0:
+        return (cx, cy)
+    if dx == 0:
+        return (cx, cy + (hh if dy > 0 else -hh))
+    if dy == 0:
+        return (cx + (hw if dx > 0 else -hw), cy)
+    t = min(hw / abs(dx), hh / abs(dy))
+    px, py = cx + dx * t, cy + dy * t
+    if abs(abs(px - cx) - hw) <= abs(abs(py - cy) - hh):
+        lim = hh / 2.0
+        return (px, cy + max(-lim, min(lim, py - cy)))
+    lim = hw / 2.0
+    return (cx + max(-lim, min(lim, px - cx)), py)
+
+
 def _expected_preview_route(nodes_px, a, b):
-    from stdraw.routing import border_point
     from stdraw.visibility import seg_rect_distance, shortest_path, _shortcut
     A, B = nodes_px[a], nodes_px[b]
-    pa = border_point(A[0], A[1], A[2], A[3], B[0] - A[0], B[1] - A[1])
-    pb = border_point(B[0], B[1], B[2], B[3], A[0] - B[0], A[1] - B[1])
+    pa = _border_point_midband(A[0], A[1], A[2], A[3], B)
+    pb = _border_point_midband(B[0], B[1], B[2], B[3], A)
     rects = [tuple(nodes_px[v]) for v in nodes_px if v not in (a, b)]
     if not rects or all(seg_rect_distance(pa, pb, r) >= 16 - 1e-6 for r in rects):
         return [list(pa), list(pb)]
@@ -108,11 +139,14 @@ def _fallback_keeps_shape(js_pts, prev_pts, tol=0.6):
                for p, q in zip(js_pts[1:-1], prev_pts[1:-1]))
 
 
-def _nodes_px(pg, lay):
-    pos = {r[0]: (r[1], r[2]) for r in pg.evaluate("window.__stdrawNodePos()")}
-    ch = lay["meta"]["cardH"]
-    return {v: (p[0], p[1], lay["nodes"][v]["w"] / 2.0, ch / 2.0)
-            for v, p in pos.items()}
+def _nodes_px(pg):
+    """Live interactive geometry straight from the drag layer
+    (window.__stdrawNodeGeom): per-node x/y/w/h, where h is DOM-synced
+    (v0.7.9 per-card height). The delivered layout.json's global cardH no
+    longer describes node boxes, so reading geometry from `lay` made every
+    expected anchor wrong for nodes whose label height differs from cardH."""
+    return {r[0]: (r[1], r[2], r[3] / 2.0, r[4] / 2.0)
+            for r in pg.evaluate("window.__stdrawNodeGeom()")}
 
 
 def _center(pg, vid):
@@ -130,7 +164,7 @@ def _to_screen(pg, vx, vy):
         [vx, vy])
 
 
-def _check_all_edges(pg, lay, payload, tag, failures, prev=None, fallbacks=None,
+def _check_all_edges(pg, payload, tag, failures, prev=None, fallbacks=None,
                     drag_node=None):
     """prev: {edge_idx: previous frame pts} (for the fallback-caliber check);
     fallbacks: counter table.
@@ -142,7 +176,7 @@ def _check_all_edges(pg, lay, payload, tag, failures, prev=None, fallbacks=None,
     anchor variants / not triggered) are outside the "live follow" promise
     and are skipped.
     """
-    npx = _nodes_px(pg, lay)
+    npx = _nodes_px(pg)
     allpts = pg.evaluate("window.__stdrawEdgePts()")
     for i, e in enumerate(payload["edges"]):
         if e.get("arc"):
@@ -188,8 +222,6 @@ def sweep_graph(browser, src_dir, tmp, filt):
                        errors="replace", cwd=ROOT)
     if r.returncode not in (0, 1):
         return (name, False, f"CLI exit {r.returncode}: {r.stderr[-200:]}")
-    with open(os.path.join(out, "layout.json"), encoding="utf-8") as f:
-        lay = json.load(f)
     demo = os.path.join(out, "demo-2d.html")
     payload = json.loads(open(demo, encoding="utf-8").read()
                          .split('<script id="stdraw-data" type="application/json">')[1]
@@ -214,7 +246,7 @@ def sweep_graph(browser, src_dir, tmp, filt):
         for k in range(1, 4):
             pg.mouse.move(cx + 14 * k, cy + 9 * k, steps=1)
             pg.wait_for_timeout(40)
-            ok, prev = _check_all_edges(pg, lay, payload, f"drag {v} step{k}",
+            ok, prev = _check_all_edges(pg, payload, f"drag {v} step{k}",
                                         failures, prev, fallbacks, drag_node=v)
             if not ok:
                 break
@@ -242,9 +274,7 @@ def sweep_graph(browser, src_dir, tmp, filt):
             mx = (na["x"] + nb["x"]) / 2
             my = (na["y"] + nb["y"]) / 2
             for c in [n["id"] for n in payload["nodes"] if n["id"] not in (a, b)]:
-                npx_try = {n["id"]: (n["x"], n["y"], lay["nodes"][n["id"]]["w"] / 2.0,
-                                     lay["meta"]["cardH"] / 2.0)
-                           for n in payload["nodes"]}
+                npx_try = _nodes_px(pg)
                 npx_try[c] = (mx, my, npx_try[c][2], npx_try[c][3])
                 ex_try = _expected_preview_route(npx_try, a, b)
                 if ex_try and len(ex_try) > 2:
@@ -263,13 +293,13 @@ def sweep_graph(browser, src_dir, tmp, filt):
                 pg.wait_for_timeout(60)
                 ei = payload["edges"].index(e)
                 pts = pg.evaluate(f"window.__stdrawEdgePts({ei})")
-                npx = _nodes_px(pg, lay)
+                npx = _nodes_px(pg)
                 ex = _expected_preview_route(npx, a, b)
                 became_poly = len(pts) > 2 and _match(pts, ex)
                 pg.mouse.move(sx + 30, sy - 22, steps=2)
                 pg.wait_for_timeout(60)
                 pts2 = pg.evaluate(f"window.__stdrawEdgePts({ei})")
-                npx = _nodes_px(pg, lay)
+                npx = _nodes_px(pg)
                 ex2 = _expected_preview_route(npx, a, b)
                 # when unreachable, accept the honest fallback (shape-preserving re-anchor: bend points match the pressed frame)
                 still = (_match(pts2, ex2) if ex2 is not None
