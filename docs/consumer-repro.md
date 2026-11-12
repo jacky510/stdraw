@@ -6,7 +6,7 @@ layout.json / certificate.json / full.html 三产物）。
 
 ## 硬规则：禁止用本仓 `.venv` 做消费侧重生成
 
-`C:/Users/jacky/Projects/stdraw/.venv` 是**开发专用环境**，三重性质决定它必然漂移：
+`<user-home>/Projects/stdraw/.venv` 是**开发专用环境**，三重性质决定它必然漂移：
 
 1. **editable 安装指向本仓工作树**——任何未提交 hunk 都实时改变消费侧输出；
    且开发推进后树 HEAD ≠ PIN 提交，PIN 版本串检查照样能过（提交级锁形同虚设）。
@@ -19,7 +19,7 @@ layout.json / certificate.json / full.html 三产物）。
 
 ```bash
 SCRATCH=<你的scratch目录>          # 例: ~/AppData/Local/hermes/profiles/<bot>/cache/scratch/stdraw-pin-verify
-git -C C:/Users/jacky/Projects/stdraw archive --format=tar.gz \
+git -C <user-home>/Projects/stdraw archive --format=tar.gz \
     -o "$SCRATCH/stdraw-<pin-commit>.tar.gz" <pin-commit>
 cd "$SCRATCH"
 uv venv stdraw-pin-venv --python 3.12
@@ -42,7 +42,7 @@ stdraw-pin-venv/Scripts/python.exe -c "from stdraw.layout_auto import _has_solve
 `Projects\stdraw\stdraw\__init__.py` 即 editable 污染，立即停）；
 ② 版本串 == PIN 版本；③ `_has_solver()` 为 True 且 PIL 可导入。
 
-## 漂移指纹（历史实测，advisorbot t_b0f13747 2026-11-12）
+## 漂移指纹（历史实测，advisorbot ref-scrubbed 2026-11-12）
 
 | 环境缺失 | 症状 |
 |---|---|
@@ -51,4 +51,4 @@ stdraw-pin-venv/Scripts/python.exe -c "from stdraw.layout_auto import _has_solve
 
 完整重生成命令与哈希对拍口径（layout 4f0087aa / cert 12a2b3a2）的正本指针：
 advisorbot 技能 `8777-v2-page-build`「P5 链图深色档返修」节
-（`C:/Users/jacky/AppData/Local/hermes/profiles/advisorbot/skills/software-development/8777-v2-page-build/`，不在本仓存副本）。
+（`<user-home>/AppData/Local/hermes/profiles/advisorbot/skills/software-development/8777-v2-page-build/`，不在本仓存副本）。
