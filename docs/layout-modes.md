@@ -322,6 +322,18 @@ id 顺序）驱动；同构图的对应节点同色 → 对应槽位。已验证
   `ANCHOR_IDS`，否则 exit 2）；证书 `from_layout.user_anchors` 如实记录
   锚点来源（auto vs user）。auto 路径字节不变。回归：
   `tests/test_manual_anchors.py`。
+- **手动布局硬门回退（T2，2026-11-12）**：用户样式/锚定的边（waypoint 自由
+  拖拽边除外）在注入完成后按交付几何**逐边复核硬门**——自盒/他盒压线
+  （1px 膨胀口径，端点 6px 附着区豁免，与几何检查 2 同账）、边-框净距
+  （<16px）、mutual 对双向均被用户锚定时的双线分离（<4px，与检查 12 同
+  账）。违例边**整条回退到引擎自有路由**（注入前快照），由路由器的
+  mutual-pair lens 弧偏移 / 压线回避 / 净距候选机制交付过门几何；mutual
+  对原子回退（任一方向违例即整对回退，避免半对共点）。过门的用户样式
+  一字不动——良性手动布局字节零漂移；回退在 `from_layout.manual_fallback`
+  逐边如实记录（边 + 违例原因），CLI 同步打印回退清单。auto 路径字节
+  不变。回归：`tests/test_manual_fallback_gates.py`（经典「富者愈富」
+  fixture：手拖位置 + 3 条用户边，2 条违例回退、1 条过门保留，
+  fail=0 / crossings 0 / 双跑逐字节一致）。
 
 ## 交付层默认吸附 16 标准锚点集（ref-scrubbed，`Router.anchor_snap`）
 

@@ -30,6 +30,12 @@ import sys
 import tempfile
 import time
 
+# Repo root on sys.path: the anchor-corpus layer imports stdraw directly.
+# Script runs put tests/ (not the repo root) on sys.path, and the historical
+# mask (a global editable stdraw install) is gone -- import explicitly from
+# this checkout instead.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Phase timing instrumentation (2026-11-10 CI bottleneck localization card):
 # mark() records elapsed seconds since the previous mark; the table is
 # printed at the end. Purely observational — no assertion logic touched.
