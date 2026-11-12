@@ -4,6 +4,25 @@ Notable user-visible changes to **stdraw**. Entries before 0.8.0 are not
 reproduced here; the engineering version history lives in
 [AGENTS.md](AGENTS.md) ("Version" section) — pointer, not a copy.
 
+## 0.8.1 — 2026-11-13
+
+- **Interactive toolbar hint condensed and overridable**: the English
+  chrome hint (340+ chars) is condensed and exposed as a new keyword
+  parameter `hint` on `render_html` / `render_auto_html` (default `None`
+  = built-in English chrome, per the repo language policy: the engine
+  EN face stays CJK-free). Byte-pinned consumers pass their own face
+  copy (the Chinese-domain consumer passes Chinese). No geometry or
+  interaction-contract change; default output changes only in the hint
+  string itself.
+- **Dark-tier hint contrast fix (ui-design D1)**: `hint_text` #64748b →
+  #94a3b8 on the #0f172a toolbar (WCAG 3.75:1 → 6.96:1, AA-passing).
+  viewer/themes.js regenerated from themes.py via write_viewer_js
+  (generated-artifact channel, byte-pinned by tests).
+- Consumer note: render output bytes change → the byte-pinned consumer
+  (investment-advisor HDD chain, STDRAW_PIN 0.8.0/261a34e) must
+  regenerate its three artifacts from this release and advance the pin
+  (deterministic double-run + CDP regression before the lock moves).
+
 ## 0.8.0 — 2026-11-11
 
 UI-A theme baseline (drawing-office style, spec:

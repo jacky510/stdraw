@@ -92,11 +92,12 @@ def _cert_head(grade, sub):
 
 def render_html(v4: dict, graph_name: str = "", cert: dict = None,
                 loops_report: dict = None, labels: dict = None,
-                values: dict = None, theme: str = DEFAULT_STATIC_THEME) -> str:
+                values: dict = None, theme: str = DEFAULT_STATIC_THEME,
+                hint: str = None) -> str:
     T = _get_theme(theme)
     if v4.get("edges") and "route" in v4["edges"][0]:
         return render_auto_html(v4, graph_name, cert, loops_report, labels,
-                                values, theme)
+                                values, theme, hint)
     W, H = v4["viewBox"][2], v4["viewBox"][3]
     nodes, edges, bars = v4["nodes"], v4["edges"], v4.get("bars", {})
     meta = v4["meta"]
@@ -247,7 +248,8 @@ def _edge_svg(e, labels, values, T):
 def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                      loops_report: dict = None, labels: dict = None,
                      values: dict = None,
-                     theme: str = DEFAULT_STATIC_THEME) -> str:
+                     theme: str = DEFAULT_STATIC_THEME,
+                     hint: str = None) -> str:
     T = _get_theme(theme)
     W, H = v4["viewBox"][2], v4["viewBox"][3]
     nodes, edges = v4["nodes"], v4["edges"]
@@ -306,15 +308,20 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                    "pts": e["route"]["points"]}
                   for e in edges],
     }
+    # Toolbar hint chrome: English default (repo language policy: EN face,
+    # zero CJK in engine chrome); callers override via the `hint` parameter
+    # (byte-pinned consumers pass their own face copy).
+    if hint is None:
+        hint = ('Drag cards to rearrange · double-click a line to cycle its '
+                'style (auto/straight/arc/free) · in free style click a line '
+                'to add fold points (max 8) or drag a segment to shift it · '
+                'hover a card to show its 16 standard anchors (toggle) · '
+                'drag an edge endpoint to snap to the nearest anchor · '
+                'metrics update live; the certificate is authoritative via '
+                'CLI --from-layout')
     parts.append(
         '<div class="stdraw-toolbar">'
-        '<span class="stdraw-hint">Drag cards to rearrange (mouse/touch) · double-click a line '
-        'to cycle its style (auto/straight/arc/free) · in free style click the line to add fold '
-        'points (max 8) · drag a segment of a hand-drawn line to shift it · hover a box to show '
-        'its 16 standard anchors (toggle) · drag an edge endpoint to snap it to the nearest '
-        'anchor · click an anchor to connect explicitly · metrics are live '
-        'recomputed on preview geometry; the certificate is '
-        'authoritative via CLI --from-layout</span>'
+        '<span class="stdraw-hint">' + hint + '</span>'
         '<span id="stdraw-metrics">…</span>'
         '<button id="stdraw-anchors-toggle" type="button">Anchors: off</button>'
         '<button id="stdraw-export" type="button">Export layout</button>'
