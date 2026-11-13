@@ -60,6 +60,7 @@
 | canvas_grid | line `rgba(147,167,196,.10)`,24px | **中性钢灰网格**(不再用青色) |
 | ink | `#dfe7f2` | |
 | muted | `#8b98ab` | |
+| body_text | `#e2e8f0` | HTML body/证书面板前景(2026-11-13 深色文字修复:浅色档不设,保持 UA 黑,浅色面冻结) |
 | card_fill | `rgba(16,22,34,.92)` | |
 | card_stroke | `#93a7c4`,1.3px | **中性钢灰**(关键修正:不再 `#7dd3fc`) |
 | card_radius | **14px** | |

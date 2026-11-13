@@ -238,3 +238,28 @@ def test_viewer_css_fallbacks_are_dark_tokens():
     consumed = set(re.findall(r"var\((--st-[a-z-]+)", html))
     missing = consumed - set(declared)
     assert not missing, "vars consumed without a :root fallback: %s" % sorted(missing)
+
+# -- 6. body/panel text ink contrast (dark-theme text fix regression) 
+# The dark face must emit a body foreground that clears 4.5:1 on every
+# surface text can sit on (page, certificate panel, toolbar); the light
+# face stays frozen (no body color emitted, UA default black clears the
+# floor too). Guards future panel additions against silent black-on-dark.
+def test_body_text_contrast():
+    assert DARK["body_text"] == "#e2e8f0"
+    assert LIGHT["body_text"] is None
+    for bg in (DARK["page_bg"], DARK["panel_bg"], DARK["toolbar_bg"]):
+        r = _ratio(DARK["body_text"], bg)
+        print("contrast dark body_text %s on %s = %.2f:1"
+              % (DARK["body_text"], bg, r))
+        assert r >= 4.5, "dark body_text on %s only %.2f:1" % (bg, r)
+    _hex7 = lambda h: h if len(h) == 7 else "#" + "".join(c * 2 for c in h[1:])
+    for bg in (LIGHT["page_bg"], LIGHT["panel_bg"], LIGHT["toolbar_bg"]):
+        r = _ratio("#000000", _hex7(bg))
+        print("contrast light UA-default black on %s = %.2f:1" % (bg, r))
+        assert r >= 4.5, "light UA-default black on %s only %.2f:1" % (bg, r)
+    # emission caliber: light byte-identical (no color), dark emits once
+    light_html = render_html(V4, "t")
+    assert "body{margin:16px;background:" in light_html
+    dark_html = render_html(V4, "t", theme="dark")
+    assert dark_html.count("body{margin:16px;color:#e2e8f0;background:") >= 1
+    assert "color:#e2e8f0" not in render_html(V4, "t")

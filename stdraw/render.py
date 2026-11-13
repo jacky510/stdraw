@@ -95,6 +95,10 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
                 values: dict = None, theme: str = DEFAULT_STATIC_THEME,
                 hint: str = None) -> str:
     T = _get_theme(theme)
+    # Dark face only: emit the body foreground (fixes black-on-dark
+    # text after the dark palette landed). Light keeps UA default
+    # (frozen face, byte-identical output).
+    _ink = ("color:%s;" % T["body_text"]) if T.get("body_text") else ""
     if v4.get("edges") and "route" in v4["edges"][0]:
         return render_auto_html(v4, graph_name, cert, loops_report, labels,
                                 values, theme, hint)
@@ -185,7 +189,7 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
     return f'''<!doctype html><html lang="en"><meta charset="utf-8">
 <title>stdraw 2D · {html.escape(graph_name)}</title>
 <style>
-body{{margin:16px;background:{T["page_bg"]};font-family:Microsoft YaHei,sans-serif}}
+body{{margin:16px;{_ink}background:{T["page_bg"]};font-family:Microsoft YaHei,sans-serif}}
 h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canvas_border"]};border-radius:8px;width:auto;height:auto;max-width:1280px;max-height:calc(100vh - 96px);margin:0 auto;display:block}}
 {_cert_css(T)}
 .ok{{color:{T["ok"]}}} .bad{{color:{T["bad"]}}} .note{{color:{T["note"]};font-size:12px}}
@@ -251,6 +255,10 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                      theme: str = DEFAULT_STATIC_THEME,
                      hint: str = None) -> str:
     T = _get_theme(theme)
+    # Dark face only: emit the body foreground (fixes black-on-dark
+    # text after the dark palette landed). Light keeps UA default
+    # (frozen face, byte-identical output).
+    _ink = ("color:%s;" % T["body_text"]) if T.get("body_text") else ""
     W, H = v4["viewBox"][2], v4["viewBox"][3]
     nodes, edges = v4["nodes"], v4["edges"]
     meta = v4["meta"]
@@ -459,7 +467,7 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     return f'''<!doctype html><html lang="en"><meta charset="utf-8">
 <title>stdraw 2D · {html.escape(graph_name)}</title>
 <style>
-body{{margin:16px;background:{T["page_bg"]};font-family:Microsoft YaHei,sans-serif}}
+body{{margin:16px;{_ink}background:{T["page_bg"]};font-family:Microsoft YaHei,sans-serif}}
 h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canvas_border"]};border-radius:8px;width:auto;height:auto;max-width:1280px;max-height:calc(100vh - 96px);margin:0 auto;display:block}}
 {_cert_css(T)}
 .ok{{color:{T["ok"]}}} .bad{{color:{T["bad"]}}} .note{{color:{T["note"]};font-size:12px}}
