@@ -49,6 +49,9 @@ LIGHT = {
     "ok": "#2f7d4f",               # pass / ink-seal green
     "bad": "#dc2626",              # unspecified by the UI-A table; kept
     "note": "#6e6a5e",             # muted notes
+    "body_text": None,             # light face: UA default (black) is
+                                   # correct on paper -- never emit a
+                                   # body color for light (frozen face)
     "grade": "#2f7d4f",            # grade seal (stamp color per spec)
     "toolbar_bg": "#fff",          # unspecified by the UI-A table; kept
     "toolbar_border": "#e2e8f0",
@@ -126,6 +129,9 @@ DARK = {
     "ok": "#4ade80",
     "bad": "#f87171",              # unspecified by the UI-A table; kept
     "note": "#8b98ab",
+    "body_text": "#e2e8f0",        # HTML body/panel foreground (viewer
+                                   # dark ui_text tier); inherited by
+                                   # h1/p/td/h4/li/cert-title chains
     "grade": "#4ade80",            # grade seal (stamp color per spec)
     "toolbar_bg": "#0f172a",       # unspecified by the UI-A table; kept
     "toolbar_border": "#334155",
