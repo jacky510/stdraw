@@ -147,9 +147,13 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
     if cert:
         m = cert["metrics"]
         def _cls(v):
-            return "ok" if v else "bad"
+            # "N/A" gates (manual coordinates, P1-2) reuse the existing
+            # neutral gray class — the template CSS stays byte-stable.
+            return ("ok" if v is True else
+                    ("note" if v == "N/A" else "bad"))
         def _mark(v):
-            return "✓" if v else "✗"
+            return ("✓" if v is True else
+                    ("–" if v == "N/A" else "✗"))
         rows = "".join(
             f'<tr><td>{k}</td><td class="{_cls(v)}">{_mark(v)}</td></tr>'
             for k, v in cert["gates"].items())
@@ -345,9 +349,13 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     if cert:
         m = cert["metrics"]
         def _cls(v):
-            return "ok" if v else "bad"
+            # "N/A" gates (manual coordinates, P1-2) reuse the existing
+            # neutral gray class — the template CSS stays byte-stable.
+            return ("ok" if v is True else
+                    ("note" if v == "N/A" else "bad"))
         def _mark(v):
-            return "✓" if v else "✗"
+            return ("✓" if v is True else
+                    ("–" if v == "N/A" else "✗"))
         rows = "".join(
             f'<tr><td>{k}</td><td class="{_cls(v)}">{_mark(v)}</td></tr>'
             for k, v in cert["gates"].items())

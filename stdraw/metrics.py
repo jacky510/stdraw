@@ -420,6 +420,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # + constant column pitch + hub-pair mirror symmetry + all-straight fan
     comb_mode = scene.get("placement") == "comb-bilateral"
     comb = scene.get("comb") or {}
+    # P1-2 (jacky 2026-11-13 ruling): manual coordinates (--from-layout) are
+    # exempt from the two automatic-pipeline structural checks — same caliber
+    # as check.py 6a/9 ("manual: N/A"). Layered-mode gate slots read "N/A";
+    # the measured values stay in metrics.
+    manual_mode = bool(scene.get("from_layout"))
+    layered_mode = not (ring_mode or column_mode or sym_mode or bowtie_mode
+                        or spine_mode or comb_mode)
 
     # 1. Crossings (pairwise polyline intersection)
     crossings = []
@@ -994,7 +1001,15 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     if gates:
         for k, v in gates.items():
             g[k] = v
-    g_pass = sum(1 for v in g.values() if v)
+    # P1-2: manual coordinates mark the two automatic-pipeline structural
+    # gates "N/A" (check.py 6a/9 caliber, jacky 2026-11-13 ruling); they are
+    # excluded from the pass count and never block. This is a caliber
+    # alignment, not a threshold change — no other gate is touched.
+    if manual_mode and layered_mode:
+        g["pitch_uniform"] = "N/A"
+        g["column_snap24_ge_060"] = "N/A"
+    g_pass = sum(1 for v in g.values() if v is True)
+    n_gates = sum(1 for v in g.values() if v != "N/A")
     reports = {
         "crossings_zero": metrics["crossings"] == 0,
         "crossings_note": ("soft target: <=2 crossings allowed when placement "
@@ -1035,7 +1050,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     else:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"] and
-                   g["pitch_uniform"])
+                   (manual_mode or g["pitch_uniform"]))
     # ref-scrubbed finalize (approved 2026-11-09): honest dense-snap
     # deferral annotation -- the anchors_standard gate value stays MEASURED
     # (False when endpoints remain off-anchor on a deferred dense graph);
@@ -1091,7 +1106,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         **({"edge_rules": scene["edge_rules"]} if scene.get("edge_rules") else {}),
         "metrics": metrics,
         "gates": g,
-        "gates_passed": f"{g_pass}/{len(g)}",
+        "gates_passed": f"{g_pass}/{n_gates}",
         "reports": reports,
         "grade": grade,
         "grade_note": grade_note,
@@ -1137,6 +1152,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "spacing_cv": metrics.get("ring_spacing_cv"),
             "template_deviation": metrics.get("ring_template_deviation"),
         }
+    if manual_mode and layered_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "Manual coordinates: uniform row pitch / 24px column snap are "
+            "automatic-pipeline structural checks, not applicable to manual "
+            "layouts (same caliber as the geometry self-check 6a/9 \"manual: "
+            "N/A\"); the gate slots read N/A and the measured values remain "
+            "in metrics"]
     if column_mode:
         out["honest_notes"] = out["honest_notes"] + [
             "Column placement caliber: the main chain aligns vertically in one "
