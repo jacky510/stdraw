@@ -1,0 +1,750 @@
+{
+ "viewBox": [
+  0,
+  0,
+  696,
+  632
+ ],
+ "nodes": {
+  "susceptible": {
+   "x": 418,
+   "y": 536,
+   "w": 110
+  },
+  "infected": {
+   "x": 544,
+   "y": 430,
+   "w": 96
+  },
+  "recovered": {
+   "x": 424,
+   "y": 360,
+   "w": 110
+  },
+  "contact_rate": {
+   "x": 128,
+   "y": 430,
+   "w": 96
+  },
+  "new_infections": {
+   "x": 254,
+   "y": 536,
+   "w": 96
+  },
+  "hospital_load": {
+   "x": 572,
+   "y": 268,
+   "w": 96
+  },
+  "bed_capacity": {
+   "x": 340,
+   "y": 252,
+   "w": 96
+  },
+  "npi": {
+   "x": 100,
+   "y": 268,
+   "w": 96
+  },
+  "fatality": {
+   "x": 490,
+   "y": 126,
+   "w": 96
+  },
+  "public_concern": {
+   "x": 182,
+   "y": 126,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "susceptible",
+   "b": "new_infections",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      366.0,
+      536.0
+     ],
+     [
+      299.0,
+      536.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     366.0,
+     536.0
+    ],
+    "b": [
+     299.0,
+     536.0
+    ]
+   },
+   "arrow": [
+    299.0,
+    536.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "contact_rate",
+   "b": "new_infections",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      138.6,
+      449.0
+     ],
+     [
+      243.4,
+      517.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     138.62,
+     449.0
+    ],
+    "b": [
+     243.38,
+     517.0
+    ]
+   },
+   "arrow": [
+    243.4,
+    517.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "infected",
+   "b": "new_infections",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      499.0,
+      434.5
+     ],
+     [
+      489.9,
+      436.4
+     ],
+     [
+      480.8,
+      438.4
+     ],
+     [
+      471.8,
+      440.7
+     ],
+     [
+      462.9,
+      443.1
+     ],
+     [
+      454.1,
+      445.7
+     ],
+     [
+      445.3,
+      448.6
+     ],
+     [
+      436.6,
+      451.6
+     ],
+     [
+      427.9,
+      454.8
+     ],
+     [
+      419.3,
+      458.1
+     ],
+     [
+      410.8,
+      461.7
+     ],
+     [
+      402.4,
+      465.5
+     ],
+     [
+      394.0,
+      469.4
+     ],
+     [
+      385.7,
+      473.6
+     ],
+     [
+      377.5,
+      477.9
+     ],
+     [
+      369.3,
+      482.4
+     ],
+     [
+      361.3,
+      487.1
+     ],
+     [
+      353.2,
+      492.0
+     ],
+     [
+      345.3,
+      497.1
+     ],
+     [
+      337.4,
+      502.3
+     ],
+     [
+      329.6,
+      507.8
+     ],
+     [
+      321.8,
+      513.4
+     ],
+     [
+      314.1,
+      519.3
+     ],
+     [
+      306.5,
+      525.3
+     ],
+     [
+      299.0,
+      531.5
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     389.1,
+     455.8
+    ]
+   },
+   "anchors": {
+    "a": [
+     499.0,
+     434.484
+    ],
+    "b": [
+     299.0,
+     531.516
+    ]
+   },
+   "arrow": [
+    299.0,
+    531.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "new_infections",
+   "b": "infected",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "wrap",
+    "points": [
+     [
+      264.6,
+      555.0
+     ],
+     [
+      282.6,
+      581.5
+     ],
+     [
+      646.5,
+      584.5
+     ],
+     [
+      646.5,
+      478.0
+     ],
+     [
+      640.0,
+      475.0
+     ],
+     [
+      589.0,
+      449.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     264.62,
+     555.0
+    ],
+    "b": [
+     589.0,
+     449.0
+    ]
+   },
+   "arrow": [
+    589.0,
+    449.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "infected",
+   "b": "susceptible",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      544.0,
+      449.0
+     ],
+     [
+      470.0,
+      517.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     544.0,
+     449.0
+    ],
+    "b": [
+     470.0,
+     517.0
+    ]
+   },
+   "arrow": [
+    470.0,
+    517.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "infected",
+   "b": "recovered",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      499.0,
+      411.0
+     ],
+     [
+      476.0,
+      379.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     499.0,
+     411.0
+    ],
+    "b": [
+     476.0,
+     379.0
+    ]
+   },
+   "arrow": [
+    476.0,
+    379.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "infected",
+   "b": "hospital_load",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      544.0,
+      411.0
+     ],
+     [
+      572.0,
+      287.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     544.0,
+     411.0
+    ],
+    "b": [
+     572.0,
+     287.0
+    ]
+   },
+   "arrow": [
+    572.0,
+    287.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "hospital_load",
+   "b": "fatality",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      561.4,
+      249.0
+     ],
+     [
+      500.6,
+      145.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     561.38,
+     249.0
+    ],
+    "b": [
+     500.62,
+     145.0
+    ]
+   },
+   "arrow": [
+    500.6,
+    145.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "bed_capacity",
+   "b": "fatality",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      350.6,
+      233.0
+     ],
+     [
+      479.4,
+      145.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     350.62,
+     233.0
+    ],
+    "b": [
+     479.38,
+     145.0
+    ]
+   },
+   "arrow": [
+    479.4,
+    145.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "fatality",
+   "b": "public_concern",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      445.0,
+      126.0
+     ],
+     [
+      227.0,
+      126.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     445.0,
+     126.0
+    ],
+    "b": [
+     227.0,
+     126.0
+    ]
+   },
+   "arrow": [
+    227.0,
+    126.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "public_concern",
+   "b": "npi",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      171.4,
+      145.0
+     ],
+     [
+      110.6,
+      249.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     171.38,
+     145.0
+    ],
+    "b": [
+     110.62,
+     249.0
+    ]
+   },
+   "arrow": [
+    110.6,
+    249.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "npi",
+   "b": "contact_rate",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      100.0,
+      287.0
+     ],
+     [
+      128.0,
+      411.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     100.0,
+     287.0
+    ],
+    "b": [
+     128.0,
+     411.0
+    ]
+   },
+   "arrow": [
+    128.0,
+    411.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "public_concern",
+   "b": "bed_capacity",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      192.6,
+      145.0
+     ],
+     [
+      329.4,
+      233.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     192.62,
+     145.0
+    ],
+    "b": [
+     329.38,
+     233.0
+    ]
+   },
+   "arrow": [
+    329.4,
+    233.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "bed_capacity",
+   "b": "hospital_load",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      385.0,
+      256.5
+     ],
+     [
+      527.0,
+      263.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     385.0,
+     256.484
+    ],
+    "b": [
+     527.0,
+     263.516
+    ]
+   },
+   "arrow": [
+    527.0,
+    263.5
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 6,
+  "rowY": [
+   126,
+   252,
+   268,
+   360,
+   430,
+   536
+  ],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "manual",
+  "mode_decision_trace": {
+   "engine": "manual",
+   "placement": null,
+   "manual": true,
+   "rules": [],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": false,
+    "detail": "manual layout: the auto mode chain did not run; routing hard gates still apply, graded honestly"
+   }
+  },
+  "from_layout": {
+   "source": "疫情扩散 · 医疗挤兑与行为反馈-manual-layout.json",
+   "manual_viewBox": [
+    0,
+    0,
+    696,
+    632
+   ],
+   "snapped_to_2px": [
+    "bed_capacity"
+   ]
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.1"
+}

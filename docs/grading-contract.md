@@ -70,6 +70,26 @@ requires 0 crossings under both calibers, and in v2
 target regime with 1-2 crossings is correctly `uncertified` — that is an
 honest result, not a bug, and thresholds must never be tuned to change it.
 
+### 3.1 Manual coordinates — automatic-pipeline structural checks are N/A
+
+Under `--from-layout` (manual coordinates), two layered-mode certificate
+gates — `pitch_uniform` and `column_snap24_ge_060` — read the string
+`"N/A"` instead of a measured boolean (jacky's ruling of 2026-11-13;
+same caliber as the geometry self-check in `check.py` items 6a/9,
+"manual: N/A"). Uniform card pitch and 24px column snapping are
+properties of the automatic pipeline's placement, not of a human-drawn
+arrangement; grading a hand layout `false` on them measured nothing.
+
+Consequently:
+
+- the `N/A` slots are excluded from `gates_passed` (a clean manual layout
+  reads e.g. `10/10`) and can never appear in `blocking_gates`;
+- this is a **caliber alignment, not a threshold change**: the measured
+  values stay in `metrics` (`column_snap24_rate`, …), every other gate is
+  untouched, and the AUTO path keeps boolean gate values;
+- a manual layout still earns `best` only through the full remaining hard
+  gates + 0 crossings under both crossing calibers.
+
 ## 4. D0 — vertical-orthogonal diagrams are banned as deliverables
 
 Ruling D0 (jacky, 2026-11-11): **vertical-orthogonal (ortho-v1) output is
