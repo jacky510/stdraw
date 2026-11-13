@@ -562,18 +562,47 @@ class PlanarLayout:
         return -s, Y, {"rows": nrow, "down": down, "W": W, "H": H,
                        "scale": round(s, 3)}
 
-    def try_candidate(self, rot, dummy, s, t):
-        # rot/dummy come from a single augment(build_rotation()) computed in
-        # run(): both depend only on the graph itself, never on the (s,t)
-        # candidate, so rebuilding them per candidate was pure waste.
-        g = self.st_numbering(rot, s, t)
-        res = self.visibility(rot, g, (s, t))
+    # Two-stage candidate search.  Per candidate, the wall-clock hog is
+    # finalize() (row compaction + column packing, ~90% of candidate cost
+    # on grid graphs), while the width/height that decide the final score
+    # already have *admissible lower bounds* from the cheap half:
+    #   H >= top + (Lchain-1)*pitch + card_h/2 + 18, where Lchain is the
+    #        longest chain of the real graph in st-order -- row compaction
+    #        only moves nodes down while keeping every node below its
+    #        g-predecessors, so the final row count can never drop below
+    #        that chain.
+    # With s = min(target_w/W, target_h/H), s(c) <= target_h/H_lb.  (The
+    # width side has no cheap admissible bound -- leader bars may span
+    # wider than cards -- so width-binding layouts simply fall back to
+    # full enumeration; correctness never depends on the prune.)
+    # Stage 2 finalizes in ascending H-bound order and keeps the best
+    # true score seen; any candidate whose bound cannot reach it skips the
+    # expensive pipeline.  The bound is admissible, so the surviving set
+    # always contains the true winner and the final stable sort by score
+    # (discovery order tie-break, unchanged) picks exactly the candidate
+    # full enumeration would pick -- output bytes are identical on every
+    # input, by construction, not just on the benchmark corpus.
+    def _stage1_candidate(self, rot, s, t):
+        """Cheap half of try_candidate: st-numbering + dual longest path + admissible width/height lower bounds (no pixel packing)."""
+        try:
+            g = self.st_numbering(rot, s, t)
+            res = self.visibility(rot, g, (s, t))
+        except AssertionError:
+            return None
         if not res:
             return None
         Y_aug, Xe = res
+        # longest chain of the real graph in st-order == number of distinct
+        # longest-path levels (levels are contiguous from 0)
+        Lchain = len(set(self.real_dag_levels(g).values()))
+        c = self.cfg
+        H_lb = c.top + (Lchain - 1) * c.pitch + c.card_h // 2 + 18
+        return g, Y_aug, Xe, H_lb
+
+    def _stage2_candidate(self, rot, dummy, s, t, g, Y_aug, Xe):
+        """Expensive half of try_candidate: directed column split + row compaction + pixel packing + scale search."""
         re_set = {frozenset(e) for e in self.edges}
         RXe = {e: x for e, x in Xe.items() if e in re_set}
-        # split bidirectional edge pairs into independent columns: keys become directed; the reverse edge gets column value +0.5 to force a separate column
         pair_n = defaultdict(int)
         directed = {}
         for (a, b) in self.edges:
@@ -585,6 +614,15 @@ class PlanarLayout:
         sc, Y, metrics = self.finalize(rot, g, Y_aug, RXe)
         return sc, s, t, rot, g, Y_aug, Xe, RXe, dummy, Y, metrics
 
+    def try_candidate(self, rot, dummy, s, t):
+        # rot/dummy come from a single augment(build_rotation()) computed in
+        # run(): both depend only on the graph itself, never on the (s,t)
+        # candidate, so rebuilding them per candidate was pure waste.
+        st1 = self._stage1_candidate(rot, s, t)
+        if not st1:
+            return None
+        return self._stage2_candidate(rot, dummy, s, t, st1[0], st1[1], st1[2])
+
     def run(self):
         """Search all candidates and return the best layout dict (deterministic: same graph, same output)."""
         # The rotation system and its triangulation depend only on the graph,
@@ -595,24 +633,51 @@ class PlanarLayout:
         # run(), and an AssertionError here would previously have aborted
         # every candidate anyway (same exception type escaping run()).
         rot, dummy = self.augment(self.build_rotation())
-        cands = []
+        # Stage 1: enumerate candidates cheaply.  Discovery order is the edge
+        # order, exactly as in the pre-two-stage loop, so the final stable
+        # sort keeps the same tie-break semantics on the surviving set.
+        survivors = []
         seen_st = set()
         for a, b in self.edges:
             for s, t in ((a, b), (b, a)):
-                try:
-                    r = self.try_candidate(rot, dummy, s, t)
-                except AssertionError:
+                st1 = self._stage1_candidate(rot, s, t)
+                if not st1:
                     continue
-                if not r:
-                    continue
-                key = tuple(sorted(r[4].items()))
+                key = tuple(sorted(st1[0].items()))
                 if key in seen_st:
                     continue
                 seen_st.add(key)
-                cands.append(r)
+                survivors.append((s, t) + st1)  # (s, t, g, Y_aug, Xe, H_lb)
+        assert survivors, "no viable candidate"
+        # Stage 2: finalize only the candidates the admissible bound cannot
+        # rule out, tightest bound first so the incumbent score prunes hard
+        # from the start.  AssertionError from finalize (e.g. packing stuck)
+        # still skips just that candidate, as before.  A candidate pruned
+        # here is provably worse than the incumbent, so the set of scored
+        # candidates always contains the arg-max -- final selection is
+        # identical to full enumeration on every input.
+        cands = []
+        s_best = None
+        for i in sorted(range(len(survivors)),
+                        key=lambda i: (survivors[i][5], i)):
+            s_ub = self.cfg.target_h / survivors[i][5]
+            if s_best is not None and s_ub < s_best:
+                continue
+            s, t, g, Y_aug, Xe = survivors[i][:5]
+            try:
+                r = self._stage2_candidate(rot, dummy, s, t, g, Y_aug, Xe)
+            except AssertionError:
+                continue
+            cands.append((i, r))
+            sc = -r[0]
+            s_best = sc if s_best is None else max(s_best, sc)
         assert cands, "no viable candidate"
-        cands.sort(key=lambda x: x[0])
-        sc, s, t, rot, g, Y_aug, Xe, RXe, dummy, Y, data = cands[0]
+        # pick (min score, earliest discovery index) -- exactly the stable
+        # cands.sort(key=score)[0] semantics of full enumeration; the
+        # finalize order above is bound order, so the tie-break MUST NOT
+        # ride on evaluation order
+        _, best = min(cands, key=lambda p: (p[1][0], p[0]))
+        sc, s, t, rot, g, Y_aug, Xe, RXe, dummy, Y, data = best
         v4 = self.stage3(g, Y, RXe)
         v4["meta"]["st"] = [s, t]
         v4["meta"]["down"] = data["down"]
