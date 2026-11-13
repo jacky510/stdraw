@@ -359,9 +359,15 @@ _INNER_FS = (0.42, 0.34, 0.50, 0.26, 0.58, 0.18, 0.66)
 _ANGLE_DS = (0.0, 20.0, -20.0, 40.0, -40.0, 60.0, -60.0, 90.0, -90.0, 120.0, -120.0)
 
 
-def place_ring(plan, widths, card_h, cfg, adj, edges):
+def place_ring(plan, widths, card_h, cfg, adj, edges, rot_deg=0.0):
     """Ring placement -> ({v: x}, {v: y}, meta). All-integer 2px grid,
     deterministic.
+
+    rot_deg: global rotation offset of the polygon slot angles (trial
+    dimension of the single-node zero-crossing reposition post-processing;
+    0.0 = historical behavior, byte-for-byte identical). The regularity
+    calibers (equal-spacing CV / template fit) are rotation invariant, so
+    trial rotations only reshape the routing geometry, never the ring gates.
 
     Residual assignment: candidates = in-ring fraction x angle offset
     (ring-neighbor centroid at 0°); each residual (id order) takes the
@@ -375,11 +381,12 @@ def place_ring(plan, widths, card_h, cfg, adj, edges):
     ring, k = plan["ring"], plan["k"]
     ring_widths = {i: widths.get(v, 96) for i, v in enumerate(ring)}
     r = _ring_radius(k, ring_widths, len(plan["residuals"]))
+    rot = math.radians(rot_deg)
     cx = int(r // 2) * 2
     cy = int((r + card_h // 2 + 40) // 2) * 2
     pos, y, angles = {}, {}, {}
     for i, v in enumerate(ring):
-        ang = 2 * math.pi * i / k - math.pi / 2
+        ang = 2 * math.pi * i / k - math.pi / 2 + rot
         angles[v] = ang
         pos[v] = int(round((cx + r * math.cos(ang)) / 2) * 2)
         y[v] = int(round((cy + r * math.sin(ang)) / 2) * 2)

@@ -1,0 +1,51 @@
+# ============================================================
+# 疫情扩散 · 医疗挤兑与行为反馈（SIR + 容量约束 + 政策闭环）
+# 经典仓室模型 SIR 与系统动力学「能力约束 / 行为反馈」的复合 CLD。
+# 语料 benchmarks/corpus/classic/ 中无 SIR / 医疗容量结构；本会话独立构造。
+#
+# 10 节点 / 14 边 / 5 条反馈环：
+#   R1 感染扩散自增强：新感染↑ → 感染者↑ → 新感染↑（无负边 ⇒ 增强）
+#   B1 易感池耗竭：易感↑ → 新感染↑ → 感染者↑ → 易感↓（1 负 ⇒ 调节）
+#   B2 防控行为反馈（长环 7 节点）：接触率↑ → 新感染↑ → 感染者↑ → 住院负荷↑
+#        → 病死↑ → 公众担忧↑ → 防控↑ → 接触率↓（1 负 ⇒ 调节）
+#   B3 医疗扩容缓冲：负荷↑ → 病死↑ → 担忧↑ → 床位↑ → 负荷↓（1 负 ⇒ 调节）
+#   B4 床位抑病死：床位↑ → 病死↓ → 担忧↓ → 床位↓（1 负 ⇒ 调节）
+#   recovered 为纯汇点（只有入边），刻意不成环。
+#
+# 设计约束：loops_audit 独立枚举全图简单回路，任何未声明环都会进 problems；
+#   且每个 loop 的 @loops 子图须只含唯一闭合路径，否则极性 DFS 可能选错路径。
+#   已用 networkx.simple_cycles 预检：全图简单回路恰为 5 条。
+# ============================================================
+graph "疫情扩散 · 医疗挤兑与行为反馈"
+
+var susceptible    "易感人群 S"
+var infected       "感染者 I"
+var recovered      "康复免疫 R"
+var contact_rate   "接触率"
+var new_infections "新增感染"
+var hospital_load  "住院负荷"
+var bed_capacity   "床位容量"
+var npi            "防控强度"
+var fatality       "病死数"
+var public_concern "公众担忧"
+
+susceptible    -> + new_infections @loops B1
+contact_rate   -> + new_infections @loops B2
+infected       -> + new_infections @loops R1
+new_infections -> + infected       @loops R1,B1,B2
+infected       -> - susceptible    @loops B1
+infected       -> + recovered
+infected       -> + hospital_load  @loops B2
+hospital_load  -> + fatality       @loops B2,B3
+bed_capacity   -> - fatality       @loops B4
+fatality       -> + public_concern @loops B2,B3,B4
+public_concern -> + npi            @loops B2
+npi            -> - contact_rate   @loops B2
+public_concern -> + bed_capacity   @loops B3,B4
+bed_capacity   -> - hospital_load  @loops B3
+
+loop R1 "感染扩散自增强" "R" [new_infections, infected]
+loop B1 "易感池耗竭" "B" [susceptible, new_infections, infected]
+loop B2 "防控行为反馈" "B" [contact_rate, new_infections, infected, hospital_load, fatality, public_concern, npi]
+loop B3 "医疗扩容缓冲" "B" [hospital_load, fatality, public_concern, bed_capacity]
+loop B4 "床位抑病死" "B" [bed_capacity, fatality, public_concern]

@@ -64,6 +64,40 @@ a `mode_decision_trace` in `meta` (`layout.json`) and in the certificate
 - Manual layouts (`--from-layout`) bypass the chain: `manual: true`,
   `rules: []` — routing hard gates still apply, graded honestly.
 
+### Single-node zero-crossing neighborhood reposition (ring-cycle post-pass, 2026-11-13)
+
+When a ring-cycle graph still carries chord crossings under the FROZEN
+main-ring selection key (the key itself is untouched; its reordering remains
+a pending owner decision), the generation-side "2 crossings acceptable"
+search target and the acceptance-side `visual_crossings_zero` hard gate
+disagree: the engine ships a drawing it considers fine and the certificate
+fails. A post-pass runs after placement, before routing, as a single-node
+neighborhood search:
+
+- **Neighborhood** = demote exactly ONE ring node to an in-ring residual
+  (the "drag one box into the middle free space" move) and re-fit the
+  remaining k-1 nodes onto the regular (k-1)-gon via `place_ring` (radius
+  adaptation as before; slot-angle rotation offsets +/-8/16/24/32/40 deg
+  are the second trial dimension — the regularity gates (equal-spacing CV /
+  template fit) are rotation invariant, only the routing geometry changes).
+- **Adoption (hard constraint, zero-regression guarantee)**: the coordinates
+  are replaced ONLY when BOTH crossing calibers (graph-theory crossings AND
+  visual crossings incl. fan pairs) reach 0 AND every hard-gate proxy (box
+  press, clearance, anchor angle, mutual-pair separation, card gap, 16-anchor
+  membership, line-line coincidence) still passes on a full delivery-chain
+  probe; otherwise the original coordinates stand, byte-for-byte.
+- **Observability**: on adoption, `mode_decision_trace` records
+  `post_layout_reposition` (node id, delta x/y, rotation, ring k before/
+  after, both crossing calibers before/after, moved-node list, reason). No
+  key is written when not triggered / not adopted — a no-op never writes,
+  which makes whole-corpus zero drift a constructive fact.
+- Trigger (free, combinatorial): selected ring `chord_crossings > 0` and
+  k >= 4; a healthy figure (already 0/0 on delivery) returns after one
+  probe without entering the search.
+- Determinism: candidate order = (chord crossings, ring index); fixed
+  rotation ladder; ties ranked by (edge-box clearance, card gap, candidate
+  order); no RNG.
+
 ### Column mode (column-chain)
 
 - **Spine selection**: candidates = declared loops ∪ graph-enumerated cycles,

@@ -1006,6 +1006,262 @@ def _final_pairs(nodes_px, edges, routes, cfg):
     return router.final_crossing_pairs(routes)
 
 
+# Trial rotation offsets (degrees) for the ring re-fit of the single-node
+# zero-crossing reposition post-processing. Fixed ladder, deterministic;
+# 0.0 first so an unrotated re-fit is always tried before rotated ones.
+REPOSITION_ROT_DEG = (0.0, 8.0, -8.0, 16.0, -16.0, 24.0, -24.0,
+                      32.0, -32.0, 40.0, -40.0)
+
+
+def _delivery_chain_probe(nodes_px, edges, cfg):
+    """The main delivery chain replicated for reposition trial evaluation
+    (ring engine: er_presets is always None there, constructed always empty).
+
+    Keep in sync with the routing/repair sequence in layout(): coincide ->
+    midband (legacy band) -> fan_spread -> arrival flip -> anchor_snap
+    (density-gated revert / deferral) -> lens joint reassign + enhanced
+    arrival flip. Inputs are only read; returned routes are fresh objects.
+    """
+    density = len(edges) / max(len(nodes_px), 1)
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+    routes = router.route_all()
+    routes = router.coincide_reroute(routes, frozen=set())
+    routes = router.midband_reanchor(routes, frozen=set(), enhanced=False)
+    routes = router.fan_spread(routes, frozen=set())
+    routes = router.mutual_arrival_flip(routes, frozen=set())
+    pre_pairs = router.final_crossing_pairs(routes)
+    pre_coincide = len(router._route_coincide_pairs(routes))
+    pre_routes = {i: _clone_route(routes[i]) for i in routes}
+    snap = router.anchor_snap(routes)
+    regress = False
+    if router.final_crossing_pairs(routes) > pre_pairs:
+        regress = True
+    if len(router._route_coincide_pairs(routes)) > pre_coincide:
+        regress = True
+    if (snap is not None and snap.get("failures")
+            and density >= ANCHOR_SNAP_DENSE_E_OVER_N):
+        regress = True      # dense caliber: unplaceable endpoints defer the snap
+    if regress:
+        routes = pre_routes
+        snap = None         # reverted / deferred: the post-snap flip is skipped
+    if snap is not None:
+        routes = router.lens_joint_reassign(routes,
+                                            snap.get("lens_pairs", []))
+        routes = router.mutual_arrival_flip(routes, enhanced_gates=True)
+    return router, routes, snap
+
+
+def _off_standard_anchors(nodes_px, routes, edges):
+    """Delivered endpoints NOT on their box's 16 standard anchor set
+    (the certificate anchors_standard caliber, evaluated directly on the
+    delivered geometry -- independent of whether anchor_snap applied,
+    reverted or deferred)."""
+    from .anchors import standard_anchors as _std
+    bad = 0
+    for i, (a, b) in enumerate(edges):
+        pts = routes[i]["points"]
+        for v, p in ((a, pts[0]), (b, pts[-1])):
+            A = nodes_px[v]
+            std = [(x, y) for _, x, y in
+                   _std(A[0], A[1], A[2] / 2.0, A[3] / 2.0)]
+            if not any(abs(p[0] - x) < 0.5 and abs(p[1] - y) < 0.5
+                       for x, y in std):
+                bad += 1
+    return bad
+
+
+def _reposition_gate_eval(router, routes, nodes_px, edges, cfg):
+    """Hard-gate accounting over delivered probe geometry (adoption caliber
+    of the reposition post-processing; same source calibers as the trial
+    gates and the certificate: dense-sampled press/clearance, anchor angle,
+    mutual-pair separation, card gap, both crossing calibers -- crossings
+    (graph-theory, shared endpoints exempt) AND visual crossings (all pairs
+    including fan pairs) -- line-line coincidence and 16-anchor membership
+    via the snap report). Returns a flat dict of counts/values."""
+    from .routing import (dist_point_rect, min_pair_dist, sample_polyline,
+                          seg_cross, ANCHOR_MIN_DEG, PRESS_MARGIN)
+    boxes = {v: (xy[0], xy[1], xy[2] / 2.0, xy[3] / 2.0)
+             for v, xy in nodes_px.items()}
+    dense = {i: sample_polyline([tuple(p) for p in routes[i]["points"]],
+                                step=4.0)
+             for i in sorted(routes)}
+    idxs = sorted(routes)
+    pairs = router.final_crossing_pairs(routes)
+    vis = 0
+    for a in range(len(idxs)):
+        ia = idxs[a]
+        for b in range(a + 1, len(idxs)):
+            ib = idxs[b]
+            hit = False
+            pa, pb = dense[ia], dense[ib]
+            for s1 in zip(pa[:-1], pa[1:]):
+                for s2 in zip(pb[:-1], pb[1:]):
+                    if seg_cross(s1[0], s1[1], s2[0], s2[1]):
+                        hit = True
+                        break
+                else:
+                    continue
+                break
+            if hit:
+                vis += 1
+    coincide = len(router._route_coincide_pairs(routes))
+    clr_bad = 0
+    own_press = 0
+    ang_bad = 0
+    min_clear = None
+    for i, (a, b) in enumerate(edges):
+        pts = dense[i]
+        raw = routes[i]["points"]
+        q0, q1 = raw[0], raw[-1]
+        for v, (cx, cy, hw, hh) in boxes.items():
+            if v in (a, b):
+                continue
+            dd = min(dist_point_rect(px, py, cx, cy, hw, hh)
+                     for px, py in pts)
+            min_clear = dd if min_clear is None else min(min_clear, dd)
+            if dd < cfg.clearance:
+                clr_bad += 1
+        # own-box body press (attachment zone exempt, check-2 caliber)
+        for v in (a, b):
+            cx, cy, hw, hh = boxes[v]
+            body = False
+            for px, py in pts:
+                if ((px - q0[0]) ** 2 + (py - q0[1]) ** 2 <= 36.0 or
+                        (px - q1[0]) ** 2 + (py - q1[1]) ** 2 <= 36.0):
+                    continue
+                if dist_point_rect(px, py, cx, cy,
+                                   hw + PRESS_MARGIN, hh + PRESS_MARGIN) <= 0:
+                    body = True
+                    break
+            if body:
+                own_press += 1
+        info = routes[i]
+        ang = min(info.get("ang_a", ANCHOR_MIN_DEG),
+                  info.get("ang_b", ANCHOR_MIN_DEG))
+        if ang < ANCHOR_MIN_DEG - 1e-9:
+            ang_bad += 1
+    mut_bad = 0
+    for i, (a, b) in enumerate(edges):
+        for j, (c, d) in enumerate(edges):
+            if j <= i or (a, b) != (d, c):
+                continue
+            md = min_pair_dist(dense[i], dense[j])
+            if md is None or md < 4.0:
+                mut_bad += 1
+    vs = sorted(nodes_px)
+    gap_bad = 0
+    min_gap = None
+    for i in range(len(vs)):
+        for j in range(i + 1, len(vs)):
+            a, b = vs[i], vs[j]
+            ax, ay, aw, ah = nodes_px[a]
+            bx, by, bw, bh = nodes_px[b]
+            g = max(abs(ax - bx) - (aw + bw) / 2,
+                    abs(ay - by) - (ah + bh) / 2)
+            min_gap = g if min_gap is None else min(min_gap, g)
+            if g < cfg.min_gap - 2:
+                gap_bad += 1
+    snap_fail = _off_standard_anchors(nodes_px, routes, edges)
+    return {"pairs": int(pairs), "vis": int(vis), "coincide": int(coincide),
+            "clr_bad": clr_bad, "own_press": own_press, "ang_bad": ang_bad,
+            "mut_bad": mut_bad, "gap_bad": gap_bad, "snap_fail": snap_fail,
+            "min_clear": (round(min_clear, 3)
+                          if min_clear is not None else 0.0),
+            "min_gap": (round(min_gap, 3) if min_gap is not None else 0.0)}
+
+
+def _reposition_clean(g):
+    """True when the gate dict shows zero hard-gate breaches (crossing
+    calibers are judged separately -- adoption requires 0 on BOTH)."""
+    return (g["coincide"] == 0 and g["clr_bad"] == 0 and g["own_press"] == 0
+            and g["ang_bad"] == 0 and g["mut_bad"] == 0 and g["gap_bad"] == 0
+            and g["snap_fail"] == 0)
+
+
+def _ring_reposition(nodes, edges, widths, card_h, cfg, adj, ring_plan,
+                     pos, y):
+    """Single-node zero-crossing neighborhood reposition post-processing
+    (ring-cycle placement).
+
+    Triggered only when the selected ring still carries chord crossings
+    under the frozen selection key. Neighborhood = demote exactly one ring
+    node to an in-ring residual and re-fit the remaining k-1 nodes onto the
+    regular (k-1)-gon (radius adapts inside place_ring; slot-angle rotation
+    offsets are the second trial dimension). Every candidate is evaluated
+    through the full delivery-chain probe and adopted ONLY when both
+    crossing calibers reach 0 AND every hard gate still passes; several
+    qualifiers are ranked by (edge-box clearance, card gap, candidate order)
+    -- strictly zero-crossing-or-nothing, never a partial improvement.
+
+    Returns (pos, y, pos_meta, record) for the adopted candidate, or None
+    (original coordinates stand; callers treat that as a byte-for-byte
+    no-op). Deterministic: fixed candidate order, fixed rotation ladder,
+    no RNG.
+    """
+    from . import ringlayout
+    from .ringlayout import _chord_segments, _crossing_count, InfeasibleRing
+    nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
+    r0, rt0, _ = _delivery_chain_probe(nodes_px, edges, cfg)
+    g0 = _reposition_gate_eval(r0, rt0, nodes_px, edges, cfg)
+    if g0["pairs"] == 0 and g0["vis"] == 0 and _reposition_clean(g0):
+        return None        # chord proxy over-counted; the delivery is already clean
+    ring = list(ring_plan["ring"])
+    cands = []
+    for i, v in enumerate(ring):
+        ring2 = [u for u in ring if u != v]
+        if len(ring2) < 3:
+            continue
+        plan2 = dict(ring_plan)
+        plan2["ring"] = ring2
+        plan2["k"] = len(ring2)
+        plan2["residuals"] = list(ring_plan["residuals"]) + [v]
+        plan2["chord_crossings"] = _crossing_count(
+            _chord_segments(ring2, edges))
+        cands.append((plan2["chord_crossings"], i, v, plan2))
+    cands.sort(key=lambda t: (t[0], t[1]))
+    best = None
+    for chord2, i, v, plan2 in cands:
+        for ri, rot in enumerate(REPOSITION_ROT_DEG):
+            try:
+                pos2, y2, meta2 = ringlayout.place_ring(
+                    plan2, widths, card_h, cfg, adj, edges, rot_deg=rot)
+            except InfeasibleRing:
+                continue   # collision landscape is rotation-dependent
+            npx2 = {u: (pos2[u], y2[u], widths[u], card_h) for u in nodes}
+            r2, rt2, _ = _delivery_chain_probe(npx2, edges, cfg)
+            g2 = _reposition_gate_eval(r2, rt2, npx2, edges, cfg)
+            if g2["pairs"] == 0 and g2["vis"] == 0 and _reposition_clean(g2):
+                key = (-g2["min_clear"], -g2["min_gap"], i, ri)
+                if best is None or key < best[0]:
+                    best = (key, pos2, y2, meta2, v, rot, g2)
+                break      # first qualifying rotation per demotion candidate
+    if best is None:
+        print("[stdraw] ring reposition: no fully-qualified zero-crossing "
+              "candidate (%d demotion candidates scanned) -- original "
+              "placement kept" % len(cands), file=sys.stderr)
+        return None
+    _, pos2, y2, meta2, v, rot, g2 = best
+    moved = [u for u in sorted(nodes)
+             if pos2[u] != pos[u] or y2[u] != y[u]]
+    rec = {
+        "triggered": True,
+        "node": v,
+        "delta_xy": [int(pos2[v] - pos[v]), int(y2[v] - y[v])],
+        "rotation_deg": rot,
+        "ring_k_before": len(ring),
+        "ring_k_after": len(ring) - 1,
+        "crossings_before": g0["pairs"],
+        "crossings_after": g2["pairs"],
+        "visual_crossings_before": g0["vis"],
+        "visual_crossings_after": g2["vis"],
+        "moved_nodes": moved,
+        "reason": ("one ring node demoted to an in-ring residual; the ring "
+                   "re-fits onto the rotated (k-1)-gon; both crossing "
+                   "calibers reach 0 and every hard gate still passes"),
+    }
+    return pos2, y2, meta2, rec
+
+
 def _sym_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     """Bowtie-pair symmetric placement + routing trial gate: adopted only if the gate passes; otherwise None (fallback, byte-for-byte unchanged).
 
@@ -1274,6 +1530,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
 
     # ②③ placement: --from-layout manual coordinates, or automatic layering + placement
     _routes_final = None
+    _reposition_rec = None
     constructed = {}
     from_meta = None
     # ref-scrubbed mode decision trace: every rule evaluation in the deterministic
@@ -1594,6 +1851,32 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                         pos, y, rows = _best[1], _best[2], _best[3]
                         _routes_final = _best[4]
             _timing.mark("polish_gated_reorder")
+
+        # ref-scrubbed improvement ticket: single-node zero-crossing
+        # neighborhood reposition post-processing (ring-cycle placement).
+        # Free trigger (combinatorial): the selected ring still carries chord
+        # crossings under the frozen selection key (the D3 selection key is
+        # NOT touched here). The acceptance-side hard gate demands
+        # visual_crossings == 0 while the generation side stops at <= 2, so
+        # a 1-crossing ring delivery reads "acceptable" here and
+        # "uncertified" on the certificate. The neighborhood = demote exactly
+        # one ring node to an in-ring residual and re-fit the remaining
+        # k-1 nodes onto the regular (k-1)-gon. Adoption is strictly gated
+        # (both crossing calibers 0 + every hard gate pass); anything else
+        # returns None and the coordinates above stand byte-for-byte, so
+        # every already-passing figure is a no-op by construction.
+        if (engine == "ring-construct" and ring_plan is not None
+                and ring_plan.get("chord_crossings", 0) > 0
+                and len(ring_plan["ring"]) >= 4):
+            _rep = _ring_reposition(nodes, edges, widths, card_h, cfg, adj,
+                                    ring_plan, pos, y)
+            if _rep is not None:
+                pos, y = _rep[0], _rep[1]
+                pos_meta = _rep[2]
+                _reposition_rec = _rep[3]
+                rows = [[v for v in nodes if y[v] == yy]
+                        for yy in sorted({y[v] for v in nodes})]
+                _timing.mark("ring_reposition")
 
     # ④ routing (straight/arc first-class, boxes do not press lines) + WS3 theoretical caliber (final-route crossing pairs)
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
@@ -2352,6 +2635,12 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                            "spine-wing: 100% in-band enforced (enhanced "
                            "re-anchor channel active, no legacy exemption)")},
         }
+        # ref-scrubbed improvement ticket: the single-node zero-crossing
+        # reposition post-processing records its decision ONLY when it fired
+        # (triggered + adopted); when absent, layout.json/certificate bytes
+        # stay identical to the pre-feature engine -- a no-op never writes.
+        if _reposition_rec is not None:
+            _mode_trace["post_layout_reposition"] = _reposition_rec
     v4 = {
         "viewBox": [0, 0, W, H],
         "nodes": {v: {"x": pos[v], "y": y[v], "w": widths[v]} for v in nodes},
