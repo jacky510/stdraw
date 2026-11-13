@@ -634,21 +634,28 @@ def main():
                                     f"{r_h.stdout[-500:]}")
                     continue
                 cert_h = load(out_h, "certificate.json")
-                # Known uncertified regression fixture (ring-cycle
-                # chord-crossing counterexample, corpus note in the .cld
-                # header): grade=uncertified / crossings=1 is the CORRECT
-                # outcome -- never tune gates to make it pass (this branch
-                # institutionalizes the counterexample assertion).
+                # Formerly the ring-cycle chord-crossing counterexample
+                # fixture (grade=uncertified / crossings=1 was the correct
+                # outcome under the generation-side <=2 search target). The
+                # single-node zero-crossing neighborhood reposition
+                # post-processing (ring-cycle demote-one + (k-1)-gon re-fit,
+                # strictly gated on 0/0 crossings + every hard gate) now
+                # rescues this figure to best WITHOUT any threshold or grade
+                # change -- the rescue is generalized search, not gate
+                # tuning. The expectation flips accordingly.
                 if name == "success-to-the-successful":
-                    if cert_h["grade"] != "uncertified":
-                        failures.append(f"corpus {name}: counterexample "
-                                        f"fixture must stay uncertified "
-                                        f"(got {cert_h['grade']})")
-                    if cert_h["metrics"]["crossings"] != 1:
-                        failures.append(f"corpus {name}: counterexample "
-                                        f"fixture must keep crossings=1 "
-                                        f"(got "
+                    if cert_h["grade"] != "best":
+                        failures.append(f"corpus {name}: expected best after "
+                                        f"the reposition rescue (got "
+                                        f"{cert_h['grade']})")
+                    if cert_h["metrics"]["crossings"] != 0:
+                        failures.append(f"corpus {name}: expected "
+                                        f"crossings=0 (got "
                                         f"{cert_h['metrics']['crossings']})")
+                    for k in _hard_gates_for(cert_h):
+                        if not cert_h["gates"].get(k, False):
+                            failures.append(f"corpus {name}: hard gate "
+                                            f"{k} FAIL")
                     n_ok += 1
                     continue
                 if cert_h["grade"] != "best":
