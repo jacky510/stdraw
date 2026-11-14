@@ -65,6 +65,9 @@ LIGHT = {
     "neutral": "#64748b",          # defensive fallback only
     "loop_r": "#c2410c",           # R semantic, light tier
     "loop_b": "#1e6fae",           # B semantic, light tier
+    # D2 planarization witness marker (UIDesignerBot spec final, 2026-11-14):
+    "xwitness_color": "#64748b",   # slate ink family (vs canvas 4.30:1)
+    "xwitness_tip_text": "#334155",  # tooltip text (vs hover bg 7.91:1)
     # UI-A new tokens ─────────────────────────────────────────────────────
     "card_radius": 14,             # rounded card corners (three-tier large)
     "canvas_grid": {               # canvas grid layer (new render feature)
@@ -145,6 +148,10 @@ DARK = {
     "neutral": "#475569",
     "loop_r": "#ffb454",           # R semantic, dark tier
     "loop_b": "#6ec6ff",           # B semantic, dark tier
+    # D2 planarization witness marker (spec final): note-family ink
+    # (vs canvas 6.36:1 — the light slate only reaches 3.91:1 here).
+    "xwitness_color": "#8b98ab",
+    "xwitness_tip_text": "#dfe7f2",  # = card_label family (12.03:1)
     # UI-A new tokens (mirror the light-tier keyset) ──────────────────────
     "card_radius": 14,
     "canvas_grid": {

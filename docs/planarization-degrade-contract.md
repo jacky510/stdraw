@@ -86,6 +86,10 @@ certificate `crossing_details` 坐标、交互 JS 实时计数（`stdraw/_intera
 
 1. **一个几何交点恰一个 marker**；marker 不改变 crossings 计数口径
    （计数仍由几何复点独立算出，marker 仅是见证的视觉呈现）。
+   D2 定稿措辞微调（字段不减）：**逐点渲染为默认态；密集簇折叠为
+   聚合视觉形态**——簇内（中心距 ≤10px）≤2 个逐点独立渲染（允许
+   视觉重叠）、≥3 个折叠为 Ø10px 聚合徽标「×N」；折叠仅发生在呈现
+   层，markers[] 数据一条不缺、witness 数与 crossings 计数口径不变。
 2. marker 携带数据：`{edges: [A, B], witness_id, planarization: {ub, lb, gap}}`。
 3. hover 文本契约：`A × B · witness #k · cr UB=c (LB=l, gap=g)`；具体文案措辞实现卡定。
 4. 符号/尺寸/颜色/ hover 样式 = **决策点 D2，UIDesignerBot 拍板**（守项目
