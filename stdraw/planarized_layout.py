@@ -33,19 +33,49 @@ elimination; every downstream quantity is derived from delivered
 (rounded) coordinates only.
 """
 from .delivery import stamp_coordinates_only
+from .themes import THEMES as _THEMES
 import math
 
-# ── D2 visual constants ────────────────────────────────────────────────
-# Contract section 3: symbol/size/color/hover style belong to
-# UIDesignerBot (spec card queued; it runs after this implementation card
-# and its constants become the single source then).  Until the spec
-# lands, the contract-suggested defaults are pinned here as the single
-# source; render.py imports from this block (no copies).
-MARKER_SIZE_PX = 9          # x-symbol bounding size (contract: 8-10px)
-MARKER_STROKE_PX = 1.2
-MARKER_COLOR = "#64748b"    # slate: clearly lower visual weight than cards
-MARKER_HOVER_BG = "rgba(100,116,139,0.14)"
-MARKER_HOVER_FONT_PX = 11
+# ── D2 visual constants (FINAL: UIDesignerBot marker spec, 2026-11-14) ──
+# Geometry constants stay here as the single source; render.py imports
+# from this block (no copies).  COLOR is NOT a constant anymore: it lives
+# as per-theme tokens in stdraw/themes.py (`xwitness_color` light
+# #64748b / dark #8b98ab; `xwitness_tip_text` light #334155 / dark
+# #dfe7f2) so a dark static export reads the dark ink — the old single
+# MARKER_COLOR import handed dark exports the light slate (3.91:1).
+MARKER_SIZE_PX = 9          # x-symbol bounding size (spec: keep 9)
+MARKER_STROKE_PX = 1.2      # below the 1.3px edge/card stroke (secondary layer)
+MARKER_HOVER_FONT_PX = 11   # tooltip text size (spec: keep 11)
+MARKER_HOVER_ALPHA = 0.14   # halo / tooltip background = marker ink at 14%
+MARKER_HOVER_RING_PX = 12   # hover halo diameter (same ring as the edge band)
+MARKER_CLUSTER_PX = 10      # dense-cluster join distance (center-to-center)
+MARKER_BADGE_PX = 10        # aggregate badge diameter (clusters of >= 3)
+MARKER_BADGE_FONT_PX = 8.5  # aggregate badge "×N" count text
+
+
+def _cluster_xwitnesses(points, join_px=None):
+    """Dense-cluster groups for the marker presentation layer (D2 spec:
+    markers never displace; a cluster renders members independently at
+    <= 2 and folds into the aggregate badge at >= 3).  Presentation
+    only — callers pass the markers[] points in layout order and render
+    from the returned index groups; the data itself is untouched.
+
+    Deterministic single-linkage greedy in list order: each point joins
+    the first existing cluster holding a member within join_px, else
+    opens a new cluster.  Returns index lists in first-appearance order.
+    """
+    if join_px is None:
+        join_px = MARKER_CLUSTER_PX
+    clusters = []
+    for idx, p in enumerate(points):
+        for c in clusters:
+            if any((p[0] - points[j][0]) ** 2 + (p[1] - points[j][1]) ** 2
+                   <= join_px * join_px for j in c):
+                c.append(idx)
+                break
+        else:
+            clusters.append([idx])
+    return clusters
 
 # ── D1 locked numbers (jacky 2026-11-14) ──────────────────────────────
 BUDGET_INSERT_STEPS = 2000  # insertion steps (one per witness crossing)
@@ -902,7 +932,10 @@ def _planarized_l1(graph, cfg, linestyle, cores):
                     "oracle UB) must agree for crossed-certified"),
         "marker_style": {"size_px": MARKER_SIZE_PX,
                          "stroke_px": MARKER_STROKE_PX,
-                         "color": MARKER_COLOR},
+                         "color": _THEMES["light"]["xwitness_color"],
+                         "color_by_theme": {
+                             name: _THEMES[name]["xwitness_color"]
+                             for name in ("light", "dark")}},
     }
 
     v4 = {

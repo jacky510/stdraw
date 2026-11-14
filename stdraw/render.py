@@ -284,34 +284,118 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         parts.append(f'<g data-edge="{i}">' + _edge_svg(e, labels, values, T) + '</g>')
     # planarization witness markers (contract section 3; L1 output only —
     # L0/L2 scenes carry no planarization key and keep today's bytes).
-    # Visual constants: single source stdraw/planarized_layout.py
-    # (UIDesignerBot spec pending; contract-suggested defaults until then).
+    # D2 marker spec (UIDesignerBot final): color = per-theme token
+    # `xwitness_color` (R1 fix: a dark static export must not pick up the
+    # light slate); hover = 12px transparent halo + render-layer tooltip
+    # card (the SVG <title> is retired); v1 is display-only — no click
+    # behavior is registered anywhere; dense clusters (center distance
+    # <= 10px) of >= 3 fold into the Ø10px aggregate badge.  markers[]
+    # data and the crossings caliber are untouched: this is presentation-
+    # layer folding only, and every byte emitted here lives inside this
+    # branch, so the L0/ortho frozen outputs stay byte-identical.
     _plz = meta.get("planarization") or {}
     if _plz.get("mode") == "L1":
         from .planarized_layout import (MARKER_SIZE_PX as _MS,
                                         MARKER_STROKE_PX as _MSW,
-                                        MARKER_COLOR as _MC)
-        _ub = _plz.get("ub")
-        _lb = _plz.get("lb")
-        _gap = _plz.get("gap")
-        for _m in _plz.get("markers") or []:
-            _mx, _my = _m["point"]
-            _h = _MS / 2
+                                        MARKER_HOVER_FONT_PX as _MF,
+                                        MARKER_HOVER_ALPHA as _MAL,
+                                        MARKER_HOVER_RING_PX as _MR,
+                                        MARKER_BADGE_PX as _MB,
+                                        MARKER_BADGE_FONT_PX as _MBF,
+                                        _cluster_xwitnesses)
+        _mc = T["xwitness_color"]
+        _mt = T["xwitness_tip_text"]
+        _rgb = (int(_mc[1:3], 16), int(_mc[3:5], 16), int(_mc[5:7], 16))
+        _hover_bg = "rgba(%d,%d,%d,%s)" % (_rgb + ("%g" % _MAL,))
+        _badge_fill = "rgba(%d,%d,%d,0.18)" % _rgb
+        _markers = _plz.get("markers") or []
+        _ub, _lb, _gap = _plz.get("ub"), _plz.get("lb"), _plz.get("gap")
+
+        def _tip_line(_m):
+            # contract hover-text skeleton: fields must not shrink
             _mem = _m.get("edges") or []
             _pair = " &times; ".join(
                 html.escape(f"{labels.get(a, a)}→{labels.get(b, b)}")
                 for (a, b) in _mem[:2])
-            _tip = (f"{_pair} · witness #{_m['witness_id']} · "
+            return (f"{_pair} · witness #{_m['witness_id']} · "
                     f"cr UB={_ub} (LB={_lb}, gap={_gap})")
-            parts.append(
-                f'<g class="stdraw-xwitness">'
-                f'<line x1="{_mx - _h:.1f}" y1="{_my - _h:.1f}" '
-                f'x2="{_mx + _h:.1f}" y2="{_my + _h:.1f}" '
-                f'stroke="{_MC}" stroke-width="{_MSW}"/>'
-                f'<line x1="{_mx - _h:.1f}" y1="{_my + _h:.1f}" '
-                f'x2="{_mx + _h:.1f}" y2="{_my - _h:.1f}" '
-                f'stroke="{_MC}" stroke-width="{_MSW}"/>'
-                f'<title>{_tip}</title></g>')
+
+        _tips = [_tip_line(_m) for _m in _markers]
+        _hits = []
+        for _cl in _cluster_xwitnesses([_m["point"] for _m in _markers]):
+            if len(_cl) <= 2:
+                # default state: one x-symbol per geometric crossing at
+                # the exact witness coordinates (displacement forbidden);
+                # a pair may overlap visually (same-color 1.2px low
+                # weight stays readable per the spec).
+                for _i in _cl:
+                    _mx, _my = _markers[_i]["point"]
+                    _h = _MS / 2
+                    parts.append(
+                        f'<g class="stdraw-xwitness">'
+                        f'<line x1="{_mx - _h:.1f}" y1="{_my - _h:.1f}" '
+                        f'x2="{_mx + _h:.1f}" y2="{_my + _h:.1f}" '
+                        f'stroke="{_mc}" stroke-width="{_MSW}"/>'
+                        f'<line x1="{_mx - _h:.1f}" y1="{_my + _h:.1f}" '
+                        f'x2="{_mx + _h:.1f}" y2="{_my - _h:.1f}" '
+                        f'stroke="{_mc}" stroke-width="{_MSW}"/>'
+                        f'</g>')
+                    _hits.append(
+                        f'<circle class="stdraw-xwitness-hit" '
+                        f'cx="{_mx:.1f}" cy="{_my:.1f}" r="{_MR / 2:g}" '
+                        f'fill="transparent" pointer-events="all" '
+                        f'data-tip="{html.escape(_tips[_i], quote=True)}"/>')
+            else:
+                # dense cluster: fold into the aggregate badge (visual
+                # form only — the tooltip lists every member's full
+                # field, one per line).
+                _cx = sum(_markers[_i]["point"][0] for _i in _cl) / len(_cl)
+                _cy = sum(_markers[_i]["point"][1] for _i in _cl) / len(_cl)
+                parts.append(
+                    f'<g class="stdraw-xwitness stdraw-xwitness-badge">'
+                    f'<circle cx="{_cx:.1f}" cy="{_cy:.1f}" r="{_MB / 2:g}" '
+                    f'fill="{_badge_fill}" stroke="{_mc}" '
+                    f'stroke-width="{_MSW}"/>'
+                    f'<text x="{_cx:.1f}" y="{_cy:.1f}" text-anchor="middle" '
+                    f'dominant-baseline="middle" font-size="{_MBF:g}" '
+                    f'fill="{_mc}">&times;{len(_cl)}</text>'
+                    f'</g>')
+                _hits.append(
+                    f'<circle class="stdraw-xwitness-hit" '
+                    f'cx="{_cx:.1f}" cy="{_cy:.1f}" r="{_MR / 2:g}" '
+                    f'fill="transparent" pointer-events="all" '
+                    f'data-tip="{html.escape(chr(10).join(_tips[_i] for _i in _cl), quote=True)}"/>')
+        # halo hit layer last inside the marker layer (topmost for
+        # elementFromPoint hit-testing; still below the node cards).
+        parts.extend(_hits)
+        # render-layer tooltip card (pointer-events:none — it never
+        # blocks drag / double-click / segment edits).
+        parts.append(
+            f'<div id="stdraw-xwitness-tip" style="position:fixed;display:'
+            f'none;z-index:9;pointer-events:none;font-size:{_MF:g}px;'
+            f'line-height:1.35;border-radius:6px;padding:4px 8px;'
+            f'max-width:320px;background:{_hover_bg};color:{_mt};'
+            f'white-space:pre-line;font-family:Microsoft YaHei,sans-serif">'
+            f'</div>')
+        parts.append('<scr' + 'ipt>(function(){'
+                     'var t=document.getElementById("stdraw-xwitness-tip");'
+                     'if(!t)return;'
+                     'var els=document.querySelectorAll(".stdraw-xwitness-hit");'
+                     'for(var i=0;i<els.length;i++){(function(h){'
+                     'h.addEventListener("pointerenter",function(){'
+                     't.textContent=h.getAttribute("data-tip");'
+                     't.style.display="block";'
+                     'var r=h.getBoundingClientRect();'
+                     'var x=r.left+r.width/2,y=r.top-8;'
+                     't.style.left="0px";t.style.top="0px";'
+                     'var b=t.getBoundingClientRect();'
+                     'x=Math.min(Math.max(8,x-b.width/2),'
+                     'window.innerWidth-b.width-8);'
+                     'if(y-b.height<8){y=r.bottom+8;}'
+                     't.style.left=x+"px";t.style.top=(y-b.height)+"px";});'
+                     'h.addEventListener("pointerleave",function(){'
+                     't.style.display="none";});'
+                     '})(els[i]);}})();</scr' + 'ipt>')
     for v, p in nodes.items():
         x, y, w = p["x"], p["y"], p["w"]
         label = html.escape(labels.get(v, v))

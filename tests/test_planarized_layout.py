@@ -106,6 +106,110 @@ class TestCertificateL1Caliber(unittest.TestCase):
                          cert["metrics"]["crossings"])
 
 
+class TestD2MarkerSpec(unittest.TestCase):
+    """D2 marker spec final (UIDesignerBot, 2026-11-14): per-theme color
+    tokens (R1 dark-tier fix), hover halo + render-layer tooltip, dense
+    cluster folding — rendering regressions for the alignment rework."""
+
+    def _render(self, markers, theme="light"):
+        from stdraw.render import render_auto_html
+        v4 = {"viewBox": [0, 0, 200, 200],
+              "meta": {"cardH": 44, "fs": [12.5, 14],
+                       "planarization": {"mode": "L1", "ub": 3, "lb": 3,
+                                         "gap": 0, "markers": markers}},
+              "nodes": {"a": {"x": 30, "y": 180, "w": 60},
+                        "b": {"x": 170, "y": 180, "w": 60}},
+              "edges": []}
+        return render_auto_html(v4, graph_name="t", theme=theme)
+
+    @staticmethod
+    def _mk(wid, x, y):
+        return {"point": [x, y], "witness_id": wid, "edges": [("a", "b")]}
+
+    def test_d2_constants(self):
+        import stdraw.planarized_layout as PL
+        self.assertEqual(PL.MARKER_SIZE_PX, 9)
+        self.assertEqual(PL.MARKER_STROKE_PX, 1.2)
+        self.assertEqual(PL.MARKER_HOVER_FONT_PX, 11)
+        self.assertEqual(PL.MARKER_HOVER_ALPHA, 0.14)
+        self.assertEqual(PL.MARKER_HOVER_RING_PX, 12)
+        self.assertEqual(PL.MARKER_CLUSTER_PX, 10)
+        self.assertEqual(PL.MARKER_BADGE_PX, 10)
+        self.assertEqual(PL.MARKER_BADGE_FONT_PX, 8.5)
+        # R1: color is a per-theme token now, no single MARKER_COLOR
+        self.assertFalse(hasattr(PL, "MARKER_COLOR"))
+        self.assertFalse(hasattr(PL, "MARKER_HOVER_BG"))
+
+    def test_theme_tokens_carry_marker_color(self):
+        from stdraw.themes import DARK, LIGHT
+        self.assertEqual(set(LIGHT) == set(DARK), True)
+        self.assertEqual(LIGHT["xwitness_color"], "#64748b")
+        self.assertEqual(DARK["xwitness_color"], "#8b98ab")
+        self.assertEqual(LIGHT["xwitness_tip_text"], "#334155")
+        self.assertEqual(DARK["xwitness_tip_text"], "#dfe7f2")
+
+    def test_cluster_helper_groups(self):
+        from stdraw.planarized_layout import _cluster_xwitnesses
+        pts = [[0, 0], [5, 0], [40, 0], [46, 0], [80, 0], [86, 0], [92, 0]]
+        self.assertEqual(_cluster_xwitnesses(pts),
+                         [[0, 1], [2, 3], [4, 5, 6]])
+        # 11px apart = outside the 10px join radius
+        self.assertEqual(_cluster_xwitnesses([[0, 0], [11, 0]]), [[0], [1]])
+
+    def test_default_state_exact_coordinates_no_title(self):
+        out = self._render([self._mk(1, 100.0, 50.0), self._mk(2, 60.0, 30.0)])
+        # exact witness coordinates (no displacement, <= 2 renders apart)
+        self.assertIn('x1="95.5" y1="45.5"', out)
+        self.assertIn('x2="104.5" y2="54.5"', out)
+        # hover skeleton fields intact; SVG <title> retired
+        self.assertIn("witness #1", out)
+        self.assertIn("cr UB=3 (LB=3, gap=0)", out)
+        self.assertEqual(out.count("<title>"), 1)  # only the page <title>
+        self.assertIn("stdraw-xwitness-hit", out)
+        self.assertIn('id="stdraw-xwitness-tip"', out)
+        # no click behavior registered (v1: display-only)
+        self.assertNotIn("crossing_details", out)
+
+    def test_dark_theme_uses_dark_ink(self):
+        markers = [self._mk(1, 100.0, 50.0)]
+        dark = self._render(markers, theme="dark")
+        light = self._render(markers, theme="light")
+        self.assertIn('stroke="#8b98ab"', dark)
+        self.assertNotIn('stroke="#64748b"', dark)
+        self.assertIn('stroke="#64748b"', light)
+        self.assertIn("rgba(139,152,171,0.14)", dark)
+        self.assertIn("rgba(100,116,139,0.14)", light)
+
+    def test_dense_cluster_folds_into_badge(self):
+        # 3 witnesses within the 10px join radius -> one badge
+        markers = [self._mk(1, 100.0, 50.0), self._mk(2, 104.0, 52.0),
+                   self._mk(3, 97.0, 55.0)]
+        out = self._render(markers)
+        self.assertIn("stdraw-xwitness-badge", out)
+        self.assertIn("&times;3", out)
+        # badge center = cluster centroid; badge diameter 10px
+        self.assertIn('cx="100.3" cy="52.3" r="5"', out)
+        # badge tooltip lists every member, one full field per line
+        tip = out.split('data-tip="')[1].split('"')[0]
+        self.assertEqual(tip.count("witness #"), 3)
+        # data layer untouched: markers[] entries all carry their points
+        # (rendering is presentation-only; members get no x-symbols)
+        self.assertEqual(out.count('<g class="stdraw-xwitness">'), 0)
+        self.assertEqual(out.count('class="stdraw-xwitness-hit"'), 1)
+
+    def test_pair_renders_independently(self):
+        markers = [self._mk(1, 100.0, 50.0), self._mk(2, 104.0, 52.0)]
+        out = self._render(markers)
+        self.assertNotIn("stdraw-xwitness-badge", out)
+        self.assertEqual(out.count('class="stdraw-xwitness"'), 2)
+        self.assertEqual(out.count("witness #"), 2)
+
+    def test_render_is_deterministic(self):
+        markers = [self._mk(i + 1, 100.0 + i, 50.0 + 2 * i)
+                   for i in range(4)]
+        self.assertEqual(self._render(markers), self._render(markers))
+
+
 class TestL2Honesty(unittest.TestCase):
     def test_cap_exceeded_defers_honestly(self):
         """When the admission cap rejects the oracle UB, the ladder must
