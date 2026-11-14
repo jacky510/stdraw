@@ -32,6 +32,11 @@ real_snap = Router.anchor_snap
 
 # Low density (E/N = 11/8 = 1.375 < 1.6): a ring plus three chords -- enough
 # edges for the snap to have candidates, small enough to stay fast.
+# Chords are pinned to a PLANAR core (A-C/A-D/B-E, planarity verified):
+# these tests exercise the L0 generic path's anchor-snap machinery, and the
+# planarization degrade ladder (docs/planarization-degrade-contract.md) by
+# design bypasses routing/snap on non-planar cores (L1 returns before the
+# router runs; anchor gates read N/A there).
 CLD = """
 graph "t5-low-density-revert"
 var A "A"
@@ -52,7 +57,7 @@ G -> + H
 H -> + A
 A -> + D
 B -> + E
-C -> + F
+A -> + C
 """
 
 
@@ -258,7 +263,8 @@ def test_low_density_endpoint_failures_do_not_revert(monkeypatch):
         report = real_snap(self, routes, max_sweeps)
         report = dict(report)
         report["failures"] = sorted(
-            report["failures"] + [{"edge": "A->D", "end": "a"}])
+            report["failures"] + [{"edge": "A->D", "end": "a"}],
+            key=lambda f: (f["edge"], f["end"]))
         return report
 
     monkeypatch.setattr(Router, "anchor_snap", failing_snap)

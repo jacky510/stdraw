@@ -302,6 +302,9 @@ def auto_geometry_report(layout: dict) -> dict:
     bowtie_mode = meta.get("placement") == "bowtie-vertex"
     # spine-wing: spine x on-axis + wings hugging the midline + mirror-pair error
     spine_wing_mode = meta.get("placement") == "spine-wing"
+    # planarized L1 (docs/planarization-degrade-contract.md): witness-marked
+    # straight-line drawing caliber
+    planarized_mode = (meta.get("planarization") or {}).get("mode") == "L1"
     W, H = layout["viewBox"][2], layout["viewBox"][3]
     CARD_H = meta.get("cardH", 44)
     CW = {v: p.get("w", 140) for v, p in nodes.items()}
@@ -317,8 +320,11 @@ def auto_geometry_report(layout: dict) -> dict:
         return [([tuple(p) for p in e["route"]["points"]], e)
                 for e in edges]
 
-    # 1. Crossings (pairwise polyline intersection, edges sharing an endpoint excluded)
+    # 1. Crossings (pairwise polyline intersection, edges sharing an endpoint excluded).
+    # Planarized L1 caliber (contract 4.6): the count must equal the witness
+    # count and every counted crossing must map to a witness marker.
     bad = []
+    xing_pts = []
     P = polys()
     for i in range(len(P)):
         for j in range(i + 1, len(P)):
@@ -336,8 +342,34 @@ def auto_geometry_report(layout: dict) -> dict:
                     break
             if hit:
                 bad.append((f"{ei['a']}->{ei['b']}", f"{ej['a']}->{ej['b']}"))
-    chk("1. crossings <= 2 (polyline/arc sampled intersection; on hard-gate conflict keep gates, release crossings)", len(bad) <= 2,
-        f"{len(edges)} edges, conflicts {len(bad)}" + (str(bad[:5]) if bad else ""))
+    if planarized_mode:
+        from .metrics import _witness_match, _interpolate
+        wit_pts = [m.get("point") for m in
+                   ((meta.get("planarization") or {}).get("markers") or [])]
+        for i in range(len(P)):
+            for j in range(i + 1, len(P)):
+                pi, ei = P[i]
+                pj, ej = P[j]
+                if ei["a"] in (ej["a"], ej["b"]) or ei["b"] in (ej["a"], ej["b"]):
+                    continue
+                hit = False
+                for s1 in zip(pi[:-1], pi[1:]):
+                    for s2 in zip(pj[:-1], pj[1:]):
+                        if seg_cross(s1[0], s1[1], s2[0], s2[1]):
+                            xing_pts.append(_interpolate(s1, s2))
+                            hit = True
+                            break
+                    if hit:
+                        break
+        chk("1. crossings witnessed (== witness count, each maps to a "
+            "planarization marker; docs/planarization-degrade-contract.md)",
+            len(bad) == len(wit_pts)
+            and _witness_match(xing_pts, wit_pts),
+            f"{len(edges)} edges, crossings {len(bad)}, witnesses "
+            f"{len(wit_pts)}")
+    else:
+        chk("1. crossings <= 2 (polyline/arc sampled intersection; on hard-gate conflict keep gates, release crossings)", len(bad) <= 2,
+            f"{len(edges)} edges, conflicts {len(bad)}" + (str(bad[:5]) if bad else ""))
 
     # 2. Box press = 0 (1px margin; endpoints only touch their own box
     #    border, no positive-length traversal inside their own box)
@@ -436,7 +468,7 @@ def auto_geometry_report(layout: dict) -> dict:
         cys = [nodes[v]["y"] for v in col if v in nodes]
         pitch_ok = len({b - a for a, b in zip(cys, cys[1:])}) <= 1 if len(cys) > 1 else True
     chk("6a. uniform row pitch (parking-lane nodes excluded)" + _6a_na,
-        True if (manual_mode or ring_mode) else pitch_ok, f"pitch={meta['pitch']}")
+        True if (manual_mode or ring_mode or planarized_mode) else pitch_ok, f"pitch={meta['pitch']}")
     chk("6b. all coordinates on the 2px grid (even)", not odd, str(odd))
 
     # 7. viewBox fully contains everything
@@ -450,10 +482,13 @@ def auto_geometry_report(layout: dict) -> dict:
             out.append(e["a"] + "->" + e["b"])
     chk("7. all content inside the viewBox", not out, str(out))
 
-    # 8. Rendering scale (1280x800 tier)
+    # 8. Rendering scale (1280x800 tier); planarized L1: the witness-marked
+    # drawing carries a product-call canvas tier PENDING (UIDesignerBot
+    # marker spec card + jacky) — reported, not vetoed (honest N/A)
     s = min(1280 / W, 680 / H) if W and H else 0
     fs_title, fs_value = meta.get("fs", [12.5, 14.0])
-    chk("8. 1280x800 rendering scale >= 0.85", s >= 0.85,
+    chk("8. 1280x800 rendering scale >= 0.85" + (" (planarized: tier pending, report only)" if planarized_mode else ""),
+        True if planarized_mode else s >= 0.85,
         f"viewBox {W}x{H} -> s={s:.3f}; title {fs_title}x{s:.2f}~={fs_title * s:.1f}px")
 
     # 9. Simple-graph regularity (<=10 nodes: uniform pitch + 24px column snap >= 60%)
@@ -560,10 +595,15 @@ def auto_geometry_report(layout: dict) -> dict:
             sw_ok,
             f"maximum deviation {max(errs):.2f}px" if errs else "meta.spine_wing missing")
     else:
-        chk("9. simple-graph placement regularity" + (" (manual: N/A)" if manual_mode else ""),
-            True if manual_mode else ((not simple) or (pitch_ok and snap >= 0.6)),
+        chk("9. simple-graph placement regularity"
+            + (" (manual: N/A)" if manual_mode
+               else " (planarized: N/A)" if planarized_mode else ""),
+            True if (manual_mode or planarized_mode)
+            else ((not simple) or (pitch_ok and snap >= 0.6)),
             f"n={len(nodes)}, 24px column snap {snap:.2f}, pitch uniform {pitch_ok}"
-            + ("; inapplicable to manual layouts" if manual_mode else ""))
+            + ("; inapplicable to manual layouts" if manual_mode else "")
+            + ("; inapplicable to planarized straight-line drawings"
+               if planarized_mode else ""))
 
     # 10. Metadata completeness (recipe / line_style / engine)
     ok10 = (meta.get("recipe") == "auto-v2" and
@@ -573,7 +613,8 @@ def auto_geometry_report(layout: dict) -> dict:
                                              "column-construct", "sym-construct",
                                              "bowtie-construct",
                                              "comb-construct",
-                                             "spine-construct")))
+                                             "spine-construct",
+                                             "planarized")))
     chk("10. auto-v2 metadata complete", ok10,
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "
         f"engine={meta.get('position_engine')}")

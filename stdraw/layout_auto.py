@@ -1512,6 +1512,25 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # report at the end goes to stderr only and never touches layout.json
     # (zero-behavior-change, ci_checks mark() style).
     _timing.start()
+    # planarization degrade ladder (docs/planarization-degrade-contract.md,
+    # @ d71263a): L0 = planar core -> untouched path below (zero drift by
+    # construction); L1 = witness-marked planarized drawing (returned
+    # directly); L2 = generic path + honest planarization_deferred record
+    # attached to meta.  Manual (--from-layout) coordinates are never
+    # planarized (user intent wins).
+    _pl_defer = None
+    if manual is None:
+        from .planarized_layout import planarized_entry
+        _pl_mode, _pl_payload = planarized_entry(graph, cfg, linestyle)
+        if _pl_mode == "L1":
+            _timing.mark("planarized_l1")
+            _timing.finish()
+            return _pl_payload
+        if _pl_mode == "L2":
+            _pl_defer = _pl_payload
+            print(f"[stdraw] planarization L2: "
+                  f"{'; '.join(_pl_defer['deferred']['reason'])} -- generic "
+                  "auto-v2 path kept (honest downgrade)", file=sys.stderr)
     nodes = graph.node_ids()
     adj = graph.adj_undirected()
     core = [v for v in nodes if adj[v]]
@@ -2676,6 +2695,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                              "inflated obstacles) + tangent-arc fillet smoothing "
                              "(G1, clearance-verified); crossing dual-caliber: "
                              "router theory vs Liang-Barsky delivered geometry"),
+            # planarization L2 honest downgrade record (None on L0; the
+            # certificate annotates the gate with it — same transport as
+            # anchor_snap_deferred)
+            **({"planarization": _pl_defer} if _pl_defer else {}),
             "method": ("layered + crossing-minimization (CP-SAT if available) "
                        "with straight/arc first-class routing and visibility-graph "
                        "detour; hard gates: box-over-line=0, edge-box clearance>=16px"),

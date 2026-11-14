@@ -17,7 +17,7 @@ Canonical facts are the CODE, never the prose:
 
 | caliber | recipe | tokens emitted by the 2D pipeline |
 |---|---|---|
-| `v2-hardgates` | `auto-v2` | `best`, `uncertified` |
+| `v2-hardgates` | `auto-v2` | `best`, `crossed-certified` (planarized L1 only), `uncertified` |
 | `v1-legacy` | `ortho-v1` | `best`, `uncertified` (plus a retained legacy `second` branch, logically near-unreachable) |
 
 `3d` is a **documentation-level tier** describing the 3D delivery path
@@ -89,6 +89,40 @@ Consequently:
   untouched, and the AUTO path keeps boolean gate values;
 - a manual layout still earns `best` only through the full remaining hard
   gates + 0 crossings under both crossing calibers.
+
+### 3.2 Planarized non-planar graphs — the L1/L2 degrade ladder
+
+Non-planar cores (after degree 0/1 safe reduction) follow the degrade
+ladder of `docs/planarization-degrade-contract.md` (@ d71263a):
+
+- **L1** (planarization + witness drawing within CAP=min(3n,80) /
+  deterministic operation budgets): the drawing is a straight-line planar
+  drawing of the planarized graph H; every crossing sits on a
+  planarization witness and is rendered as a small marker. New hard
+  gates: `crossings_witnessed` (every geometric crossing maps to a
+  witness, counts equal) replaces `visual_crossings_zero`, and
+  `three_account_consistent` (geometric recount == witness count ==
+  oracle cr UB) is required. Anchor/row-column regularity gates read
+  `"N/A"` (inapplicable to the straight-line planarized drawing, same
+  N/A pattern as §3.1). When all L1 hard gates plus dual crossing
+  accounting pass, the grade is **`crossed-certified`**: the certified
+  crossings equal cr(G) and each one is proven necessary by the
+  planarization witness. 0-crossing graphs keep `best`; `crossed-certified`
+  never applies to a planar-core (L0) drawing.
+- **L2** (L1 admission failure: over CAP / over budget / no realizable
+  witness drawing): the generic auto-v2 path runs unchanged with an
+  additive honest record `gates.planarization_deferred = {reason: [...],
+  measured: ...}` (same transport pattern as `anchors_standard_deferred`).
+  Grade follows today's gates unchanged (normally `uncertified`); gate
+  values stay measured, never fudged.
+
+For L1 the oracle cr UB participates by default (the `--exact` layer,
+D4 of the contract); without it `three_account_consistent` cannot pass
+and the certificate stays honestly `uncertified`.  The D4 fallback is
+wired as the `--no-exact` CLI flag (jacky 2026-11-14 scope ruling,
+stdraw range n<=20): default stays ON for certificate integrity;
+opting out keeps the witness-marked L1 drawing but the grade honestly
+drops to `uncertified`.
 
 ## 4. D0 — vertical-orthogonal diagrams are banned as deliverables
 
