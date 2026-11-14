@@ -146,7 +146,7 @@ ref-scrubbed 字节清单模式）。
 |---|---|---|---|
 | random-n10 i09/i10/i16/i19（4 图） | exit 0, uncertified, 交叉数无对照 | exit 0, `crossed-certified`, 三账一致 | B2-P 新门组 |
 | random-n20-i00（triage 快照，余 19 图实现卡补测） | **exit 1**（crossings=30 > 2 几何门失败）, uncertified | exit 0, `crossed-certified`, crossings==UB（cr 预计 ≪30），`crossings_witnessed` 替位 ≤2 门 | B2-P |
-| random-n30 ×20 | n30 单图 >10min 级，triage 未逐一实测 | L1（CAP 内）或诚实 L2 | B2-P（实现卡开工前补测定档） |
+| random-n30 ×20 | triage 快照 n30-i00：**exit 1**（crossings=75 > 2 几何门失败）；余 19 图实现卡补测 | L1（CAP 内）或诚实 L2 | B2-P（实现卡开工前补测定档） |
 | random-n50 ×20 | exit 0, uncertified | 大概率 L2（超 CAP），断言诚实降级记录存在 | L2 诚实门 |
 | B2 既有 4 张 planar n10 | 过 | **零漂移**（L0 恒不触发，构造保证） | 既有字节基线不动 |
 | ortho 冻结基线（含非平面跳过路径） | exit 0 skip | **0 触碰** | 既有 gate A 基线不动 |
