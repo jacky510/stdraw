@@ -57,9 +57,16 @@ def main():
         # at the dense-snap gate's first cut (coincidence-gate resampling +
         # tier-2 joint detour) -- fixed by exact-equivalence accelerations
         # (seg-grid coincide/crossing worlds + corner-visibility VG cache +
-        # plan_route memo), measured 122.5s/run on the dev box (quiet).
-        # 300s keeps ~2.4x headroom over the measured value on this hardware.
-        assert dt <= 300.0, f"n20 auto-v2 wall-clock {dt:.1f}s > 300s budget"
+        # plan_route memo), measured 122.5s/run on the dev box (quiet,
+        # pre-planarization).
+        # Planarization era: non-planar n20 samples pay the L1
+        # admission attempt (greedy insert + oil nogood ladder) before the
+        # honest L2 fallback; quiet-box measured 838.1s for random-n20-i00
+        # (2026-11-14, see docs/planarization-degrade-contract.md section 9).
+        # jacky scope ruling 2026-11-14 (stdraw range n<=20,
+        # n30 capability moved to the stdraw20 line): 900s is the honest
+        # per-run downgrade cap -- the budget encodes it.
+        assert dt <= 900.0, f"n20 auto-v2 wall-clock {dt:.1f}s > 900s cap"
         outs.append(json.dumps(v4, sort_keys=True))
         print(f"  run: {dt:.1f}s engine={v4['meta']['position_engine']} "
               f"status={v4['meta'].get('solver_status')}")

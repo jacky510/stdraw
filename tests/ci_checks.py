@@ -391,6 +391,84 @@ def main():
                     print(f"OK  crashreg {ex}: exit {r1.returncode} "
                           f"({'rendered' if r1.returncode == 0 else 'honest rc=1'}, no traceback)")
             mark("B3: crash regression (5 ex)")
+        if _on("B2-P"):
+            # ── B2-P. Planarized L1 goldens + L2 honesty (degrade contract:
+            # docs/planarization-degrade-contract.md).  L1 targets: exit 0 +
+            # crossed-certified + three accounts + witness gates + double-run
+            # byte-identical.  L2 sample: the ladder must degrade HONESTLY
+            # (planarization_deferred with a measured reason) — an L1 result
+            # is also acceptable (the oracle may find a witness within
+            # budget); what is never acceptable is a silent downgrade.
+            PL_L1_TARGETS = [
+                "benchmarks/corpus/random/random-n10-i09.cld",
+                "benchmarks/corpus/random/random-n10-i10.cld",
+                "benchmarks/corpus/random/random-n10-i16.cld",
+                "benchmarks/corpus/random/random-n10-i19.cld",
+            ]
+            PL_L2_SAMPLES = [
+                # slow: the oil nogood ladder on this core runs ~minutes
+                "benchmarks/corpus/random/random-n20-i00.cld",
+            ]
+            for ex in PL_L1_TARGETS:
+                name = os.path.splitext(os.path.basename(ex))[0]
+                out1 = os.path.join(tmp, name + "-pl-1")
+                out2 = os.path.join(tmp, name + "-pl-2")
+                r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
+                if r1.returncode != 0:
+                    failures.append(f"planarized {ex}: CLI exit {r1.returncode} "
+                                    "(crossed-certified target)")
+                    continue
+                run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
+                cert = load(out1, "certificate.json")
+                m = cert["metrics"]
+                g = cert["gates"]
+                if cert["grade"] != "crossed-certified":
+                    failures.append(f"planarized {ex}: grade={cert['grade']} "
+                                    "(expected crossed-certified)")
+                for k in ("crossings_witnessed", "three_account_consistent"):
+                    if g.get(k) is not True:
+                        failures.append(f"planarized {ex}: gate {k}={g.get(k)}")
+                ex_cn = (cert.get("exactness") or {}).get("crossing_number")
+                if ex_cn is None or m["crossings"] != ex_cn:
+                    failures.append(f"planarized {ex}: crossings={m['crossings']} "
+                                    f"!= cr UB {ex_cn}")
+                for fn in ("layout.json", "certificate.json", "demo-2d.html",
+                           "geometry_report.json"):
+                    with open(os.path.join(out1, fn), "rb") as fa, \
+                         open(os.path.join(out2, fn), "rb") as fb:
+                        if fa.read() != fb.read():
+                            failures.append(f"planarized {ex}: {fn} "
+                                            "non-deterministic (two runs differ)")
+                print(f"OK  planarized {ex}: crossed-certified, crossings="
+                      f"{m['crossings']} == cr UB, deterministic")
+            for ex in PL_L2_SAMPLES:
+                name = os.path.splitext(os.path.basename(ex))[0]
+                outd = os.path.join(tmp, name + "-pl")
+                r1 = run_cli(ex, outd, ("--recipe", "auto"), pitch=None)
+                if r1.returncode not in (0, 1):
+                    failures.append(f"planarized {ex}: exit {r1.returncode} "
+                                    "(want 0/1)")
+                    continue
+                cert = load(outd, "certificate.json")
+                g = cert["gates"]
+                if "crossings_witnessed" in g:
+                    if cert["grade"] != "crossed-certified":
+                        failures.append(f"planarized {ex}: L1 "
+                                        f"grade={cert['grade']}")
+                    print(f"OK  planarized {ex}: L1 crossed-certified "
+                          "(ladder honest)")
+                else:
+                    defer = g.get("planarization_deferred")
+                    if cert["grade"] == "crossed-certified":
+                        failures.append(f"planarized {ex}: crossed-certified "
+                                        "without witness gates")
+                    if not defer or not defer.get("reason"):
+                        failures.append(f"planarized {ex}: L2 without an "
+                                        "honest planarization_deferred record")
+                    else:
+                        print(f"OK  planarized {ex}: L2 honest downgrade "
+                              f"(reason={'; '.join(defer['reason'])[:90]})")
+        mark("B2-P: planarized L1 goldens + L2 honesty")
         if _on("C"):
             r = subprocess.run(
                 [sys.executable, "-m", "stdraw.rendercheck",

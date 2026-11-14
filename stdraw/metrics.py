@@ -309,6 +309,9 @@ def scene_from_auto(v4: dict) -> dict:
             # ref-scrubbed finalize: dense-snap deferral pass-through (None on
             # normal graphs) -- certificate_auto annotates anchors_standard.
             "anchor_snap_deferred": v4["meta"].get("anchor_snap_deferred"),
+            # planarization degrade ladder pass-through (L1 witness-marked
+            # caliber / L2 honest downgrade record; None/absent on L0)
+            "planarization": v4["meta"].get("planarization"),
             # edge placement rules v1 pass-through (certificate records it)
             "edge_rules": v4["meta"].get("edge_rules"),
             "line_style": v4["meta"].get("line_style", "straight"),
@@ -373,6 +376,29 @@ def _bbox_gap(pa, pb):
     return max(0.0, max(bx0 - ax1, ax0 - bx1, by0 - ay1, ay0 - by1))
 
 
+def _witness_match(xpts, wit_pts, radius=4.0):
+    """Bijective nearest-match of geometric crossing points to witness
+    marker points (L1 crossings_witnessed caliber, contract section
+    4.6).  Both lists carry [x, y] int-rounded coordinates."""
+    import math as _m
+    if len(xpts) != len(wit_pts) or not wit_pts:
+        return False
+    remaining = list(range(len(wit_pts)))
+    for p in xpts:
+        if p is None:
+            return False
+        best, bi = None, None
+        for ri in remaining:
+            q = wit_pts[ri]
+            d = _m.hypot(p[0] - q[0], p[1] - q[1])
+            if best is None or d < best:
+                best, bi = d, ri
+        if best is None or best > radius:
+            return False
+        remaining.remove(bi)
+    return True
+
+
 def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                      gates: Optional[dict] = None,
                      notes: Optional[List[str]] = None,
@@ -427,6 +453,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     manual_mode = bool(scene.get("from_layout"))
     layered_mode = not (ring_mode or column_mode or sym_mode or bowtie_mode
                         or spine_mode or comb_mode)
+    # planarization degrade ladder (docs/planarization-degrade-contract.md):
+    # L1 = witness-marked planarized drawing (crossed-certified caliber);
+    # L2 = generic path + honest planarization_deferred record.  L0 scenes
+    # carry no planarization key and keep every byte of today's behavior.
+    plz = scene.get("planarization") or {}
+    plz_l1 = plz.get("mode") == "L1"
+    plz_l2 = plz.get("mode") == "L2"
 
     # 1. Crossings (pairwise polyline intersection)
     crossings = []
@@ -438,8 +471,15 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             for s1 in zip(polys[i][:-1], polys[i][1:]):
                 for s2 in zip(polys[j][:-1], polys[j][1:]):
                     if _rc_seg_cross(s1[0], s1[1], s2[0], s2[1]):
-                        crossings.append({"edges": [f"{ei['a']}->{ei['b']}",
-                                                    f"{ej['a']}->{ej['b']}"]})
+                        crossings.append({
+                            "edges": [f"{ei['a']}->{ei['b']}",
+                                      f"{ej['a']}->{ej['b']}"],
+                            # L1 witness caliber only: the crossing point
+                            # coordinates for the witness-match check
+                            # (L0 scenes keep the old dict bytes)
+                            **({"point": _interpolate(s1, s2)}
+                               if plz_l1 else {}),
+                        })
                         break
                 else:
                     continue
@@ -496,9 +536,18 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # bboxes; an equivalent speedup).
     coincide_pairs = []
     _step = 4.0
+    # L1 witness caliber: a witnessed pair's thin crossing approaches
+    # within 1px over a long stretch by geometry — that is the crossing,
+    # not parallel adherence (L0: empty set, behavior unchanged)
+    _wit_pairs = ({frozenset(c["edges"]) for c in crossings}
+                  if plz_l1 else set())
     for i in range(len(edges)):
         sa = sample_polyline(polys[i])
         for j in range(i + 1, len(edges)):
+            if _wit_pairs and frozenset(
+                    [f"{edges[i]['a']}->{edges[i]['b']}",
+                     f"{edges[j]['a']}->{edges[j]['b']}"]) in _wit_pairs:
+                continue
             sb = sample_polyline(polys[j])
             if _bbox_gap(sa, sb) > COINCIDE_THR:
                 continue
@@ -968,6 +1017,24 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
+    elif plz_l1:
+        # planarized witness-marked caliber: anchors / row-column
+        # regularity gates are inapplicable to the straight-line
+        # planarized drawing (same N/A pattern as manual coordinates,
+        # P1-2); crossings_witnessed replaces visual_crossings_zero
+        # (contract section 4.3/4.6)
+        g = {
+            "box_press_zero": metrics["box_press_1px"] == 0,
+            "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
+            "min_gap_ge_16": metrics["min_card_gap"] >= 16,
+            "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
+            "anchors_smooth": "N/A",
+            "anchors_standard": "N/A",
+            "cv_le_035": "N/A",
+            "pitch_uniform": "N/A",
+            "column_snap24_ge_060": "N/A",
+        }
     else:
         g = {
             "box_press_zero": metrics["box_press_1px"] == 0,
@@ -996,6 +1063,18 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # grade best (honest grading: the certificate must see what the eye
     # sees).
     g["visual_crossings_zero"] = metrics["visual_crossings"] == 0
+    if plz_l1:
+        # witness-marked caliber (contract section 4.2/4.6): every
+        # geometric crossing must map to a planarization witness and the
+        # three accounts must agree (geometry == witnesses == oracle UB)
+        wit_pts = [m.get("point") for m in (plz.get("markers") or [])]
+        g["crossings_witnessed"] = _witness_match(
+            [c.get("point") for c in crossings], wit_pts)
+        ex_cn = (exactness or {}).get("crossing_number")
+        g["three_account_consistent"] = bool(
+            ex_cn is not None and len(crossings) == len(wit_pts)
+            and abs(len(crossings) - ex_cn) < 0.5)
+        g["visual_crossings_zero"] = "N/A"      # replaced (contract 4.6)
     if routing_consistent is not None:
         g["routing_consistent"] = routing_consistent
     if gates:
@@ -1058,10 +1137,32 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # regressions.  No gate fudging: grade reflects the deferral honestly.
     if scene.get("anchor_snap_deferred"):
         g["anchors_standard_deferred"] = scene["anchor_snap_deferred"]
-    hard_ok = (hard_ok and g["anchors_standard"]       # ref-scrubbed: 16-anchor membership
-               and g["visual_crossings_zero"])
+    if plz_l2:
+        # L2 honest downgrade record (same transport pattern as
+        # anchors_standard_deferred; the gate values stay measured)
+        g["planarization_deferred"] = plz.get("deferred")
+    if plz_l1:
+        hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
+                   g["min_gap_ge_16"] and g["lines_no_coincidence"] and
+                   g["crossings_witnessed"] and g["three_account_consistent"])
+    else:
+        hard_ok = (hard_ok and g["anchors_standard"]       # ref-scrubbed: 16-anchor membership
+                   and g["visual_crossings_zero"])
     dual_ok = routing_consistent is not False   # dual-accounting mismatch -> refuse the certificate
-    if metrics["crossings"] == 0 and hard_ok and dual_ok:
+    if plz_l1:
+        if hard_ok and dual_ok:
+            grade = "crossed-certified"
+            grade_note = ("planarized witness-marked drawing: all L1 hard "
+                          "gates passed and the three accounts agree "
+                          f"(geometric {len(crossings)} == witnesses "
+                          f"{len(plz.get('markers') or [])} == cr UB "
+                          f"{(exactness or {}).get('crossing_number')})")
+        else:
+            grade = "uncertified"
+            grade_note = ("planarized witness certification failed: "
+                          + ", ".join(k for k, v in g.items() if v is False)
+                          + " — honestly ungraded")
+    elif metrics["crossings"] == 0 and hard_ok and dual_ok:
         grade = "best"
         grade_note = ("all hard gates passed (box press 0 / clearance >=16 / "
                       "anchors smooth / regularity) + 0 line crossings")
@@ -1243,6 +1344,17 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "source: docs/grading-contract.md")
     out["blocking_gates"] = [k for k, v in g.items() if v is False]
     out["deliverable"] = bool(deliverable)
+    if plz_l1:
+        # additive L1 caliber annotation (L0 certificates keep the
+        # original grade_semantics string byte-for-byte)
+        out["grade_semantics"] = (
+            out["grade_semantics"]
+            + " | planarized L1 (docs/planarization-degrade-contract.md): "
+            "crossed-certified = all L1 hard gates AND crossings_witnessed "
+            "AND three_account_consistent (geometric recount == witness "
+            "count == cr UB); anchors/regularity gates are N/A for the "
+            "straight-line planarized drawing. Tokens: best | "
+            "crossed-certified | uncertified")
     # D3 observability probe (S2-1, WorkBuddy task 2026-11-11): every
     # candidate main ring with the exact selection-key inputs, recorded on
     # the CERTIFICATE trace only (the layout meta trace stays byte-stable;

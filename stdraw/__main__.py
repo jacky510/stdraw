@@ -113,6 +113,11 @@ def main(argv=None):
                     help="WS2 exact crossing-number layer: B&B squeeze computes cr(G) and writes the "
                          "certificate exactness block (proven_optimal/gap; requires the optional "
                          "ortools dependency; honestly degraded when not installed)")
+    ap.add_argument("--no-exact", dest="no_exact", action="store_true",
+                    help="D4 fallback (jacky 2026-11-14 scope ruling, stdraw range n<=20): opt OUT "
+                         "of the L1-default exact layer.  L1 planarized drawings then keep the "
+                         "witness-marked drawing but stay honestly 'uncertified' "
+                         "(three_account_consistent cannot pass without the oracle cr UB).")
     ap.add_argument("--from-layout", default=None, metavar="MANUAL_JSON",
                     help="manual layout JSON (the demo-2d.html \"Export layout\" product or a "
                          "layout.json subset: node id->x,y + viewBox). Runs the same routing + "
@@ -259,13 +264,31 @@ def main(argv=None):
         rc = geometry_report_to_file(
             v4, os.path.join(a.outdir, "geometry_report.json"))
         exactness = None
-        if a.exact:
-            from .crossing_exact import crossing_exact
-            exactness = crossing_exact(g)
+        # D4 (jacky 2026-11-14): L1 planarized drawings default to
+        # --exact (oracle cr UB participates in the three-account
+        # check).  D4 fallback (jacky 2026-11-14 scope ruling, stdraw
+        # range n<=20): --no-exact opts out; the certificate then stays
+        # honestly 'uncertified' (three_account_consistent cannot pass
+        # without the oracle cr UB).  Solve times over budget ->
+        # report, never self-downgrade.
+        _plz_meta = v4["meta"].get("planarization") or {}
+        if (a.exact or _plz_meta.get("mode") == "L1") and not a.no_exact:
+            # reuse the pipeline's oracle run (same computation; avoids a
+            # duplicate B&B solve; falls back to a fresh run for direct
+            # --exact on L0 drawings)
+            exactness = _plz_meta.get("exactness")
+            if exactness is None:
+                from .crossing_exact import crossing_exact
+                exactness = crossing_exact(g)
             print(f"      [exact] cr={exactness['crossing_number']} "
                   f"proven_optimal={exactness['proven_optimal']} "
                   f"lb={exactness['lb']} gap={exactness['gap']} "
                   f"coverage={exactness['coverage']}")
+        if _plz_meta.get("mode") == "L1":
+            print(f"      [planarized] mode=L1 CAP={_plz_meta.get('cap')} "
+                  f"witnesses={_plz_meta.get('witness_count')} "
+                  f"(crossed-certified caliber, "
+                  "docs/planarization-degrade-contract.md)")
         cert = certificate_auto(scene_from_auto(v4), graph_name=name, layer="2D",
                                 graph=g, exactness=exactness,
                                 interactive="yes", drag_layer="yes",

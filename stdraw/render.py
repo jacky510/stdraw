@@ -282,6 +282,36 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     for i, e in enumerate(edges):
         e["_idx"] = i
         parts.append(f'<g data-edge="{i}">' + _edge_svg(e, labels, values, T) + '</g>')
+    # planarization witness markers (contract section 3; L1 output only —
+    # L0/L2 scenes carry no planarization key and keep today's bytes).
+    # Visual constants: single source stdraw/planarized_layout.py
+    # (UIDesignerBot spec pending; contract-suggested defaults until then).
+    _plz = meta.get("planarization") or {}
+    if _plz.get("mode") == "L1":
+        from .planarized_layout import (MARKER_SIZE_PX as _MS,
+                                        MARKER_STROKE_PX as _MSW,
+                                        MARKER_COLOR as _MC)
+        _ub = _plz.get("ub")
+        _lb = _plz.get("lb")
+        _gap = _plz.get("gap")
+        for _m in _plz.get("markers") or []:
+            _mx, _my = _m["point"]
+            _h = _MS / 2
+            _mem = _m.get("edges") or []
+            _pair = " &times; ".join(
+                html.escape(f"{labels.get(a, a)}→{labels.get(b, b)}")
+                for (a, b) in _mem[:2])
+            _tip = (f"{_pair} · witness #{_m['witness_id']} · "
+                    f"cr UB={_ub} (LB={_lb}, gap={_gap})")
+            parts.append(
+                f'<g class="stdraw-xwitness">'
+                f'<line x1="{_mx - _h:.1f}" y1="{_my - _h:.1f}" '
+                f'x2="{_mx + _h:.1f}" y2="{_my + _h:.1f}" '
+                f'stroke="{_MC}" stroke-width="{_MSW}"/>'
+                f'<line x1="{_mx - _h:.1f}" y1="{_my + _h:.1f}" '
+                f'x2="{_mx + _h:.1f}" y2="{_my - _h:.1f}" '
+                f'stroke="{_MC}" stroke-width="{_MSW}"/>'
+                f'<title>{_tip}</title></g>')
     for v, p in nodes.items():
         x, y, w = p["x"], p["y"], p["w"]
         label = html.escape(labels.get(v, v))
@@ -472,6 +502,24 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
 
     engine = meta.get("position_engine", "construct")
     ls = meta.get("line_style", "straight")
+    # contract section 4.5: L1 output must not claim the RT theorem
+    # phrasing; L0 keeps today's bytes (interpolation equals the old
+    # literals exactly when meta.planarization is absent)
+    _plz_mode = (meta.get("planarization") or {}).get("mode")
+    _h1_caliber = ("planarized: crossings = cr UB, witness-marked "
+                   "(planarized)"
+                   if _plz_mode == "L1" else
+                   "auto-v2: straight/arc lines first-class, zero box-press "
+                   "hard gate, edge-box clearance &ge;16px")
+    _grade_note_foot = ("stdraw auto-v2 · crossings = cr UB, witness-marked "
+                        "(planarized): every crossing sits on a planarization "
+                        "witness; this certificate holds only for this graph "
+                        "and this layout."
+                        if _plz_mode == "L1" else
+                        "stdraw auto-v2 · honest grading: the crossing count "
+                        "is an objective-function minimization term, not a "
+                        "theorem guarantee; this certificate holds only for "
+                        "this graph and this layout.")
     return f'''<!doctype html><html lang="en"><meta charset="utf-8">
 <title>stdraw 2D · {html.escape(graph_name)}</title>
 <style>
@@ -490,9 +538,9 @@ h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canva
 #stdraw-svg [data-node] rect{{touch-action:none}}
 #stdraw-svg [data-node].dragging{{cursor:grabbing}}
 </style>
-<h1>stdraw 2D layout · {html.escape(graph_name)} (auto-v2: straight/arc lines first-class, zero box-press hard gate, edge-box clearance &ge;16px; position engine {engine}, line style {ls})</h1>
+<h1>stdraw 2D layout · {html.escape(graph_name)} ({_h1_caliber}; position engine {engine}, line style {ls})</h1>
 {''.join(parts)}
 {cert_html}
 {loops_html}
-<p class="note">stdraw auto-v2 · honest grading: the crossing count is an objective-function minimization term, not a theorem guarantee; this certificate holds only for this graph and this layout.</p>
+<p class="note">{_grade_note_foot}</p>
 '''
