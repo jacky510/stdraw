@@ -1567,33 +1567,17 @@ def _column_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
-def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
-           manual: dict = None):
-    """auto recipe entry point: graph -> a v4-compatible layout dict (with polyline/arc routing + metadata).
+def _layout_candidates(graph, cfg, edges, linestyle, manual):
+    """layout() stage 1 -- candidate generation: card metrics, dense verdict,
+    mode priority chain + trial gates, placement (manual / constructed /
+    layered), ring reposition.
 
-    manual: a --from-layout manual layout ({nodes: {id: x,y}, viewBox, source}).
-    When given, layering/placement/polish are skipped and the manual
-    coordinates go through the same routing + delivery pipeline (hard-gate
-    caliber unchanged, scored honestly). With manual=None (default) the code
-    path is byte-for-byte identical to history.
+    Pure code motion out of layout() (byte-equivalent refactor): every
+    statement below is the original body verbatim.  The planarized-L1 early
+    exit returns (payload, None) so layout() can return it directly.
 
-    ref-scrubbed loop-dominant ring placement: with manual=None the deterministic
-    trigger detection (ringlayout.detect_ring) runs first;
-    a hit whose routing trial passes the gate -> regular-polygon slots for the
-    main ring;
-    no hit / trial failure -> the existing layered path (byte-for-byte
-    unchanged).
-    """
-    cfg = config or AutoConfig()
-    edges = tuple((e.a, e.b) for e in graph.edges)
-    # Cache lifecycle: module-level route/corner caches must never carry
-    # state across layouts (rounded-key aliasing would make batch results
-    # order-dependent); Router caches are instance-scoped, fresh per call.
-    _reset_route_caches()
-    # T3: observational stage timing. No-op unless STDRAW_TIMING=1; the
-    # report at the end goes to stderr only and never touches layout.json
-    # (zero-behavior-change, ci_checks mark() style).
-    _timing.start()
+    Returns (l1_payload, cand): cand carries the shared state consumed by
+    the routing optimization loop and the delivery assembly."""
     # planarization degrade ladder (docs/planarization-degrade-contract.md,
     # @ d71263a): L0 = planar core -> untouched path below (zero drift by
     # construction); L1 = witness-marked planarized drawing (returned
@@ -1607,7 +1591,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         if _pl_mode == "L1":
             _timing.mark("planarized_l1")
             _timing.finish()
-            return _pl_payload
+            return _pl_payload, None
         if _pl_mode == "L2":
             _pl_defer = _pl_payload
             print(f"[stdraw] planarization L2: "
@@ -2057,6 +2041,34 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                 rows = [[v for v in nodes if y[v] == yy]
                         for yy in sorted({y[v] for v in nodes})]
                 _timing.mark("ring_reposition")
+    return None, {
+        "nodes": nodes, "deg0": deg0, "widths": widths, "card_h": card_h,
+        "_pl_defer": _pl_defer, "_dense_hub": _dense_hub,
+        "_dense_deg_max": _dense_deg_max, "_routes_final": _routes_final,
+        "_reposition_rec": _reposition_rec, "constructed": constructed,
+        "from_meta": from_meta, "engine": engine, "pos_meta": pos_meta,
+        "pos": pos, "y": y, "rows": rows,
+        "_mode_rules": _mode_rules, "_form_fallbacks": _form_fallbacks,
+    }
+
+
+def _layout_optimize_routes(cfg, graph, manual, edges, cand):
+    """layout() stage 2 -- routing optimization loop: anchor presets
+    (edgerules) + final routing + the deterministic repair chain
+    (coincide / midband / fan / mutual / arrival-flip / anchor-snap).
+
+    Pure code motion out of layout() (byte-equivalent refactor): every
+    statement below is the original body verbatim."""
+    nodes = cand["nodes"]
+    pos = cand["pos"]
+    y = cand["y"]
+    widths = cand["widths"]
+    card_h = cand["card_h"]
+    engine = cand["engine"]
+    constructed = cand["constructed"]
+    _dense_hub = cand["_dense_hub"]
+    _routes_final = cand["_routes_final"]
+    from_meta = cand["from_meta"]
 
     # ④ routing (straight/arc first-class, boxes do not press lines) + WS3 theoretical caliber (final-route crossing pairs)
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
@@ -2619,7 +2631,33 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         routes = router.mutual_arrival_flip(routes, enhanced_gates=True)
         _timing.mark("repair:arrival_flip_post")
     router_pairs = router.final_crossing_pairs(routes)
+    return routes, router, router_pairs, er_report, _snap_deferred
 
+
+def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
+                              routes, router, router_pairs, er_report,
+                              _snap_deferred, cand):
+    """layout() stage 3 -- delivery assembly: loop coloring, edges_out,
+    viewBox + dx/dy shift, mode trace, v4 dict + coordinate stamping.
+
+    Pure code motion out of layout() (byte-equivalent refactor): every
+    statement below is the original body verbatim."""
+    nodes = cand["nodes"]
+    pos = cand["pos"]
+    y = cand["y"]
+    widths = cand["widths"]
+    card_h = cand["card_h"]
+    engine = cand["engine"]
+    pos_meta = cand["pos_meta"]
+    deg0 = cand["deg0"]
+    rows = cand["rows"]
+    _mode_rules = cand["_mode_rules"]
+    _form_fallbacks = cand["_form_fallbacks"]
+    _reposition_rec = cand["_reposition_rec"]
+    from_meta = cand["from_meta"]
+    _pl_defer = cand["_pl_defer"]
+    _dense_hub = cand["_dense_hub"]
+    _dense_deg_max = cand["_dense_deg_max"]
     # ref-scrubbed R/B loop coloring: edge -> the set of declared-loop kinds it belongs to (deterministic rules in docs/layout-modes.md):
     # a single loop in a single color (R=amber/B=sky blue); multiple loops of the same color take that color; multiple loops of different
     # colors or no loop -> neutral (rendering layer slate); polarity (+/-) data unchanged.
@@ -2901,3 +2939,49 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     _timing.mark("delivery")
     _timing.finish()
     return stamp_coordinates_only(v4)
+
+
+def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
+           manual: dict = None):
+    """auto recipe entry point: graph -> a v4-compatible layout dict (with polyline/arc routing + metadata).
+
+    manual: a --from-layout manual layout ({nodes: {id: x,y}, viewBox, source}).
+    When given, layering/placement/polish are skipped and the manual
+    coordinates go through the same routing + delivery pipeline (hard-gate
+    caliber unchanged, scored honestly). With manual=None (default) the code
+    path is byte-for-byte identical to history.
+
+    ref-scrubbed loop-dominant ring placement: with manual=None the deterministic
+    trigger detection (ringlayout.detect_ring) runs first;
+    a hit whose routing trial passes the gate -> regular-polygon slots for the
+    main ring;
+    no hit / trial failure -> the existing layered path (byte-for-byte
+    unchanged).
+    """
+    cfg = config or AutoConfig()
+    edges = tuple((e.a, e.b) for e in graph.edges)
+    # Cache lifecycle: module-level route/corner caches must never carry
+    # state across layouts (rounded-key aliasing would make batch results
+    # order-dependent); Router caches are instance-scoped, fresh per call.
+    _reset_route_caches()
+    # T3: observational stage timing. No-op unless STDRAW_TIMING=1; the
+    # report at the end goes to stderr only and never touches layout.json
+    # (zero-behavior-change, ci_checks mark() style).
+    _timing.start()
+    # stage 1 -- candidate generation (extracted verbatim; see
+    # _layout_candidates): planarization ladder, card metrics, dense
+    # verdict, mode priority chain + trials, placement, reposition
+    _l1_payload, cand = _layout_candidates(graph, cfg, edges, linestyle, manual)
+    if _l1_payload is not None:
+        return _l1_payload
+    # stage 2 -- routing optimization loop (extracted verbatim; see
+    # _layout_optimize_routes): edgerules presets, final routing,
+    # deterministic repair chain, anchor snap
+    routes, router, router_pairs, er_report, _snap_deferred = \
+        _layout_optimize_routes(cfg, graph, manual, edges, cand)
+    # stage 3 -- delivery assembly (extracted verbatim; see
+    # _layout_assemble_delivery): loop coloring, edges_out, viewBox
+    # shift, mode trace, v4 + stamp
+    return _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
+                                     routes, router, router_pairs,
+                                     er_report, _snap_deferred, cand)
