@@ -154,9 +154,14 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
         def _mark(v):
             return ("✓" if v is True else
                     ("–" if v == "N/A" else "✗"))
+        # Q3 (dense card) + same transport class: audit annotation entries in
+        # the gates dict are metadata records (dicts), not gates — they travel
+        # via the certificate JSON only; the face shows real boolean gates
+        # (plus the manual-mode "N/A" caliber marks) so the table rows can
+        # never contradict the "Gates n/n" header.
         rows = "".join(
             f'<tr><td>{k}</td><td class="{_cls(v)}">{_mark(v)}</td></tr>'
-            for k, v in cert["gates"].items())
+            for k, v in cert["gates"].items() if not isinstance(v, dict))
         cert_html = f'''<div class="cert">{_cert_head(cert["grade"], "rechecked on delivered coordinates · ortho-v1 theorem guarantee")}
 <div class="cert-detail">
 <table>
@@ -470,9 +475,14 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         def _mark(v):
             return ("✓" if v is True else
                     ("–" if v == "N/A" else "✗"))
+        # Q3 (dense card) + same transport class: audit annotation entries in
+        # the gates dict are metadata records (dicts), not gates — they travel
+        # via the certificate JSON only; the face shows real boolean gates
+        # (plus the manual-mode "N/A" caliber marks) so the table rows can
+        # never contradict the "Gates n/n" header.
         rows = "".join(
             f'<tr><td>{k}</td><td class="{_cls(v)}">{_mark(v)}</td></tr>'
-            for k, v in cert["gates"].items())
+            for k, v in cert["gates"].items() if not isinstance(v, dict))
         placement = cert.get("placement")
         metric_rows = (
             f'<tr><td>Crossings (soft target · report item)</td><td>{m["crossings"]}</td></tr>'
