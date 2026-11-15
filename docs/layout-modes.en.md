@@ -22,7 +22,8 @@
 | 2 | Bilateral comb (v0.7.7, wide-card fan v0.7.8) | Exactly two non-adjacent hubs with identical neighborhoods equal to the shared source set S (\|S\| = m >= 3); remaining core nodes form pendant forests on S (one source per tree); the comb source column must be strictly longer than the best column spine to preempt column; the ring ratio branch refuses to enter when best k <= 4 and detect_comb hits (see below) | `comb-bilateral` |
 | 3 | Column (long chain / few loops) | 3 <= n <= 12 ∧ longest simple loop 3 <= k <= 4 ∧ k < n (small main ring -> strong chain reading; k = n macro-loops go to ring; pure-cycle/ratio ring triggers do not enter column) | `column-chain` |
 | 4 | Ring | Pure cycle / main-ring coverage >= n-2 / cycle-edge ratio >= 0.9 ∧ k >= 5 or full coverage | `ring-cycle` |
-| 5 | Layered (existing path) | Everything else (chains / trees / large graphs) | `layered` |
+| 5 | Radial (star/fan) | `hub_deg >= 6 ∧ leaf_frac >= 0.5 ∨ hub_deg >= 10` (hub = max-degree node, ties to the smallest id; leaf_frac = share of degree-1 leaves; see below) | `radial` |
+| 6 | Layered (existing path) | Everything else (chains / trees / large graphs) | `layered` |
 
 Every new mode carries a **trial gate**: after constructing the placement, the
 same router re-runs a hard-gate proxy (crossings <= 2, press = 0, clearance

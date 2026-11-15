@@ -319,6 +319,8 @@ def scene_from_auto(v4: dict) -> dict:
             # ring placement caliber: certificate picks metrics per placement mode
             "placement": v4["meta"].get("placement"),
             "ring_nodes": (v4["meta"].get("ring") or {}).get("nodes"),
+            # radial (hub-centered spokes) certificate caliber
+            "radial": v4["meta"].get("radial"),
             # column-chain / symmetric placement calibers
             "column_spine": (v4["meta"].get("column") or {}).get("spine"),
             "symmetry": v4["meta"].get("symmetry"),
@@ -430,6 +432,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # (ring = on-ring equal spacing CV + regular-polygon template fit error).
     ring_mode = scene.get("placement") == "ring-cycle"
     ring_nodes = scene.get("ring_nodes") or []
+    # radial (hub-centered spokes) certificate caliber: HUB center deviation
+    # + azimuth equal-spacing CV (the ring equal-spacing caliber, rotation
+    # invariant)
+    radial_mode = scene.get("placement") == "radial"
+    radial = scene.get("radial") or {}
     # column-chain / symmetric placement calibers
     column_mode = scene.get("placement") == "column-chain"
     sym_mode = scene.get("placement") == "symmetric"
@@ -452,7 +459,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # the measured values stay in metrics.
     manual_mode = bool(scene.get("from_layout"))
     layered_mode = not (ring_mode or column_mode or sym_mode or bowtie_mode
-                        or spine_mode or comb_mode)
+                        or spine_mode or comb_mode or radial_mode)
     # planarization degrade ladder (docs/planarization-degrade-contract.md):
     # L1 = witness-marked planarized drawing (crossed-certified caliber);
     # L2 = generic path + honest planarization_deferred record.  L0 scenes
@@ -646,8 +653,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     avg_len = sum(sum(math.dist(polys[i][k], polys[i][k + 1])
                       for k in range(len(polys[i]) - 1))
                   for i in polys) / len(polys) if polys else 0.0
-    if ring_mode:
-        row_rate = None          # ring placement: row alignment inapplicable (caliber stated honestly)
+    if ring_mode or radial_mode:
+        row_rate = None          # ring/radial placement: row alignment inapplicable (caliber stated honestly)
     else:
         ysorted = sorted(p["y"] for p in nodes.values())
         aligned, i2 = 0, 0
@@ -687,10 +694,30 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     deg0 = scene.get("deg0", set())
     ring_spacing_cv = None
     ring_template_dev = None
+    radial_hub_dev = None
+    radial_cv = None
     col_axis_dev = None
     sym_mirror_err = None
     sw_spine_axis_dev = None
     sw_midline_dev = None
+    if radial_mode:
+        # radial regularity caliber: HUB center deviation <= 2px + azimuth
+        # equal-spacing CV <= 0.05 (certificate = check.py = ci_checks one
+        # caliber; rotation invariant like the ring CV)
+        rnodes = radial.get("ring_nodes") or []
+        rc = radial.get("center")
+        if radial.get("hub") in nodes and isinstance(rc, list) and len(rc) == 2:
+            radial_hub_dev = math.hypot(nodes[radial["hub"]]["x"] - rc[0],
+                                        nodes[radial["hub"]]["y"] - rc[1])
+        if len(rnodes) >= 3 and isinstance(rc, list) and len(rc) == 2:
+            try:
+                from . import radellayout as _rl
+                radial_cv = _rl.azimuth_cv(
+                    radial.get("ring_groups") or rnodes,
+                    {v: nodes[v]["x"] for v in nodes},
+                    {v: nodes[v]["y"] for v in nodes}, rc[0], rc[1])
+            except Exception:
+                radial_cv = None
     if ring_mode and len(ring_nodes) >= 3:
         rpts = [(nodes[v]["x"], nodes[v]["y"]) for v in ring_nodes
                 if v in nodes]
@@ -707,7 +734,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                     ring_nodes)
             except Exception:
                 ring_template_dev = None
-    if ring_mode:
+    if ring_mode or radial_mode:
         pitch_uniform, snap_rate, simple, regularity_ok = True, None, False, True
     elif column_mode and len(column_spine) >= 2:
         ys = [nodes[v]["y"] for v in column_spine if v in nodes]
@@ -901,6 +928,18 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                                       if ring_spacing_cv is not None else None)
         metrics["ring_template_deviation"] = (round(ring_template_dev, 4)
                                               if ring_template_dev is not None else None)
+    if radial_mode:
+        metrics["radial_hub_center_dev"] = (round(radial_hub_dev, 2)
+                                            if radial_hub_dev is not None
+                                            else None)
+        metrics["radial_spacing_cv"] = (round(radial_cv, 4)
+                                        if radial_cv is not None else None)
+        rc = radial.get("center")
+        if isinstance(rc, list) and len(rc) == 2:
+            # report item (not a gate): ring center vs the canvas geometric
+            # center (the read-view centering criterion)
+            metrics["radial_center_offset"] = round(
+                math.hypot(rc[0] - W / 2.0, rc[1] - H / 2.0), 1)
     if column_mode:
         metrics["column_axis_deviation"] = (round(col_axis_dev, 2)
                                             if col_axis_dev is not None else None)
@@ -938,6 +977,24 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                                        and metrics["ring_spacing_cv"] <= 0.05),
             "ring_template_fit_le_005": (metrics["ring_template_deviation"] is not None
                                          and metrics["ring_template_deviation"] <= 0.05),
+            "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
+        }
+    elif radial_mode:
+        # Radial caliber gates: HUB center deviation <= 2px + azimuth
+        # equal-spacing CV <= 0.05 (row/pitch calibers inapplicable --
+        # same N/A shape as ring)
+        g = {
+            "box_press_zero": metrics["box_press_1px"] == 0,
+            "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
+            "anchors_smooth": metrics["anchor_violations"] == 0,
+            "anchors_standard": metrics["anchor_standard_violations"] == 0,
+            "min_gap_ge_16": metrics["min_card_gap"] >= 16,
+            "radial_hub_center_le_2px": (metrics["radial_hub_center_dev"]
+                                         is not None
+                                         and metrics["radial_hub_center_dev"] <= 2.0),
+            "radial_spacing_cv_le_005": (metrics["radial_spacing_cv"] is not None
+                                         and metrics["radial_spacing_cv"] <= 0.05),
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
@@ -1106,6 +1163,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
                    g["ring_spacing_cv_le_005"] and g["ring_template_fit_le_005"])
+    elif radial_mode:
+        hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
+                   g["anchors_smooth"] and g["min_gap_ge_16"] and
+                   g["radial_hub_center_le_2px"] and
+                   g["radial_spacing_cv_le_005"])
     elif comb_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and

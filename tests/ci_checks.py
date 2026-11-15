@@ -156,12 +156,22 @@ COMB_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "lines_no_coincidence",
                       "anchors_standard",
                       "visual_crossings_zero")
+# radial (hub-centered spokes): HUB center deviation + azimuth equal-spacing
+# CV replace the row/pitch calibers (same shape as the ring gate set)
+RADIAL_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
+                     "min_gap_ge_16", "radial_hub_center_le_2px",
+                     "radial_spacing_cv_le_005", "mutual_pairs_separated",
+                     "lines_no_coincidence",
+                      "anchors_standard",
+                      "visual_crossings_zero")
 
 
 def _hard_gates_for(cert):
     p = cert.get("placement")
     if p == "ring-cycle":
         return RING_HARD_GATES
+    if p == "radial":
+        return RADIAL_HARD_GATES
     if p == "column-chain":
         return COLUMN_HARD_GATES
     if p == "spine-wing":

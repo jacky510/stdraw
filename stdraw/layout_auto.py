@@ -937,6 +937,50 @@ def _ring_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     return plan
 
 
+def _radial_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
+    """Radial (hub-centered spokes) placement + routing trial gate: adopted
+    only if the gate passes; otherwise None (fall back to layered,
+    byte-for-byte unchanged).
+
+    why: optional dict — receives the trial-gate outcome reason (mode
+    decision trace). Contract: every hub spoke must deliver as a straight
+    line (the radial reading); the unified hard-gate proxy reviews the
+    routed geometry like any other constructed placement.
+    """
+    from . import radellayout
+    adj, _ = radellayout._adjacency(edges)
+    try:
+        pos, y, meta = radellayout.place_radial(plan, widths, card_h, cfg,
+                                                adj, edges)
+    except radellayout.InfeasibleRadial:
+        if why is not None:
+            why["reason"] = ("trial: constructed placement infeasible "
+                             "(InfeasibleRadial)")
+        return None
+    nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+    routes = router.route_all()
+    hub = plan["hub"]
+    for i, (a, b) in enumerate(edges):
+        if hub in (a, b) and routes[i].get("kind") != "line":
+            if why is not None:
+                why["reason"] = ("trial gate: hub spoke not a straight line "
+                                 f"({routes[i].get('kind')}) — radial contract "
+                                 "broken")
+            return None
+    if not _constructed_gates(nodes_px, edges, routes, cfg, {}):
+        if why is not None:
+            why["reason"] = ("trial gate: hard-gate proxy failed "
+                             "(crossings<=2 / press=0 / clearance>=16 / "
+                             "smooth anchors / mutual separation / card gap)")
+        return None
+    if why is not None:
+        why["reason"] = "trial gate passed"
+    plan = dict(plan)
+    plan["placed"] = (pos, y, meta)
+    return plan
+
+
 def _constructed_gates(nodes_px, edges, routes, cfg, constructed):
     """Unified hard-gate proxy over constructed routes (closed arcs / mirror-symmetry arcs) and routed routes (ref-scrubbed).
 
@@ -1592,10 +1636,13 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         comb_plan = None
         column_plan = None
         ring_plan = None
+        radial_plan = None
         _why_sym, _why_bw, _why_sw = {}, {}, {}
         _why_comb, _why_col, _why_ring = {}, {}, {}
+        _why_rad = {}
         _tw_sym, _tw_bw, _tw_sw = {}, {}, {}
         _tw_comb, _tw_col, _tw_ring = {}, {}, {}
+        _tw_rad = {}
         _chain_cap = len(nodes) <= 12
         if not _chain_cap:
             _cap_reason = (f"n={len(nodes)} > 12 — structural modes cap at "
@@ -1700,6 +1747,23 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         if not any(p is not None for p in (sym_plan, bw_plan, sw_plan,
                                            comb_plan, column_plan,
                                            ring_plan)):
+            # radial (priority 5, after ring-cycle / before layered):
+            # star/fan graphs put the leaves around the HUB. Trace
+            # discipline: the rule entry is recorded ONLY when the
+            # detector fires — a non-hit leaves mode_decision_trace
+            # byte-for-byte unchanged, so every layered corpus graph
+            # keeps its delivered bytes (trigger-writes-the-key
+            # precedent, post_layout_reposition).
+            from . import radellayout as _radellayout
+            _rad = _radellayout.detect_radial(graph, why=_why_rad)
+            if _rad is not None:
+                radial_plan = _radial_trial(_rad, nodes, widths, card_h,
+                                            cfg, edges, why=_tw_rad)
+                _rule_hit("radial", 5, True, radial_plan, _why_rad,
+                          _tw_rad)
+        if not any(p is not None for p in (sym_plan, bw_plan, sw_plan,
+                                           comb_plan, column_plan,
+                                           ring_plan, radial_plan)):
             _mode_rules.append({"tier": 5, "rule": "layered (existing path)",
                                 "triggered": True,
                                 "reason": ("fallback: no structural mode "
@@ -1765,6 +1829,14 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     for yy in sorted({y[v] for v in nodes})]
             engine = "ring-construct"
             pos_meta = rmeta
+        elif radial_plan is not None:
+            dpos, dyy, dmeta = radial_plan["placed"]
+            pos, y = dpos, dyy
+            deg0 = list(radial_plan["deg0"])
+            rows = [[v for v in nodes if y[v] == yy]
+                    for yy in sorted({y[v] for v in nodes})]
+            engine = "radial-construct"
+            pos_meta = dmeta
         else:
             # ② layering (cycle breaking + longest path + empty-layer compression)
             _, dag = _cycle_break(core, edges)
@@ -2566,6 +2638,12 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     pos_meta["comb"].get("axis_x", 0) + dx
                 pos_meta["comb"]["hub_y"] = \
                     pos_meta["comb"].get("hub_y", 0) + dy
+            # radial: the hub/ring center shifts in sync with the translation
+            if isinstance(pos_meta.get("radial"), dict):
+                _rc = pos_meta["radial"].get("center")
+                if isinstance(_rc, list) and len(_rc) == 2:
+                    _rc[0] += dx
+                    _rc[1] += dy
 
     # W/H must be taken on the final post-shift coordinates. bugfix (a v0.2.0 leftover exposed by CI): the original implementation computed
     # W from the pre-shift xs_all; with dx>0 the content overflowed the viewBox after the right shift (analytic box widths are narrower
@@ -2601,9 +2679,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     if manual is not None:
         row_y_out = [yy + dy for yy in sorted({y[v] for v in nodes})]
         pitch_out = None
-    elif engine in ("ring-construct", "comb-construct"):
-        # ring/comb placement have no uniform-row semantics: rowY records the
-        # deduplicated order of actual y values; pitch does not apply
+    elif engine in ("ring-construct", "comb-construct", "radial-construct"):
+        # ring/comb/radial placement have no uniform-row semantics: rowY
+        # records the deduplicated order of actual y values; pitch does not
+        # apply
         row_y_out = [yy + dy for yy in sorted({y[v] for v in nodes})]
         pitch_out = None
     else:
@@ -2621,6 +2700,7 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                          "comb-construct": "comb-bilateral",
                          "column-construct": "column-chain",
                          "ring-construct": "ring-cycle",
+                         "radial-construct": "radial",
                          "manual": "manual"}
     _final_placement = ((pos_meta.get("placement")
                          if isinstance(pos_meta, dict) else None)

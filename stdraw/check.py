@@ -289,6 +289,9 @@ def auto_geometry_report(layout: dict) -> dict:
     # on-ring equal spacing CV + regular-polygon template fit error; see
     # metrics).
     ring_mode = meta.get("placement") == "ring-cycle"
+    # radial placement (hub-centered spokes): row caliber inapplicable, same
+    # shape as ring; regularity = HUB center deviation + azimuth equal CV
+    radial_mode = meta.get("placement") == "radial"
     # comb-bilateral placement (v0.7.7): row caliber = column pitch + column
     # axis + hub-pair mirror symmetry (same caliber as the certificate)
     comb_mode = meta.get("placement") == "comb-bilateral"
@@ -456,6 +459,7 @@ def auto_geometry_report(layout: dict) -> dict:
     odd = [v for v, p in nodes.items() if p["x"] % 2 or p["y"] % 2]
     _6a_na = (" (manual: N/A)" if manual_mode else
               " (ring: N/A)" if ring_mode else
+              " (radial: spokes)" if radial_mode else
               " (comb: column rows)" if comb_mode else
               " (column: main-chain rows)" if column_mode else
               " (sym: all rows)" if sym_mode else "")
@@ -468,7 +472,7 @@ def auto_geometry_report(layout: dict) -> dict:
         cys = [nodes[v]["y"] for v in col if v in nodes]
         pitch_ok = len({b - a for a, b in zip(cys, cys[1:])}) <= 1 if len(cys) > 1 else True
     chk("6a. uniform row pitch (parking-lane nodes excluded)" + _6a_na,
-        True if (manual_mode or ring_mode or planarized_mode) else pitch_ok, f"pitch={meta['pitch']}")
+        True if (manual_mode or ring_mode or radial_mode or planarized_mode) else pitch_ok, f"pitch={meta['pitch']}")
     chk("6b. all coordinates on the 2px grid (even)", not odd, str(odd))
 
     # 7. viewBox fully contains everything
@@ -594,6 +598,31 @@ def auto_geometry_report(layout: dict) -> dict:
         chk("9. spine-wing placement regularity (spine on-axis + midline adherence + mirror <=2px)",
             sw_ok,
             f"maximum deviation {max(errs):.2f}px" if errs else "meta.spine_wing missing")
+    elif radial_mode:
+        # radial: HUB on the declared center <=2px + azimuth equal-spacing
+        # CV <=0.05 (same caliber as the certificate metrics)
+        rd = meta.get("radial") or {}
+        rc = rd.get("center")
+        hub = rd.get("hub")
+        if (hub in nodes and isinstance(rc, list) and len(rc) == 2):
+            hdev = math.hypot(nodes[hub]["x"] - rc[0], nodes[hub]["y"] - rc[1])
+            try:
+                from . import radellayout as _rl
+                rcv = _rl.azimuth_cv(rd.get("ring_groups")
+                                     or (rd.get("ring_nodes") or []),
+                                     {v: nodes[v]["x"] for v in nodes},
+                                     {v: nodes[v]["y"] for v in nodes},
+                                     rc[0], rc[1])
+            except Exception:
+                rcv = None
+            rad_ok = hdev <= 2.0 and rcv is not None and rcv <= 0.05
+            chk("9. radial placement regularity (HUB center deviation + azimuth equal-spacing CV)",
+                rad_ok,
+                f"HUB center deviation={hdev:.2f}px, azimuth CV={rcv:.4f} "
+                "(gates: <=2px, <=0.05)")
+        else:
+            chk("9. radial placement regularity (HUB center deviation + azimuth equal-spacing CV)",
+                False, "meta.radial hub/center/ring_nodes missing")
     else:
         chk("9. simple-graph placement regularity"
             + (" (manual: N/A)" if manual_mode
@@ -614,6 +643,7 @@ def auto_geometry_report(layout: dict) -> dict:
                                              "bowtie-construct",
                                              "comb-construct",
                                              "spine-construct",
+                                             "radial-construct",
                                              "planarized")))
     chk("10. auto-v2 metadata complete", ok10,
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "
