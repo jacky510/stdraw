@@ -316,6 +316,9 @@ def scene_from_auto(v4: dict) -> dict:
             # dense-mode audit meta pass-through (absent on non-dense
             # graphs; certificate annotates it, face unchanged)
             "dense_mode": v4["meta"].get("dense_mode"),
+            # reverse-form gate pass-through (absent unless a structural
+            # form was detected but abandoned; certificate degrades it)
+            "form_fallback": v4["meta"].get("form_fallback"),
             # edge placement rules v1 pass-through (certificate records it)
             "edge_rules": v4["meta"].get("edge_rules"),
             "line_style": v4["meta"].get("line_style", "straight"),
@@ -977,6 +980,19 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             # center (the read-view centering criterion)
             metrics["radial_center_offset"] = round(
                 math.hypot(rc[0] - W / 2.0, rc[1] - H / 2.0), 1)
+        # manual-calibrated form battery report items (2026-11-15; the
+        # GATE rows carry the pass/fail — these are the measured values)
+        try:
+            from . import radellayout as _rlr
+            _ch = float(next(iter(nodes.values())).get("h", 44))
+            _fmr = _rlr.form_metrics(nodes, _ch, radial,
+                                     [(e["a"], e["b"]) for e in edges])
+            for _k in ("centroid_dev", "radius_cv", "long_edge_rate",
+                       "min_pair_gap", "fit_ratio"):
+                if _fmr.get(_k) is not None:
+                    metrics[f"radial_{_k}"] = round(_fmr[_k], 4)
+        except Exception:
+            pass
     if column_mode:
         metrics["column_axis_deviation"] = (round(col_axis_dev, 2)
                                             if col_axis_dev is not None else None)
@@ -1018,20 +1034,44 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     elif radial_mode:
-        # Radial caliber gates: HUB center deviation <= 2px + azimuth
-        # equal-spacing CV <= 0.05 (row/pitch calibers inapplicable --
-        # same N/A shape as ring)
+        # Radial caliber gates -- recalibrated 2026-11-15 against the
+        # manual ground truth (benchmarks/manual fan-d12/fan-d17): the
+        # battery is radellayout.form_metrics (single source with
+        # check.py gate 9; thresholds = the radellayout manual-band
+        # constants).  The former min_gap>=16 / azimuth CV<=0.05 calibers
+        # REJECTED jacky's hand-drawn layouts themselves (manual minimum
+        # rect-gap 6px, azimuth CV up to 0.486), so the band now reads
+        # the fixtures, not the old engine's quantization floor.
+        from . import radellayout as _rlg
+        _card_h = float(next(iter(scene["nodes"].values())).get("h", 44))
+        _fm = _rlg.form_metrics(scene["nodes"], _card_h,
+                                scene.get("radial") or {},
+                                [(e["a"], e["b"]) for e in scene["edges"]])
         g = {
             "box_press_zero": metrics["box_press_1px"] == 0,
             "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
             "anchors_smooth": metrics["anchor_violations"] == 0,
             "anchors_standard": metrics["anchor_standard_violations"] == 0,
-            "min_gap_ge_16": metrics["min_card_gap"] >= 16,
+            "radial_min_gap_ge_pack_floor": (metrics["min_card_gap"]
+                                             >= _rlg.RADIAL_MIN_PAIR_GAP),
             "radial_hub_center_le_2px": (metrics["radial_hub_center_dev"]
                                          is not None
                                          and metrics["radial_hub_center_dev"] <= 2.0),
-            "radial_spacing_cv_le_005": (metrics["radial_spacing_cv"] is not None
-                                         and metrics["radial_spacing_cv"] <= 0.05),
+            "radial_centroid_dev_le_24px": (
+                _fm.get("centroid_dev") is not None
+                and _fm["centroid_dev"] <= _rlg.RADIAL_CENTROID_DEV_MAX),
+            "radial_azimuth_cv_le_050": (
+                _fm.get("azimuth_cv") is not None
+                and _fm["azimuth_cv"] <= _rlg.RADIAL_AZ_CV_MAX),
+            "radial_radius_cv_le_015": (
+                _fm.get("radius_cv") is not None
+                and _fm["radius_cv"] <= _rlg.RADIAL_RADIUS_CV_MAX),
+            "radial_long_edge_rate_zero": (
+                _fm.get("long_edge_rate") is not None
+                and _fm["long_edge_rate"] == 0.0),
+            "radial_total_edge_fit_le_125": (
+                _fm.get("fit_ratio") is not None
+                and _fm["fit_ratio"] <= _rlg.RADIAL_TOTAL_EDGE_FIT),
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
@@ -1204,9 +1244,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                    g["ring_spacing_cv_le_005"] and g["ring_template_fit_le_005"])
     elif radial_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
-                   g["anchors_smooth"] and g["min_gap_ge_16"] and
+                   g["anchors_smooth"] and g["radial_min_gap_ge_pack_floor"] and
                    g["radial_hub_center_le_2px"] and
-                   g["radial_spacing_cv_le_005"])
+                   g["radial_centroid_dev_le_24px"] and
+                   g["radial_azimuth_cv_le_050"] and
+                   g["radial_radius_cv_le_015"] and
+                   g["radial_long_edge_rate_zero"] and
+                   g["radial_total_edge_fit_le_125"])
     elif comb_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
@@ -1285,6 +1329,22 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         grade_note = ("hard gates not all passed or crossings > 2 — honestly "
                       "ungraded; a certificate bought with a relaxed budget "
                       "never poses as a finished product")
+    # reverse-form gate (jacky ruling 2026-11-15): a structural form that
+    # was detected but abandoned (trial gate fail -> layered fallback)
+    # disqualifies the certificate regardless of geometric hygiene --
+    # "form misplacement is failing before any hygiene metric".  The
+    # abandoned readings ride in on the meta form_fallback block; the
+    # gate row is added here and best is never issued on a fallback.
+    _form_fallback = scene.get("form_fallback")
+    if _form_fallback:
+        g["topology_form_fallback"] = False
+        if grade == "best":
+            grade = "uncertified"
+        grade_note = (grade_note
+                      + " | reverse-form gate: structural form detected "
+                        "but abandoned -> "
+                      + "; ".join(f"{f.get('mode')}: {f.get('reason')}"
+                                  for f in _form_fallback))
 
     out = {
         "tool": "stdraw", "version": _PKG_VERSION, "layer": layer,

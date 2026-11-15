@@ -610,29 +610,45 @@ def auto_geometry_report(layout: dict) -> dict:
             sw_ok,
             f"maximum deviation {max(errs):.2f}px" if errs else "meta.spine_wing missing")
     elif radial_mode:
-        # radial: HUB on the declared center <=2px + azimuth equal-spacing
-        # CV <=0.05 (same caliber as the certificate metrics)
+        # radial form-coherence battery (recalibrated 2026-11-15 against
+        # the manual ground truth, benchmarks/manual fan fixtures; single
+        # source = radellayout.form_metrics + its manual-band constants,
+        # the same battery the metrics.py certificate gates read):
+        # HUB on the declared center <=2px, hub-vs-ring-centroid <=24px,
+        # azimuth CV <=0.50, radius CV <=0.15, long-edge rate 0, min
+        # card rect-gap >=6px, total-edge fit <=1.25x the minimal radius
+        from . import radellayout as _rl
         rd = meta.get("radial") or {}
-        rc = rd.get("center")
-        hub = rd.get("hub")
-        if (hub in nodes and isinstance(rc, list) and len(rc) == 2):
-            hdev = math.hypot(nodes[hub]["x"] - rc[0], nodes[hub]["y"] - rc[1])
-            try:
-                from . import radellayout as _rl
-                rcv = _rl.azimuth_cv(rd.get("ring_groups")
-                                     or (rd.get("ring_nodes") or []),
-                                     {v: nodes[v]["x"] for v in nodes},
-                                     {v: nodes[v]["y"] for v in nodes},
-                                     rc[0], rc[1])
-            except Exception:
-                rcv = None
-            rad_ok = hdev <= 2.0 and rcv is not None and rcv <= 0.05
-            chk("9. radial placement regularity (HUB center deviation + azimuth equal-spacing CV)",
-                rad_ok,
-                f"HUB center deviation={hdev:.2f}px, azimuth CV={rcv:.4f} "
-                "(gates: <=2px, <=0.05)")
+        _card_h = float(next(iter(nodes.values())).get("h", 44))
+        fm = _rl.form_metrics(nodes, _card_h, rd,
+                              [(e["a"], e["b"]) for e in edges])
+        if fm:
+            checks = (
+                ("HUB center deviation", fm["hub_center_dev"], 2.0, "<=2px"),
+                ("ring-centroid deviation", fm.get("centroid_dev"),
+                 _rl.RADIAL_CENTROID_DEV_MAX, f"<={_rl.RADIAL_CENTROID_DEV_MAX:.0f}px"),
+                ("azimuth CV", fm.get("azimuth_cv"),
+                 _rl.RADIAL_AZ_CV_MAX, f"<={_rl.RADIAL_AZ_CV_MAX:.2f}"),
+                ("radius CV", fm.get("radius_cv"),
+                 _rl.RADIAL_RADIUS_CV_MAX, f"<={_rl.RADIAL_RADIUS_CV_MAX:.2f}"),
+                ("long-edge rate", fm.get("long_edge_rate"), 0.0, "==0"),
+                ("min card rect-gap", fm.get("min_pair_gap"),
+                 _rl.RADIAL_MIN_PAIR_GAP, f">={_rl.RADIAL_MIN_PAIR_GAP:.0f}px"),
+                ("total-edge fit ratio", fm.get("fit_ratio"),
+                 _rl.RADIAL_TOTAL_EDGE_FIT,
+                 f"<={_rl.RADIAL_TOTAL_EDGE_FIT:.2f}"),
+            )
+            bad = [(nm, v, lim) for nm, v, lim, _ in checks if v is None
+                   or (v > lim if nm != "min card rect-gap" else v < lim)]
+            detail = ", ".join(
+                f"{nm}={v:.4g} (gate {gs})" if v is not None
+                else f"{nm}=N/A" for nm, v, _l, gs in checks)
+            chk("9. radial form coherence (manual-calibrated battery)",
+                not bad,
+                detail + (" — FAIL: " + ", ".join(f"{nm}={v}" for nm, v, _l in bad)
+                          if bad else " (manual band)"))
         else:
-            chk("9. radial placement regularity (HUB center deviation + azimuth equal-spacing CV)",
+            chk("9. radial form coherence (manual-calibrated battery)",
                 False, "meta.radial hub/center/ring_nodes missing")
     else:
         chk("9. simple-graph placement regularity"

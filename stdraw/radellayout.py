@@ -45,9 +45,35 @@ the fixed start angle and the 2px grid; no RNG. Trial gating and silent
 fallback are the caller's job (layout_auto._radial_trial), same pattern
 as ring/column/comb.
 
-Certificate caliber (mode "radial"): HUB center deviation <= 2px, ring
-center vs canvas geometric center <= 2px, azimuth equal-spacing CV
-<= 0.05 (the ring equal-spacing CV caliber, rotation invariant).
+Certificate caliber (mode "radial", recalibrated 2026-11-15 against the
+manual ground truth -- jacky hand-dragged fan-d12/fan-d17, exported via
+"Export layout", stored under benchmarks/manual/):
+  - HUB center deviation <= 2px (engine invariant: the hub sits on the
+    declared ring center) AND hub-vs-ring-centroid deviation <= 24px
+    (manual band: 6.2/18.9px on the two fixtures);
+  - azimuth equal-spacing CV <= 0.50 (manual band: 0.486 fan-d12 /
+    0.235 fan-d17 -- the former 0.05 gate REJECTED the manual ground
+    truth itself, so the caliber now reads the fixtures, not the old
+    engine's quantization floor);
+  - radius CV <= 0.15 (manual: 0.122 / 0.081), long-edge rate = 0
+    (manual: no edge longer than 2x the median on either fixture);
+  - min card pair rect-gap >= 6px (manual minimum: 6px fan-d17 -- jacky
+    packs tightly to keep total spoke length minimal; the chord-based
+    ring radius is retired for the single-ring path);
+  - total-edge fit: mean spoke length <= 1.25x the closed-form minimal
+    ring radius (manual ratios: 1.227 fan-d12 / 0.996 fan-d17 -- "all
+    edges as short as possible" once symmetry/uniformity hold).
+
+Ring placement (recalibrated): the ring radius is the MINIMAL uniform
+radius satisfying box-aware clearance (rect-gap caliber, PACK_GAP) for
+every adjacent azimuth pair plus the hub clearance -- NOT the old
+chord-based circular-packing need.  Measured on the fan family this
+reproduces jacky's manual packing almost exactly (fan-d17: closed-form
+minimum ~283px vs manual mean spoke 282px; the old conservative caliber
+sat at 414px, +46% total edge length).  A double ring now only appears
+when even the box-aware minimum exceeds the radius bound (dormant on
+the whole n<=20 fan family); its interleaved legacy caliber is kept
+verbatim for that over-bound fallback.
 """
 import math
 
@@ -91,6 +117,70 @@ RING_STEP_DENSE = 120      # dense-era separation: with the gap-azimuth stagger
 INNER_FRACTIONS = (1.42, 1.30, 1.55, 1.18, 1.70, 1.06)   # outward along the anchor azimuth
 _INNER_FS = (0.42, 0.34, 0.50, 0.26, 0.58, 0.18, 0.66)   # in-ring fallback fractions
 _ANGLE_DS = (0.0, 20.0, -20.0, 40.0, -40.0, 60.0, -60.0, 90.0, -90.0)
+
+# -- manual-calibrated form calibers (2026-11-15; single source for the
+#    placement, the check.py gate 9 battery and the metrics.py certificate
+#    gates; every threshold is derived from the two manual fixtures --
+#    benchmarks/manual/fan-d12/fan-d17-manual-layout.json -- as
+#    "manual value rounded up to the next 0.5/1 band edge") --
+PACK_GAP = 8.0              # placement pack target: manual min rect-gap 6px
+                            # + the 2px grid guard (the placement must never
+                            # land UNDER the manual floor after quantization)
+RADIAL_MIN_PAIR_GAP = 6.0   # form gate: min card pair rect-gap (manual
+                            # minimum: 6px fan-d17 / 12px fan-d12)
+RADIAL_AZ_CV_MAX = 0.50     # manual azimuth CV: 0.4855 (d12) / 0.2352 (d17)
+RADIAL_RADIUS_CV_MAX = 0.15 # manual radius CV: 0.1222 (d12) / 0.0812 (d17)
+RADIAL_CENTROID_DEV_MAX = 24.0  # manual hub-vs-ring-centroid dev: 18.9 (d12)
+RADIAL_TOTAL_EDGE_FIT = 1.25    # manual mean-spoke/min-radius ratio:
+                                # 1.227 (d12) / 0.996 (d17)
+RADIAL_LONG_EDGE_FACTOR = 2.0   # "no many long lines": an edge longer than
+                                # 2x the median is a long edge; manual rate 0
+                                # on both fixtures -> gate rate == 0
+RADIAL_BUMP_STEPS = 30          # trial-gate radius ladder: +2px per step,
+                                # deterministic give-up ceiling (+60px)
+
+
+def min_ring_radius_box(ring, widths, hub_w, card_h, pack_gap=PACK_GAP):
+    """Minimal uniform ring radius under box-aware clearance (manual
+    calibration 2026-11-15).
+
+    Every adjacent azimuth pair (uniform 2*pi/k steps) must satisfy the
+    rect-gap caliber max(gap_x, gap_y) >= pack_gap, and every spoke must
+    clear the hub card by HUB_GAP.  Both constraints are linear in r for a
+    uniform circle, so the closed form below is exact (no iteration, no
+    RNG).  This replaces the chord-based circular-packing need for the
+    single-ring path: the chord caliber ignored card orientation (a
+    vertically stacked side pair only needs dy >= card_h + gap, not the
+    full chord width), which is exactly the slack jacky's manual layouts
+    use to keep total spoke length minimal.
+    """
+    k = len(ring)
+    if k < 3:
+        return float(RADIUS_MIN)
+    delta = 2 * math.pi / k
+    half = math.sin(delta / 2)
+    need = float(RADIUS_MIN)
+    for i in range(k):
+        wa = widths.get(ring[i], 96)
+        wb = widths.get(ring[(i + 1) % k], 96)
+        th1 = _azimuth(i, k)
+        th2 = _azimuth((i + 1) % k, k)
+        mid = math.atan2(math.sin(th1) + math.sin(th2),
+                         math.cos(th1) + math.cos(th2))
+        s, c = abs(math.sin(mid)), abs(math.cos(mid))
+        # rect-gap >= pack_gap needs gap_x >= pack OR gap_y >= pack; both
+        # gaps grow linearly with r, so the pair bound is the min of the
+        # two per-axis bounds (eps guards the axis-aligned singularities)
+        rx = ((wa + wb) / 2 + pack_gap) / (2 * half * s + 1e-9)
+        ry = (card_h + pack_gap) / (2 * half * c + 1e-9)
+        need = max(need, min(rx, ry))
+        # hub clearance along the spoke (same rect-gap caliber)
+        w = widths.get(ring[i], 96)
+        sx, cx_ = abs(math.sin(th1)), abs(math.cos(th1))
+        hx = ((hub_w + w) / 2 + HUB_GAP) / (cx_ + 1e-9)
+        hy = (card_h + HUB_GAP) / (sx + 1e-9)
+        need = max(need, min(hx, hy))
+    return need
 
 
 def detect_radial(graph, why=None):
@@ -171,22 +261,27 @@ def _q2(v):
     return int(round(v / 2)) * 2
 
 
-def place_radial(plan, widths, card_h, cfg, adj, edges, dense_hub=None):
+def place_radial(plan, widths, card_h, cfg, adj, edges, dense_hub=None,
+                 radius_floor=0.0):
     """Radial placement -> ({v: x}, {v: y}, meta). All-integer 2px grid,
     deterministic.
 
     dense_hub: dense-mode node id or None — dense graphs read the dense
     ring knobs (DENSE_RING_ADJ_GAP corridor caliber + RADIUS_MAX_DENSE
     bound) so the fan family delivers as a single clean ring.
+    radius_floor: retry lever for the caller's trial gate (bump loop) —
+    when a radius-bump retry needs more breathing room, the caller passes
+    the previous radius + 2 and the ring re-centers on that floor.
     """
     hub = plan["hub"]
     ring = list(plan["ring"])
     k = len(ring)
     hub_w = widths.get(hub, 96)
     dense = dense_hub is not None and dense_hub == hub
-    ring_gap = DENSE_RING_ADJ_GAP if dense else ADJ_GAP
     radius_max = RADIUS_MAX_DENSE if dense else RADIUS_MAX
-    single_r = _ring_radius(ring, widths, hub_w, adj_gap=ring_gap)
+    single_r = min_ring_radius_box(ring, widths, hub_w, card_h)
+    if radius_floor:
+        single_r = max(single_r, float(radius_floor))
     two_rings = single_r > radius_max
     if two_rings and k < 6:
         raise InfeasibleRadial(
@@ -395,3 +490,102 @@ def azimuth_cv(ring_nodes, pos, y, cx, cy):
     if len(pts) < 3:
         return None
     return _cv_of(pts, cx, cy)
+
+
+def form_metrics(nodes, card_h, radial_meta, edges):
+    """Shared radial form-coherence battery (single source: check.py gate 9
+    AND the metrics.py certificate gates read this; manual-calibrated
+    2026-11-15, thresholds as module constants above).
+
+    nodes: {v: {"x": .., "y": .., "w": ..}} (scene/v4 node dicts);
+    radial_meta: the meta["radial"] block (hub/center/ring_nodes/
+    ring_groups); edges: [(a, b), ...] graph edges.
+
+    Returns a dict with (None when not computable -- callers gate on the
+    values being present AND within band):
+      hub_center_dev   hub card vs the declared ring center (px)
+      centroid_dev     hub card vs the ring-card centroid (px)
+      azimuth_cv       per-ring azimuth equal-spacing CV (max over rings)
+      radius_cv        per-ring spoke-length CV (max over rings)
+      long_edge_rate   share of edges longer than RADIAL_LONG_EDGE_FACTOR
+                       x the median edge length
+      min_pair_gap     minimum rect-gap over ALL card pairs (px)
+      mean_edge        mean graph-edge node-center distance (px)
+      fit_ratio        mean spoke length / closed-form minimal ring radius
+    """
+    hub = radial_meta.get("hub")
+    rc = radial_meta.get("center")
+    ring_nodes = radial_meta.get("ring_nodes") or []
+    groups = radial_meta.get("ring_groups") or [ring_nodes]
+    if hub not in nodes or not (isinstance(rc, list) and len(rc) == 2):
+        return {}
+    cx, cy = float(rc[0]), float(rc[1])
+    hp = nodes[hub]
+    hub_center_dev = math.hypot(hp["x"] - cx, hp["y"] - cy)
+    flat = [v for g in groups for v in g if v in nodes]
+    centroid_dev = None
+    radius_cv = None
+    if flat:
+        gx = sum(nodes[v]["x"] for v in flat) / len(flat)
+        gy = sum(nodes[v]["y"] for v in flat) / len(flat)
+        centroid_dev = max(abs(hp["x"] - gx), abs(hp["y"] - gy))
+    cvs, rcvs = [], []
+    for g in groups:
+        gsel = [v for v in g if v in nodes]
+        if len(gsel) >= 3:
+            cv = _cv_of([(nodes[v]["x"], nodes[v]["y"]) for v in gsel],
+                        cx, cy)
+            if cv is not None:
+                cvs.append(cv)
+            spokes = [math.hypot(nodes[v]["x"] - cx, nodes[v]["y"] - cy)
+                      for v in gsel]
+            md = sum(spokes) / len(spokes)
+            if md:
+                rcvs.append(math.sqrt(sum((s - md) ** 2 for s in spokes)
+                                      / len(spokes)) / md)
+    azimuth_cv = max(cvs) if cvs else None
+    radius_cv = max(rcvs) if rcvs else None
+    els = []
+    for a, b in edges:
+        if a in nodes and b in nodes:
+            els.append(math.hypot(nodes[a]["x"] - nodes[b]["x"],
+                                  nodes[a]["y"] - nodes[b]["y"]))
+    long_edge_rate = None
+    mean_edge = None
+    if els:
+        els_sorted = sorted(els)
+        med = els_sorted[len(els) // 2] if len(els) % 2 else \
+            (els_sorted[len(els) // 2 - 1] + els_sorted[len(els) // 2]) / 2
+        long_edge_rate = (sum(1 for l in els
+                              if l > RADIAL_LONG_EDGE_FACTOR * med)
+                          / len(els))
+        mean_edge = sum(els) / len(els)
+    min_pair_gap = None
+    vs = list(nodes)
+    if len(vs) >= 2:
+        gaps = []
+        for i in range(len(vs)):
+            for j in range(i + 1, len(vs)):
+                a, b = nodes[vs[i]], nodes[vs[j]]
+                dx = abs(a["x"] - b["x"]) - (a.get("w", 96)
+                                             + b.get("w", 96)) / 2
+                dy = abs(a["y"] - b["y"]) - card_h
+                gaps.append(max(dx, dy))
+        min_pair_gap = min(gaps)
+    fit_ratio = None
+    if flat and ring_nodes:
+        widths = {v: nodes[v].get("w", 96) for v in flat}
+        hub_w = hp.get("w", 96)
+        r_min = min_ring_radius_box(ring_nodes, widths, hub_w, card_h)
+        if r_min:
+            spokes = [math.hypot(nodes[v]["x"] - cx, nodes[v]["y"] - cy)
+                      for v in flat]
+            fit_ratio = (sum(spokes) / len(spokes)) / r_min
+    return {"hub_center_dev": hub_center_dev,
+            "centroid_dev": centroid_dev,
+            "azimuth_cv": azimuth_cv,
+            "radius_cv": radius_cv,
+            "long_edge_rate": long_edge_rate,
+            "min_pair_gap": min_pair_gap,
+            "mean_edge": mean_edge,
+            "fit_ratio": fit_ratio}

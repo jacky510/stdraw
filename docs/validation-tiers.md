@@ -177,3 +177,18 @@ Z1/Z2 并入 `docs/zcode-upgrade-brief.md` 任务书，启用时再开卡。）
 `tests/ci_checks.py` 同批整改：无 ortools 时开头打 DEGRADED 横幅、结尾摘要附
 `engine caliber: fallback-construct (DEGRADED — cp-sat layered path NOT covered)`
 ——绿色但降级，先报可见缺陷。
+
+## 9. 读图终审 checklist（2026-11-15 追加拍板，排布类交付必答）
+
+背景：fan-d17 一字排开曾拿到 grade best——三层失守的第三层是「读图三道关
+只查缺陷不查设计」。机器门（形态一致性门 + 反向门，见
+`docs/layout-modes.md` §放射排布/§静默回退审计）封住前两层后，人读图层
+补两项必答：
+
+1. **拓扑合理性终审**（排布类交付的视觉验收卡必答项，由编排方派验收卡
+   时内置）：对照 `benchmarks/manual/` 手拉基准回答「这个排布像不像人会
+   做的」——hub 是否居中、环是否围合、有没有把放射拓扑排成一字排开；
+2. **长边视觉抽查**（worker 自验读图 checklist 项）：数一遍图里超过
+   2×中位边长的可见长线，任何一条都要在交付说明里给出成因
+   （机器门 `radial_long_edge_rate_zero` 已把放射族钳到 0，此项兜住
+   其他形态档）。

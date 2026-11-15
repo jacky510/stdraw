@@ -951,57 +951,83 @@ def _radial_trial(plan, nodes, widths, card_h, cfg, edges, why=None,
     proxy read the dense branches (slot grid + straight-spoke preference
     + the 12 deg hub-end angle floor) and the dense ring knobs, dense
     card form-correctness gate.
+
+    Radius-bump ladder (manual calibration 2026-11-15): the placement
+    delivers the minimal box-aware radius; if the routing gate proxy
+    still fails (a spoke clearance / anchor-smoothness corner case), the
+    radius is retried +2px on the grid up to RADIAL_BUMP_STEPS times
+    before the trial concedes.  Deterministic ladder, no RNG.
     """
     from . import radellayout
     adj, _ = radellayout._adjacency(edges)
-    try:
-        pos, y, meta = radellayout.place_radial(plan, widths, card_h, cfg,
-                                                adj, edges,
-                                                dense_hub=dense_hub)
-    except radellayout.InfeasibleRadial:
-        if why is not None:
-            why["reason"] = ("trial: constructed placement infeasible "
-                             "(InfeasibleRadial)")
-        return None
-    nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
-    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch,
-                    dense_hub=dense_hub)
-    routes = router.route_all()
-    hub = plan["hub"]
-    for i, (a, b) in enumerate(edges):
-        if hub in (a, b) and routes[i].get("kind") != "line":
+    last_reason = None
+    for bump in range(radellayout.RADIAL_BUMP_STEPS + 1):
+        try:
+            pos, y, meta = radellayout.place_radial(plan, widths, card_h,
+                                                    cfg, adj, edges,
+                                                    dense_hub=dense_hub,
+                                                    radius_floor=2.0 * bump)
+        except radellayout.InfeasibleRadial:
             if why is not None:
-                why["reason"] = ("trial gate: hub spoke not a straight line "
-                                 f"({routes[i].get('kind')}) — radial contract "
-                                 "broken")
+                why["reason"] = ("trial: constructed placement infeasible "
+                                 "(InfeasibleRadial)")
             return None
-    if not _constructed_gates(nodes_px, edges, routes, cfg, {},
-                              dense_hub=dense_hub):
-        if why is not None:
-            why["reason"] = ("trial gate: hard-gate proxy failed "
-                             "(crossings<=2 / press=0 / clearance>=16 / "
-                             "smooth anchors / mutual separation / card gap)")
-        return None
+        nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
+        router = Router(nodes_px, edges, cfg.clearance, cfg.pitch,
+                        dense_hub=dense_hub)
+        routes = router.route_all()
+        hub = plan["hub"]
+        straight_ok = True
+        for i, (a, b) in enumerate(edges):
+            if hub in (a, b) and routes[i].get("kind") != "line":
+                straight_ok = False
+                last_reason = ("trial gate: hub spoke not a straight line "
+                               f"({routes[i].get('kind')}) — radial contract "
+                               "broken")
+                break
+        if straight_ok and _constructed_gates(nodes_px, edges, routes, cfg,
+                                              {}, dense_hub=dense_hub,
+                                              min_gap_override=(
+                                                  radellayout.RADIAL_MIN_PAIR_GAP
+                                                  + 2.0)):
+            if why is not None:
+                why["reason"] = ("trial gate passed"
+                                 + (f" (radius bump x{bump})"
+                                    if bump else ""))
+            plan = dict(plan)
+            plan["placed"] = (pos, y, meta)
+            return plan
+        if straight_ok and last_reason is None:
+            last_reason = ("trial gate: hard-gate proxy failed "
+                           "(crossings<=2 / press=0 / clearance>=16 / "
+                           "smooth anchors / mutual separation / card gap)")
     if why is not None:
-        why["reason"] = "trial gate passed"
-    plan = dict(plan)
-    plan["placed"] = (pos, y, meta)
-    return plan
+        why["reason"] = last_reason or "trial gate failed (radius ladder exhausted)"
+    return None
 
 
 def _constructed_gates(nodes_px, edges, routes, cfg, constructed,
-                       dense_hub=None):
+                       dense_hub=None, min_gap_override=None):
     """Unified hard-gate proxy over constructed routes (closed arcs / mirror-symmetry arcs) and routed routes (ref-scrubbed).
 
     Same caliber as _ring_trial: press=0, edge-box clearance>=clearance,
     anchors on box edges with smoothing
     >=ANCHOR_MIN_DEG (dense-mode hub ends: DENSE_ANCHOR_MIN_DEG), card gap >= min_gap-2, mutual-pair separation >=4px,
     crossings <=2.
+    min_gap_override: radial form-family caliber (manual-calibrated
+    2026-11-15) -- jacky's hand-drawn fan fixtures pack to a 6px rect-gap
+    minimum (benchmarks/manual), so the radial trial passes
+    RADIAL_MIN_PAIR_GAP + 2 and the card-gap leg reviews that floor
+    instead of cfg.min_gap; every other caller keeps cfg.min_gap
+    verbatim.
     Returns True = gate passed.
     """
     from .routing import (dist_point_rect, min_pair_dist, sample_polyline,
                           ANCHOR_MIN_DEG, DENSE_ANCHOR_MIN_DEG)
-    # card gap (rect_gap caliber, >= min_gap-2)
+    # card gap (rect_gap caliber, >= min_gap-2; radial form family: the
+    # manual pack floor)
+    gap_floor = ((min_gap_override if min_gap_override is not None
+                  else cfg.min_gap) - 2)
     vs = sorted(nodes_px)
     for i in range(len(vs)):
         for j in range(i + 1, len(vs)):
@@ -1010,7 +1036,7 @@ def _constructed_gates(nodes_px, edges, routes, cfg, constructed,
             bx, by, bw, bh = nodes_px[b]
             gap_x = abs(ax - bx) - (aw + bw) / 2
             gap_y = abs(ay - by) - (ah + bh) / 2
-            if max(gap_x, gap_y) < cfg.min_gap - 2:
+            if max(gap_x, gap_y) < gap_floor:
                 return False
     if _final_pairs(nodes_px, edges, routes, cfg) > 2:
         return False
@@ -1635,6 +1661,10 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # item 5: reduce the trigger-template black-box feel). Recording only — the
     # decision logic below is untouched, so non-hit paths stay byte-identical.
     _mode_rules = []
+    # reverse-form gate record (radial-scoped; see the mode chain below) --
+    # initialized here so the manual path (which skips the whole mode
+    # chain) still reaches the meta assembly safely
+    _form_fallbacks = []
     if manual is not None:
         pos, y, rows, from_meta = _manual_positions(nodes, widths, manual)
         deg0 = []
@@ -1656,6 +1686,17 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                 entry["trial_gate"] = "fail"
                 entry["reason"] = (entry["reason"] + " — " +
                                    (trial_why or {}).get("reason", ""))
+                # reverse-form gate: the form was detected, attempted, and
+                # abandoned -> the layered fallback must carry a cost
+                # (certificate degrade; see the form_fallback meta block).
+                # radial only -- the audit (docs/layout-modes.md) shows
+                # spine-wing/ring-cycle fallbacks fire on the random
+                # corpus today; widening this to those modes flips their
+                # certificates against the frozen A-tier byte gate
+                if name == "radial":
+                    _form_fallbacks.append({"mode": name,
+                                            "reason": ((trial_why or {}).get("reason")
+                                                       or "trial gate failed")})
             elif plan is not None:
                 entry["trial_gate"] = "pass"
             else:
@@ -1676,6 +1717,20 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         _tw_sym, _tw_bw, _tw_sw = {}, {}, {}
         _tw_comb, _tw_col, _tw_ring = {}, {}, {}
         _tw_rad = {}
+        # reverse-form gate (jacky ruling 2026-11-15): when a structural
+        # form detector fires but its trial gate fails, the fallback to
+        # layered is NOT silent anymore -- the abandoned reading is
+        # recorded in _form_fallbacks (initialized above the manual
+        # branch) and the certificate degrades (metrics.py: grade
+        # uncertified + topology_form_fallback gate).  "Form misplacement
+        # is disqualifying before any hygiene metric."
+        # Scope: the ruling names the star/fan family explicitly (nail:
+        # "a star/fan topology that outputs layered geometry = gate
+        # fail").  spine-wing/ring-cycle fallbacks DO occur on the random
+        # corpus today (measured 2026-11-15: several random-n10 graphs) --
+        # widening FORM_FALLBACK_MODES would flip their certificates and
+        # break the frozen A-tier byte gate, a jacky-conflict-class
+        # decision, so the wider modes stay record-only in the audit.
         _chain_cap = len(nodes) <= 12
         if not _chain_cap:
             _cap_reason = (f"n={len(nodes)} > 12 — structural modes cap at "
@@ -2830,6 +2885,13 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     **({"degrade": router.dense_degrade}
                        if router.dense_degrade else {})}}
               if _dense_hub is not None else {}),
+            # reverse-form gate (jacky ruling 2026-11-15): a detected-
+            # but-abandoned structural reading degrades the certificate
+            # (metrics.py: grade uncertified + topology_form_fallback
+            # gate).  Absent when every attempted form either delivered
+            # or was never detected (trigger writes the key — corpus
+            # bytes stay identical).
+            **({"form_fallback": _form_fallbacks} if _form_fallbacks else {}),
             "method": ("layered + crossing-minimization (CP-SAT if available) "
                        "with straight/arc first-class routing and visibility-graph "
                        "detour; hard gates: box-over-line=0, edge-box clearance>=16px"),
