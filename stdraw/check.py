@@ -276,7 +276,8 @@ def run_check_file(layout_path: str, report_path: str) -> int:
 # ═══ auto-v2 geometry self-report (new hard gates) ═══
 def auto_geometry_report(layout: dict) -> dict:
     from .routing import (sample_polyline, dist_point_rect, seg_cross,
-                          PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE)
+                          PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE,
+                          DENSE_ANCHOR_MIN_DEG)
     nodes, edges = layout["nodes"], layout["edges"]
     meta = layout["meta"]
     # --from-layout manual layout: uniform card pitch / simple-graph
@@ -418,6 +419,12 @@ def auto_geometry_report(layout: dict) -> dict:
 
     # 4. Anchor smoothness: anchor on box border + departure direction vs
     #    border tangent angle >= 20 deg
+    #    dense-mode adaptation (dense card, Q2): edges attached to the
+    #    dense hub box read the relaxed 12 deg floor; every other edge
+    #    keeps the 20 deg caliber.
+    _dense4 = meta.get("dense_mode") or {}
+    _dense4_on = bool(_dense4.get("triggered"))
+    _dense4_hub = _dense4.get("hub")
     bad4 = []
     for pts, e in P:
         for v, idx, nidx in ((e["a"], 0, 1), (e["b"], len(pts) - 1, len(pts) - 2)):
@@ -432,10 +439,14 @@ def auto_geometry_report(layout: dict) -> dict:
             c = abs(dx * tx + dy * ty) / n if n > 1e-9 else 1.0
             import math as _m
             ang = _m.degrees(_m.acos(max(0.0, min(1.0, c))))
-            if off_border or ang < ANCHOR_MIN_DEG:
+            _min_deg = (DENSE_ANCHOR_MIN_DEG
+                        if _dense4_on and v == _dense4_hub else ANCHOR_MIN_DEG)
+            if off_border or ang < _min_deg:
                 bad4.append((f"{e['a']}->{e['b']}", v, round(ang, 1),
                              "off-border" if off_border else "tangential"))
-    chk("4. anchor smoothness (border anchors, tangent angle >= 20 deg)", not bad4, str(bad4[:5]))
+    chk("4. anchor smoothness (border anchors, tangent angle >= 20 deg)"
+        + (" (dense hub >= 12 deg)" if _dense4_on else ""),
+        not bad4, str(bad4[:5]))
 
     # 5. Cards pairwise non-overlapping
     bad5 = []

@@ -288,6 +288,7 @@ def _interpolate(si, sj):
 from .routing import (sample_polyline, dist_point_rect, seg_cross as _rc_seg_cross,
                       min_pair_dist,
                       PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE,
+                      DENSE_ANCHOR_MIN_DEG, DENSE_GRID_STEP,
                       span_one_way_segs, COINCIDE_THR, COINCIDE_SPAN)
 from .anchors import standard_anchors as _std_anchors
 
@@ -312,6 +313,9 @@ def scene_from_auto(v4: dict) -> dict:
             # planarization degrade ladder pass-through (L1 witness-marked
             # caliber / L2 honest downgrade record; None/absent on L0)
             "planarization": v4["meta"].get("planarization"),
+            # dense-mode audit meta pass-through (absent on non-dense
+            # graphs; certificate annotates it, face unchanged)
+            "dense_mode": v4["meta"].get("dense_mode"),
             # edge placement rules v1 pass-through (certificate records it)
             "edge_rules": v4["meta"].get("edge_rules"),
             "line_style": v4["meta"].get("line_style", "straight"),
@@ -401,6 +405,28 @@ def _witness_match(xpts, wit_pts, radius=4.0):
     return True
 
 
+def _on_dense_grid(nd, a0):
+    """Dense slot-grid membership (dense card gate table #0): the point
+    sits in the border band (anchor inset 3px + 0.75px tolerance) and its
+    tangent offset is a multiple of DENSE_GRID_STEP (same 0.75px
+    tolerance; mirrors Router._dense_on_grid on delivered coordinates).
+    Only consulted for dense-mode hub boxes; every other node keeps the
+    16-set membership."""
+    hw, hh = nd["w"] / 2.0, nd["h"] / 2.0
+    band = 3.75
+    on_x = abs(abs(a0[0] - nd["x"]) - hw) <= abs(abs(a0[1] - nd["y"]) - hh)
+    if on_x:
+        if abs(abs(a0[0] - nd["x"]) - hw) > band:
+            return False
+        off = a0[1] - nd["y"]
+    else:
+        if abs(abs(a0[1] - nd["y"]) - hh) > band:
+            return False
+        off = a0[0] - nd["x"]
+    steps = off / DENSE_GRID_STEP
+    return abs(off - round(steps) * DENSE_GRID_STEP) <= 0.75
+
+
 def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                      gates: Optional[dict] = None,
                      notes: Optional[List[str]] = None,
@@ -458,6 +484,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # as check.py 6a/9 ("manual: N/A"). Layered-mode gate slots read "N/A";
     # the measured values stay in metrics.
     manual_mode = bool(scene.get("from_layout"))
+    # dense-mode caliber (dense card, Q2/Q3): hub-box endpoints/edges read
+    # the dense-adapted floors (12 deg anchor smoothness / slot-grid
+    # membership); every other node and every non-dense scene keeps the
+    # legacy thresholds byte-for-byte.
+    dense = scene.get("dense_mode") or {}
+    dense_on = bool(dense.get("triggered"))
+    dense_hub = dense.get("hub")
     layered_mode = not (ring_mode or column_mode or sym_mode or bowtie_mode
                         or spine_mode or comb_mode or radial_mode)
     # planarization degrade ladder (docs/planarization-degrade-contract.md):
@@ -626,7 +659,9 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                 continue
             v = e["a"] if end_key == "a" else e["b"]
             ang = _anchor_tangent_angle(nodes[v], a0, (dx / n, dy / n))
-            if ang < ANCHOR_MIN_DEG:
+            _ang_floor = (DENSE_ANCHOR_MIN_DEG
+                          if dense_on and v == dense_hub else ANCHOR_MIN_DEG)
+            if ang < _ang_floor:
                 anchor_bad.append({"edge": f"{e['a']}->{e['b']}", "end": end_key,
                                    "angle": round(ang, 1)})
         # ref-scrubbed: endpoint membership in the 16 standard anchor set
@@ -643,11 +678,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             pts16 = _std_anchors(nd["x"], nd["y"], nd["w"] / 2.0, nd["h"] / 2.0)
             if not any(abs(ax - a0[0]) <= 0.75 and abs(ay - a0[1]) <= 0.75
                        for _aid, ax, ay in pts16):
-                anchor_standard_bad += 1
-                if len(anchor_standard_details) < 10:
-                    anchor_standard_details.append(
-                        {"edge": f"{e['a']}->{e['b']}", "end": end_key,
-                         "anchor": [round(a0[0], 1), round(a0[1], 1)]})
+                if not (dense_on and v == dense_hub
+                        and _on_dense_grid(nd, a0)):
+                    anchor_standard_bad += 1
+                    if len(anchor_standard_details) < 10:
+                        anchor_standard_details.append(
+                            {"edge": f"{e['a']}->{e['b']}", "end": end_key,
+                             "anchor": [round(a0[0], 1), round(a0[1], 1)]})
 
     # 3. Average edge length / row alignment / card gap / CV (same caliber as v1)
     avg_len = sum(sum(math.dist(polys[i][k], polys[i][k + 1])
@@ -1145,7 +1182,9 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         g["pitch_uniform"] = "N/A"
         g["column_snap24_ge_060"] = "N/A"
     g_pass = sum(1 for v in g.values() if v is True)
-    n_gates = sum(1 for v in g.values() if v != "N/A")
+    # n_gates counts REAL boolean gates only: audit annotation entries
+    # (dense_mode meta dict, dense card Q3) are truthy dicts, not gates.
+    n_gates = sum(1 for v in g.values() if isinstance(v, bool))
     reports = {
         "crossings_zero": metrics["crossings"] == 0,
         "crossings_note": ("soft target: <=2 crossings allowed when placement "
@@ -1199,6 +1238,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # regressions.  No gate fudging: grade reflects the deferral honestly.
     if scene.get("anchor_snap_deferred"):
         g["anchors_standard_deferred"] = scene["anchor_snap_deferred"]
+    if scene.get("dense_mode"):
+        # dense-mode audit annotation (Q3 meta pass-through): the gate
+        # VALUES above stay measured — dense hub endpoints are graded
+        # under the dense adaptations (anchors_smooth 12 deg floor /
+        # anchors_standard slot-grid membership); the certificate face
+        # does not display this field (a face change needs acceptance).
+        g["dense_mode"] = scene["dense_mode"]
     if plz_l2:
         # L2 honest downgrade record (same transport pattern as
         # anchors_standard_deferred; the gate values stay measured)
@@ -1252,7 +1298,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                       "symmetric" if sym_mode else
                       "bowtie-vertex" if bowtie_mode else
                       "spine-wing" if spine_mode else
-                      "comb-bilateral" if comb_mode else "layered"),
+                      "comb-bilateral" if comb_mode else
+                      "radial" if radial_mode else "layered"),
         # ref-scrubbed: which structural rule fired and why, trial-gate outcome,
         # and whether the registered anchor-band legacy exemption applies —
         # the trigger-template audit trail (None for scenes without the trace,

@@ -48,6 +48,10 @@ class GatePolicy:
     cert_angle        router._cert_angle_ok required.
     anchors_in_band   router._anchors_in_band required (lens_joint_reassign only).
     coincide          router._coincide_no_worse (needs baseline.coi).
+
+    edge_gate_check(min_deg=...) overrides the anchor-smoothness floor:
+    None (default) keeps routing.ANCHOR_MIN_DEG — the dense-mode branches
+    pass routing.DENSE_ANCHOR_MIN_DEG for hub-box edges only.
     """
     name: str
     clearance_margin: float = 0.0    # None -> routing.PRESS_MARGIN
@@ -69,6 +73,15 @@ class GatePolicy:
 # G-FAN fan_spread whole-group fallback (NO own-box check -- registered
 # caliber gap, docs/routing-gates.md section 3 item 2).
 FAN_SPREAD = GatePolicy(name="fan_spread", own_check="none")
+# G-FAN-DENSE dense-mode fan_spread branch (dense card, jacky 2026-11-14
+# authorization): same shape as G-FAN; the mutual-pair separation floor
+# relaxes 4.0 -> 3.0 (proposal gate table #5: adjacent 12px dense slots can
+# put a mutual pair's diagonal mid-run under 4px without overlapping) and
+# the anchor-smoothness floor is overridden per call to
+# routing.DENSE_ANCHOR_MIN_DEG (gate table #1).  press / clearance /
+# crossing criteria are NOT relaxed (gate table #6).
+FAN_SPREAD_DENSE = GatePolicy(name="fan_spread_dense", own_check="none",
+                              msep_floor=3.0)
 # G-PAIR-BAND _reroute_pair_band.gates_ok
 PAIR_BAND = GatePolicy(name="pair_band_reroute")
 # G-MIDBAND-T0 midband_reanchor Tier 0 baseline-accounting clamp acceptance
@@ -129,7 +142,8 @@ class GateBaseline:
     cross_cap: dict = field(default_factory=dict)
 
 
-def edge_gate_check(router, i, routes, baseline, policy, msep_floor=None):
+def edge_gate_check(router, i, routes, baseline, policy, msep_floor=None,
+                    min_deg=None):
     """Acceptance check for edge i against its pre-change baseline.
 
     Returns True iff every criterion of ``policy`` passes for the CURRENT
@@ -139,6 +153,8 @@ def edge_gate_check(router, i, routes, baseline, policy, msep_floor=None):
 
     msep_floor overrides policy.msep_floor when given (arrival_flip passes
     its derived sep_floor; enhanced leg fixes 12.0).
+    min_deg overrides the anchor-smoothness floor when given (None keeps
+    routing.ANCHOR_MIN_DEG; dense branches pass the relaxed dense floor).
     """
     _r = _rt()
     st = router._edge_stats(i, routes)
@@ -162,8 +178,9 @@ def edge_gate_check(router, i, routes, baseline, policy, msep_floor=None):
         margin = _r.PRESS_MARGIN
     if st[1] is not None and st[1] < router.cl - margin - 1e-6:
         return False
-    # -- anchor departure smoothness --
-    if st[2] < _r.ANCHOR_MIN_DEG:
+    # -- anchor departure smoothness (floor overridable; dense branches
+    #     pass the relaxed dense floor for hub-box edges only) --
+    if st[2] < (min_deg if min_deg is not None else _r.ANCHOR_MIN_DEG):
         return False
     # -- mutual-pair separation (None tolerated) --
     if policy.check_msep:

@@ -71,6 +71,26 @@ ROUND_GUARD = 0.15     # conservative margin for delivery rounding (0.1px): bord
 COINCIDE_THR = 1.0          # distance <1px counts as adherence (same source as the certificate accounting)
 COINCIDE_SPAN = 8.0         # accumulated adherence must exceed 8px to count as "visual coincidence" (endpoint meeting exempted)
 FAN_STEP = 18.0             # uniform spread step for multiple anchors on the same node side (ref-scrubbed rule 3)
+# Dense mode (jacky 2026-11-14 authorization: "1 anchor may be shared by
+# multiple lines; angle limits may be relaxed appropriately" — dense-only
+# branch, proposal stdraw-dense approved by default final review).  Every
+# constant below is read ONLY when Router.dense_hub is set (dense := the
+# graph's max node degree >= DENSE_MIN_DEG, a topology-pure predicate
+# evaluated in layout_auto); with dense_hub=None the legacy calibers above
+# apply byte-for-byte.
+DENSE_MIN_DEG = 10           # dense := max node degree >= 10 (Q1)
+DENSE_ANCHOR_MIN_DEG = 12    # dense-branch anchor smoothness floor (Q2)
+DENSE_FAN_STEP = 12.0        # dense-branch fan slot step (gate table #3)
+DENSE_GRID_STEP = 6.0        # dense slot grid step (gate table #0 / er layer)
+DENSE_CAP_PER_SLOT = 4       # per-slot sharing hard cap (Q4; exceed = honest degrade)
+DENSE_SLOT_SEP_MIN = 6.0     # dense adjacent distinct-slot separation (gate table #4)
+DENSE_SPOKE_STRAIGHT_PENALTY = 120.0
+# dense radial contract: hub spokes deliver as STRAIGHT lines (the radial
+# reading; operator form-correctness gate 2026-11-15).  Arc / vg / poly
+# candidates on an edge touching the dense hub carry this fixed type cost
+# (same mechanism as the vg/poly/wrap costs), so a gate-clean straight
+# spoke always beats a bulged arc; if no straight candidate clears the
+# hard gates the arc still wins (honest fallback, dense-only branch).
 # Edge placement rules v1 (edgerules preset candidates): honest fixed
 # penalties for bending away from the rule geometry -- arc on the
 # non-rule side / straight where a B line wants its golden-point arc.
@@ -297,11 +317,44 @@ def seg_cross(p1, p2, p3, p4):
 
 
 # -- router ------------------------------------------------------------
+def _dense_fan_offsets(k, half_len, shift):
+    """Dense fan offsets for a k-entry hub-side group (deterministic).
+
+    Distinct grid slots first: multiples of DENSE_FAN_STEP centered on
+    the border midpoint, clamped inside +/-(half_len) by construction.
+    When k exceeds the 12px-slot capacity, the grid shrinks to the
+    DENSE_GRID_STEP (6px — still gate-table-#4 compliant: adjacent
+    distinct slots stay >= 6px apart, so no sharing admission is needed
+    for the whole d<=32 fan family).  Slot sharing (azimuth-monotone,
+    cap-checked by the caller) is the last resort only.  Grid
+    discipline: every offset is a multiple of DENSE_GRID_STEP so
+    delivered hub endpoints sit on the dense slot grid (anchors_standard
+    dense caliber, metrics side).
+    """
+    step = DENSE_FAN_STEP
+    n_slots = int(math.floor((2.0 * half_len) / step)) + 1
+    if k > n_slots:
+        n_slots = int(math.floor((2.0 * half_len) / DENSE_GRID_STEP)) + 1
+        step = DENSE_GRID_STEP
+    if k <= n_slots:
+        if step == DENSE_FAN_STEP:
+            # 12px slots with half-slot centering stay on the 6px grid
+            return [(t - (k - 1) / 2.0) * step + shift for t in range(k)]
+        # 6px slots: integer-slot centering (half-slot centering would
+        # land on 3px odd offsets and break the 6px grid discipline)
+        base = -((k - 1) // 2)
+        return [(t + base) * step + shift for t in range(k)]
+    s = -(-k // n_slots)          # ceil sharing factor
+    used = -(-k // s)             # slots actually used
+    base = -((used - 1) // 2)
+    return [(t // s + base) * step + shift for t in range(k)]
+
+
 class Router:
     """Plan a route for each edge from the node box positions on the canvas. Deterministic: fixed candidate order + fixed scoring."""
 
     def __init__(self, nodes: dict, edges: list, clearance=CLEARANCE, pitch=80,
-                 quality=False, presets=None):
+                 quality=False, presets=None, dense_hub=None):
         """nodes: {id: (x,y,w,h)} center + size; edges: [(a,b)] directed.
 
             quality=False (default): the legacy candidate pool, output byte-for-byte identical to v0.4.x;
@@ -313,6 +366,11 @@ class Router:
             (docs/edge-placement-rules-v1.md: anchors are decided before
             routing; the router still scores honestly between line / arc
             (rule side first) / vg / lane fallbacks).
+            dense_hub: dense-mode node id (the box whose degree >=
+            routing.DENSE_MIN_DEG) or None (default — every dense branch
+            inert, legacy bytes preserved).  When set, only THIS box's
+            repair groups enter the dense branches (slot grid + controlled
+            sharing + relaxed angle floor); leaf boxes are never dense.
         """
         self.N = {v: (p[0], p[1], p[2] / 2.0, p[3] / 2.0) for v, p in nodes.items()}
         self.edges = list(edges)
@@ -320,6 +378,14 @@ class Router:
         self.pitch = pitch
         self.quality = quality
         self.presets = dict(presets) if presets else None
+        # dense mode: None = inert (every dense branch skipped, legacy
+        # bytes); a node id = dense repair branches active for that box.
+        self.dense_hub = dense_hub
+        self.dense = dense_hub is not None
+        # honest degrade records of the dense branches (fan fallback
+        # abolished / sharing cap exceeded); layout_auto lifts them into
+        # meta.dense_mode for the certificate pass-through.
+        self.dense_degrade = []
         mutual = set()
         for a, b in edges:
             if (b, a) in set(edges) and a < b:
@@ -335,6 +401,29 @@ class Router:
         return abs(yb - ya)
 
     # -- anchors --
+    def _dense_on_grid(self, v, p):
+        """Dense caliber: is endpoint p of the dense hub box on the slot
+        grid (border band within the 3px inset + 0.75px tolerance, tangent
+        offset a multiple of DENSE_GRID_STEP, same 0.75px tolerance)?
+        Non-dense routers / leaf boxes always answer False (legacy bytes)."""
+        if not self.dense or v != self.dense_hub:
+            return False
+        cx, cy, hw, hh = self.N[v]
+        on_x = abs(abs(p[0] - cx) - hw) <= abs(abs(p[1] - cy) - hh)
+        # border band: the normal coordinate sits within the anchor inset
+        # (3px) + membership tolerance (0.75px) of the true border
+        band = 3.75
+        if on_x:
+            if abs(abs(p[0] - cx) - hw) > band:
+                return False
+            off = p[1] - cy
+        else:
+            if abs(abs(p[1] - cy) - hh) > band:
+                return False
+            off = p[0] - cx
+        steps = off / DENSE_GRID_STEP
+        return abs(off - round(steps) * DENSE_GRID_STEP) <= 0.75
+
     def _band_clamp_pt(self, v, p):
         """ref-scrubbed anchor accounting: mutual-pair candidate anchors clamped into the edge-midpoint +/- 1/4 band.
 
@@ -768,6 +857,14 @@ class Router:
         if kind == "wrap":
             # Fixed cost for the outer detour: only worth it to fix coincidence (600*gap), does not compete with short candidates on score
             kind_pref += 200.0
+        if (self.dense and kind != "line"
+                and (a == self.dense_hub or b == self.dense_hub)):
+            # dense radial contract (dense card, form-correctness gate):
+            # hub spokes must deliver as straight lines -- non-line
+            # candidates carry the fixed straight-preference cost so a
+            # gate-clean straight spoke wins the score; arcs still win
+            # when no straight candidate clears the hard gates.
+            kind_pref += DENSE_SPOKE_STRAIGHT_PENALTY
         if mutual_pair:
             # F1 tightened clearance: separation candidates must not sacrifice the edge-box clearance gate (total weight 150*gap)
             clr_def *= 5.0
@@ -1253,20 +1350,49 @@ class Router:
             a2, b2 = self.edges[i2]
             for end2, p2 in (("a", pts2[0]), ("b", pts2[-1])):
                 v2 = a2 if end2 == "a" else b2
+                if self.dense and v2 == self.dense_hub:
+                    # dense: hub-side arc endpoints are SLIDABLE group
+                    # members below (grid slots + ctrl lockstep), so they
+                    # must not occupy their side as frozen anchors.
+                    continue
                 other2 = b2 if end2 == "a" else a2
                 frozen_side.setdefault((v2, self._side_of(v2, p2)),
                                        []).append((tuple(p2), other2))
         groups = {}
         for i in sorted(routes.keys()):
-            if i in frozen or routes[i].get("kind") == "arc":
+            if i in frozen:
+                continue
+            _arc = routes[i].get("kind") == "arc"
+            if _arc and not (self.dense and self.dense_hub in self.edges[i]):
+                # ref-scrubbed: arc-kind routes are NOT slot-slidable on
+                # the legacy path (stale-curve defect); only the dense
+                # hub branch slides them (ctrl lockstep + re-discretize).
                 continue
             pts = routes[i]["points"]
             a, b = self.edges[i]
             for end, p in (("a", pts[0]), ("b", pts[-1])):
                 v = a if end == "a" else b
+                if _arc and v != self.dense_hub:
+                    # dense arc member: only the HUB-side end joins the
+                    # slidable group (the leaf end keeps its anchor).
+                    continue
                 groups.setdefault((v, self._side_of(v, p)), []).append(
                     (i, end, tuple(p)))
         for (v, side), entries in sorted(groups.items()):
+            # dense branch (dense-only, HUB box groups, dense card): the
+            # mid-band clamp relaxes to the FULL edge and slots run on the
+            # DENSE_FAN_STEP grid (shrinking to the 6px grid before any
+            # sharing) with controlled sharing; the whole-node "fall back
+            # to border-midpoint anchors" path below is ABOLISHED for
+            # these groups (gate table #2 — the uncontrolled fallback is
+            # what produced the 0px pileups).  Arc-kind members JOIN the
+            # dense group (endpoint slides on the grid with lockstep ctrl
+            # translation + Bezier re-discretization — the same reshape
+            # accounting as anchor_snap tier 1); on the legacy path they
+            # stay excluded (ref-scrubbed discipline).  Leaf boxes and
+            # every non-dense graph keep the legacy path byte-for-byte.
+            dense_grp = (self.dense and v == self.dense_hub
+                         and not frozen_side.get((v, side)))
             # ref-scrubbed: single-entry groups join when frozen/arc anchors
             # occupy the same (node, side) -- the occupied-slot accounting
             # (clearance >= MIN_FROZEN_ANCHOR_SEP + merged azimuth
@@ -1275,8 +1401,11 @@ class Router:
             # detour poly both landed on the border midpoint -> the poly's
             # final segment ran into the arc's arrival, a T-junction the
             # shared-endpoint exemption hides from the old caliber). Groups
-            # with no frozen anchors on their side keep the >= 2 rule.
-            if len(entries) < 2 and not frozen_side.get((v, side)):
+            # with no frozen anchors on their side keep the >= 2 rule;
+            # dense hub groups always join (single lines still quantize
+            # onto the slot grid).
+            if len(entries) < 2 and not dense_grp \
+                    and not frozen_side.get((v, side)):
                 continue
             cx, cy, hw, hh = self.N[v]
             vertical = side in ("r", "l")
@@ -1318,6 +1447,8 @@ class Router:
             # uniformly into it (monotone slot order and equal spacing are
             # preserved, no stacking; deterministic).
             band = (hh if vertical else hw) / 2.0
+            if dense_grp:
+                band = half_len          # gate table #2: full-edge band
             # ref-scrubbed: frozen anchors on this same node side occupy their
             # tangent offset; the fan must not land on them (V co-point).
             frozen_offs = []
@@ -1342,6 +1473,8 @@ class Router:
                 k1_base = (_p0[1] - cy) if vertical else (_p0[0] - cx)
 
             def _offs_for(shift):
+                if dense_grp:
+                    return _dense_fan_offsets(k, half_len, shift)
                 if k == 1:
                     return [max(-half_len, min(half_len, k1_base + shift))]
                 raw = [(t2 - (k - 1) / 2.0) * FAN_STEP + shift
@@ -1380,9 +1513,27 @@ class Router:
             # word->rate measured: geometry identical, layout.json bytes
             # drifted). Only a real conflict enters the candidate ladder.
             if (k == 1
+                    and not dense_grp
                     and not (frozen_offs
                              and _frozen_conflict(_offs_for(0.0)))):
                 continue
+            if dense_grp:
+                # dense Q4 cap accounting: the sharing factor that the
+                # placement needs; above DENSE_CAP_PER_SLOT the
+                # placement proceeds deterministically but the exceed is
+                # recorded as an honest L2-style degrade (never silently).
+                _n_slots = int(math.floor((2.0 * half_len)
+                                          / DENSE_FAN_STEP)) + 1
+                if k > _n_slots:
+                    _n_slots = int(math.floor((2.0 * half_len)
+                                              / DENSE_GRID_STEP)) + 1
+                _s_share = -(-k // _n_slots)
+                if _s_share > DENSE_CAP_PER_SLOT:
+                    self.dense_degrade.append(
+                        {"stage": "fan_spread", "node": v, "side": side,
+                         "lines": k, "shared_per_slot": _s_share,
+                         "reason": "per-slot sharing cap %d exceeded — L2 honest degrade"
+                                   % DENSE_CAP_PER_SLOT})
             # candidate give-way shifts, deterministic: centered first, then
             # half-steps (right preferred), then whole steps. Shift 0 with no
             # frozen anchors / no conflict reproduces the previous offs
@@ -1394,6 +1545,37 @@ class Router:
                                 1.5 * FAN_STEP, -1.5 * FAN_STEP]
             before = {i2: [list(p) for p in routes[i2]["points"]]
                       for i2, _e, _p in ents}
+            before_ctrl = {i2: (list(routes[i2]["ctrl"])
+                                if routes[i2].get("ctrl") is not None
+                                else None)
+                           for i2, _e, _p in ents}
+
+            def _dense_set(i2, end, off):
+                """Dense endpoint slide: straight lines set the tangent
+                coordinate directly; arcs translate ctrl in lockstep with
+                the endpoint delta and re-discretize the Bezier (same
+                reshape accounting as anchor_snap tier 1)."""
+                base_pts, base_ctrl = before[i2], before_ctrl[i2]
+                pts2 = [list(q) for q in base_pts]
+                idx = 0 if end == "a" else len(pts2) - 1
+                if vertical:
+                    new = max(cy - half_len, min(cy + half_len, cy + off))
+                    dx, dy = 0.0, new - base_pts[idx][1]
+                    pts2[idx] = [base_pts[idx][0], new]
+                else:
+                    new = max(cx - half_len, min(cx + half_len, cx + off))
+                    dx, dy = new - base_pts[idx][0], 0.0
+                    pts2[idx] = [new, base_pts[idx][1]]
+                if base_ctrl is not None:
+                    ctrl = [base_ctrl[0] + dx, base_ctrl[1] + dy]
+                    p0, p1 = (pts2[idx], pts2[-1]) if idx == 0 \
+                        else (pts2[0], pts2[idx])
+                    routes[i2]["points"] = [list(q)
+                                            for q in quad_points(p0, ctrl, p1)]
+                    routes[i2]["ctrl"] = ctrl
+                else:
+                    routes[i2]["points"] = pts2
+
             stats_before = {i2: self._edge_stats(i2, routes)
                             for i2, _e, _p in ents}
             ok = False
@@ -1403,32 +1585,64 @@ class Router:
                     continue
                 for i2, pts_b in before.items():
                     routes[i2]["points"] = [list(p) for p in pts_b]
-                for (i2, end, _p), off in zip(ents, offs):
-                    pts2 = routes[i2]["points"]
-                    idx = 0 if end == "a" else len(pts2) - 1
-                    if vertical:
-                        pts2[idx] = [pts2[idx][0],
-                                     max(cy - half_len, min(cy + half_len,
-                                                            cy + off))]
-                    else:
-                        pts2[idx] = [max(cx - half_len, min(cx + half_len,
-                                                            cx + off)),
-                                     pts2[idx][1]]
+                    _c = before_ctrl[i2]
+                    if _c is not None and routes[i2].get("ctrl") is not None:
+                        routes[i2]["ctrl"] = list(_c)
+                if dense_grp:
+                    for (i2, end, _p), off in zip(ents, offs):
+                        _dense_set(i2, end, off)
+                else:
+                    for (i2, end, _p), off in zip(ents, offs):
+                        pts2 = routes[i2]["points"]
+                        idx = 0 if end == "a" else len(pts2) - 1
+                        if vertical:
+                            pts2[idx] = [pts2[idx][0],
+                                         max(cy - half_len, min(cy + half_len,
+                                                                cy + off))]
+                        else:
+                            pts2[idx] = [max(cx - half_len, min(cx + half_len,
+                                                                cx + off)),
+                                         pts2[idx][1]]
                 ok = True
                 for i2, _e, _p in ents:
                     # T4: unified delivery-gate caliber (docs/routing-gates.md G-FAN;
                     # no own-box check -- registered caliber gap)
+                    # dense: G-FAN-DENSE policy (msep floor 3.0) + the
+                    # relaxed dense angle floor for hub edges (Q2).
                     if not _gates.edge_gate_check(
                             self, i2, routes,
                             _gates.GateBaseline(stats={i2: stats_before[i2]}),
-                            _gates.FAN_SPREAD):
+                            _gates.FAN_SPREAD_DENSE if dense_grp
+                            else _gates.FAN_SPREAD,
+                            min_deg=(DENSE_ANCHOR_MIN_DEG if dense_grp
+                                     else None)):
                         ok = False
                         break
                 if ok:
                     break
             if not ok:
-                for i2, pts_b in before.items():
-                    routes[i2]["points"] = pts_b
+                if dense_grp:
+                    # dense: the whole-node midpoint fallback is ABOLISHED
+                    # (gate table #2) — re-apply the base (shift-0) grid
+                    # placement deterministically and record the honest
+                    # degrade; the hard gates still grade the delivery.
+                    _offs0 = _offs_for(0.0)
+                    for i2, pts_b in before.items():
+                        routes[i2]["points"] = [list(p) for p in pts_b]
+                        _c = before_ctrl[i2]
+                        if _c is not None and routes[i2].get("ctrl") is not None:
+                            routes[i2]["ctrl"] = list(_c)
+                    for (i2, end, _p), off in zip(ents, _offs0):
+                        _dense_set(i2, end, off)
+                    self.dense_degrade.append(
+                        {"stage": "fan_spread", "node": v, "side": side,
+                         "lines": k,
+                         "reason": "fan hard gates fail on every shift; "
+                                   "midpoint fallback abolished (dense) — "
+                                   "grid placement kept, graded honestly"})
+                else:
+                    for i2, pts_b in before.items():
+                        routes[i2]["points"] = pts_b
         return routes
 
     def _pt_in_band(self, v, p):
@@ -2658,6 +2872,8 @@ class Router:
         """
         occ = {}
         report = {"anchored": 0, "moved": 0, "failures": []}
+        if self.dense:
+            report["dense_anchored"] = 0
         # ref-scrubbed: the mutual-lens joint pass runs FIRST -- the generic
         # per-endpoint pass would grab the nearest anchors for the lens ends
         # independently and break the mirror symmetry.  Its occupancy only
@@ -2673,6 +2889,17 @@ class Router:
                 if aid is not None:
                     occ.setdefault((v, aid), set()).add((i, end))
                     report["anchored"] += 1
+                elif self._dense_on_grid(v, p):
+                    # dense: hub endpoints on the slot grid are anchored
+                    # by the dense caliber (16-set OR grid); registered
+                    # occupied so nothing else claims the same slot.
+                    slot = round(((p[1] - self.N[v][1])
+                                  if abs(abs(p[0] - self.N[v][0])
+                                         - self.N[v][2]) <= abs(abs(p[1] - self.N[v][1])
+                                                                - self.N[v][3])
+                                  else (p[0] - self.N[v][0])) / DENSE_GRID_STEP)
+                    occ.setdefault((v, ("dgrid", slot)), set()).add((i, end))
+                    report["dense_anchored"] += 1
         for _sweep in range(max_sweeps):
             changed = False
             for i in sorted(routes):
@@ -2699,6 +2926,12 @@ class Router:
                     idx = 0 if end == 0 else len(routes[i]["points"]) - 1
                     p = routes[i]["points"][idx]
                     if self._anchor_at(v, p) is not None:
+                        continue
+                    if self._dense_on_grid(v, p):
+                        # dense: hub endpoint already on the slot grid —
+                        # anchored under the dense caliber; re-snapping
+                        # to the 16-set would destroy the controlled
+                        # sharing placement (fan grid slots).
                         continue
                     before_pts = [list(q) for q in routes[i]["points"]]
                     before_ctrl = (list(routes[i]["ctrl"])
@@ -2843,6 +3076,20 @@ class Router:
                         # N03->N08 end a measured: own 1>0 on every near
                         # anchor, cascading into visual_crossings x4 /
                         # lines_no_coincidence on the delivered graph).
+                        if self.dense and (a == self.dense_hub
+                                           or b == self.dense_hub):
+                            # dense form guard (dense card, operator
+                            # form-correctness gate): the tier-2 joint
+                            # detour replaces the straight spoke with a vg
+                            # polyline whose hub-side departure crosses the
+                            # sibling spokes (measured fan-d17: two vg
+                            # spokes, visual_crossings 0->2) — the hub
+                            # edge keeps its straight route instead and
+                            # the unsnapped end is reported honestly.
+                            report["failures"].append(
+                                {"edge": f"{a}->{b}",
+                                 "end": "a" if end == 0 else "b"})
+                            continue
                         applied = self._snap_joint_detour(
                             routes, occ, report, i, end)
                         if applied:

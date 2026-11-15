@@ -937,7 +937,8 @@ def _ring_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     return plan
 
 
-def _radial_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
+def _radial_trial(plan, nodes, widths, card_h, cfg, edges, why=None,
+                  dense_hub=None):
     """Radial (hub-centered spokes) placement + routing trial gate: adopted
     only if the gate passes; otherwise None (fall back to layered,
     byte-for-byte unchanged).
@@ -946,19 +947,25 @@ def _radial_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     decision trace). Contract: every hub spoke must deliver as a straight
     line (the radial reading); the unified hard-gate proxy reviews the
     routed geometry like any other constructed placement.
+    dense_hub: dense-mode node id or None — the trial router and gate
+    proxy read the dense branches (slot grid + straight-spoke preference
+    + the 12 deg hub-end angle floor) and the dense ring knobs, dense
+    card form-correctness gate.
     """
     from . import radellayout
     adj, _ = radellayout._adjacency(edges)
     try:
         pos, y, meta = radellayout.place_radial(plan, widths, card_h, cfg,
-                                                adj, edges)
+                                                adj, edges,
+                                                dense_hub=dense_hub)
     except radellayout.InfeasibleRadial:
         if why is not None:
             why["reason"] = ("trial: constructed placement infeasible "
                              "(InfeasibleRadial)")
         return None
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
-    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch,
+                    dense_hub=dense_hub)
     routes = router.route_all()
     hub = plan["hub"]
     for i, (a, b) in enumerate(edges):
@@ -968,7 +975,8 @@ def _radial_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
                                  f"({routes[i].get('kind')}) — radial contract "
                                  "broken")
             return None
-    if not _constructed_gates(nodes_px, edges, routes, cfg, {}):
+    if not _constructed_gates(nodes_px, edges, routes, cfg, {},
+                              dense_hub=dense_hub):
         if why is not None:
             why["reason"] = ("trial gate: hard-gate proxy failed "
                              "(crossings<=2 / press=0 / clearance>=16 / "
@@ -981,17 +989,18 @@ def _radial_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     return plan
 
 
-def _constructed_gates(nodes_px, edges, routes, cfg, constructed):
+def _constructed_gates(nodes_px, edges, routes, cfg, constructed,
+                       dense_hub=None):
     """Unified hard-gate proxy over constructed routes (closed arcs / mirror-symmetry arcs) and routed routes (ref-scrubbed).
 
     Same caliber as _ring_trial: press=0, edge-box clearance>=clearance,
     anchors on box edges with smoothing
-    >=ANCHOR_MIN_DEG, card gap >= min_gap-2, mutual-pair separation >=4px,
+    >=ANCHOR_MIN_DEG (dense-mode hub ends: DENSE_ANCHOR_MIN_DEG), card gap >= min_gap-2, mutual-pair separation >=4px,
     crossings <=2.
     Returns True = gate passed.
     """
     from .routing import (dist_point_rect, min_pair_dist, sample_polyline,
-                          ANCHOR_MIN_DEG)
+                          ANCHOR_MIN_DEG, DENSE_ANCHOR_MIN_DEG)
     # card gap (rect_gap caliber, >= min_gap-2)
     vs = sorted(nodes_px)
     for i in range(len(vs)):
@@ -1030,7 +1039,10 @@ def _constructed_gates(nodes_px, edges, routes, cfg, constructed):
             on_x = abs(abs(a0[0] - cx) - w / 2) <= abs(abs(a0[1] - cy) - h / 2)
             tx, ty = (0.0, 1.0) if on_x else (1.0, 0.0)
             c = abs(dx * tx + dy * ty) / n
-            if math.degrees(math.acos(max(0.0, min(1.0, c)))) < ANCHOR_MIN_DEG:
+            _ang_floor = (DENSE_ANCHOR_MIN_DEG
+                          if dense_hub is not None and v == dense_hub
+                          else ANCHOR_MIN_DEG)
+            if math.degrees(math.acos(max(0.0, min(1.0, c)))) < _ang_floor:
                 return False
     # mutual-pair separation >=4px
     for i in range(len(edges)):
@@ -1591,6 +1603,27 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     card_h = max(heights.values()) if heights else cfg.card_h
     _timing.mark("card_metrics")
 
+    # dense-mode determination (dense card, Q1): pure topology, evaluated
+    # BEFORE any placement — dense := the graph's max node degree >=
+    # routing.DENSE_MIN_DEG.  The A-tier corpus family tops out at
+    # max_deg = 8, so every corpus graph is a constructive non-hit (zero
+    # drift by construction).  Manual layouts keep user intent over
+    # endpoints: dense branches stay inert there (same precedent as the
+    # planarization entry).
+    _dense_hub = None
+    _dense_deg_max = 0
+    if manual is None and nodes:
+        from .routing import DENSE_MIN_DEG as _DENSE_MIN_DEG
+        _dense_deg_max = max(len(adj[v]) for v in nodes)
+        if _dense_deg_max >= _DENSE_MIN_DEG:
+            # the dense hub = the max-degree node; ties fall back to the
+            # canonical id order (same convention as the radial detector)
+            _dense_hub = sorted(nodes, key=lambda v: (-len(adj[v]), v))[0]
+            print(f"[stdraw] dense mode: max_deg={_dense_deg_max} >= "
+                  f"{_DENSE_MIN_DEG}, hub={_dense_hub} — slot grid + "
+                  "controlled sharing armed (dense-only branch)",
+                  file=sys.stderr)
+
     # ②③ placement: --from-layout manual coordinates, or automatic layering + placement
     _routes_final = None
     _reposition_rec = None
@@ -1758,7 +1791,8 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             _rad = _radellayout.detect_radial(graph, why=_why_rad)
             if _rad is not None:
                 radial_plan = _radial_trial(_rad, nodes, widths, card_h,
-                                            cfg, edges, why=_tw_rad)
+                                            cfg, edges, why=_tw_rad,
+                                            dense_hub=_dense_hub)
                 _rule_hit("radial", 5, True, radial_plan, _why_rad,
                           _tw_rad)
         if not any(p is not None for p in (sym_plan, bw_plan, sw_plan,
@@ -1989,12 +2023,14 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     if manual is None and engine in ("cp-sat", "construct"):
         from . import edgerules as _er
         er_kinds = _er.loop_edge_kinds(getattr(graph, "loops", []), edges)
-        er_presets, er_report = _er.assign(nodes_px, edges, er_kinds)
+        er_presets, er_report = _er.assign(nodes_px, edges, er_kinds,
+                                           dense_hub=_dense_hub)
         # spec §4: hard gates rank above the rules — presets whose fixed
         # chord would make a hard gate unachievable (tangential exit /
         # un-detourable press) fall back to the legacy candidate pool with
         # an honest violation record.
-        _er_drop = _er.validate_presets(nodes_px, edges, er_presets, cfg.clearance)
+        _er_drop = _er.validate_presets(nodes_px, edges, er_presets,
+                                        cfg.clearance, dense_hub=_dense_hub)
         if _er_drop:
             for _i in sorted(_er_drop):
                 er_report["violations"].append(
@@ -2041,7 +2077,8 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                     inv.add(ib)
         return sorted(inv)
 
-    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch, presets=er_presets)
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch, presets=er_presets,
+                    dense_hub=_dense_hub)
     routes = router.route_all()
     # manual mode: snapshot the engine's own delivery BEFORE the user-style /
     # user-anchor injection below replaces routes.  Injected routes that breach
@@ -2062,7 +2099,8 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                 break
             from . import edgerules as _er
             _er_alts = _er.alternate_presets(nodes_px, edges, er_kinds,
-                                             _er_best[1], _er_inv, _er_round)
+                                             _er_best[1], _er_inv, _er_round,
+                                             dense_hub=_dense_hub)
             if _er_alts is None:
                 break
             _r2 = Router(nodes_px, edges, cfg.clearance, cfg.pitch,
@@ -2078,7 +2116,8 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
         # route_all comparison would misjudge.  Probe replicates the chain;
         # on fallback the main repair section re-runs the real chain from
         # scratch (probe result discarded -> legacy bytes stay identical).
-        _router_lg = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+        _router_lg = Router(nodes_px, edges, cfg.clearance, cfg.pitch,
+                            dense_hub=_dense_hub)
         _rt_lg = _router_lg.route_all()
         if _routes_final is not None:
             # gated reorder won at placement time: the honest legacy baseline
@@ -2103,7 +2142,8 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
                 {"edge": "*", "rule": 0,
                  "detail": "graph-level exemption: legacy delivery wins the hard-gate tuple"})
             er_presets = None
-            router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+            router = Router(nodes_px, edges, cfg.clearance, cfg.pitch,
+                            dense_hub=_dense_hub)
             routes = router.route_all()
             if _routes_final is not None:
                 routes = _routes_final
@@ -2779,6 +2819,17 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
             # certificate annotates the gate with it — same transport as
             # anchor_snap_deferred)
             **({"planarization": _pl_defer} if _pl_defer else {}),
+            # dense-mode audit meta (dense card, Q3): meta pass-through
+            # only — the certificate face does NOT display it (a face
+            # change needs its own acceptance).  Absent on non-dense
+            # graphs (trigger writes the key — corpus bytes stay
+            # identical).
+            **({"dense_mode": {
+                    "triggered": True, "rule_hit": "max_deg>=10",
+                    "deg_max": _dense_deg_max, "hub": _dense_hub,
+                    **({"degrade": router.dense_degrade}
+                       if router.dense_degrade else {})}}
+              if _dense_hub is not None else {}),
             "method": ("layered + crossing-minimization (CP-SAT if available) "
                        "with straight/arc first-class routing and visibility-graph "
                        "detour; hard gates: box-over-line=0, edge-box clearance>=16px"),

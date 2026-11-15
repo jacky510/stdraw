@@ -45,7 +45,8 @@ from collections import defaultdict
 
 from .anchors import ANCHOR_IDS, standard_anchors
 from .routing import (adaptive_arc_k, ARC_NEAR_PENALTY,
-                      STRAIGHT_ON_B_PENALTY)
+                      STRAIGHT_ON_B_PENALTY, DENSE_GRID_STEP,
+                      DENSE_SLOT_SEP_MIN)
 
 SLOT_SEP_MIN = 10.0        # spec §1.3 (same caliber as routing.PAIR_SEP_MIN)
 TIE_FRAC = 0.10            # rule 1: |dx| vs |dy| within 10% = tie
@@ -82,17 +83,61 @@ def _anchor_table(cx, cy, hw, hh):
     return {p[0]: (p[1], p[2]) for p in standard_anchors(cx, cy, hw, hh)}
 
 
-def _usable(table, side):
+def _usable(table, side, sep_min=None):
     """Usable anchor ids on one side (spec §1.3): the midpoint plus the
-    golden points that clear SLOT_SEP_MIN from it, in ANCHOR_IDS order."""
+    golden points that clear SLOT_SEP_MIN from it, in ANCHOR_IDS order.
+
+    sep_min overrides the separation floor for one call (dense branch:
+    the dense hub box reads DENSE_SLOT_SEP_MIN = 6px, gate table #0;
+    every other box keeps the default None -> SLOT_SEP_MIN caliber)."""
     out = []
     mx, my = table[side]
-    for aid in (side, side + "-g1", side + "-g2"):
+    floor = SLOT_SEP_MIN if sep_min is None else sep_min
+    grid = sorted((aid for aid in table if aid.startswith(side + "@")),
+                  key=lambda aid: int(aid.split("@")[1]))
+    for aid in (side, side + "-g1", side + "-g2") + tuple(grid):
+        if aid not in table:
+            continue          # dense hub: the golden points are popped
         x, y = table[aid]
-        if aid != side and math.hypot(x - mx, y - my) < SLOT_SEP_MIN:
+        if aid != side and math.hypot(x - mx, y - my) < floor:
             continue
         out.append(aid)
     return out
+
+
+def _extend_dense_grid(t):
+    """Dense hub-box slot grid (dense card, gate table #0): replace the
+    side golden points with deterministic grid slots at multiples of
+    DENSE_GRID_STEP inside the inset rectangle (half-3 clamp, same inset
+    caliber as the 16-point set).  The midpoint stays.  Pure mutation of
+    the caller's private table; only the dense hub box gets it, so every
+    non-dense path is byte-for-byte unchanged.  Grid slots carry synthetic
+    ids ``<side>@+<k>`` / ``<side>@-<k>`` (k = grid steps from the
+    midpoint); with the 6px floor they are all usable, which lifts the
+    per-side capacity above the >16-edge single-box scenario."""
+    for side in SIDES:
+        for g in (side + "-g1", side + "-g2"):
+            t.pop(g, None)
+        mx, my = t[side]
+        on_x = side in ("n", "s")     # n/s sides order (and run) along x
+        half = _half_len_of(t, side)
+        k = 1
+        while k * DENSE_GRID_STEP <= half:
+            off = k * DENSE_GRID_STEP
+            for sgn in (1, -1):
+                aid = "%s@%s%d" % (side, "+" if sgn > 0 else "-", k)
+                t[aid] = ((mx + sgn * off, my) if on_x else (mx, my + sgn * off))
+            k += 1
+
+
+def _half_len_of(t, side):
+    """Inset half length of one side from the anchor table (midpoint vs
+    corner coordinate on the side's axis; the corners sit on the inset
+    rectangle, so |corner - midpoint| = half - inset)."""
+    ax = _side_axis(side)
+    corner = ("ne", "se") if side == "e" else ("se", "sw") if side == "s" \
+        else ("sw", "nw") if side == "w" else ("nw", "ne")
+    return abs(t[corner[0]][ax] - t[side][ax])
 
 
 def _side_axis(side):
@@ -100,12 +145,16 @@ def _side_axis(side):
     return 0 if side in ("n", "s") else 1
 
 
-def _slots_by_coord(table, side):
+def _slots_by_coord(table, side, sep_min=None):
     """Usable anchor ids of one side sorted by coordinate along the side
-    (ascending, ties by ANCHOR_IDS index) — the rule-5 slot order."""
+    (ascending, ties by ANCHOR_IDS index) — the rule-5 slot order.
+
+    Dense grid slots (synthetic ``@`` ids) order after the standard ids
+    at equal coordinate (deterministic; they never tie in practice — the
+    grid is offset from the golden fractions)."""
     ax = _side_axis(side)
-    return sorted(_usable(table, side),
-                  key=lambda aid: (table[aid][ax], ANCHOR_IDS.index(aid)))
+    return sorted(_usable(table, side, sep_min=sep_min),
+                  key=lambda aid: (table[aid][ax],) + _aid_ord(aid))
 
 
 def _center_coord(t, side):
@@ -124,14 +173,17 @@ def _geom_tables(nodes_px):
     return ntab
 
 
-def _facing_side(ntab, a, b):
-    """Rule 1: the side of box `a` facing box `b`."""
+def _facing_side(ntab, a, b, sep_min=None):
+    """Rule 1: the side of box `a` facing box `b` (sep_min: dense-branch
+    slot floor override for box a's usable counts, dense branch only)."""
     ta = ntab[a]
     dx, dy = ntab[b]["cx"] - ta["cx"], ntab[b]["cy"] - ta["cy"]
     adx, ady = abs(dx), abs(dy)
     if adx and ady and abs(adx - ady) <= TIE_FRAC * max(adx, ady):
-        vert = (len(_usable(ta, "n")) + len(_usable(ta, "s"))) >= \
-               (len(_usable(ta, "e")) + len(_usable(ta, "w")))
+        vert = (len(_usable(ta, "n", sep_min=sep_min))
+                + len(_usable(ta, "s", sep_min=sep_min))) >= \
+               (len(_usable(ta, "e", sep_min=sep_min))
+                + len(_usable(ta, "w", sep_min=sep_min)))
     else:
         vert = ady >= adx
     if vert:
@@ -228,8 +280,15 @@ def _ename(edges, i):
     return "%s->%s" % (edges[i][0], edges[i][1])
 
 
-def assign(nodes_px, edges, kinds, skip=()):
+def assign(nodes_px, edges, kinds, skip=(), dense_hub=None):
     """Edge placement rules v1 decision layer (spec §3/§5).
+
+    dense_hub: dense-mode node id or None (default — legacy caliber).
+    When set, this box's sides run on the deterministic slot grid (gate
+    table #0: goldens replaced by DENSE_GRID_STEP slots, 6px usable
+    floor); the grid capacity alone hosts >16-edge single boxes, so the
+    dense branch does not need slot sharing here (a residual collision
+    still records its honest rule-2 violation).
 
     Returns ``(presets, report)``.
       presets: {edge idx: preset dict} — pa/pb endpoint xy, a_anchor /
@@ -239,6 +298,13 @@ def assign(nodes_px, edges, kinds, skip=()):
     """
     skip = set(skip)
     ntab = _geom_tables(nodes_px)
+    if dense_hub is not None and dense_hub in ntab:
+        _extend_dense_grid(ntab[dense_hub])
+    hub_sep = DENSE_SLOT_SEP_MIN if dense_hub is not None else None
+
+    def _sep_of(v):
+        return hub_sep if v == dense_hub else None
+
     violations = []
     overflow = 0
 
@@ -247,8 +313,8 @@ def assign(nodes_px, edges, kinds, skip=()):
     for i, (a, b) in enumerate(edges):
         if i in skip:
             continue
-        side_of[(i, "a")] = _facing_side(ntab, a, b)
-        side_of[(i, "b")] = _facing_side(ntab, b, a)
+        side_of[(i, "a")] = _facing_side(ntab, a, b, sep_min=_sep_of(a))
+        side_of[(i, "b")] = _facing_side(ntab, b, a, sep_min=_sep_of(b))
 
     # occupancy per (box, side); rank = target center coordinate along
     # the side's ordering axis (rule 5 order)
@@ -277,7 +343,7 @@ def assign(nodes_px, edges, kinds, skip=()):
         for (v, side) in work:
             while True:
                 entries = occ.get((v, side)) or []
-                usable = _usable(ntab[v], side)
+                usable = _usable(ntab[v], side, sep_min=_sep_of(v))
                 golds = [s for s in usable if "-g" in s]
                 nb = sum(1 for e in entries if e.kind == "B")
                 if len(entries) <= len(usable) and nb <= len(golds):
@@ -290,7 +356,8 @@ def assign(nodes_px, edges, kinds, skip=()):
                         break
                 if victim is None:
                     break
-                target = _spill_target(v, side, victim, ntab, claimed)
+                target = _spill_target(v, side, victim, ntab, claimed,
+                                       sep_min=_sep_of(v))
                 if target is None:
                     violations.append({"edge": _ename(edges, victim.edge),
                                        "rule": 6,
@@ -321,7 +388,7 @@ def assign(nodes_px, edges, kinds, skip=()):
                          key=lambda e: (e.rank, e.edge))          # rule 5 order
         if not entries:
             continue
-        usable = _slots_by_coord(ntab[v], side)
+        usable = _slots_by_coord(ntab[v], side, sep_min=_sep_of(v))
         mids = [s for s in usable if s in SIDES]
         golds = [s for s in usable if "-g" in s]
         n_b = sum(1 for e in entries if e.kind == "B")
@@ -445,6 +512,15 @@ def assign(nodes_px, edges, kinds, skip=()):
     return presets, report
 
 
+def _aid_ord(aid):
+    """Deterministic order key for an anchor id: ANCHOR_IDS index for the
+    standard set; dense grid slots (synthetic ``@`` ids) sort after all
+    standard ids by (side-local) grid step."""
+    if aid in ANCHOR_IDS:
+        return (0, ANCHOR_IDS.index(aid), 0)
+    return (1, int(aid.split("@")[1]), 0 if "+" in aid else 1)
+
+
 def _resolve_symbolic_golden(a, b, sd_a, sd_b, aid_a, aid_b, ntab, claimed):
     """Rules 4 + 9 for an edge holding a symbolic golden end.
 
@@ -488,11 +564,11 @@ def _resolve_symbolic_golden(a, b, sd_a, sd_b, aid_a, aid_b, ntab, claimed):
     best_far = max(s[0] for s in scored)
     # rule 10 tie-break: within FAR_TIE_EPS of the best -> lowest anchor ids
     tied = [s for s in scored if s[0] >= best_far - FAR_TIE_EPS]
-    tied.sort(key=lambda s: (ANCHOR_IDS.index(s[1]), ANCHOR_IDS.index(s[2])))
+    tied.sort(key=lambda s: (_aid_ord(s[1]), _aid_ord(s[2])))
     return tied[0][1], tied[0][2], []
 
 
-def _spill_target(v, side, ent, ntab, claimed):
+def _spill_target(v, side, ent, ntab, claimed, sep_min=None):
     """Rule 6: adjacent side + anchor for a spilled entry.  Prefers the
     near-side golden of the adjacent side chosen by target direction,
     then the adjacent midpoint.  Returns (side, anchor id) or None."""
@@ -501,13 +577,13 @@ def _spill_target(v, side, ent, ntab, claimed):
     cands = []
     for adj in ADJACENT[side]:
         g = NEAR_GOLDEN.get((side, adj))
-        if g is not None:
+        if g is not None and g in ntab[v]:
             # golden points rank BEFORE the adjacent midpoint at equal
             # distance (spec rule 6: prefer the golden point on the side
             # closer to the original edge, then the midpoint)
             cands.append((abs(ntab[v][g][ax] - tgt), 0, ANCHOR_IDS.index(g),
                           adj, g))
-        if adj in _usable(ntab[v], adj):
+        if adj in _usable(ntab[v], adj, sep_min=sep_min):
             cands.append((abs(ntab[v][adj][ax] - tgt), 1, ANCHOR_IDS.index(adj),
                           adj, adj))
     cands.sort()
@@ -582,19 +658,20 @@ def audit_delivery(presets, routes, edges):
 # §4 hard-gate precedence: preset eligibility validation
 # ------------------------------------------------------------------
 
-def validate_presets(nodes_px, edges, presets, clearance):
-    """Spec §4: hard gates rank ABOVE the rules.  A preset is dropped
+def validate_presets(nodes_px, edges, presets, clearance, dense_hub=None):
+    """Spec §4: hard gates rank above the rules.  A preset is dropped
     (edge falls back to the legacy candidate pool, honest violation
     recorded by the caller) when its fixed chord geometry would make a
     hard gate unachievable:
       - departure/arrival angle vs the border tangent < ANCHOR_MIN_DEG
         (tangential exit — the fixed anchor cannot be fixed by any
-        candidate geometry);
+        candidate geometry);  dense-mode hub ends read the relaxed
+        DENSE_ANCHOR_MIN_DEG floor (dense card, Q2);
       - the straight chord pierces another box AND no visibility-graph
         detour exists between the fixed endpoints (press unavoidable).
     Returns the set of edge indices to exempt."""
     import math as _m
-    from .routing import ANCHOR_MIN_DEG, PRESS_MARGIN
+    from .routing import ANCHOR_MIN_DEG, PRESS_MARGIN, DENSE_ANCHOR_MIN_DEG
     from . import visibility as _vis
     rects = []
     ntab = _geom_tables(nodes_px)
@@ -628,7 +705,10 @@ def validate_presets(nodes_px, edges, presets, clearance):
             dl = _m.hypot(dvx, dvy) or 1.0
             ang = _m.degrees(_m.acos(max(0.0, min(1.0,
                 abs((dvx / dl) * tx + (dvy / dl) * ty)))))
-            if ang < ANCHOR_MIN_DEG:
+            _floor = (DENSE_ANCHOR_MIN_DEG
+                      if dense_hub is not None and v == dense_hub
+                      else ANCHOR_MIN_DEG)
+            if ang < _floor:
                 bad_angle = True
                 break
         if bad_angle:
@@ -651,15 +731,24 @@ def validate_presets(nodes_px, edges, presets, clearance):
 # §5 step 7: bounded local re-enumeration when crossings survive
 # ------------------------------------------------------------------
 
-def alternate_presets(nodes_px, edges, kinds, presets, involved, round_no):
+def alternate_presets(nodes_px, edges, kinds, presets, involved, round_no,
+                      dense_hub=None):
     """Deterministic local re-enumeration for edges still involved in
     crossings (spec §5 step 7).  round_no 1/2/3 tries, per involved edge:
       1. mirror the golden pair (other global side, bulge sign flipped);
       2. move both ends to a near-side golden of an adjacent side
          (rule 6 spill geometry);
       3. straight between the facing side midpoints (last resort).
+    dense_hub: dense-mode node id or None — the dense hub table carries
+    the slot grid (same caliber as assign).
     Returns the updated preset dict, or None when no variant applies."""
     ntab = _geom_tables(nodes_px)
+    if dense_hub is not None and dense_hub in ntab:
+        _extend_dense_grid(ntab[dense_hub])
+    hub_sep = DENSE_SLOT_SEP_MIN if dense_hub is not None else None
+
+    def _sep_of(v):
+        return hub_sep if v == dense_hub else None
     out = dict(presets)
     changed = False
     for i in sorted(involved):
@@ -673,8 +762,9 @@ def alternate_presets(nodes_px, edges, kinds, presets, involved, round_no):
             ma = GOLD_MIRROR.get((p["a_side"], p["b_side"]), {})
             mb = GOLD_MIRROR.get((p["b_side"], p["a_side"]), {})
             ga2, gb2 = ma.get(p["a_anchor"]), mb.get(p["b_anchor"])
-            if ga2 and gb2 and ga2 in _usable(ta, p["a_side"]) \
-                    and gb2 in _usable(tb, p["b_side"]):
+            if ga2 and gb2 and ga2 in _usable(ta, p["a_side"],
+                                              sep_min=_sep_of(a)) \
+                    and gb2 in _usable(tb, p["b_side"], sep_min=_sep_of(b)):
                 cand = dict(p, a_anchor=ga2, b_anchor=gb2,
                             pa=list(ta[ga2]), pb=list(tb[gb2]),
                             arc_side=-p["arc_side"])
@@ -682,18 +772,19 @@ def alternate_presets(nodes_px, edges, kinds, presets, involved, round_no):
             ea = _spill_target(a, p["a_side"],
                                _Entry(i, "a", kinds[i], a, b,
                                       _center_coord(ntab[b], p["a_side"])),
-                               ntab, {})
+                               ntab, {}, sep_min=_sep_of(a))
             eb = _spill_target(b, p["b_side"],
                                _Entry(i, "b", kinds[i], b, a,
                                       _center_coord(ntab[a], p["b_side"])),
-                               ntab, {})
+                               ntab, {}, sep_min=_sep_of(b))
             if ea and eb:
                 cand = dict(p, a_side=ea[0], b_side=eb[0],
                             a_anchor=ea[1], b_anchor=eb[1],
                             pa=list(ta[ea[1]]), pb=list(tb[eb[1]]))
         elif round_no == 3:
-            if p["a_side"] in _usable(ta, p["a_side"]) and \
-                    p["b_side"] in _usable(tb, p["b_side"]):
+            if p["a_side"] in _usable(ta, p["a_side"], sep_min=_sep_of(a)) \
+                    and p["b_side"] in _usable(tb, p["b_side"],
+                                               sep_min=_sep_of(b)):
                 cand = dict(p, style="line", a_anchor=p["a_side"],
                             b_anchor=p["b_side"], pa=list(ta[p["a_side"]]),
                             pb=list(tb[p["b_side"]]))

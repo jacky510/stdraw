@@ -424,3 +424,92 @@ auto 路径（manual=None，边规则 v1 生效）实况：
 另按返修要求 3 补诚实记录：`audit_delivery` 新增 rule-2 记录（交付 press>0、到达/离开角 <20° 逐条入证书 `edge_rules.violations`）。
 
 **修复后实测（i00，同解释器同命令，独立复算口径）**：真压他框 25→**4**（= main 基线 4，逐边对拍全等）；擦边角 4→**0**；`anchors_smooth` **True**；demo-2d.html 与 main **逐字节一致**，layout.json 仅差 `edge_rules` 注记。路径：validate 拦下 3 条擦边 preset（rule-0 记录）→ 剩余 preset 诚实评分仍劣于 legacy → 图级豁免按 spec §4 接管（exempt=True + 全量降级记录 17 条）。**取舍**：i00 单图 crossings/非标准锚等 v1 改善项随豁免回落 main 水平（30/39/64）——硬门绝对优先（spec §4 即此设计）；分支级改善项由其余分层引擎图（i01/i05 等收敛图，v1 保留不豁免）承载。
+
+## 19. 密集模式分支（dense-only，2026-11-15 落地）
+
+> 授权依据：jacky 2026-11-14 设计指令「1 个锚点可接受多条线共同使用；角度限制可适当放宽」；
+> 方案与终审拍板见方案卡归档（dense 提案 v1：Q1 `dense := max_deg ≥ 10`、Q2 dense
+> `ANCHOR_MIN_DEG = 12°`、Q3 `dense_mode` meta pass-through 且证书 face 不展示、
+> Q4 每槽共享硬上限 4 条）。本节为 dense-only 分支的口径登记：**非 dense 路径
+> 逐字节复用现路径**（`Router.dense_hub=None` 时所有 dense 分支惰性）。
+
+### 19.1 判定（布局前、纯拓扑、无 RNG）
+
+```
+dense := ∃ box v: deg(v) ≥ 10     （deg_max 节点 = dense hub；平局取规范形 id 序小者）
+```
+
+- 语料全族（classic 20 + random n10/n20）实测 max_deg = 8 < 10 → 61 图构造性零触发，
+  A 档字节零漂移由此成立。
+- **d9 边界（如实记录）**：deg = 9~10 的框在现行 8 点可用容量下只 spill 1~2 条，
+  尚未产生本卡治理的 0px 堆叠形态；`D_deg=10` 恰好贴着容量边界，d9 fan 场景
+  留在 legacy 路径，不进 dense 分支（终审拍板原文）。
+- manual（`--from-layout`）路径 dense 分支惰性——用户对端点保有权威（同 planarization 先例）。
+
+### 19.2 机制（radial 落地后的收缩口径）
+
+radial 排布接住星型/fan 后，布线层 fan 压力收缩为「HUB 单框的锚点容量」
+（叶子框 deg=1 永不需要）；dense 分支的作用域因此收缩为 **HUB 框侧内**：
+
+1. **fan_spread dense 分支**（`routing.Router.dense_hub`）：HUB 侧组中带钳制放宽到
+   全边长（±(half−3)），槽位走 `DENSE_FAN_STEP=12px` 栅格；12px 槽不够时收缩到
+   `DENSE_GRID_STEP=6px` 栅格（相邻异槽间距 ≥6px，满足门禁适配表 #4 的
+   「≥6px 或受控共享」二选一），仍不够才按方位角单调序准入共享（每槽硬上限
+   `DENSE_CAP_PER_SLOT=4`，超限照常布线并如实记入 `dense_mode.degrade`）。
+   整组「回退边中点」路径在 dense 分支**废除**（0px 堆叠的机制根源），门失败时
+   保留 shift-0 栅格布点并记 degrade，硬门照常对交付诚实评分。
+2. **arc 成员滑槽**：dense 分支里 HUB 端的 arc 路由加入扇组（端点滑到栅格 + ctrl
+   锁步平移 + Bezier 重散化，与 anchor_snap tier-1 同记账）；legacy 路径 arc
+   仍不可滑（ref-scrubbed 纪律原样）。叶端不进组。
+3. **anchor_snap dense 认定**：HUB 端点已居栅格 = 已锚定（dense 口径：16 点集
+   ∪ 6px 栅格），不再回拉 16 点集；栅格槽按占用记账。
+4. **er 层 dense 分支**（`edgerules.assign(dense_hub=…)`，仅 `cp-sat`/`construct`
+   引擎 + radial trial 失败的回退路径会走到）：dense hub 框的侧内可用集从
+   「中点 + golden ≥10px」改为「中点 + 6px 步距栅格槽（golden 退位）」，
+   `SLOT_SEP_MIN` 在该框放宽 10→6px；栅格容量（96px 卡长边 15 槽）足以承载
+   >16 边单框，故 er 层不需要槽共享。`validate_presets` 对 dense hub 端读 12° floor。
+5. **门禁适配**（授权依据 = jacky 2026-11-14 指令，逐门见方案卡适配表）：
+   anchor smoothness 门（`check.py` 门 4 / `gates.edge_gate_check(min_deg=…)` /
+   `metrics.anchors_smooth`）对 dense hub 边读 12°；`G-FAN-DENSE` policy 的
+   mutual-pair separation floor 4.0→3.0（仅 fan 邻槽）；**press / clearance /
+   crossing 门不豁免，grade 语义不放宽**。`anchors_standard` 对 dense hub 端
+   扩展为「16 点集 ∪ 6px 栅格」（栅格为 16 点集 golden 的确定性替代位）。
+6. **证书**：`meta.dense_mode = {triggered, rule_hit, deg_max, hub[, degrade]}`,
+   仅触发图写入（trigger-writes-the-key）；certificate gates 注记同名字段，
+   **face 不展示**（动 face 须另走 acceptance）。
+
+### 19.3 形态硬门（operator 2026-11-15 追加，两条）
+
+1. **dense 样本（d12-d24）输出形态正确**：HUB 居中放射几何，不得因锚点共享改造
+   回退一字排开。落地机制：radial trial 的 Router/gate 代理读 dense 分支
+   （`_radial_trial(dense_hub=…)`），dense hub 辐条候选携带
+   `DENSE_SPOKE_STRAIGHT_PENALTY=120` 直线偏置（radial 契约=辐条直线，弧/绕行
+   仅在直线无门净解时诚实兜底）；anchor_snap 的 tier-2 联合绕行对 dense hub 边
+   禁用（实测它把直线辐条换成 vg 折线且出发段跨邻居辐条，visual_crossings
+   0→2）——端点留在直线上如实报未锚。
+2. **自验读图长边抽查**：共享槽出线走廊展开不得制造新长边/绕行束（「没有很多
+   长线」为 jacky 明文优先级）。dense 分支不新增任何 vg/poly 长绕行——
+   dense 样本交付路由全部为直线辐条（见 §19.4 证据表 kinds 列）。
+
+**双环几何裁定（R5，本卡实测收口）**：k≥17 双环形态数学不可行——两条等间距
+共质数栅格（40°/45°）必然近对齐（最小角距 ≤ gcd 步长/2 = 2.5°），实测外圈辐条
+距内圈卡仅 12.6px（<16px 走廊）。dense 分支改走**单环大半径**：
+`DENSE_RING_ADJ_GAP = 56`（辐条-卡走廊 lateral = 48+28 = 76px，净距 ~22px，
+且 survives 叶端最近标准锚 tilting ≤5px）+ `RADIUS_MAX_DENSE = 600`。
+代价如实登记：d16-d24 单环半径 390-582px，check8 渲染比 <0.85（1280x800 档）
+→ rc=1 如实记账，grade 与证书门不受影响；双环代码路径保留（非 dense 大环图
+仍可走，k≥24 dense 图如超 600px 界才回退双环并如实 uncertified）。
+
+### 19.4 实测（fan 语料，radial HEAD 基线 vs dense 分支，同机同口径）
+
+| 样本 | 基线（改前，radial HEAD） | dense 分支（改后） |
+|---|---|---|
+| fan-d12 | best · 1.8s | best · radial · ~2s（环距 56 口径） |
+| fan-d16 | best · 4.8s · rc=1(check8) | best · radial · rc=1(check8) |
+| fan-d17 | uncertified · 34 端点未锚 · 94.6s · layered | **best · radial 全直线 · 0 未锚 · 0 交叉 · 7.0s** |
+| fan-d20 | uncertified · 40 端点未锚 · 159.2s · layered | **best · radial 全直线 · 0 未锚 · 13.3s** |
+| fan-d24 | uncertified · >700s 超时 · layered | 见证据表（radial，<60s） |
+
+枚举预算：dense 栅格化 + radial 形态使 d17-d24 墙钟从 94.6-1275s 级降到
+2.6-58s 级——「门失败重试枚举」的大头被消除，确定性预算机制无需启用
+（`DENSE_*` 常量保留为安全阀，按当前实测不绑定）。d24 < 300s 目标达成。

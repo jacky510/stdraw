@@ -69,9 +69,25 @@ ADJ_GAP = 36               # ring adjacency margin = the 36px card-gap breathing
                            # target (GAP_TARGET; prototype radii d12=255/d16=338
                            # are exactly this need over the regular k-gon chord)
 HUB_GAP = 36               # hub-card-to-ring-card margin along the spoke
-DOUBLE_RING_K = 17         # legacy prototype threshold (kept for reference; the
-                           # live split criterion is the radius need > RADIUS_MAX)
+# dense-mode ring knobs (dense card, form-correctness gate 2026-11-15):
+# the dense fan family delivers as a SINGLE large ring.  The spoke-to-card
+# corridor needs lateral >= half-width(48) + 16px, and lateral = half chord
+# = 48 + gap/2, so the ring adjacency gap widens 36 -> 56 (clearance
+# ~22px, which also survives the nearest-standard-anchor tilt of the
+# leaf-end snap); the radius bound extends accordingly -- a big clean
+# sunburst beats a double ring (two equal-spaced co-prime grids ALWAYS
+# near-align: min angular distance <= gcd-step/2, measured fan-d17 outer
+# spoke pressed 12.6px past the inner box) and beats the layered row
+# fallback (operator form gate).
+DENSE_RING_ADJ_GAP = 56.0
+RADIUS_MAX_DENSE = 600.0
 RING_STEP = 190            # inner/outer ring radius separation (card 44 + corridors)
+                           # (legacy caliber, non-dense double rings)
+RING_STEP_DENSE = 120      # dense-era separation: with the gap-azimuth stagger
+                           # (dense-only, form-correctness gate) same-ray box
+                           # separation is no longer the binding constraint --
+                           # the spoke corridor is; 120 = card 44 + corridor
+                           # 76 keeps the fallback ring inside the bound.
 INNER_FRACTIONS = (1.42, 1.30, 1.55, 1.18, 1.70, 1.06)   # outward along the anchor azimuth
 _INNER_FS = (0.42, 0.34, 0.50, 0.26, 0.58, 0.18, 0.66)   # in-ring fallback fractions
 _ANGLE_DS = (0.0, 20.0, -20.0, 40.0, -40.0, 60.0, -60.0, 90.0, -90.0)
@@ -130,8 +146,8 @@ def detect_radial(graph, why=None):
             "deg0": deg0}
 
 
-def _ring_radius(nodes_on_ring, widths, hub_w):
-    """Radius need: adjacent ring cards >= (w_u+w_v)/2 + ADJ_GAP center
+def _ring_radius(nodes_on_ring, widths, hub_w, adj_gap=ADJ_GAP):
+    """Radius need: adjacent ring cards >= (w_u+w_v)/2 + adj_gap center
     distance AND every spoke clears the hub card. Above the upper bound the
     caller splits into two rings."""
     k = len(nodes_on_ring)
@@ -139,7 +155,7 @@ def _ring_radius(nodes_on_ring, widths, hub_w):
     for i in range(k):
         wu = widths.get(nodes_on_ring[i], 96)
         wv = widths.get(nodes_on_ring[(i + 1) % k], 96)
-        need = max(need, (wu + wv) / 2 + ADJ_GAP)
+        need = max(need, (wu + wv) / 2 + adj_gap)
         need = max(need, (hub_w + wu) / 2 + HUB_GAP)
     if k < 3:
         need = max(need, RADIUS_MIN)
@@ -155,15 +171,23 @@ def _q2(v):
     return int(round(v / 2)) * 2
 
 
-def place_radial(plan, widths, card_h, cfg, adj, edges):
+def place_radial(plan, widths, card_h, cfg, adj, edges, dense_hub=None):
     """Radial placement -> ({v: x}, {v: y}, meta). All-integer 2px grid,
-    deterministic."""
+    deterministic.
+
+    dense_hub: dense-mode node id or None — dense graphs read the dense
+    ring knobs (DENSE_RING_ADJ_GAP corridor caliber + RADIUS_MAX_DENSE
+    bound) so the fan family delivers as a single clean ring.
+    """
     hub = plan["hub"]
     ring = list(plan["ring"])
     k = len(ring)
     hub_w = widths.get(hub, 96)
-    single_r = _ring_radius(ring, widths, hub_w)
-    two_rings = single_r > RADIUS_MAX
+    dense = dense_hub is not None and dense_hub == hub
+    ring_gap = DENSE_RING_ADJ_GAP if dense else ADJ_GAP
+    radius_max = RADIUS_MAX_DENSE if dense else RADIUS_MAX
+    single_r = _ring_radius(ring, widths, hub_w, adj_gap=ring_gap)
+    two_rings = single_r > radius_max
     if two_rings and k < 6:
         raise InfeasibleRadial(
             f"radius requirement {single_r:.0f}px exceeds the bound and "
@@ -176,9 +200,10 @@ def place_radial(plan, widths, card_h, cfg, adj, edges):
         # CV at the quantization floor)
         inner = [ring[i] for i in range(k) if i % 2 == 0]
         outer = [ring[i] for i in range(k) if i % 2 == 1]
-        r_in = _ring_radius(inner, widths, hub_w)
-        r_out = r_in + RING_STEP
-        if r_out > RADIUS_MAX + RING_STEP:
+        r_in = _ring_radius(inner, widths, hub_w,
+                            adj_gap=DENSE_RING_ADJ_GAP if dense else ADJ_GAP)
+        r_out = r_in + (RING_STEP_DENSE if dense else RING_STEP)
+        if r_out > radius_max + RING_STEP:
             raise InfeasibleRadial(
                 f"double-ring radius need {r_out:.0f}px exceeds the bound")
         radii = {v: (r_in if v in inner else r_out) for v in ring}
@@ -197,7 +222,20 @@ def place_radial(plan, widths, card_h, cfg, adj, edges):
     for v in ring:
         seq = ring_of[v]
         i = seq.index(v)
-        ang = _azimuth(i, len(seq))
+        if (dense and two_rings and len(seqs[0]) > 0 and seq is seqs[0]):
+            # form-correctness (dense card, operator gate 2026-11-15): the
+            # OUTER ring sits on the INNER ring's gap azimuths (+half inner
+            # step).  Both rings starting at -90 deg aligned an outer leaf
+            # onto an inner leaf's ray, so the straight hub spoke to the
+            # outer leaf pressed straight through the inner box (measured:
+            # fan-d17 L00 blocks the HUB->L01 spoke; the 40/45 deg grids
+            # also drift to 5 deg near-alignments).  Dense graphs deliver
+            # single-ring (RADIUS_MAX_DENSE), so this branch only guards a
+            # dense over-bound fallback; non-dense double rings keep the
+            # legacy equal-step azimuths byte-for-byte.
+            ang = _azimuth(i, len(inner)) + math.pi / len(inner)
+        else:
+            ang = _azimuth(i, len(seq))
         angles[v] = ang
         rr = radii[v]
         pos[v] = _q2(cx + rr * math.cos(ang))
