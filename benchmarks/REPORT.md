@@ -401,3 +401,66 @@ workspace; regenerate with `STDRAW_TIMING=1 python -m stdraw
 layout <file> --outdir <dir>`.
 
 
+### §9.4 polish incremental evaluation (exact-memo acceleration, 2026-11-16; hand-maintained)
+
+The §9.2 finding stands: layered-path random n10 walls sit ~86-96% inside the
+③b polish block, which re-routes the whole graph for every hill-climb
+candidate world (one node shifted / two adjacent nodes swapped). The block
+now shares computation across those worlds through an exact content-keyed
+memoization layer (EvalCache in stdraw/routing.py): per-(candidate-geometry,
+box) press/clearance sampling, per-(candidate-geometry, routed-route-content)
+crossings, per-candidate samples / length / own-box / anchor angles, and a
+line/arc candidate-prefix cache keyed on the two endpoint boxes. Every memo
+key embeds the exact float content of every input that can change the
+memoized value, so a hit is value-identical by construction; rejection
+checks and score arithmetic re-run per call in the base expression order.
+Paths without a cache (default) are untouched: every structural engine, the
+delivery repair chain, and anchor_snap construct their own routers exactly
+as before.
+
+#### Same-machine stage timing (quiet machine, Python 3.12,
+cp-sat-layered, STDRAW_TIMING=1 CLI runs, back-to-back)
+
+| graph | wall s before -> after | polish_gated_reorder before -> after |
+|---|---|---|
+| random-n10-i00 | 55.0 -> 21.0 (2.6x) | 95.8% (52.3 s) -> 88.1% (18.0 s) |
+| random-n10-i05 | 49.7 -> 20.5 (2.4x) | 94.5% (46.5 s) -> 85.7% (17.1 s) |
+| random-n10-i19 | 6.6 -> 6.5 (planarized engine; polish absent) | n/a |
+| random-n20-i00 (rc=1, honest uncertified) | 350.2 -> 348.8 (polish skipped) | n/a |
+
+n20 note: the §9.2 stage profile has shifted since its 2026-11-10 snapshot -
+the post-change n20-i00 run shows card_metrics 63.5% / route_final 18.3% /
+anchor_snap.snap 13.6%, i.e. the n20 bottleneck is no longer snap-dominated.
+Registered here as an observation for the next n20-targeting effort; this
+section changes nothing about that path.
+
+#### Full random n10 corpus walls (tier-A sweep legs, same machine,
+back-to-back)
+
+- before: median 56.1 s -> after: median 21.5 s (2.6x).
+- Layered-path graphs speed up 1.9-2.7x; structural-engine graphs
+  (ring / planarized) measure 0.99-1.04x, i.e. unchanged - the acceleration
+  is confined to the polish block by construction. The rc set is identical
+  across legs.
+
+#### Differential byte-equivalence evidence (acceptance gate)
+
+1. Tier-A (n<=20) dual-leg sweep: pinned pre-change worktree vs changed
+   tree, same interpreter (cp-sat-layered). 60 graph directories x 7 output
+   files = 420 files, every file sha256-identical. (The two example
+   rendering entries share directories with same-content corpus classic
+   graphs, hence 60 dirs on disk for the 62-entry tier.) rc=1
+   honest-uncertified random families are covered: the sweep index does not
+   record their files, so the comparison walks the output directories
+   directly.
+2. In-process differential harness: every engine-visited polish world was
+   additionally recomputed through the uncached path - bitwise-identical
+   totals and route-info fields on all worlds; sampled per-candidate
+   comparisons (22,616 checks, including memo-hit repeats) all identical.
+3. Regression: tests/test_polish_eval_cache.py (cache vs uncached bitwise
+   equality across candidate worlds, per-candidate evaluation, memo-hit
+   stability); full pytest 230 passed / 0 failed.
+
+Baseline harness: regenerate with STDRAW_TIMING=1 python -m stdraw layout
+<file> --outdir <dir>; legs regenerate with benchmarks/tools/sweep_tiers.py
+--tier A --outdir <leg-dir> (+ --compare for the indexed subset).

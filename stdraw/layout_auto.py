@@ -26,7 +26,7 @@ from . import timing as _timing
 from .visibility import reset_caches as _reset_route_caches
 from .anchors import ANCHOR_IDS, standard_anchors as _standard_anchors
 from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
-                      ANCHOR_MIN_DEG, border_point)
+                      ANCHOR_MIN_DEG, border_point, EvalCache)
 from .anchors import nearest_anchor as _nearest_anchor
 
 # ref-scrubbed finalize (approved 2026-11-09): edge/node density at or
@@ -307,7 +307,8 @@ def _content_w(rows, widths, cfg):
                for vs in rows) + 2 * cfg.margin
 
 
-def _route_total(nodes_px, edges, cfg, hard_gates=False, quality=False):
+def _route_total(nodes_px, edges, cfg, hard_gates=False, quality=False,
+                 eval_cache=None):
     """Routing ground-truth total cost: a weighted sum of press/clearance/crossing/coincidence/edge length (the layout layer's true objective function).
 
     hard_gates: hard clearance/anchor penalties (1500 per violation). Default
@@ -323,7 +324,8 @@ def _route_total(nodes_px, edges, cfg, hard_gates=False, quality=False):
     no hard gate (crowding is caught by the existing clearance gate).
     """
     from .metrics import rect_gap
-    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch, quality=quality)
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch, quality=quality,
+                    eval_cache=eval_cache)
     routes = router.route_all()
     eset = set(edges)
     total = 0.0
@@ -493,7 +495,7 @@ def _repack_x(order, widths, cfg):
 
 
 def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2,
-            hard_gates=False):
+            hard_gates=False, eval_cache=None):
     """Local search: per-node +/-24/+/-48 horizontal shifts (preserving same-row clearance), scored by routing ground-truth total cost.
 
     A supplementary refinement over CP-SAT global placement - it explicitly
@@ -505,7 +507,8 @@ def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2,
 
     best_pos = dict(pos)
     best_score, best_routes, _ = _route_total(nodes_px(best_pos), edges, cfg,
-                                              hard_gates, quality=hard_gates)
+                                              hard_gates, quality=hard_gates,
+                                              eval_cache=eval_cache)
     row_of = {v: r for r, vs in enumerate(rows) for v in vs}
     for _ in range(rounds):
         improved = False
@@ -521,7 +524,8 @@ def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2,
                 cand = dict(best_pos)
                 cand[v] = nx
                 sc, routes, _ = _route_total(nodes_px(cand), edges, cfg,
-                                             hard_gates, quality=hard_gates)
+                                             hard_gates, quality=hard_gates,
+                                             eval_cache=eval_cache)
                 if sc < best_score - 1e-6:
                     best_pos, best_score, best_routes = cand, sc, routes
                     improved = True
@@ -532,7 +536,8 @@ def _polish(nodes, edges, rows, pos, y, widths, card_h, cfg, rounds=2,
                 cand = dict(best_pos)
                 cand[u], cand[w] = best_pos[w], best_pos[u]
                 sc, routes, _ = _route_total(nodes_px(cand), edges, cfg,
-                                             hard_gates, quality=hard_gates)
+                                             hard_gates, quality=hard_gates,
+                                             eval_cache=eval_cache)
                 if sc < best_score - 1e-6:
                     best_pos, best_score, best_routes = cand, sc, routes
                     improved = True
@@ -1939,8 +1944,12 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
             # ③b local polish (small graphs <=10 nodes): hill-climbing horizontal shifts on routing ground-truth total cost, explicitly
             # feeding routing feasibility (press/clearance/crossings) back into the placement layer
             if len(core) <= 10:
+                # exact-memo cache shared by both polish passes and the
+                # gated-block routers (fresh per layout call; with it the
+                # delivered bytes are identical, construction-guaranteed)
+                _ec = EvalCache()
                 pos, _sc, _rt = _polish(core, edges, rows, pos, y,
-                                        widths, card_h, cfg)
+                                        widths, card_h, cfg, eval_cache=_ec)
                 # -- WS3 routing-quality rework (random dense graphs: check1 crossings>2 / check3 clearance<16): when a routing hard gate fails, the
                 #    layout bottleneck is not the router (the graph is planar but the placement pushes topological interleaving pairs to 3+, and greedy
                 #    routing can only dodge some of them) but the "row assignment + in-row order". Trigger a deterministic (row, order) reorder -> 24px
@@ -1948,7 +1957,7 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
                 #    than the baseline). Gated trigger: layouts whose hard gates already pass (the entire classic domain, existing passing cases) get
                 #    zero perturbation, output byte-for-byte unchanged.
                 _r0 = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
-                             edges, cfg.clearance, cfg.pitch)
+                             edges, cfg.clearance, cfg.pitch, eval_cache=_ec)
                 _routes0 = _r0.route_all()
                 _pairs0 = _r0.final_crossing_pairs(_routes0)
                 _clrbad0 = sum(1 for _i in _routes0.values()
@@ -1963,7 +1972,8 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
                     # expands the stair candidate pool - gated path only; the normal path (including polish's _route_total) keeps the historical
                     # candidate pool, zero perturbation for passing cases.
                     _rq = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
-                                 edges, cfg.clearance, cfg.pitch, quality=True)
+                                 edges, cfg.clearance, cfg.pitch, quality=True,
+                                 eval_cache=_ec)
                     _routesA = _rq.joint_reroute(dict(_routes0))
                     _pairsA = _rq.final_crossing_pairs(_routesA)
                     _clrbadA = sum(1 for _i in _routesA.values()
@@ -1987,7 +1997,7 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
                             _y2[_v] = cfg.top + _r * cfg.pitch
                     _pos2, _sc2, _rt2 = _polish(core, edges, _order2, _pos2,
                                                 _y2, widths, card_h, cfg,
-                                                hard_gates=True)
+                                                hard_gates=True, eval_cache=_ec)
                     # ref-scrubbed: isolated nodes are not in rows (delivered on the top parking strip); the gated reorder reorders only core -
                     # parking-strip coordinates are carried back as-is, so the Router's all-node keys stay complete (legacy gap: on graphs
                     # with isolated nodes the gated path raised KeyError on first trigger)
@@ -1995,7 +2005,7 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
                         _pos2.setdefault(_v, pos[_v])
                     _r2 = Router({v: (_pos2[v], _y2[v], widths[v], card_h)
                                   for v in nodes}, edges, cfg.clearance, cfg.pitch,
-                                 quality=True)
+                                 quality=True, eval_cache=_ec)
                     _rt2 = _r2.route_all()
                     _rt2 = _r2.joint_reroute(dict(_rt2))
                     _pairs2 = _r2.final_crossing_pairs(_rt2)

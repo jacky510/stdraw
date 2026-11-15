@@ -350,11 +350,66 @@ def _dense_fan_offsets(k, half_len, shift):
     return [(t // s + base) * step + shift for t in range(k)]
 
 
+class EvalCache:
+    """Content-keyed exact memoization shared across Router instances.
+
+    The polish hill-climb re-routes the whole graph for every candidate
+    world (one node shifted / two nodes swapped); across those worlds most
+    per-candidate geometry and most node boxes are float-identical.  Every
+    key in this cache embeds the exact float content of every input that
+    can change the memoized value (candidate point content / box tuples /
+    routed-segment content / honest flag), so a hit reproduces the
+    uncached value bitwise by construction -- no invalidation logic, same
+    argument as the v0.7.15 content-keyed caches.  Rejection checks and
+    score arithmetic are re-run per call in the base expression order, so
+    delivered floats are identical, not merely equal.
+
+    Lifetime: ONE polish block.  layout() creates a fresh instance per
+    call; route-key interning holds references to segment lists, so the
+    cache (and everything it pins) dies with the block.
+    """
+
+    CROSS_CAP = 3_000_000   # safety valve; exactness never depends on hits
+
+    def __init__(self):
+        self.ck_id = {}      # candidate point-content tuple -> small int
+        self.samples = {}    # ck int -> (samples list, bbox xlo xhi ylo yhi)
+        self.cand_segs = {}  # ck int -> (cand segs list, per-seg bbox list)
+        self.press = {}      # (ck int, box tuple) -> (press_u, dmin_u)
+        self.cross = {}      # (ck int, route int) -> (cross_j, hit_j)
+        self.ownang = {}     # (ck int, box a, box b, honest) ->
+                             #   (rejected, press_own, ang_a, ang_b)
+        self.length = {}     # ck int -> polyline length
+        self.cand_linearc = {}   # (a, b, box a, box b, mutual bool) ->
+                                 #   canonical line/arc candidate prefix
+        self.rk_id = {}      # canonical segs key -> small int
+        self._rkrefs = {}    # id(segs list) -> (ref, canonical key, int)
+
+    def route_key(self, segs):
+        """Small-int id for a routed-segments list, content-keyed.
+
+        Identity-guarded interning: the same list object (reused across the
+        ~200 candidate evaluations of one route_all pass) resolves without
+        re-hashing its content; distinct list objects with identical
+        segment content share one id (joint_reroute rebuilds segs lists
+        every pair)."""
+        ent = self._rkrefs.get(id(segs))
+        if ent is not None and ent[0] is segs:
+            return ent[2]
+        key = tuple((p[0], p[1], q[0], q[1]) for p, q in segs)
+        rid = self.rk_id.get(key)
+        if rid is None:
+            rid = self.rk_id[key] = len(self.rk_id)
+        self._rkrefs[id(segs)] = (segs, key, rid)
+        return rid
+
+
 class Router:
     """Plan a route for each edge from the node box positions on the canvas. Deterministic: fixed candidate order + fixed scoring."""
 
     def __init__(self, nodes: dict, edges: list, clearance=CLEARANCE, pitch=80,
-                 quality=False, presets=None, dense_hub=None):
+                 quality=False, presets=None, dense_hub=None,
+                 eval_cache=None):
         """nodes: {id: (x,y,w,h)} center + size; edges: [(a,b)] directed.
 
             quality=False (default): the legacy candidate pool, output byte-for-byte identical to v0.4.x;
@@ -392,6 +447,10 @@ class Router:
                 mutual.add((a, b))
         self.mutual = mutual
         self.eidx = {(a, b): i for i, (a, b) in enumerate(edges)}
+        # Exact-memo fast path (polish worlds): None = legacy behavior
+        # untouched (default); an EvalCache instance enables the cached
+        # evaluate path -- outputs stay byte-identical either way.
+        self._ecache = eval_cache
         # Routing order: edges spanning more rows are routed first (large spans decide the corridors), the rest by (a,b)
         self.order = sorted(range(len(edges)),
                             key=lambda i: (-self._span(edges[i]), edges[i][0], edges[i][1]))
@@ -498,17 +557,22 @@ class Router:
         return variants
 
     # -- candidate generation --
-    def _candidates(self, a, b, idx):
-        """Fixed-order candidates: straight -> arc (left/right x curvature) -> detour channels, x anchor variants."""
-        if self.presets and idx in self.presets:
-            return self._preset_candidates(a, b, idx)
-        cands = []
+    def _candidates_linearc(self, a, b):
+        """Deterministic line/arc candidate prefix: depends only on the two
+        endpoint boxes and the mutual-pair flag (anchor variants, adaptive
+        curvature ladder).  Returned in CANONICAL form (kind, tuple pts,
+        tuple pa, tuple pb, tuple ctrl-or-None) for exact memoization
+        across polish candidate worlds; _candidates materializes fresh
+        mutable containers from it per call (bitwise-identical values, no
+        shared-mutable aliasing)."""
+        out = []
         key = (min(a, b), max(a, b))
         # F1 lens double-arc: both directions of a mutual pair take the same arc side sign (their reference frames are opposite -> geometrically opposite arcs,
         # forming a lens; one arc one arrow per direction, no more double-headed-arrow look)
         mutual_side = 1 if key in self.mutual else None
         for pa, pb in self._anchor_variants(a, b):
-            cands.append(("line", [pa, pb], pa, pb))
+            out.append(("line", (tuple(pa), tuple(pb)),
+                        tuple(pa), tuple(pb), None))
             vx, vy = pb[0] - pa[0], pb[1] - pa[1]
             dist = math.hypot(vx, vy)
             ux, uy = norm(-vy, vx)
@@ -520,7 +584,35 @@ class Router:
                 for s in sides:
                     ctrl = [(pa[0] + pb[0]) / 2 + ux * k * dist * s,
                             (pa[1] + pb[1]) / 2 + uy * k * dist * s]
-                    cands.append(("arc", quad_points(pa, ctrl, pb), pa, pb, ctrl))
+                    out.append(("arc",
+                                tuple(tuple(p) for p in quad_points(pa, ctrl, pb)),
+                                tuple(pa), tuple(pb), (ctrl[0], ctrl[1])))
+        return out
+
+    @staticmethod
+    def _materialize_linearc(canon):
+        kind, pts_c, pa_c, pb_c, ctrl_c = canon
+        pa, pb = list(pa_c), list(pb_c)
+        if kind == "line":
+            return ("line", [pa, pb], pa, pb)
+        return ("arc", [list(p) for p in pts_c], pa, pb, list(ctrl_c))
+
+    def _candidates(self, a, b, idx):
+        """Fixed-order candidates: straight -> arc (left/right x curvature) -> detour channels, x anchor variants."""
+        if self.presets and idx in self.presets:
+            return self._preset_candidates(a, b, idx)
+        ec = self._ecache
+        if ec is not None:
+            pk = (a, b, self.N[a], self.N[b],
+                  (min(a, b), max(a, b)) in self.mutual)
+            prefix = ec.cand_linearc.get(pk)
+            if prefix is None:
+                prefix = ec.cand_linearc[pk] = self._candidates_linearc(a, b)
+            cands = [self._materialize_linearc(c) for c in prefix]
+        else:
+            cands = [self._materialize_linearc(c)
+                     for c in self._candidates_linearc(a, b)]
+        key = (min(a, b), max(a, b))
         # WS3 visibility-graph shortest-path candidates (mathematically optimal obstacle avoidance): generated only when the straight line is blocked (deterministic)
         # F1: mutual pairs build vg from several tangentially offset anchor sets x two inflation tiers -- mutually opposite shortest
         # corridors with the same inflation and same anchors hug the same obstacle corner and coincide point-by-point (0.0px), while the outer-ring
@@ -744,6 +836,13 @@ class Router:
 
     # -- candidate evaluation --
     def _evaluate(self, cand, a, b, routed_segs, sib_samples=None, honest=False):
+        if self._ecache is None:
+            return self._evaluate_base(cand, a, b, routed_segs,
+                                       sib_samples, honest)
+        return self._evaluate_cached(cand, a, b, routed_segs,
+                                     sib_samples, honest)
+
+    def _evaluate_base(self, cand, a, b, routed_segs, sib_samples=None, honest=False):
         """Return (score, info); info carries press/clearance/crossing/anchor-angle/mutual-separation details.
 
                 routed_segs: {j: (list of routed segments, list of per-segment bboxes)} (precomputed by route_all).
@@ -882,6 +981,183 @@ class Router:
         score += 2.0 * ang_def
         if ang_def > 0.5:
             score += 1500.0     # soft rejection of tangent-anchor exits: not chosen when a smooth candidate exists (the hard gate preserves smoothness)
+        info = {"kind": kind, "points": pts, "press": press,
+                "min_clear": round(min_clr, 1) if min_clr < 1e9 else None,
+                "cross": cross, "cross_edges": hit_edges,
+                "ang_a": ang_a, "ang_b": ang_b,
+                "pair_sep": round(pair_sep, 1) if pair_sep is not None else None,
+                "sep_def": round(sep_def, 2)}
+        if kind == "arc":
+            info["ctrl"] = cand[4]
+        if kind == "vg":
+            info["vg_corners"] = [list(p) for p in cand[4]["corner_pts"]]
+            info["vg_fillets"] = cand[4]["fillets"]
+        return (score, info)
+
+    def _evaluate_cached(self, cand, a, b, routed_segs, sib_samples=None,
+                         honest=False):
+        """Exact-memo fast path of _evaluate_base: byte-identical outputs.
+
+        Memo keys embed the exact float content of every input that can
+        change the memoized value (candidate point content / box tuples /
+        routed-segment content / honest flag) -- a hit reproduces the base
+        path's value bitwise by construction.  Early-out box skips are
+        min_clr-order-dependent, so they are re-evaluated per call in the
+        base order and never memoized; only boxes that actually ran the
+        sample loop are stored.  Score/info assembly re-runs the base
+        expression tree every call (same op order -> same floats).
+        """
+        ec = self._ecache
+        kind, pts, pa, pb = cand[0], cand[1], cand[2], cand[3]
+        ck = tuple((p[0], p[1]) for p in pts)
+        cki = ec.ck_id.get(ck)
+        if cki is None:
+            cki = ec.ck_id[ck] = len(ec.ck_id)
+        sbe = ec.samples.get(cki)
+        if sbe is None:
+            sbe = ec.samples[cki] = (
+                sample_polyline(pts),
+                min(p[0] for p in pts), max(p[0] for p in pts),
+                min(p[1] for p in pts), max(p[1] for p in pts))
+        samples, bxl, bxh, byl, byh = sbe
+        # own boxes: border attachment + interior press + anchor angles
+        # (depend only on candidate geometry + the two endpoint boxes)
+        bok = (cki, self.N[a], self.N[b], honest)
+        oent = ec.ownang.get(bok)
+        if oent is None:
+            rejected = False
+            press_own = 0
+            for v, endp in ((a, pa), (b, pb)):
+                cx, cy, hw, hh = self.N[v]
+                if honest:
+                    for (px, py) in samples[1:-1]:
+                        if dist_point_rect(px, py, cx, cy,
+                                           hw + PRESS_MARGIN,
+                                           hh + PRESS_MARGIN) <= ROUND_GUARD:
+                            press_own += 1
+                            break
+                    continue
+                if dist_point_rect(endp[0], endp[1], cx, cy, hw, hh) > 0.75:
+                    rejected = True
+                    break
+                interior = False
+                for (px, py) in samples[1:-1]:
+                    if dist_point_rect(px, py, cx, cy, hw + PRESS_MARGIN,
+                                       hh + PRESS_MARGIN) <= ROUND_GUARD:
+                        interior = True
+                        break
+                if interior:
+                    rejected = True
+                    break
+            ang_a = self._anchor_angle(a, pa, pts[0], pts[1])
+            ang_b = self._anchor_angle(b, pb, pts[-1], pts[-2])
+            oent = ec.ownang[bok] = (rejected, press_own, ang_a, ang_b)
+        rejected, press_own, ang_a, ang_b = oent
+        if rejected:
+            return (1e9, None)
+        press = press_own
+        min_clr = 1e9
+        cse = ec.cand_segs.get(cki)
+        if cse is None:
+            cand_segs = list(zip(pts[:-1], pts[1:]))
+            cand_bb = [(min(p[0], q[0]), min(p[1], q[1]),
+                        max(p[0], q[0]), max(p[1], q[1]))
+                       for p, q in cand_segs]
+            cse = ec.cand_segs[cki] = (cand_segs, cand_bb)
+        cand_segs, cand_bb = cse
+        for v, box in self.N.items():
+            if v in (a, b):
+                continue
+            pent = ec.press.get((cki, box))
+            if pent is None:
+                cx, cy, hw, hh = box
+                mhw = hw + PRESS_MARGIN
+                mhh = hh + PRESS_MARGIN
+                gx = cx - mhw - bxh
+                g = bxl - cx - mhw
+                if g > gx:
+                    gx = g
+                gy = cy - mhh - byh
+                g = byl - cy - mhh
+                if g > gy:
+                    gy = g
+                if gx > ROUND_GUARD or gy > ROUND_GUARD:
+                    lb2 = 0.0
+                    if gx > 0.0:
+                        lb2 = gx * gx
+                    if gy > 0.0:
+                        lb2 += gy * gy
+                    if lb2 >= min_clr * min_clr:
+                        continue      # press impossible, min_clr not refreshable
+                p_u, d_u = 0, 1e9
+                for (px, py) in samples:
+                    d = dist_point_rect(px, py, cx, cy,
+                                        hw + PRESS_MARGIN, hh + PRESS_MARGIN)
+                    if d <= ROUND_GUARD:
+                        p_u = 1
+                        break
+                    if d < d_u:
+                        d_u = d
+                pent = ec.press[(cki, box)] = (p_u, d_u)
+            press += pent[0]
+            if pent[1] < min_clr:
+                min_clr = pent[1]
+        clr_def = max(0.0, self.cl - min_clr) if min_clr < 1e9 else 0.0
+        # crossings vs already-routed routes, memoized per (candidate,
+        # routed-route content): ints, summation order preserved
+        cross = 0
+        hit_edges = 0
+        for j, (rsegs, rbb) in routed_segs.items():
+            rke = ec.route_key(rsegs)
+            cent = ec.cross.get((cki, rke))
+            if cent is None:
+                cj, hit = 0, False
+                for si, s1 in enumerate(cand_segs):
+                    x1l, y1l, x1h, y1h = cand_bb[si]
+                    for k, s2 in enumerate(rsegs):
+                        x2l, y2l, x2h, y2h = rbb[k]
+                        if x1l > x2h or x2l > x1h or y1l > y2h or y2l > y1h:
+                            continue
+                        if seg_cross(s1[0], s1[1], s2[0], s2[1]):
+                            cj += 1
+                            hit = True
+                cent = (cj, 1 if hit else 0)
+                if len(ec.cross) < ec.CROSS_CAP:
+                    ec.cross[(cki, rke)] = cent
+            cross += cent[0]
+            hit_edges += cent[1]
+        length = ec.length.get(cki)
+        if length is None:
+            length = ec.length[cki] = sum(
+                math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
+        kind_pref = 0.0
+        mutual_pair = (min(a, b), max(a, b)) in self.mutual
+        pair_sep = None
+        sep_def = 0.0
+        if mutual_pair and sib_samples:
+            pair_sep = min_pair_dist(sample_polyline(pts, step=12), sib_samples)
+            if pair_sep is not None:
+                sep_def = max(0.0, PAIR_SEP_MIN - pair_sep)
+        if mutual_pair and kind == "arc":
+            kind_pref = -2.0
+        if kind == "vg":
+            kind_pref += 120.0
+        if kind == "poly":
+            kind_pref += 40.0
+        if kind == "wrap":
+            kind_pref += 200.0
+        if (self.dense and kind != "line"
+                and (a == self.dense_hub or b == self.dense_hub)):
+            kind_pref += DENSE_SPOKE_STRAIGHT_PENALTY
+        if mutual_pair:
+            clr_def *= 5.0
+        rule_pen = cand[5] if len(cand) > 5 else 0.0
+        score = (4000 * press + 40 * cross + 30.0 * clr_def + 0.01 * length +
+                 PAIR_SEP_W * sep_def + kind_pref + rule_pen)
+        ang_def = max(0.0, ANCHOR_MIN_DEG - ang_a) + max(0.0, ANCHOR_MIN_DEG - ang_b)
+        score += 2.0 * ang_def
+        if ang_def > 0.5:
+            score += 1500.0
         info = {"kind": kind, "points": pts, "press": press,
                 "min_clear": round(min_clr, 1) if min_clr < 1e9 else None,
                 "cross": cross, "cross_edges": hit_edges,
