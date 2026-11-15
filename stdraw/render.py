@@ -298,6 +298,11 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     # data and the crossings caliber are untouched: this is presentation-
     # layer folding only, and every byte emitted here lives inside this
     # branch, so the L0/ortho frozen outputs stay byte-identical.
+    # HTML-block overlays (tooltip div + script) must never be emitted
+    # inside the svg: an HTML parser treats <div> as foreign content
+    # and pops every later <g> out of the svg (card loss).  They are
+    # appended right after the closing </svg> instead.
+    _overlay = []
     _plz = meta.get("planarization") or {}
     if _plz.get("mode") == "L1":
         from .planarized_layout import (MARKER_SIZE_PX as _MS,
@@ -317,10 +322,13 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         _ub, _lb, _gap = _plz.get("ub"), _plz.get("lb"), _plz.get("gap")
 
         def _tip_line(_m):
-            # contract hover-text skeleton: fields must not shrink
+            # contract hover-text skeleton: fields must not shrink.  Raw
+            # text only — the single html.escape happens at the data-tip
+            # attribute site, and textContent never decodes entities, so
+            # any pre-escaped literal (e.g. "&times;") would double-escape.
             _mem = _m.get("edges") or []
-            _pair = " &times; ".join(
-                html.escape(f"{labels.get(a, a)}→{labels.get(b, b)}")
+            _pair = " × ".join(
+                f"{labels.get(a, a)}→{labels.get(b, b)}"
                 for (a, b) in _mem[:2])
             return (f"{_pair} · witness #{_m['witness_id']} · "
                     f"cr UB={_ub} (LB={_lb}, gap={_gap})")
@@ -374,15 +382,16 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         # elementFromPoint hit-testing; still below the node cards).
         parts.extend(_hits)
         # render-layer tooltip card (pointer-events:none — it never
-        # blocks drag / double-click / segment edits).
-        parts.append(
+        # blocks drag / double-click / segment edits).  Emitted after
+        # </svg> via _overlay (see above — foreign-content breakout).
+        _overlay.append(
             f'<div id="stdraw-xwitness-tip" style="position:fixed;display:'
             f'none;z-index:9;pointer-events:none;font-size:{_MF:g}px;'
             f'line-height:1.35;border-radius:6px;padding:4px 8px;'
             f'max-width:320px;background:{_hover_bg};color:{_mt};'
             f'white-space:pre-line;font-family:Microsoft YaHei,sans-serif">'
             f'</div>')
-        parts.append('<scr' + 'ipt>(function(){'
+        _overlay.append('<scr' + 'ipt>(function(){'
                      'var t=document.getElementById("stdraw-xwitness-tip");'
                      'if(!t)return;'
                      'var els=document.querySelectorAll(".stdraw-xwitness-hit");'
@@ -406,7 +415,7 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         label = html.escape(labels.get(v, v))
         value = html.escape(values.get(v, ""))
         parts.append(f'<g data-node="{html.escape(v, quote=True)}">'
-                     f'<rect x="{x - w / 2:.0f}" y="{y - card_h / 2:.0f}" width="{w}" '
+                      f'<rect x="{x - w / 2:.0f}" y="{y - card_h / 2:.0f}" width="{w}" '
                      f'height="{card_h}" rx="{T["card_radius"]}" fill="{T["card_fill"]}" stroke="{T["card_stroke"]}" '
                      f'stroke-width="1.5"/>'
                      f'<text x="{x:.0f}" y="{y + 4:.0f}" text-anchor="middle" '
@@ -418,6 +427,10 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                          f'fill="{T["card_value"]}">{value}</text>')
         parts.append('</g>')
     parts.append('</svg>')
+    # L1 overlay (tooltip div + hover script) goes after the svg element —
+    # inside the svg a raw <div> breaks out of foreign content and pops
+    # every later node <g> out of the svg (card loss).
+    parts.extend(_overlay)
     # ── Interactive layer: toolbar + embedded data + script ──
     # Zero dependencies, zero network; without dragging the initial geometry is
     # byte-identical to the static rendering (the script only attaches

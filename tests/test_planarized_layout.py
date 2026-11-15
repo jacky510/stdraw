@@ -209,6 +209,40 @@ class TestD2MarkerSpec(unittest.TestCase):
                    for i in range(4)]
         self.assertEqual(self._render(markers), self._render(markers))
 
+    def test_overlay_emitted_after_svg_no_breakout(self):
+        # regression (marker acceptance rework MAJOR-1): the tooltip <div> +
+        # <script> were appended before </svg>; the HTML parser treats a
+        # <div> inside <svg> as foreign content and pops every later node
+        # <g> out of the svg (all node cards lost on the real page).
+        out = self._render([self._mk(1, 100.0, 50.0)])
+        svg = out[out.index("<svg"):out.index("</svg>")]
+        self.assertNotIn("<div", svg)
+        self.assertNotIn("<scr" + "ipt", svg)
+        self.assertEqual(svg.count("<g data-node="), 2)
+        # overlay (div + script) lands after the svg close
+        self.assertLess(out.index("</svg>"),
+                        out.index('id="stdraw-xwitness-tip"'))
+        # card-over-marker layer order: markers emitted before node cards
+        # inside the svg (later elements paint on top)
+        self.assertLess(svg.index('class="stdraw-xwitness"'),
+                        svg.index("<g data-node="))
+
+    def test_tip_text_uses_raw_times_char(self):
+        # regression (marker acceptance rework MAJOR-2): the separator was the
+        # entity literal "&times;", then html.escape doubled the & — and
+        # textContent never decodes entities, so the tooltip rendered the
+        # literal "&times;".  The tip must carry raw text; the single
+        # html.escape happens at the data-tip attribute site.
+        m1 = self._mk(1, 100.0, 50.0)
+        m1["edges"] = [("a", "b"), ("b", "a")]
+        out = self._render([m1])
+        tip = out.split('data-tip="')[1].split('"')[0]
+        self.assertIn("×", tip)
+        self.assertNotIn("&times;", tip)
+        self.assertNotIn("&amp;", tip)
+        self.assertIn("witness #1", tip)
+        self.assertIn("cr UB=3 (LB=3, gap=0)", tip)
+
 
 class TestL2Honesty(unittest.TestCase):
     def test_cap_exceeded_defers_honestly(self):
