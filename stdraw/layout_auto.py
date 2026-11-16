@@ -41,6 +41,14 @@ from .anchors import nearest_anchor as _nearest_anchor
 # dense graph that passes the hard gates with zero regressions.
 ANCHOR_SNAP_DENSE_E_OVER_N = 1.6
 
+# Reverse-form gate scope (jacky ruling 2026-11-15; widened 2026-11-16 to
+# spine-wing/ring-cycle once manual ground truth landed in
+# benchmarks/manual): a structural form that was detected but abandoned
+# (trial gate fail -> layered fallback) degrades the certificate
+# (form_fallback meta -> metrics.py topology_form_fallback gate + grade
+# uncertified) instead of falling back silently.
+_FORM_FALLBACK_MODES = ("radial", "spine-wing", "ring-cycle")
+
 
 def _clone_route(rt):
     """Deep copy of one route dict (points/ctrl/vg_corners/vg_fillets only --
@@ -1650,7 +1658,8 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
     # item 5: reduce the trigger-template black-box feel). Recording only — the
     # decision logic below is untouched, so non-hit paths stay byte-identical.
     _mode_rules = []
-    # reverse-form gate record (radial-scoped; see the mode chain below) --
+    # reverse-form gate record (scope: _FORM_FALLBACK_MODES; see the mode
+    # chain below) --
     # initialized here so the manual path (which skips the whole mode
     # chain) still reaches the meta assembly safely
     _form_fallbacks = []
@@ -1678,11 +1687,13 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
                 # reverse-form gate: the form was detected, attempted, and
                 # abandoned -> the layered fallback must carry a cost
                 # (certificate degrade; see the form_fallback meta block).
-                # radial only -- the audit (docs/layout-modes.md) shows
-                # spine-wing/ring-cycle fallbacks fire on the random
-                # corpus today; widening this to those modes flips their
-                # certificates against the frozen A-tier byte gate
-                if name == "radial":
+                # Widened 2026-11-16 to spine-wing/ring-cycle on manual
+                # ground truth (benchmarks/manual): the affected graphs
+                # measure grade=uncertified already, so the widening flips
+                # bytes (form_fallback meta + the topology_form_fallback
+                # gate row), not grades; the artifact regeneration face is
+                # registered and concentrated at the version closure.
+                if name in _FORM_FALLBACK_MODES:
                     _form_fallbacks.append({"mode": name,
                                             "reason": ((trial_why or {}).get("reason")
                                                        or "trial gate failed")})
@@ -1706,20 +1717,21 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
         _tw_sym, _tw_bw, _tw_sw = {}, {}, {}
         _tw_comb, _tw_col, _tw_ring = {}, {}, {}
         _tw_rad = {}
-        # reverse-form gate (jacky ruling 2026-11-15): when a structural
-        # form detector fires but its trial gate fails, the fallback to
-        # layered is NOT silent anymore -- the abandoned reading is
-        # recorded in _form_fallbacks (initialized above the manual
-        # branch) and the certificate degrades (metrics.py: grade
+        # reverse-form gate (jacky ruling 2026-11-15, widened 2026-11-16):
+        # when a structural form detector fires but its trial gate fails,
+        # the fallback to layered is NOT silent anymore -- the abandoned
+        # reading is recorded in _form_fallbacks (initialized above the
+        # manual branch) and the certificate degrades (metrics.py: grade
         # uncertified + topology_form_fallback gate).  "Form misplacement
         # is disqualifying before any hygiene metric."
-        # Scope: the ruling names the star/fan family explicitly (nail:
-        # "a star/fan topology that outputs layered geometry = gate
-        # fail").  spine-wing/ring-cycle fallbacks DO occur on the random
-        # corpus today (measured 2026-11-15: several random-n10 graphs) --
-        # widening FORM_FALLBACK_MODES would flip their certificates and
-        # break the frozen A-tier byte gate, a jacky-conflict-class
-        # decision, so the wider modes stay record-only in the audit.
+        # Scope: _FORM_FALLBACK_MODES = radial + spine-wing + ring-cycle.
+        # The spine/ring widening was measured against the manual fixtures
+        # before landing (brand-flywheel CV 0.0802 / i05 CV 0.4626 -- the
+        # old uncalibrated 0.05 ring gates rejected the ground truth
+        # itself); the affected random-corpus graphs already grade
+        # uncertified, so the widening flips bytes only.  Artifact
+        # regeneration for the affected corpus face is concentrated at the
+        # version closure (no in-flight flip of stored certificates).
         _chain_cap = len(nodes) <= 12
         if not _chain_cap:
             _cap_reason = (f"n={len(nodes)} > 12 — structural modes cap at "

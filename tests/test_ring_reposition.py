@@ -77,8 +77,8 @@ def test_epidemic_rescued_to_best(tmp_path):
     assert rec["crossings_after"] == 0 and rec["visual_crossings_after"] == 0
     assert rec["node"] in rec["moved_nodes"]
     # the demotion kept the ring gates green on the re-fit polygon
-    assert cert["gates"].get("ring_spacing_cv_le_005") is True
-    assert cert["gates"].get("ring_template_fit_le_005") is True
+    assert cert["gates"].get("ring_spacing_cv_le_050") is True
+    assert cert["gates"].get("ring_template_fit_le_070") is True
 
 
 def test_success_rescued_to_best(tmp_path):

@@ -71,6 +71,55 @@ placement) and relative geometric regularities as the samples.
   uniform radius (fan-d17: 303px vs the old chord caliber 414px) and
   keeps one ring across the whole n<=20 fan family.
 
+## brand-flywheel-manual-layout.json
+
+- **Origin**: exported via "Export layout" after jacky hand-dragged the
+  nodes on the stdraw demo-2d interactive page (2026-11-16).
+- **Graph**: `brand-flywheel` (Brand Asset Flywheel; 6-node ring-cycle
+  certified family).
+- **viewBox**: 488×480.
+- **Structural regularities** (measured with the certificate formulas):
+  - single ring covering all 6 nodes, chord spacing CV 0.0802,
+    regular-polygon deviation 0.1197 — a hand-drawn GOOD ring;
+  - the former uncalibrated 0.05 gates REJECTED this fixture itself
+    (the same incident class as the fan azimuth caliber).
+- **Caliber role**: good-ring anchor for the ring form battery
+  (`ringlayout.RING_SPACING_CV_MAX / RING_TEMPLATE_FIT_MAX`,
+  recalibrated 2026-11-16).
+
+## random-n10-i05-manual-layout.json
+
+- **Origin**: exported via "Export layout" after jacky hand-dragged the
+  nodes on the stdraw demo-2d interactive page (2026-11-16). The graph
+  is ring-detected (k=9 covering 9/10 nodes) whose engine trial fails
+  (crossings leg) and falls back to layered — jacky dragged his own
+  ring reading of it.
+- **Graph**: `random-n10-i05` (random corpus, E/N=1.60).
+- **viewBox**: 528×512.
+- **Structural regularities** (measured): single 9-node ring, chord
+  spacing CV 0.4626, regular-polygon deviation 0.6922 — the upper band
+  of a freehand ring reading.
+- **Caliber role**: migration/upper-band fixture for the ring form
+  battery (together with brand-flywheel below the recalibrated gates).
+
+## random-n10-i00-manual-layout.json
+
+- **Origin**: exported via "Export layout" after jacky hand-dragged the
+  nodes on the stdraw demo-2d interactive page (2026-11-16). The graph
+  is spine-wing-detected (hub pair N06/N07) whose engine trial fails
+  (hard-gate proxy) and falls back to layered.
+- **Graph**: `random-n10-i00` (random corpus).
+- **viewBox**: 568×528.
+- **Structural regularities** (measured): the freehand reading shows NO
+  constructed spine-wing geometry (spine axis deviation 115px, wing
+  midline deviation 172px) — a human "shape is right" layout, not a
+  constructed one.
+- **Caliber role**: spine-wing migration evidence: the 2px constructed
+  battery band stays engine-side (verified against classic-cld's own
+  6px sample, unchanged); the fixture anchors the spine-wing
+  reverse-form-gate face (detected -> trial failed -> form_fallback
+  meta instead of a silent layered fallback).
+
 ## Historical incident (recurrence guard)
 
 v0.7.1 (ref-scrubbed): the engine-side spine-wing layout had landed and was

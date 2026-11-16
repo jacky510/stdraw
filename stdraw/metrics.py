@@ -1018,6 +1018,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # branch: every counted crossing also counts in visual_crossings, so
     # hard_ok already forces 0).
     if ring_mode:
+        from . import ringlayout as _ringlayout
         # Ring caliber gates: on-ring equal spacing CV + template fit error
         # (within 2px quantization tolerance ~= 0)
         g = {
@@ -1026,10 +1027,19 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "anchors_smooth": metrics["anchor_violations"] == 0,
             "anchors_standard": metrics["anchor_standard_violations"] == 0,
             "min_gap_ge_16": metrics["min_card_gap"] >= 16,
-            "ring_spacing_cv_le_005": (metrics["ring_spacing_cv"] is not None
-                                       and metrics["ring_spacing_cv"] <= 0.05),
-            "ring_template_fit_le_005": (metrics["ring_template_deviation"] is not None
-                                         and metrics["ring_template_deviation"] <= 0.05),
+            # Ring regularity gates -- recalibrated 2026-11-16 against the
+            # manual ground truth (benchmarks/manual brand-flywheel +
+            # random-n10-i05): thresholds = the ringlayout manual-band
+            # constants (single source).  The former 0.05 calibers were
+            # uncalibrated and REJECTED jacky's hand-drawn good ring
+            # itself (brand-flywheel CV 0.0802 / deviation 0.1197).
+            "ring_spacing_cv_le_050": (metrics["ring_spacing_cv"] is not None
+                                       and metrics["ring_spacing_cv"]
+                                       <= _ringlayout.RING_SPACING_CV_MAX),
+            "ring_template_fit_le_070": (
+                metrics["ring_template_deviation"] is not None
+                and metrics["ring_template_deviation"]
+                <= _ringlayout.RING_TEMPLATE_FIT_MAX),
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
@@ -1241,7 +1251,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     if ring_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
-                   g["ring_spacing_cv_le_005"] and g["ring_template_fit_le_005"])
+                   g["ring_spacing_cv_le_050"] and g["ring_template_fit_le_070"])
     elif radial_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["radial_min_gap_ge_pack_floor"] and

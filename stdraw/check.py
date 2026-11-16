@@ -524,8 +524,14 @@ def auto_geometry_report(layout: dict) -> dict:
             from . import regularity as _reg
             rdev = _reg.cycle_polygon_deviation(
                 {v: (nodes[v]["x"], nodes[v]["y"]) for v in rnodes}, rnodes)
-            ring_ok = rsv <= 0.05 and rdev <= 0.05
-            ring_detail = f"on-ring equal spacing CV={rsv:.4f}, regular-polygon deviation D={rdev:.4f} (gate <=0.05)"
+            from . import ringlayout as _ringlayout
+            ring_ok = (rsv <= _ringlayout.RING_SPACING_CV_MAX
+                       and rdev <= _ringlayout.RING_TEMPLATE_FIT_MAX)
+            ring_detail = (f"on-ring equal spacing CV={rsv:.4f}, "
+                           f"regular-polygon deviation D={rdev:.4f} "
+                           f"(gate CV<={_ringlayout.RING_SPACING_CV_MAX:.2f}, "
+                           f"D<={_ringlayout.RING_TEMPLATE_FIT_MAX:.2f}; "
+                           "manual band 2026-11-16)")
         else:
             ring_ok, ring_detail = False, "meta.ring.nodes missing / fewer than 3 nodes"
         chk("9. ring placement regularity (on-ring equal spacing CV + template fit)", ring_ok, ring_detail)

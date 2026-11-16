@@ -115,8 +115,8 @@ HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
 # to ring criteria (row alignment / column snap don't apply to rings; never
 # misjudge a ring under row criteria)
 RING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
-                   "min_gap_ge_16", "ring_spacing_cv_le_005",
-                   "ring_template_fit_le_005", "mutual_pairs_separated",
+                   "min_gap_ge_16", "ring_spacing_cv_le_050",
+                   "ring_template_fit_le_070", "mutual_pairs_separated",
                    "lines_no_coincidence",
                       "anchors_standard",
                       "visual_crossings_zero")

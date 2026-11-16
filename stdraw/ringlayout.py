@@ -44,6 +44,19 @@ import math
 from collections import defaultdict
 
 MAX_RING_N = 12            # trigger upper bound: small graphs
+
+# Ring form battery manual band (2026-11-16 recalibration, kanban task on
+# the silent-fallback audit): the former 0.05 gates were uncalibrated and
+# REJECTED the operator's own hand-drawn good ring themselves --
+# benchmarks/manual/brand-flywheel-manual-layout.json measures chord
+# spacing CV 0.0802 and regular-polygon deviation 0.1197, and the
+# migration fixture random-n10-i05 (hand-drawn ring reading of a
+# ring-detected graph) measures CV 0.4626 / deviation 0.6922.  Same
+# discipline as the radial battery (radellayout manual-band constants):
+# thresholds = the fixtures' measured upper band, rounded up -- the band
+# reads the ground truth, not the old engine's quantization floor.
+RING_SPACING_CV_MAX = 0.50
+RING_TEMPLATE_FIT_MAX = 0.70
 COVER_SLACK = 2            # main ring covers >= n - 2
 CYCLE_EDGE_RATIO = 0.90    # ring-edge (non-bridge) ratio threshold (OR branch)
 DFS_STEP_CAP = 2_000_000   # simple-loop enumeration step cap (deterministic: operation-count criterion)

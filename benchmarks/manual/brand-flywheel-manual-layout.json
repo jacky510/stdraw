@@ -1,0 +1,93 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "品牌资产飞轮",
+ "viewBox": [
+  0,
+  0,
+  488,
+  480
+ ],
+ "nodes": {
+  "ad_spend": {
+   "x": 392,
+   "y": 156
+  },
+  "ad_effect": {
+   "x": 244,
+   "y": 70
+  },
+  "awareness": {
+   "x": 76,
+   "y": 148
+  },
+  "sales": {
+   "x": 245,
+   "y": 405
+  },
+  "budget": {
+   "x": 393,
+   "y": 311
+  },
+  "wom": {
+   "x": 75,
+   "y": 308
+  }
+ },
+ "edges": [
+  {
+   "a": "ad_spend",
+   "b": "ad_effect",
+   "style": "auto",
+   "anchors": {
+    "src": "n",
+    "dst": "e"
+   }
+  },
+  {
+   "a": "ad_effect",
+   "b": "awareness",
+   "style": "free",
+   "anchors": {
+    "src": "s",
+    "dst": "e"
+   }
+  },
+  {
+   "a": "awareness",
+   "b": "sales",
+   "style": "auto",
+   "anchors": {
+    "src": "se",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "sales",
+   "b": "budget",
+   "style": "auto",
+   "anchors": {
+    "src": "e",
+    "dst": "s"
+   }
+  },
+  {
+   "a": "sales",
+   "b": "wom",
+   "style": "auto",
+   "anchors": {
+    "src": "w",
+    "dst": "s"
+   }
+  },
+  {
+   "a": "awareness",
+   "b": "ad_effect",
+   "style": "straight",
+   "anchors": {
+    "src": "n",
+    "dst": "w"
+   }
+  }
+ ]
+}
