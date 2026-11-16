@@ -176,10 +176,15 @@ neighborhood search:
   candidate pool (straight/arc first-class; mutual pairs crowding<->quickfix /
   crowding<->fundamental ride the Router mutual corridors >= 4px apart).
 - **Trial gate**: reuses `_constructed_gates` (press / clearance / anchors /
-  card gap / mutual separation / crossings <= 2); on failure, silent fallback,
-  negatives byte-stable.
+  card gap / mutual separation / crossings <= 2); on failure, silent fallback
+  (since 2026-11-17 spine-wing is inside the widened reverse-form gate
+  `_FORM_FALLBACK_MODES`: the fallback is no longer silent — it records the
+  `form_fallback` meta plus the certificate rejection gate row; see the
+  "Silent-fallback audit" section of the Chinese edition).
 - **Certificate regularity gates (equivalent caliber)**: for the spine+wing
-  shape, ring's "CV <= 0.05 / template fit <= 0.05" caliber becomes — **spine
+  shape, ring's equal-spacing/template-fit caliber (manual-calibrated on
+  2026-11-17 to CV <= 0.50 / template fit <= 0.70, single source
+  ringlayout.py) becomes — **spine
   x alignment <= 2px + wing midline hug <= 2px + mirror-pair error <= 2px**
   (classic-cld measured 0px on all three; crossings are a reported soft
   target; determinism carried by byte-identical CLI double runs). The caliber
@@ -429,7 +434,7 @@ geometrically equivalent (mirror images).
 
 | Mode | Regularity gates |
 |---|---|
-| ring-cycle | on-ring equal-spacing CV <= 0.05 + regular-polygon template fit <= 0.05 |
+| ring-cycle | on-ring equal-spacing CV <= 0.50 + regular-polygon template fit <= 0.70 (manual-calibrated 2026-11-17; `RING_SPACING_CV_MAX` / `RING_TEMPLATE_FIT_MAX` in ringlayout.py) |
 | spine-wing | spine x alignment <= 2px + wing midline hug <= 2px + mirror-pair error <= 2px |
 | column-chain | spine column-axis deviation <= 2px + uniform spine row pitch |
 | symmetric | mirror-axis error <= 2px |

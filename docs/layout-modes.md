@@ -24,7 +24,10 @@
 
 每个新模式带**试验闸门**：构造排布后跑同一布线器复核硬门代理（交叉≤2、
 压线=0、净距≥16、锚点平滑、互环分离、卡距≥16），任一不过**静默回退**
-下一优先级——回退路径输出与不触发的图完全一致（负例逐字节不变）。
+下一优先级——回退路径输出与不触发的图完全一致（负例逐字节不变；
+例外：命中反向形态门的模式——radial 自 2026-11-15、spine-wing/ring-cycle
+自 1f229b4——回退时落 `form_fallback` meta + 拒证门行，字节随 B 面漂移，
+见「静默回退审计」与「反向门扩权后的翻转面登记」节）。
 
 ### 模式决策链留痕（mode_decision_trace，ref-scrubbed）
 
@@ -89,21 +92,47 @@
   **拒证降级**（grade=uncertified + `topology_form_fallback` 门行），
   永不因几何卫生干净而 best——形态错位先于一切卫生指标。
 
-### 静默回退审计（2026-11-15，全形态排查）
+### 静默回退审计（2026-11-15 全形态排查；2026-11-17 按 1f229b4 双腿 sweep 勘误）
 
-「试验闸门失败→静默回退」路径全档排查（跑通全部 100 张语料图实测）：
+「试验闸门失败→静默回退」路径全档排查（跑通全部 100 张语料图实测；命中
+清单 2026-11-17 按 1f229b4 的 42 图双腿 sweep 逐文件 sha256 实测勘误——
+23 图漂移/18 零漂移，证据 diff_full.json 逐图 `fallback_after` 的
+mode_decision_trace）：
 
 | 形态档 | 语料实测命中-失败-回退 | 处置 |
 |---|---|---|
 | radial（星型/fan） | 0 命中（detect_radial 0/100） | **反向门生效**：命中即封住静默回退（回退=拒证降级），本卡落地 |
-| spine-wing（纵柱+翼位） | 4 图（random-n10 i00/i01/i03/i06）检测命中→trial 失败→静默回退分层 | **维持现状**：通用降级会翻转这些图的证书、击穿 A 档冻结字节门——属「与既有拍板冲突」类，须 jacky/default 裁决后另卡处置，本卡只登记不扩权 |
-| ring-cycle（环形） | 6 图（random-n10 i01/i04/i05/i06/i07）检测命中→trial 失败→静默回退分层 | 同上，登记待裁决 |
+| spine-wing（纵柱+翼位） | 检测命中 8 图（random-n10 i00/i01/i03/i06/i08/i11/i14/i18）→trial 失败；**最终 layered 4 张 = i00/i01/i06/i14**（勘误：原载第 4 张 i03 有误——i03 最终交付 ring-cycle 携 spine 弃读，layered 第 4 张实为 i14）。i03/i08/i18 最终交付 ring-cycle；i11 等级翻转见下节 | 原载「维持现状、登记待裁决」→**已裁决落地**：1f229b4 反向门扩权（`_FORM_FALLBACK_MODES` 含 spine-wing），回退不再静默——meta 落 `form_fallback` + 证书 `topology_form_fallback` 门行 |
+| ring-cycle（环形） | 检测命中→trial 失败→**最终 layered 实测 7 张**（random-n10 i01/i04/i05/i06/i07/i12/i14；勘误：原载「6 图」却只列 5 id，自相矛盾——漏 i12，实测 7） | 同上，1f229b4 反向门扩权（`_FORM_FALLBACK_MODES` 含 ring-cycle） |
 | symmetric/bowtie/column/comb | 0 命中-失败 | 无回退路径 |
 
 裁决依据记录：jacky 2026-11-15 反向门拍板的点名对象是星型/fan
 （「一个方框有多条连线……那它就在中间，其他方框围着它」）；spine-wing
 与 ring-cycle 的回退在 random 语料上是既有已交付形态，扩权降级与
-A 档零漂移硬限抵触，按冲突协议回 jacky，不自行变通。
+A 档零漂移硬限抵触，按冲突协议回 jacky，不自行变通。**2026-11-17 手拉真值
+形态电池落地（commit 1f229b4）**：实测反推 ring 电池阈值
+（jacky 亲手好环 brand-flywheel chord spacing CV=0.0802/模板偏差 0.1197
+被旧 0.05 门拒证；自由手拉环上界 random-n10-i05 CV=0.4626/偏差 0.6922），
+新门 RING_SPACING_CV_MAX=0.50 / RING_TEMPLATE_FIT_MAX=0.70 单一来源
+ringlayout.py（metrics/check/ci_checks/tests 四处同源）；spine 2px 构造带
+实测核验不扩带（random-n10-i00 手拉 spine 轴差 115px/中线差 172px，
+非构造几何走角色分组等价通道）。
+
+### 反向门扩权后的翻转面登记（2026-11-17，版本收口前置）
+
+**字节面 vs 等级面（勘误原「通用降级会翻转这些图的证书」表述）**：8 张
+最终 layered 声明面（i00/i01/i04/i05/i06/i07/i12/i14）在 1f229b4 之前已全
+uncertified——反向门翻转的是**字节**（form_fallback meta +
+topology_form_fallback 门行；cert/demo/geometry_report 三文件，42 图双腿
+实测 23 图漂移），**不翻转等级**。A 面 ring 门行改名 le_005→le_050/le_070
+（7 classic best：arms-race/brand-flywheel/debt-spiral/fishing-collapse/
+induced-demand/soil-erosion/success-to-the-successful + i02/i13/i15/i17
+uncertified ring）同样等级全不变。
+
+**唯一等级翻转 = random-n10-i11：ring-cycle best→uncertified**（spine
+检测命中但 trial 弃读，反向门裁定形态错位先于一切卫生指标）——存量证书
+再生属版本收口卡，须 jacky 在场批复或改判（改判选项：B 面只记 meta 不
+降级），本档与常规改动均不得自动翻转存量等级。
 
 ### 单节点零交叉邻域重定位（ring-cycle 后处理，2026-11-13）
 
@@ -187,9 +216,12 @@ D3 仍待拍板），生成侧「≤2 即满意」与验收侧 `visual_crossings
   不走候选池）；其余边走同一 Router 候选池（直线/弧线一等；互环对
   crowding↔quickfix / crowding↔fundamental 走 Router 互环走廊 ≥4px 分离）。
 - **试验闸门**：复用 `_constructed_gates`（压线/净距/锚点/卡距/互环分离/
-  交叉≤2），不过静默回退，负例逐字节不变。
-- **证书规律门（等价门）**：对纵柱+翼位形态，ring 的「CV≤0.05 / 模板拟合
-  ≤0.05」等价口径为——**纵柱 x 对齐 ≤2px + 翼位中线贴靠 ≤2px + 镜像对
+  交叉≤2），不过静默回退（2026-11-17 起 spine-wing 在 `_FORM_FALLBACK_MODES`
+  反向门扩权内：回退不再静默，落 `form_fallback` meta + 拒证门行，见
+  「静默回退审计」节；本节切口期的 classic-cld 等存量交付不受影响）。
+- **证书规律门（等价门）**：对纵柱+翼位形态，ring 的等距/模板拟合口径
+  （2026-11-17 手拉校准后 CV≤0.50 / 模板拟合≤0.70，见 ringlayout.py
+  单一来源）的等价口径为——**纵柱 x 对齐 ≤2px + 翼位中线贴靠 ≤2px + 镜像对
   误差 ≤2px**（classic-cld 实测三者全 0px；交叉为软目标报告项；确定性由
   CLI 双跑逐字节一致承载）。本步只对 classic-cld 一张切口径，其余 ring 图
   零漂移可回归验证。
@@ -365,7 +397,7 @@ id 顺序）驱动；同构图的对应节点同色 → 对应槽位。已验证
 
 | 模式 | 规律性门 |
 |---|---|
-| ring-cycle | 环上等间距 CV ≤0.05 + 正多边形模板拟合 ≤0.05 |
+| ring-cycle | 环上等间距 CV ≤0.50 + 正多边形模板拟合 ≤0.70（2026-11-17 手拉校准；单一来源 ringlayout.py 的 RING_SPACING_CV_MAX / RING_TEMPLATE_FIT_MAX） |
 | spine-wing | 纵柱 x 对齐 ≤2px + 翼位中线贴靠 ≤2px + 镜像对误差 ≤2px |
 | column-chain | 主链列轴偏差 ≤2px + 主链行距恒等 |
 | symmetric | 镜像轴误差 ≤2px |
