@@ -130,7 +130,12 @@ content.
    >= 0.9 AND k>=5 or covering the whole graph) -> layered; every mode has a
    **trial gate** (after construction, placement re-runs the same router's
    hard-gate proxies for review), and any failure **silently falls back** to
-   the next tier, with negative cases byte-identical. Full rules in
+   the next tier, with negative cases byte-identical — exception:
+   for radial / spine-wing / ring-cycle the reverse-form gate makes
+   the fallback non-silent (layout meta records `form_fallback` and
+   the certificate gains a `topology_form_fallback` row with an
+   honest grade downgrade; see the silent-fallback audit in
+   docs/layout-modes.md). Full rules in
    [docs/layout-modes.md](docs/layout-modes.md) (Chinese; English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md)).
    - **Placement hard gates**: box-over-line = 0 (any angle, 1px margin),
      edge-box clearance >= 16px, smooth anchors, card gap >= 16px (36px
@@ -446,10 +451,27 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.8.1** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.8.2** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
 
+- **v0.8.2 version closure** (ring form battery + reverse-form gate
+  widening; 42-graph stock-certificate regeneration): ring regularity
+  thresholds re-derived from hand-pulled ring truth — the old 0.05 gate
+  rejected jacky's own good ring (brand-flywheel CV 0.0802 / template fit
+  0.1197); single source stdraw/ringlayout.py: RING_SPACING_CV_MAX 0.50 /
+  RING_TEMPLATE_FIT_MAX 0.70, certificate gate rows le_005 -> le_050 /
+  le_070 (metrics / check / ci_checks / tests consume the same source);
+  reverse-form gate widened to spine-wing / ring-cycle — trial-gate
+  fallback records `form_fallback` meta + `topology_form_fallback`
+  certificate row with honest downgrade (form misfit precedes every
+  hygiene metric); A-tier 42-graph stock certificate records regenerated
+  at closure: 23 graphs byte-drift (11 gate-row renames + 11 form_fallback
+  meta faces, grades unchanged), one approved grade flip random-n10-i11
+  ring-cycle best -> uncertified (jacky 2026-11-17, option A); also
+  landed since 0.8.1: exact content-keyed memoization across polish
+  candidate worlds (byte-identical, faster sweeps) and the L1 tooltip
+  overlay emitted after </svg> (node cards stay inside the svg).
 - **v0.8.0 version closure** (UI-A theme baseline; declared major-version
   visual baseline, spec = docs/ui-theme-spec-a.md): 2D light ("tracing
   paper") and dark ("midnight ink") token tables redefined in
