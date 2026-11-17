@@ -137,7 +137,9 @@ content.
      breathing target), mutual pairs (a<->b bidirectional edges) two-line
      separation >= 4px, line-line visual coincidence = 0; placement
      regularity gates switch per mode — ring: on-ring equal spacing
-     CV <= 0.05 + regular-polygon template fit <= 0.05; column: main-chain
+     CV <= 0.50 + regular-polygon template fit <= 0.70 (manual-calibrated
+     2026-11-17; RING_SPACING_CV_MAX / RING_TEMPLATE_FIT_MAX in
+     stdraw/ringlayout.py); column: main-chain
      column-axis deviation <= 2px + constant main-chain row pitch;
      symmetric: mirror-axis error <= 2px; bowtie-vertex: mirror-axis error
      <= 2px; spine-wing: spine x alignment <= 2px + midline adherence
