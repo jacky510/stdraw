@@ -73,18 +73,16 @@ def main():
               f"engine={meta['position_engine']} status={status}")
         assert dt <= budget, (
             f"complexity budget: n={n} wall clock {dt:.1f}s > {budget:.0f}s cap")
-    # scaling-class gate: t20 <= 4 * t10 + 60s (see docstring grounding)
-    ratio = times[20] / max(times[10], 1e-9)
-    limit = RATIO_CAP * times[10] + RATIO_SLACK_S
-    print(f"  scaling: t20/t10 = {ratio:.2f} "
-          f"(cap {RATIO_CAP}x + {RATIO_SLACK_S:.0f}s -> {limit:.1f}s)")
-    assert times[20] <= limit, (
-        f"complexity budget: scaling class blown -- t20 {times[20]:.1f}s "
-        f"exceeds {RATIO_CAP}x * t10 + {RATIO_SLACK_S:.0f}s "
-        f"(ratio {ratio:.2f}); breadth expansion likely re-inflated complexity")
+    # scaling-class gate REMOVED (jacky 2026-11-18, option A): the 4x+t10
+    # envelope was grounded on pre-planarization timings (n20 97-144s);
+    # planarization adds a ~700s structural floor to any non-planar L1 run,
+    # so the ratio is no longer proportional across tiers. Absolute budgets
+    # above remain the regression class guard (dense-snap 7.6x inflation
+    # still trips the n20 900s cap).
+    print(f"  scaling: t20/t10 = {times[20] / max(times[10], 1e-9):.2f} "
+          "(recorded, no envelope gate; absolute budgets are the gate)")
     assert meta_seen["position_engine"] == "cp-sat", meta_seen
-    print("OK  test_complexity_budget: absolute budgets + quadratic "
-          "scaling envelope hold")
+    print("OK  test_complexity_budget: absolute budgets hold")
     return 0
 
 
