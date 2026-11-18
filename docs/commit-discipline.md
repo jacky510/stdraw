@@ -7,6 +7,12 @@ agent — uses the author/committer identity
 jacky510 <jacky510@users.noreply.github.com>
 ```
 
+**Bot commits (explicit):** commits made by bot workers / automated agents are
+bound by the same identity rule — the **author AND committer email of every
+bot commit MUST be `jacky510@users.noreply.github.com`**. Agents must verify
+the repo-local config before committing and must never set a different email
+via `-c user.email=...`, env vars, or a rewritten identity.
+
 ## Why
 
 GitHub maps commit author emails to accounts. `jacky510@users.noreply.github.com`
