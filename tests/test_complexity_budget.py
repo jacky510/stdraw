@@ -6,21 +6,21 @@ cannot re-inflate complexity").
 
 Assertions (honest SKIP without ortools, same caliber as test_scalability):
   1. random-n10-i00 auto-v2 wall clock <= 350s   (REPORT S3 budget protocol:
-     "random n<=10 = 350s"; quiet dev box measured ~45-60s/graph post-WS5);
+     "random n<=10 = 350s");
   2. random-n20-i00 auto-v2 wall clock <= 900s   (the test_scalability cap,
-     jacky scope ruling 2026-11-14: n<=20, honest per-run downgrade cap);
-  3. scaling class: t(n20) <= 4 * t(n10) + 60s   (a quadratic envelope with
-     headroom). Grounding: quiet-box measurements give t20/t10 ~= 2.0-2.6
-     (n10 45-60s, n20 97-144s, REPORT.md section 222 note + S5 records), so
-     the gate carries >50% headroom while still catching the historical
-     regression class: the dense-snap first cut inflated n20 ~7.6x (126s ->
-     956.2s) while barely touching n10 -- that run scores ~19:1 and goes red
-     here.
+     jacky scope ruling 2026-11-14: n<=20, honest per-run downgrade cap).
 
-The gate measures wall clock, which varies with machine load; both budgets
-above already encode that slack (350s vs 60s measured, 900s vs 144s worst
-measured). The scaling-class gate is load-robust because contention inflates
-both sides of the ratio.
+Absolute budgets only. A quadratic scaling envelope (t20 <= 4*t10 + 60s)
+shipped in this batch was removed the same day (jacky 2026-11-18, option A):
+it was grounded on pre-planarization timings (n20 97-144s, ratio 2.0-2.6),
+but planarization adds a ~700s structural L2-fallback floor to n20 runs that
+n10 does not pay (quiet-box calibration 2026-11-18: n10 19.5-36.4s, n20
+545-838s, family ratio 20-40x), so the ratio measures graph-difficulty
+difference, not complexity scaling, and cannot pass on any quiet machine.
+The absolute n20 cap remains the regression-class guard: the historical
+dense-snap first cut ran 956.2s and would trip it. Re-introduce an envelope
+gate only after the planarization performance work (DeepSeek review deep
+closure item) lands.
 """
 import json
 import os
@@ -38,8 +38,6 @@ CASES = {
     20: os.path.join(REPO, "benchmarks", "corpus", "random", "random-n20-i00.cld"),
 }
 ABS_BUDGET_S = {10: 350.0, 20: 900.0}
-RATIO_CAP = 4.0
-RATIO_SLACK_S = 60.0
 
 
 def _run_auto(path):
@@ -73,15 +71,9 @@ def main():
               f"engine={meta['position_engine']} status={status}")
         assert dt <= budget, (
             f"complexity budget: n={n} wall clock {dt:.1f}s > {budget:.0f}s cap")
-    # scaling-class gate REMOVED (jacky 2026-11-18, option A): the 4x+t10
-    # envelope was grounded on pre-planarization timings (n20 97-144s);
-    # planarization adds a ~700s structural floor to any non-planar L1 run,
-    # so the ratio is no longer proportional across tiers. Absolute budgets
-    # above remain the regression class guard (dense-snap 7.6x inflation
-    # still trips the n20 900s cap).
+    assert meta_seen["position_engine"] == "cp-sat", meta_seen
     print(f"  scaling: t20/t10 = {times[20] / max(times[10], 1e-9):.2f} "
           "(recorded, no envelope gate; absolute budgets are the gate)")
-    assert meta_seen["position_engine"] == "cp-sat", meta_seen
     print("OK  test_complexity_budget: absolute budgets hold")
     return 0
 
