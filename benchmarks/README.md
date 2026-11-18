@@ -18,3 +18,12 @@ Aggregate: `tools/collect.py` → `REPORT.md` (per-graph tables).
 
 Honest boundary: the random-family n≥20 all-DNF was fixed by WS5 (CP-SAT deterministic time budget + exact-equivalence routing speedup; root cause and fix record in `REPORT.md §5`), but runtime remains 2–3 orders of magnitude slower than the baselines and random-family box-press/clearance are not 0; OGDF was not run on the same problem (§6). "Best"-claim wording follows REPORT §8 and is written into the repo README only after default's review.
 
+
+## Complexity budget hard gate (2026-11-18 closure batch)
+
+`tests/test_complexity_budget.py` is the size-x-time hard gate: absolute
+budgets (n10 <= 350s per the S3 protocol; n20 <= 900s per the scalability
+cap) plus a quadratic scaling envelope (t20 <= 4 x t10 + 60s, >50%
+headroom over the measured ~2.0-2.6 ratio; catches the dense-snap-class
+~7.6x n20 regression). Grounding numbers: REPORT.md S3/S5 and the section
+222 runtime-caliber note.
