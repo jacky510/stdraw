@@ -207,7 +207,7 @@ content.
    **draggable handles**, dragging pins the edge as user-anchored, and
    "Export layout" writes `edges[].waypoints` for anchored edges;
    `--from-layout` re-runs the same routing + certificate pipeline on manual
-   coordinates (hard-gate caliber unchanged, graded honestly);
+   coordinates (automatic-pipeline structural gates read N/A per the manual caliber — grading-contract.md §3.1; graded honestly on the remaining gates);
    `--compare-auto` additionally runs the automatic layout of the same graph
    and outputs the dual-certificate comparison `compare-auto.json`;
    `layout-diff` produces a three-layer diff (node displacement / structural
@@ -244,7 +244,7 @@ stdraw layout-diff <layout.json> <layout2.json> [--cld graph-source] [--diff-out
 | `--pitch` | 56 | row pitch px; raising it for small graphs (e.g. 62) makes the clearance gates easier |
 | `--name` | the DSL graph name | graph name in the certificate |
 | `--exact` | off | exact crossing-number layer: B&B squeeze computes cr(G) into the certificate exactness block (needs `stdraw[solver]`) |
-| `--from-layout` | — | manual layout JSON (a demo-2d.html "Export layout" product or a layout.json subset: node id->x,y + viewBox [+ edges[].waypoints]). Runs the same routing + certificate pipeline on manual coordinates, hard-gate caliber unchanged, graded honestly |
+| `--from-layout` | — | manual layout JSON (a demo-2d.html "Export layout" product or a layout.json subset: node id->x,y + viewBox [+ edges[].waypoints]). Runs the same routing + certificate pipeline on manual coordinates, automatic-pipeline structural gates read N/A per grading-contract.md §3.1, graded honestly on the remaining gates |
 | `--compare-auto` | off | with `--from-layout`: also runs the automatic layout of the same graph into `<outdir>-compare-auto/`, outputting the dual-certificate comparison `compare-auto.json` |
 | `--cld` | — | layout-diff: graph source (.cld/.json), enables the semantic layer (loop membership / cohesion) |
 | `--diff-out` | — | layout-diff: machine-readable JSON output path |
