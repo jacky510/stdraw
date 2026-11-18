@@ -93,7 +93,7 @@ Consequently:
 ### 3.2 Planarized non-planar graphs — the L1/L2 degrade ladder
 
 Non-planar cores (after degree 0/1 safe reduction) follow the degrade
-ladder of `docs/planarization-degrade-contract.md` (@ d71263a):
+ladder of `docs/planarization-degrade-contract.md` (@ 4e0cdec):
 
 - **L1** (planarization + witness drawing within CAP=min(3n,80) /
   deterministic operation budgets): the drawing is a straight-line planar

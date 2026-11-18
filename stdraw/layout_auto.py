@@ -1592,7 +1592,7 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
     Returns (l1_payload, cand): cand carries the shared state consumed by
     the routing optimization loop and the delivery assembly."""
     # planarization degrade ladder (docs/planarization-degrade-contract.md,
-    # @ d71263a): L0 = planar core -> untouched path below (zero drift by
+    # @ 4e0cdec): L0 = planar core -> untouched path below (zero drift by
     # construction); L1 = witness-marked planarized drawing (returned
     # directly); L2 = generic path + honest planarization_deferred record
     # attached to meta.  Manual (--from-layout) coordinates are never

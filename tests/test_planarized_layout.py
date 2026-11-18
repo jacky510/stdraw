@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Planarized 2D layer (L1/L2 degrade ladder) unit tests.
 
-Implementation basis: docs/planarization-degrade-contract.md (@ d71263a).
+Implementation basis: docs/planarization-degrade-contract.md (@ 4e0cdec).
 """
 import os
 import unittest

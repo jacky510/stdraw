@@ -26,7 +26,7 @@
 压线=0、净距≥16、锚点平滑、互环分离、卡距≥16），任一不过**静默回退**
 下一优先级——回退路径输出与不触发的图完全一致（负例逐字节不变；
 例外：命中反向形态门的模式——radial 自 2026-11-15、spine-wing/ring-cycle
-自 1f229b4——回退时落 `form_fallback` meta + 拒证门行，字节随 B 面漂移，
+自 64fa7db——回退时落 `form_fallback` meta + 拒证门行，字节随 B 面漂移，
 见「静默回退审计」与「反向门扩权后的翻转面登记」节）。
 
 ### 模式决策链留痕（mode_decision_trace，ref-scrubbed）
@@ -92,25 +92,25 @@
   **拒证降级**（grade=uncertified + `topology_form_fallback` 门行），
   永不因几何卫生干净而 best——形态错位先于一切卫生指标。
 
-### 静默回退审计（2026-11-15 全形态排查；2026-11-17 按 1f229b4 双腿 sweep 勘误）
+### 静默回退审计（2026-11-15 全形态排查；2026-11-17 按 64fa7db 双腿 sweep 勘误）
 
 「试验闸门失败→静默回退」路径全档排查（跑通全部 100 张语料图实测；命中
-清单 2026-11-17 按 1f229b4 的 42 图双腿 sweep 逐文件 sha256 实测勘误——
+清单 2026-11-17 按 64fa7db 的 42 图双腿 sweep 逐文件 sha256 实测勘误——
 23 图漂移/18 零漂移，证据 diff_full.json 逐图 `fallback_after` 的
 mode_decision_trace）：
 
 | 形态档 | 语料实测命中-失败-回退 | 处置 |
 |---|---|---|
 | radial（星型/fan） | 0 命中（detect_radial 0/100） | **反向门生效**：命中即封住静默回退（回退=拒证降级），本卡落地 |
-| spine-wing（纵柱+翼位） | 检测命中 8 图（random-n10 i00/i01/i03/i06/i08/i11/i14/i18）→trial 失败；**最终 layered 4 张 = i00/i01/i06/i14**（勘误：原载第 4 张 i03 有误——i03 最终交付 ring-cycle 携 spine 弃读，layered 第 4 张实为 i14）。i03/i08/i18 最终交付 ring-cycle；i11 等级翻转见下节 | 原载「维持现状、登记待裁决」→**已裁决落地**：1f229b4 反向门扩权（`_FORM_FALLBACK_MODES` 含 spine-wing），回退不再静默——meta 落 `form_fallback` + 证书 `topology_form_fallback` 门行 |
-| ring-cycle（环形） | 检测命中→trial 失败→**最终 layered 实测 7 张**（random-n10 i01/i04/i05/i06/i07/i12/i14；勘误：原载「6 图」却只列 5 id，自相矛盾——漏 i12，实测 7） | 同上，1f229b4 反向门扩权（`_FORM_FALLBACK_MODES` 含 ring-cycle） |
+| spine-wing（纵柱+翼位） | 检测命中 8 图（random-n10 i00/i01/i03/i06/i08/i11/i14/i18）→trial 失败；**最终 layered 4 张 = i00/i01/i06/i14**（勘误：原载第 4 张 i03 有误——i03 最终交付 ring-cycle 携 spine 弃读，layered 第 4 张实为 i14）。i03/i08/i18 最终交付 ring-cycle；i11 等级翻转见下节 | 原载「维持现状、登记待裁决」→**已裁决落地**：64fa7db 反向门扩权（`_FORM_FALLBACK_MODES` 含 spine-wing），回退不再静默——meta 落 `form_fallback` + 证书 `topology_form_fallback` 门行 |
+| ring-cycle（环形） | 检测命中→trial 失败→**最终 layered 实测 7 张**（random-n10 i01/i04/i05/i06/i07/i12/i14；勘误：原载「6 图」却只列 5 id，自相矛盾——漏 i12，实测 7） | 同上，64fa7db 反向门扩权（`_FORM_FALLBACK_MODES` 含 ring-cycle） |
 | symmetric/bowtie/column/comb | 0 命中-失败 | 无回退路径 |
 
 裁决依据记录：jacky 2026-11-15 反向门拍板的点名对象是星型/fan
 （「一个方框有多条连线……那它就在中间，其他方框围着它」）；spine-wing
 与 ring-cycle 的回退在 random 语料上是既有已交付形态，扩权降级与
 A 档零漂移硬限抵触，按冲突协议回 jacky，不自行变通。**2026-11-17 手拉真值
-形态电池落地（commit 1f229b4）**：实测反推 ring 电池阈值
+形态电池落地（commit 64fa7db）**：实测反推 ring 电池阈值
 （jacky 亲手好环 brand-flywheel chord spacing CV=0.0802/模板偏差 0.1197
 被旧 0.05 门拒证；自由手拉环上界 random-n10-i05 CV=0.4626/偏差 0.6922），
 新门 RING_SPACING_CV_MAX=0.50 / RING_TEMPLATE_FIT_MAX=0.70 单一来源
@@ -121,7 +121,7 @@ ringlayout.py（metrics/check/ci_checks/tests 四处同源）；spine 2px 构造
 ### 反向门扩权后的翻转面登记（2026-11-17，版本收口前置）
 
 **字节面 vs 等级面（勘误原「通用降级会翻转这些图的证书」表述）**：8 张
-最终 layered 声明面（i00/i01/i04/i05/i06/i07/i12/i14）在 1f229b4 之前已全
+最终 layered 声明面（i00/i01/i04/i05/i06/i07/i12/i14）在 64fa7db 之前已全
 uncertified——反向门翻转的是**字节**（form_fallback meta +
 topology_form_fallback 门行；cert/demo/geometry_report 三文件，42 图双腿
 实测 23 图漂移），**不翻转等级**。A 面 ring 门行改名 le_005→le_050/le_070

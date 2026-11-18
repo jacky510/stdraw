@@ -114,7 +114,7 @@ jobs:
         run: pytest -q tests/test_docs_consistency.py
 
   checks-pytest:
-    # Full pytest suite (6534e42) as its own parallel lane: heavy
+    # Full pytest suite (8de1d15) as its own parallel lane: heavy
     # (~18min locally, scalability wall-clock dominates) and must not
     # lengthen any other job.
     runs-on: ubuntu-latest

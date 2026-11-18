@@ -2,7 +2,7 @@
 """Planarized 2D layer for non-planar cores (degrade ladder L1/L2).
 
 Implementation basis (sole authority): docs/planarization-degrade-contract.md
-(@ d71263a, approved jacky 2026-11-14 D1-D4).  Oracle math is consumed
+(@ 4e0cdec, approved jacky 2026-11-14 D1-D4).  Oracle math is consumed
 READ-ONLY from crossing_exact.py (safe_reduce / heuristic planarization /
 embedding / oil insertion / _planarized_graph / _faces_from_rotation); the
 drawing kernel lives HERE so the ortho frozen files stay byte-untouched.
