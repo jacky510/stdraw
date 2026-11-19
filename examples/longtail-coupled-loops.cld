@@ -1,0 +1,44 @@
+# Candidate-pool smoke corpus: long-tail topology (plan v1.3.1 §12: the
+# quality long tail lives on the layered fallback path).
+# 14 nodes / two coupled 4-node loops + a balancing coupling loop + pendant
+# chains; no structural mode matches (n>12 caps the template detectors) ->
+# the incumbent falls to the layered path. This sample is the M1
+# blind-comparison fixture. All enumerated cycles are declared and their
+# R/B declarations match the polarity parity (loops-audit clean).
+graph "coupled loops long tail"
+
+var a1 "loopA demand"
+var a2 "loopA supply"
+var a3 "loopA price"
+var a4 "loopA investment"
+var b1 "loopB adoption"
+var b2 "loopB capacity"
+var b3 "loopB unit cost"
+var b4 "loopB margin"
+var p1 "ext shock"
+var p2 "depreciation"
+var p3 "word of mouth"
+var p4 "pricing pressure"
+var p5 "policy support"
+var p6 "market churn"
+
+a1 -> + a2 @loops L1,L4
+a2 -> + a3 @loops L1,L4
+a3 -> + a4 @loops L1,L4
+a4 -> + a1 @loops L1,L4
+b1 -> + b2 @loops L2
+b2 -> + b3 @loops L2,L4
+b3 -> + b4 @loops L2
+b4 -> + b1 @loops L2
+a2 -> + b2 @loops L4
+b3 -> - a3 @loops L4
+p1 -> - a1
+p2 -> - a4
+p3 -> + b1
+p4 -> - b4
+p5 -> + a4
+p6 -> - b3
+
+loop L1 "loop A" "R" [a1, a2, a3, a4]
+loop L2 "loop B" "R" [b1, b2, b3, b4]
+loop L4 "coupling loop" "B" [a1, a2, b2, b3, a3, a4]
