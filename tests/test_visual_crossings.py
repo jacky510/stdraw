@@ -4,7 +4,7 @@ intersection INCLUDING shared-endpoint fan pairs).
 
 Background: the graph-theory `crossings` caliber exempts shared-endpoint
 pairs, so a same-box fan whose lines cross mid-air shows an X on the
-drawing while the certificate reports crossings=0 (classic-cld pre-d4c1901
+drawing while the certificate reports crossings=0 (classic-cld pre-d568f54
 measured 8 such intersections from the delivered HTML paths). The repo's
 iron rule — honest grading, never masquerade as zero crossings — requires
 the certificate to see what the eye sees, as a reported (non-vetoing)
@@ -38,7 +38,7 @@ def _cert_for(path_or_dsl):
 class TestVisualCrossings(unittest.TestCase):
 
     def test_classic_cld_visual_zero(self):
-        # Acceptance anchor: post-d4c1901 classic-cld must stay 0 under the
+        # Acceptance anchor: post-d568f54 classic-cld must stay 0 under the
         # all-pairs (fan-inclusive) caliber — default's HTML-path recount
         # measured 8 pre-fix, 0 post-fix.
         cert = _cert_for(EXAMPLE)

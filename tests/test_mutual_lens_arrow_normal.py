@@ -31,7 +31,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXAMPLE = os.path.join(ROOT, "examples", "classic-cld-growth-and-burden.cld")
 
 PAIR = ("crowding", "fundamental")
-SEP_FLOOR = 12.0            # pre-regression level (d4c1901^ measured 12.0)
+SEP_FLOOR = 12.0            # pre-regression level (d568f54^ measured 12.0)
 
 
 def _border_normal(node_box, pt):

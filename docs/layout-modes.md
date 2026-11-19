@@ -201,7 +201,7 @@ D3 仍待拍板），生成侧「≤2 即满意」与验收侧 `visual_crossings
     不命中）。
   - 19 图语料 sweep 实测（v0.7.1）：仅 classic-cld-growth-and-burden 命中；
     bowtie 三张 W=1、共边领结两张与纵列族 W≤2、纯环族 W≤1 全部不命中；
-    其余 18 张 layout.json 相对 base 7378016 逐字节零漂移。
+    其余 18 张 layout.json 相对 base c4cd7ec 逐字节零漂移。
 - **排布**（构造约束——对拍样本相对几何，**非全局目标函数项**）：
   - 纵柱：中枢对沿布局轴 x=0 严格垂直，head 上 y=−Hs、tail 下 y=+Hs，
     Hs=2·(card_h+GAP)=160（样本纵柱半距 160）；head/target 在上是

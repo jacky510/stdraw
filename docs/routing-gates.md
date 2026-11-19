@@ -4,7 +4,7 @@
 本卡为**纯重构**：每道修补工序的现有口径**原样保留**（差异全部用 policy 字段表达），
 **不做任何口径统一**。§3 的口径不一致清单只登记，是否统一另行评审拍板。
 
-基线依据：HEAD 40dc106 前后的逐字节一致 sweep（classic 21 + random n10，
+基线依据：HEAD 0f35a39 前后的逐字节一致 sweep（classic 21 + random n10，
 layout.json sha256 全同），复跑命令见 §5。
 
 ## §1 route_all 后的修补工序（delivery acceptance gates，`_edge_stats` 记账级）

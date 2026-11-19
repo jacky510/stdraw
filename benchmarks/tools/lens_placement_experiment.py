@@ -2,7 +2,7 @@
 """ref-scrubbed D: offline mutual-lens placement+arrival experiment.
 
 NOT part of the production pipeline.  HISTORICAL ARCHIVE of the pre-ref-scrubbed
-exploration (measured on main 5b6721c, before the non-mirrored lens_joint_reassign
+exploration (measured on main 2e22a4f, before the non-mirrored lens_joint_reassign
 channel landed; on newer mains its mini-chain no longer mirrors the production
 lens channel -- kept for the record, do not re-run for current numbers).
 Reproduces the placement-alignment

@@ -156,7 +156,7 @@ neighborhood search:
   - 19-figure corpus sweep (v0.7.1): only classic-cld-growth-and-burden hits;
     the three bowtie graphs have W=1, shared-edge bowties and the column
     family W <= 2, pure-ring family W <= 1 — all miss; the other 18
-    layout.json files stay byte-identical to base 7378016.
+    layout.json files stay byte-identical to base c4cd7ec.
 - **Placement** (constructed constraints — calibrated against the hand-laid
   sample, not a global objective term):
   - Spine: the hub pair strictly vertical on the layout axis x=0, head at

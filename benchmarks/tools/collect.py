@@ -160,7 +160,7 @@ def main():
     A("- **Environment**: Windows 11 / Python 3.12.10 + networkx + OR-Tools CP-SAT / "
       "Graphviz 16.1.0 (official release zip, sha256-verified) / elkjs (bundled, node 22.23.2) /"
       "OGDF: not run (see §6). stdraw auto/auto-exact numbers are **re-measured after WS5** "
-      "(engine b4ea801+); the baselines (Graphviz/ELK) and stdraw-ortho reuse the WS4 same-machine measurements "
+      "(engine bf08643+); the baselines (Graphviz/ELK) and stdraw-ortho reuse the WS4 same-machine measurements "
       "(outside this fix's scope; engine unchanged).\n")
 
     # ═══ §3 classic CLD corpus (big per-graph tables, one per tool, all six metrics) ═══

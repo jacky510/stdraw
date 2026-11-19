@@ -79,7 +79,7 @@ AUTO_EXAMPLES = EXAMPLES + [
 ]
 # Layer B2 (WS3-Q routing-quality rework ref-scrubbed): random dense-graph
 # sampling -- in the random n10 fixed-seed corpus, 4/10 cases previously
-# had check1 crossings>2 / check3 insufficient clearance (d483639 legacy).
+# had check1 crossings>2 / check3 insufficient clearance (ff08256 legacy).
 # After the gated (row,order) permutation + joint rerouting + stair
 # candidate-pool fixes, these 4 cases must stay exit 0.
 # Slow to run (gated permutation + hard-gate polish, ~2min per case),

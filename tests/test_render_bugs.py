@@ -6,7 +6,7 @@
 #15 route_svg_d fillet corner-redraw glitch + check13 delivery/verification
 consistency gate.
 
-Historical bug shape (observed in the d4b378f review snapshot):
+Historical bug shape (observed in the b45a8bb review snapshot):
   route_svg_d unconditionally redrew "L <corner>" after a fillet arc
   (L ta; A tb), producing a tb->corner->ta_next fold-back glitch in the
   rendered layer; the certificate only checked the dense sampled points
