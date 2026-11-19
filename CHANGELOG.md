@@ -48,9 +48,11 @@ reproduced here; the engineering version history lives in
   viewer/themes.js regenerated from themes.py via write_viewer_js
   (generated-artifact channel, byte-pinned by tests).
 - Consumer note: render output bytes change → the byte-pinned consumer
-  (investment-advisor HDD chain, STDRAW_PIN 0.8.0/261a34e) must
+  (investment-advisor HDD chain, STDRAW_PIN 0.8.0/d04a872) must
   regenerate its three artifacts from this release and advance the pin
   (deterministic double-run + CDP regression before the lock moves).
+  Note: hash repointed for chain consistency only — the live 8777 STDRAW_PIN
+  migration is aligned by advisorbot's next release, not moved here.
 
 ## 0.8.0 — 2026-11-11
 

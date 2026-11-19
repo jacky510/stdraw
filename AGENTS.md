@@ -384,7 +384,7 @@ ortho / stdraw auto / auto+exact layer} x {Graphviz 16.1.0 dot/neato/sfdp,
 ELK layered}, six metrics from one same-source implementation, all raw
 evaluation JSON archived in `benchmarks/raw/`. **Measurement base point**:
 stdraw auto/auto-exact re-measured on the post-WS5-performance-fix engine
-(b4ea801+); Graphviz/ELK baselines and stdraw-ortho carried over from WS4
+(bf08643+); Graphviz/ELK baselines and stdraw-ortho carried over from WS4
 same-machine measurements.
 
 Classic means (REPORT.md section 7):
@@ -600,13 +600,13 @@ the spec documents.
   synced; 23-input sweep: exactly the 3 figures changed (grade best->best,
   visual_crossings 1->0), the other 20 byte-identical; pytest 102/102 +
   ci_checks green; certificate digest byte-identical pre/post bump.
-- **v0.7.11** (ref-scrubbed / 14bd041; entry backfilled — no version-section
+- **v0.7.11** (ref-scrubbed / 0ab5439; entry backfilled — no version-section
   entry was written at bump time): visible-edge redraw fix, per-edge
   fail-visible isolation, deterministic comb constraints.
-- **v0.7.9** (ref-scrubbed / 5a3db81; entry backfilled): font-environment
+- **v0.7.9** (ref-scrubbed / dd6598a; entry backfilled): font-environment
   robustness — post-render DOM geometry re-anchor.
 
-- **v0.7.10 version closure** (fix landed in ref-scrubbed / 25acc80, closure
+- **v0.7.10 version closure** (fix landed in ref-scrubbed / 87808b6, closure
   card ref-scrubbed): **interactive-layer edge hit CSS fix** — `.stdraw-hit`
   hit-paths carried `stroke: transparent` under `pointer-events: stroke`,
   which is unhittable on Chromium builds that gate hit-testing on painted
@@ -641,7 +641,7 @@ the spec documents.
   unified hard gates on the result; certificate meta.comb.fan=facing-border
   marker, gate set unchanged; regression fixture tests/data/hdd-wide-tickers.cld
   joined the CI AUTO_EXAMPLES (grade best, 11/11 gates) + 7 unit tests;
-  20-graph corpus sweep byte-identical vs f86f1d3 (tier-0 path untouched);
+  20-graph corpus sweep byte-identical vs bfefa29 (tier-0 path untouched);
 
 - **v0.7.7 version closure** (implementation card ref-scrubbed, closure
   card ref-scrubbed): **comb-bilateral placement mode** — K_{m,2}-type
@@ -665,7 +665,7 @@ the spec documents.
   `window.__stdrawApplyLayout` (nodes + edge_styles + waypoints, cap-clamped)
   and the `stdraw:layoutchanged` event (drag-release + applyLayout paths)
   plus the `--value-pad` CLI option; 19-graph corpus sweep byte-identical
-  vs f337273 (demos changed only in toolbar hints + script = the
+  vs 28f06c4 (demos changed only in toolbar hints + script = the
   interactive-layer upgrade);
 - **v0.7.6 version closure** (implementation card ref-scrubbed, closure
   card ref-scrubbed): repo-wide bilingual governance — README / AGENTS.md
@@ -683,12 +683,12 @@ the spec documents.
   same batch — AGENTS.md caliber sync (gates example switched to spine-wing
   11 gates, anchor mid-band index row, version history filled for
   v0.7.2-v0.7.5, taking over ref-scrubbed's approved diff); publishing-face
-  card-id sanitization (ref-scrubbed, dbe2890);
+  card-id sanitization (ref-scrubbed, ce87c65);
 - **v0.7.4 version closure** (landing card ref-scrubbed): publishing-face
   alignment (README captions / auto-v2 description switched to mode-based
   caliber, SKILL.md mode list gained bowtie-vertex / spine-wing,
   demos/classic-certificate.json re-rendered to spine-wing 11 gates);
-  batch-switch verification = 19-graph sweep (HEAD 69d49af) with only
+  batch-switch verification = 19-graph sweep (HEAD 3b4655e) with only
   classic-cld hitting spine-wing, bullwhip / tragedy-of-the-commons being
   column-chain isomorphic families that don't trigger (W<=2),
   limits-to-growth rest=0 not triggering;
