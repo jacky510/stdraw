@@ -1,0 +1,282 @@
+{
+  "canvas": {
+    "diagonal": 940.127650907,
+    "viewBox": [
+      0.0,
+      0.0,
+      696.0,
+      632.0
+    ]
+  },
+  "clearance_px": 16.0,
+  "counts": {
+    "edges": 14,
+    "loops": 2,
+    "nodes": 10
+  },
+  "determinism": {
+    "rng": "none",
+    "summation": "math.fsum",
+    "traversal": "sorted ids / sorted edges"
+  },
+  "features": {
+    "alignment_coverage": {
+      "anchors": 38,
+      "max_coverage": 0.921052632,
+      "note": "RFC §15.2: tolerance normalized by canvas scale (v1 initial value)",
+      "per_axis": [
+        {
+          "axis_deg": 0.0,
+          "coverage": 0.657894737,
+          "groups_ge3": 7
+        },
+        {
+          "axis_deg": 45.0,
+          "coverage": 0.894736842,
+          "groups_ge3": 9
+        },
+        {
+          "axis_deg": 90.0,
+          "coverage": 0.921052632,
+          "groups_ge3": 6
+        },
+        {
+          "axis_deg": 135.0,
+          "coverage": 0.789473684,
+          "groups_ge3": 7
+        }
+      ],
+      "tolerance_px": 25.28
+    },
+    "angular_resolution_deg": {
+      "min": 0.0,
+      "per_node": [
+        {
+          "min_gap_deg": 43.975445501,
+          "node": "bed_capacity"
+        },
+        {
+          "min_gap_deg": 139.878982812,
+          "node": "contact_rate"
+        },
+        {
+          "min_gap_deg": 40.030259272,
+          "node": "fatality"
+        },
+        {
+          "min_gap_deg": 56.0498929,
+          "node": "hospital_load"
+        },
+        {
+          "min_gap_deg": 0.0,
+          "node": "infected"
+        },
+        {
+          "min_gap_deg": 0.0,
+          "node": "new_infections"
+        },
+        {
+          "min_gap_deg": 140.188986369,
+          "node": "npi"
+        },
+        {
+          "min_gap_deg": 38.571252251,
+          "node": "public_concern"
+        },
+        {
+          "min_gap_deg": 139.927109948,
+          "node": "susceptible"
+        }
+      ]
+    },
+    "automorphism_symmetry_residual": {
+      "approximate_five_fields": null,
+      "automorphisms_found": 0,
+      "five_fields": null,
+      "note": "confidence weights pending data calibration (RFC §15.1)",
+      "residual": null
+    },
+    "bend_count_total_curvature": {
+      "bend_count": 27,
+      "total_curvature_deg": 241.062236755
+    },
+    "bend_curvature_soft_clearance": {
+      "clearance_threshold_px": 16.0,
+      "min_gap_px": 23.798304346,
+      "soft_margin_px": 7.798304346,
+      "worst_pair": [
+        [
+          "infected",
+          "new_infections"
+        ],
+        "susceptible"
+      ]
+    },
+    "canvas_fill_and_aspect": {
+      "aspect_deviation_from_square": 0.251101322,
+      "aspect_ratio": 1.251101322,
+      "content_bbox": [
+        568.0,
+        454.0
+      ],
+      "fill_rate": 0.09882875
+    },
+    "crossing_count": {
+      "total": 0
+    },
+    "edge_length_cv": {
+      "cv": 0.290862888,
+      "n_edges": 14
+    },
+    "hub_centroid_distance": {
+      "distance_px": 217.767990502,
+      "hub": "infected",
+      "hub_degree": 5,
+      "ratio": 0.231636619
+    },
+    "layout_stability": {
+      "applicable": false,
+      "note": "increment-only feature (Appendix A); static extraction v1 reports null",
+      "value": null
+    },
+    "loop_edge_crossing_count": {
+      "total": 0
+    },
+    "loop_edge_length_cv": {
+      "mean": 0.141881407,
+      "per_loop": [
+        {
+          "edge_length_cv": 0.141881407,
+          "kind": "B"
+        },
+        {
+          "edge_length_cv": null,
+          "kind": "R"
+        }
+      ],
+      "worst": 0.141881407
+    },
+    "loop_foreign_node_count": {
+      "per_loop": [
+        {
+          "foreign_nodes_inside": 0,
+          "kind": "B"
+        },
+        {
+          "foreign_nodes_inside": 0,
+          "kind": "R"
+        }
+      ],
+      "total": 0
+    },
+    "loop_isoperimetric_compactness": {
+      "mean": 0.566291884,
+      "per_loop": [
+        {
+          "closed": true,
+          "isoperimetric_compactness": 0.566291884,
+          "kind": "B"
+        },
+        {
+          "closed": true,
+          "isoperimetric_compactness": null,
+          "kind": "R"
+        }
+      ],
+      "valid_loops": 1,
+      "worst": 0.566291884
+    },
+    "loop_overlap_area": {
+      "method": "sutherland_hodgman",
+      "pairs": [],
+      "total": 0.0
+    },
+    "loop_self_intersections": {
+      "per_loop": [
+        {
+          "kind": "B",
+          "self_intersections": 0
+        },
+        {
+          "kind": "R",
+          "self_intersections": 0
+        }
+      ],
+      "total": 0
+    },
+    "max_min_edge_ratio": {
+      "ratio": 2.22254114
+    },
+    "min_crossing_angle_deg": {
+      "crossings_with_angle": 0,
+      "min": null
+    },
+    "min_spacing_diagonal_ratio": {
+      "min_spacing_px": 136.821051012,
+      "ratio": 0.145534546
+    },
+    "mirror_axis_residual": null,
+    "node_spacing_cv": {
+      "cv": 0.077945811,
+      "n_nodes": 10
+    },
+    "visual_centroid_offset": {
+      "area_centroid": [
+        347.348178138,
+        336.453441296
+      ],
+      "canvas_center": [
+        348.0,
+        316.0
+      ],
+      "offset_px": 20.463824974,
+      "ratio": 0.021767071
+    },
+    "voronoi_cell_area_cv": {
+      "cv": 0.235057354,
+      "per_node": [
+        {
+          "cell_area": 37798.932677313,
+          "node": "bed_capacity"
+        },
+        {
+          "cell_area": 51174.97891264,
+          "node": "contact_rate"
+        },
+        {
+          "cell_area": 61007.326500225,
+          "node": "fatality"
+        },
+        {
+          "cell_area": 40942.965605026,
+          "node": "hospital_load"
+        },
+        {
+          "cell_area": 50454.938824323,
+          "node": "infected"
+        },
+        {
+          "cell_area": 39239.126244509,
+          "node": "new_infections"
+        },
+        {
+          "cell_area": 37684.556889694,
+          "node": "npi"
+        },
+        {
+          "cell_area": 58851.53492832,
+          "node": "public_concern"
+        },
+        {
+          "cell_area": 27107.632159983,
+          "node": "recovered"
+        },
+        {
+          "cell_area": 35610.007257966,
+          "node": "susceptible"
+        }
+      ]
+    }
+  },
+  "schema": "stdraw.features/v1"
+}
