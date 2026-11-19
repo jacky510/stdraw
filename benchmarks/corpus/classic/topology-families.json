@@ -1,0 +1,595 @@
+{
+  "_meta": {
+    "purpose": "Phase 0 拓扑族打标：方案《stdraw-优化方案-两方评审综合稿》v1.3.1 §14 P6 拓扑族覆盖表的数据底座，供 Phase 2 特征筛选分层抽样与实验 A/B/C 按族分层使用",
+    "caliber": "纯图论口径（与引擎版本无关）：解析 .cld 的 var/edge/loop 三类行；环=有向基本环（含 2 节点双向眼）；分析脚本为本卡工作区临时件，不随仓维护，结果可由 networkx 3.7 复算",
+    "pool_note": "目录现 20 图；canonical_19=true 的 19 图 = benchmarks/REPORT.md §3 WS4 口径经典池；success-to-the-successful 于 2026-11-11 作为第 20 图加入（REPORT §10.1 重测口径含它）",
+    "family_rules": {
+      "优先级顺序": "非平面族 > 链/星(无环) > 单环 > 嵌套环 > 多环耦合",
+      "非平面族": "无向简单图不满足平面性判据（networkx check_planarity）",
+      "链": "无环(独立环维数=0) 且最大度<=2 的树",
+      "星": "无环 且存在度>=3 枢纽的树",
+      "单环": "恰 1 个有向基本环（可含悬挂枝）",
+      "嵌套环": ">=2 个有向基本环，且存在环对(A,B)满足 V(A) 严格子集 V(B) 且共享有向边<=1（内环不沿外环路径重走）；本池内嵌套一律表现为「2 节点自增强眼嵌在长环节点对上」",
+      "多环耦合": "其余 >=2 环情形；subtype 细分——共享路径型(环对共享>=2条有向边)/共享单节点型(恰共享1节点,共享0边)/枢纽-单边束型(经共享单边或枢纽节点串联)"
+    },
+    "metric_calibers": {
+      "环数 cycles": "有向基本环计数（含 2 节点双向眼）；另报 cycle_basis_dim=无向独立环维数(m-n+c,不含双向眼) 与 declared_loops=DSL 声明环数",
+      "最长环 longest_cycle": "有向基本环的最大节点数",
+      "共享节点数 shared_loop_nodes": "参与>=2 个有向基本环的节点个数",
+      "平面性 planar": "无向简单图平面性（Kuratowski 判据）"
+    },
+    "known_fixture_quirks": [
+      "fishing-collapse 声明环 R2 [fleet,catch_amount,fish_stock] 缺闭合边 fish_stock->fleet，非有向环；仅登记不改动（loops lint 口径属语料维护方）"
+    ]
+  },
+  "family_counts": {
+    "pool_20": {
+      "链": 0,
+      "星": 0,
+      "单环": 1,
+      "多环耦合": 11,
+      "嵌套环": 8,
+      "非平面族": 0
+    },
+    "canonical_19": {
+      "链": 0,
+      "星": 0,
+      "单环": 1,
+      "多环耦合": 11,
+      "嵌套环": 7,
+      "非平面族": 0
+    }
+  },
+  "coverage_gaps": [
+    "链/星/非平面族在池内 0 覆盖：经典 CLD 语料全部含环且全部平面；方案 §14 实验A④「每族>=10 对」对空族不可满足，须由随机族/合成生成器补足并如实标注",
+    "单环族仅 1 图(arms-race)：分层样本量不足，族内结论不可靠",
+    "嵌套环在本池内的形态单一(全部为 2 节点眼嵌长环，无 len>=3 内环独占节点的深嵌套)：嵌套族子型覆盖有偏"
+  ],
+  "graphs": [
+    {
+      "name": "arms-race",
+      "file": "arms-race.cld",
+      "title": "军备竞赛",
+      "canonical_19": true,
+      "n": 4,
+      "m": 4,
+      "family": "单环",
+      "subtype": "纯环(哈密顿环)",
+      "rationale": "全图恰 1 个 4 节点有向环（哈密顿环），无弦、无悬挂节点；环数=1/最长环=4/共享节点=0/平面",
+      "metrics": {
+        "cycles": 1,
+        "cycle_basis_dim": 1,
+        "declared_loops": 1,
+        "longest_cycle": 4,
+        "shared_loop_nodes": 0,
+        "shared_loop_node_names": [],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "brand-flywheel",
+      "file": "brand-flywheel.cld",
+      "title": "品牌资产飞轮",
+      "canonical_19": true,
+      "n": 6,
+      "m": 8,
+      "family": "嵌套环",
+      "subtype": "2节点眼嵌于长环+挂接小环",
+      "rationale": "ad_effect↔awareness 双向眼严格嵌于 5 节点主环节点集（子集+共享边=1），wom 3 节点环另经共享节点挂接；环数=3/最长环=5/共享节点=3/平面",
+      "metrics": {
+        "cycles": 3,
+        "cycle_basis_dim": 2,
+        "declared_loops": 3,
+        "longest_cycle": 5,
+        "shared_loop_nodes": 3,
+        "shared_loop_node_names": [
+          "ad_effect",
+          "awareness",
+          "sales"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 1,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "bullwhip",
+      "file": "bullwhip.cld",
+      "title": "牛鞭效应",
+      "canonical_19": true,
+      "n": 5,
+      "m": 6,
+      "family": "多环耦合",
+      "subtype": "共享路径型",
+      "rationale": "3 节点环与 4 节点环沿 orders→factory→inventory 共享 2 条连续边（香蕉对），外挂悬挂节点 retail；环数=2/最长环=4/共享节点=3/平面",
+      "metrics": {
+        "cycles": 2,
+        "cycle_basis_dim": 2,
+        "declared_loops": 2,
+        "longest_cycle": 4,
+        "shared_loop_nodes": 3,
+        "shared_loop_node_names": [
+          "factory",
+          "inventory",
+          "orders"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": [
+          "retail"
+        ]
+      }
+    },
+    {
+      "name": "burnout-attrition",
+      "file": "burnout-attrition.cld",
+      "title": "倦怠与离职",
+      "canonical_19": true,
+      "n": 5,
+      "m": 6,
+      "family": "多环耦合",
+      "subtype": "共享路径型",
+      "rationale": "两个 4 节点环沿 overtime→burnout 共享 2 条边，分流 attrition/productivity 两出口；环数=2/最长环=4/共享节点=3/平面",
+      "metrics": {
+        "cycles": 2,
+        "cycle_basis_dim": 2,
+        "declared_loops": 2,
+        "longest_cycle": 4,
+        "shared_loop_nodes": 3,
+        "shared_loop_node_names": [
+          "burnout",
+          "overtime",
+          "workload"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "classic-cld-growth-and-burden",
+      "file": "classic-cld-growth-and-burden.cld",
+      "title": "增长极限×转嫁负担",
+      "canonical_19": true,
+      "n": 8,
+      "m": 13,
+      "family": "嵌套环",
+      "subtype": "复合:眼嵌套+伞骨环束",
+      "rationale": "quickfix↔crowding 眼嵌于 quickfix→sideeffect→crowding 环（子集+共享边=1），另有 rate→adopters 伞骨 3 环束——池内最重耦合图(8节点13边6环)；环数=6/最长环=3/共享节点=4/平面",
+      "metrics": {
+        "cycles": 6,
+        "cycle_basis_dim": 4,
+        "declared_loops": 6,
+        "longest_cycle": 3,
+        "shared_loop_nodes": 4,
+        "shared_loop_node_names": [
+          "adopters",
+          "crowding",
+          "quickfix",
+          "rate"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 2,
+        "pendant_nodes": [
+          "fundamental"
+        ]
+      }
+    },
+    {
+      "name": "debt-spiral",
+      "file": "debt-spiral.cld",
+      "title": "债务螺旋",
+      "canonical_19": true,
+      "n": 5,
+      "m": 6,
+      "family": "多环耦合",
+      "subtype": "共享路径型",
+      "rationale": "3 节点环嵌在 5 节点环的 interest→deficit→debt 共享路径上（共享 2 边）；环数=2/最长环=5/共享节点=3/平面",
+      "metrics": {
+        "cycles": 2,
+        "cycle_basis_dim": 2,
+        "declared_loops": 2,
+        "longest_cycle": 5,
+        "shared_loop_nodes": 3,
+        "shared_loop_node_names": [
+          "debt",
+          "deficit",
+          "interest"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "eroding-goals",
+      "file": "eroding-goals.cld",
+      "title": "目标侵蚀",
+      "canonical_19": true,
+      "n": 5,
+      "m": 6,
+      "family": "多环耦合",
+      "subtype": "共享单节点型(图8)",
+      "rationale": "两个 3 节点环仅在枢纽节点 gap 上相切（共享 0 边）；环数=2/最长环=3/共享节点=1/平面",
+      "metrics": {
+        "cycles": 2,
+        "cycle_basis_dim": 2,
+        "declared_loops": 2,
+        "longest_cycle": 3,
+        "shared_loop_nodes": 1,
+        "shared_loop_node_names": [
+          "gap"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "fishing-collapse",
+      "file": "fishing-collapse.cld",
+      "title": "渔业崩溃",
+      "canonical_19": true,
+      "n": 6,
+      "m": 9,
+      "family": "嵌套环",
+      "subtype": "眼嵌长环+独立环",
+      "rationale": "catch_amount↔fish_stock 眼嵌于 5 节点稀缺涨价环（子集+共享边=1），R1 3 节点环与 quota 眼另挂；环数=4/最长环=5/共享节点=4/平面；注：声明环 R2 缺 fish_stock→fleet 闭合边、非有向环，语料标注瑕疵仅登记不改",
+      "metrics": {
+        "cycles": 4,
+        "cycle_basis_dim": 2,
+        "declared_loops": 5,
+        "longest_cycle": 5,
+        "shared_loop_nodes": 4,
+        "shared_loop_node_names": [
+          "catch_amount",
+          "fish_stock",
+          "fleet",
+          "profit"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 2,
+        "pendant_nodes": [
+          "quota"
+        ]
+      }
+    },
+    {
+      "name": "fixes-that-fail",
+      "file": "fixes-that-fail.cld",
+      "title": "饮鸩止渴",
+      "canonical_19": true,
+      "n": 4,
+      "m": 5,
+      "family": "多环耦合",
+      "subtype": "共享单边对偶型",
+      "rationale": "两个 3 节点环共享 problem→fix 单边后分叉 consequence/relief 两出口（无路径重叠）；环数=2/最长环=3/共享节点=2/平面",
+      "metrics": {
+        "cycles": 2,
+        "cycle_basis_dim": 2,
+        "declared_loops": 2,
+        "longest_cycle": 3,
+        "shared_loop_nodes": 2,
+        "shared_loop_node_names": [
+          "fix",
+          "problem"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "induced-demand",
+      "file": "induced-demand.cld",
+      "title": "交通诱导需求",
+      "canonical_19": true,
+      "n": 5,
+      "m": 7,
+      "family": "嵌套环",
+      "subtype": "复合:眼+伞骨+长环",
+      "rationale": "congestion↔car_trips 眼同时嵌于 3/4/5 节点三个外环（各共享边≤1），4 环全经 congestion、car_trips 两枢纽；环数=4/最长环=5/共享节点=5/平面",
+      "metrics": {
+        "cycles": 4,
+        "cycle_basis_dim": 2,
+        "declared_loops": 4,
+        "longest_cycle": 5,
+        "shared_loop_nodes": 5,
+        "shared_loop_node_names": [
+          "car_trips",
+          "congestion",
+          "driving_cost",
+          "expansion",
+          "road_capacity"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 1,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "learning-flywheel",
+      "file": "learning-flywheel.cld",
+      "title": "学习飞轮",
+      "canonical_19": true,
+      "n": 4,
+      "m": 5,
+      "family": "多环耦合",
+      "subtype": "共享单边型",
+      "rationale": "两个 3 节点环仅共享 practice→skill 单边（skill/challenge 与 confidence/practice 两翼展开）；环数=2/最长环=3/共享节点=2/平面",
+      "metrics": {
+        "cycles": 2,
+        "cycle_basis_dim": 2,
+        "declared_loops": 2,
+        "longest_cycle": 3,
+        "shared_loop_nodes": 2,
+        "shared_loop_node_names": [
+          "practice",
+          "skill"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "limits-to-growth",
+      "file": "limits-to-growth.cld",
+      "title": "增长极限",
+      "canonical_19": true,
+      "n": 5,
+      "m": 7,
+      "family": "多环耦合",
+      "subtype": "伞骨环束型",
+      "rationale": "三个 3 节点环共用 rate→adopters 骨干边后向 crowding/potential/word 三向展开（两两共享恰 1 边）；环数=3/最长环=3/共享节点=2/平面",
+      "metrics": {
+        "cycles": 3,
+        "cycle_basis_dim": 3,
+        "declared_loops": 3,
+        "longest_cycle": 3,
+        "shared_loop_nodes": 2,
+        "shared_loop_node_names": [
+          "adopters",
+          "rate"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "population-logistic",
+      "file": "population-logistic.cld",
+      "title": "种群逻辑斯蒂",
+      "canonical_19": true,
+      "n": 4,
+      "m": 6,
+      "family": "嵌套环",
+      "subtype": "枢纽眼嵌套",
+      "rationale": "births↔population 眼嵌于 rpc→births→population 环（子集+共享边=1），deaths 眼另挂枢纽 population；环数=3/最长环=3/共享节点=2/平面",
+      "metrics": {
+        "cycles": 3,
+        "cycle_basis_dim": 1,
+        "declared_loops": 3,
+        "longest_cycle": 3,
+        "shared_loop_nodes": 2,
+        "shared_loop_node_names": [
+          "births",
+          "population"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 2,
+        "pendant_nodes": [
+          "deaths"
+        ]
+      }
+    },
+    {
+      "name": "renewable-resource",
+      "file": "renewable-resource.cld",
+      "title": "可再生资源",
+      "canonical_19": true,
+      "n": 5,
+      "m": 7,
+      "family": "多环耦合",
+      "subtype": "枢纽节点串联型",
+      "rationale": "harvest↔stock、regeneration↔stock 两眼与 economy→harvest→profit 环经 stock/harvest 枢纽节点串联，无子集关系；环数=3/最长环=3/共享节点=2/平面",
+      "metrics": {
+        "cycles": 3,
+        "cycle_basis_dim": 1,
+        "declared_loops": 3,
+        "longest_cycle": 3,
+        "shared_loop_nodes": 2,
+        "shared_loop_node_names": [
+          "harvest",
+          "stock"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 2,
+        "pendant_nodes": [
+          "regeneration"
+        ]
+      }
+    },
+    {
+      "name": "shifting-the-burden",
+      "file": "shifting-the-burden.cld",
+      "title": "转嫁负担",
+      "canonical_19": true,
+      "n": 5,
+      "m": 8,
+      "family": "嵌套环",
+      "subtype": "双眼各嵌于3节点环",
+      "rationale": "fundamental↔problem 眼嵌于 fundamental→capability→problem 环、problem↔symptom_fix 眼嵌于 problem→symptom_fix→side_effect 环（两对子集+共享边=1），problem 为全图枢纽；环数=4/最长环=3/共享节点=3/平面",
+      "metrics": {
+        "cycles": 4,
+        "cycle_basis_dim": 2,
+        "declared_loops": 4,
+        "longest_cycle": 3,
+        "shared_loop_nodes": 3,
+        "shared_loop_node_names": [
+          "fundamental",
+          "problem",
+          "symptom_fix"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 2,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "soil-erosion",
+      "file": "soil-erosion.cld",
+      "title": "耕地水土流失",
+      "canonical_19": true,
+      "n": 6,
+      "m": 8,
+      "family": "嵌套环",
+      "subtype": "眼嵌长环",
+      "rationale": "crop_yield↔farming 眼嵌于 5 节点主环（子集+共享边=1），abandonment 3 节点环另沿 2 边路径与主环耦合；环数=3/最长环=5/共享节点=4/平面",
+      "metrics": {
+        "cycles": 3,
+        "cycle_basis_dim": 2,
+        "declared_loops": 3,
+        "longest_cycle": 5,
+        "shared_loop_nodes": 4,
+        "shared_loop_node_names": [
+          "crop_yield",
+          "erosion",
+          "farming",
+          "vegetation"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 1,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "success-to-the-successful",
+      "file": "success-to-the-successful.cld",
+      "title": "富者愈富 · 赢家通吃",
+      "canonical_19": false,
+      "n": 6,
+      "m": 10,
+      "family": "嵌套环",
+      "subtype": "双侧对称眼嵌跨主体环",
+      "rationale": "a 侧与 b 侧两个双向眼同时嵌于 4 节点跨主体环（子集+各共享 1 边）——池内唯一结构镜像对称图；环数=3/最长环=4/共享节点=4/平面",
+      "metrics": {
+        "cycles": 3,
+        "cycle_basis_dim": 3,
+        "declared_loops": 3,
+        "longest_cycle": 4,
+        "shared_loop_nodes": 4,
+        "shared_loop_node_names": [
+          "a_alloc",
+          "a_perf",
+          "b_alloc",
+          "b_perf"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 2,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "tragedy-of-the-commons",
+      "file": "tragedy-of-the-commons.cld",
+      "title": "公共地悲剧",
+      "canonical_19": true,
+      "n": 5,
+      "m": 6,
+      "family": "多环耦合",
+      "subtype": "共享路径型",
+      "rationale": "3 节点 B1 环沿 usage→total_usage 2 边路径嵌在 4 节点 R1 环上（香蕉对），population 悬挂；环数=2/最长环=4/共享节点=3/平面",
+      "metrics": {
+        "cycles": 2,
+        "cycle_basis_dim": 2,
+        "declared_loops": 2,
+        "longest_cycle": 4,
+        "shared_loop_nodes": 3,
+        "shared_loop_node_names": [
+          "individual_gain",
+          "total_usage",
+          "usage"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": [
+          "population"
+        ]
+      }
+    },
+    {
+      "name": "urban-migration",
+      "file": "urban-migration.cld",
+      "title": "城市化与拥挤",
+      "canonical_19": true,
+      "n": 6,
+      "m": 8,
+      "family": "多环耦合",
+      "subtype": "平行走廊束型",
+      "rationale": "三个 4 节点环两两沿 population→…→amenity→in_migration 共享 2 边走廊（congestion/housing_cost/jobs 平行走廊束）；环数=3/最长环=4/共享节点=3/平面",
+      "metrics": {
+        "cycles": 3,
+        "cycle_basis_dim": 3,
+        "declared_loops": 3,
+        "longest_cycle": 4,
+        "shared_loop_nodes": 3,
+        "shared_loop_node_names": [
+          "amenity",
+          "in_migration",
+          "population"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "wage-price-spiral",
+      "file": "wage-price-spiral.cld",
+      "title": "通胀工资螺旋",
+      "canonical_19": true,
+      "n": 5,
+      "m": 6,
+      "family": "多环耦合",
+      "subtype": "共享单节点型(图8)",
+      "rationale": "工资环与需求环仅在枢纽节点 prices 上相切（共享 0 边），典型图 8 形态；环数=2/最长环=3/共享节点=1/平面",
+      "metrics": {
+        "cycles": 2,
+        "cycle_basis_dim": 2,
+        "declared_loops": 2,
+        "longest_cycle": 3,
+        "shared_loop_nodes": 1,
+        "shared_loop_node_names": [
+          "prices"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    }
+  ]
+}
