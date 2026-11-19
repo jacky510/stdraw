@@ -1,0 +1,15 @@
+[stdraw] stage timing (STDRAW_TIMING=1), total 2285 ms:
+  card_metrics                     87.7 ms    3.8%
+  mode_detection_trials            52.1 ms    2.3%
+  route_final                      59.0 ms    2.6%
+  manual_injection                  0.0 ms    0.0%
+  repair:coincide                   5.2 ms    0.2%
+  repair:midband                    0.2 ms    0.0%
+  repair:fan_spread                 0.3 ms    0.0%
+  repair:arrival_flip_pre           0.0 ms    0.0%
+  anchor_snap.gate_eval_pre         5.2 ms    0.2%
+  anchor_snap.snap                  2.0 ms    0.1%
+  anchor_snap.gate_eval_post        7.1 ms    0.3%
+  repair:lens_joint_reassign        0.0 ms    0.0%
+  repair:arrival_flip_post          0.0 ms    0.0%
+  delivery                       2066.2 ms   90.4%

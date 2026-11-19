@@ -1,0 +1,1 @@
+[stdraw] planarization L2: no-witness-drawing: core 0 planarization failed (oil:infeasible) -- generic auto-v2 path kept (honest downgrade)

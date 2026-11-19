@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "brand-flywheel", "n": 6, "m": 8, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 33.0, "spacing_cv": 0.0, "row_align_rate": 0.667, "runtime_s": 0.99, "bbox": [392, 388], "bbox_area": 152096, "status": "ok", "exactness": null}

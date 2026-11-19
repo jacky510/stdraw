@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "bullwhip", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 21.8, "spacing_cv": 0.23, "row_align_rate": 0.4, "runtime_s": 0.692, "bbox": [228, 284], "bbox_area": 64752, "status": "ok", "exactness": null}

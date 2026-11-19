@@ -1,0 +1,19 @@
+[stdraw] anchor_snap: 31 endpoints snapped (dense probe, E/N=1.60, zero gate regressions)
+[stdraw] stage timing (STDRAW_TIMING=1), total 30254 ms:
+  card_metrics                     19.3 ms    0.1%
+  mode_detection_trials           492.5 ms    1.6%
+  layering                          0.0 ms    0.0%
+  placement_cp_sat                660.0 ms    2.2%
+  polish_gated_reorder          26543.5 ms   87.7%
+  route_final                    2197.9 ms    7.3%
+  manual_injection                  0.0 ms    0.0%
+  repair:coincide                  51.4 ms    0.2%
+  repair:midband                    4.9 ms    0.0%
+  repair:fan_spread                 1.4 ms    0.0%
+  repair:arrival_flip_pre           0.0 ms    0.0%
+  anchor_snap.gate_eval_pre        62.1 ms    0.2%
+  anchor_snap.snap                145.8 ms    0.5%
+  anchor_snap.gate_eval_post       66.6 ms    0.2%
+  repair:lens_joint_reassign        0.1 ms    0.0%
+  repair:arrival_flip_post          0.0 ms    0.0%
+  delivery                          8.3 ms    0.0%

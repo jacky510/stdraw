@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "random-n10-i18", "status": "dnf", "why": "timeout at budget 350s", "budget_s": 350}

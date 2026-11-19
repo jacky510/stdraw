@@ -1,0 +1,17 @@
+[stdraw] ring reposition: no fully-qualified zero-crossing candidate (10 demotion candidates scanned) -- original placement kept
+[stdraw] anchor_snap: 30 endpoints snapped (dense probe, E/N=1.60, zero gate regressions)
+[stdraw] stage timing (STDRAW_TIMING=1), total 272866 ms:
+  card_metrics                     19.7 ms    0.0%
+  mode_detection_trials           497.1 ms    0.2%
+  route_final                  270309.4 ms   99.1%
+  manual_injection                  0.0 ms    0.0%
+  repair:coincide                 331.3 ms    0.1%
+  repair:midband                   12.4 ms    0.0%
+  repair:fan_spread                13.3 ms    0.0%
+  repair:arrival_flip_pre           0.0 ms    0.0%
+  anchor_snap.gate_eval_pre       346.8 ms    0.1%
+  anchor_snap.snap                236.4 ms    0.1%
+  anchor_snap.gate_eval_post      318.6 ms    0.1%
+  repair:lens_joint_reassign        0.1 ms    0.0%
+  repair:arrival_flip_post          0.0 ms    0.0%
+  delivery                        781.0 ms    0.3%

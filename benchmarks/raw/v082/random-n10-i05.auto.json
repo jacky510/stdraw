@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "random-n10-i05", "n": 10, "m": 16, "crossings": 1, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 16.6, "spacing_cv": 0.125, "row_align_rate": 0.9, "runtime_s": 39.259, "bbox": [384, 364], "bbox_area": 139776, "status": "ok", "exactness": null}
