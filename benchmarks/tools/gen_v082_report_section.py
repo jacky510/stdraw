@@ -36,7 +36,12 @@ def mean(vals):
 
 def median(vals):
     v = sorted(vals)
-    return v[len(v) // 2] if v else 0.0
+    n = len(v)
+    if not n:
+        return 0.0
+    if n % 2:
+        return v[n // 2]
+    return (v[n // 2 - 1] + v[n // 2]) / 2.0
 
 
 def main():
@@ -96,8 +101,14 @@ def main():
     ts = json.load(open(os.path.join(RAW, "timing-summary.json"), encoding="utf-8"))
     L.append("### §10.3 Stage timing — bottleneck reconciliation")
     L.append("")
-    L.append(f"Timing captures: {len(ts['per_graph'])} graphs, grand total "
-             f"{ts['grand_total_ms']/1000:.1f}s wall. Full per-graph tables in")
+    L.append("Timing-capture inclusion rule: `raw/v082/timing/` holds 38 stderr")
+    L.append("captures for the 60-graph re-run scope (20 classic + 20 random n10 +")
+    L.append("20 random n20); a capture enters the aggregation only when it carries")
+    L.append("a parseable `total N ms` header line. 37 captures qualify and form")
+    L.append("the 37-graph timing caliber aggregated below; `random-n20-i09`")
+    L.append("(killed at the 100s n20 budget) captured a stderr fragment without")
+    L.append("a total line and is excluded; the 22 DNF graphs produced no capture")
+    L.append("at all and are likewise not aggregated. Full per-graph tables in")
     L.append("`raw/v082/timing-summary.md`; aggregate shares:")
     L.append("")
     L.append("| stage | summed ms | % of grand total |")
@@ -127,6 +138,10 @@ def main():
     L.append("  the wall sits in the routing/reposition/polish side (§9.3 finding 1")
     L.append("  already pointed there; this full-corpus sweep confirms it corpus-wide).")
     L.append("")
+    L.append("Timing variance caveat: same-machine re-runs of identical graphs")
+    L.append("scatter 0.49-0.90x wall-to-wall, so absolute-runtime comparisons")
+    L.append("against this table should carry a ±2x noise band.")
+    L.append("")
     rnd = {n: [r for b, r in sorted(recs.items())
                if b.startswith(f"random-n{n}-")] for n in (10, 20)}
     L.append("### §10.4 random family re-measure (n10 + n20; n30/n50 not re-run)")
@@ -142,7 +157,7 @@ def main():
                      f"{mean([r['clear_violations'] for r in okr]):.2f} | "
                      f"{mean([r['spacing_cv'] for r in okr]):.3f} | "
                      f"{mean([r['row_align_rate'] for r in okr]):.2f} | "
-                     f"{median([r['runtime_s'] for r in okr]):.1f} | {dnf} |")
+                     f"{median([r['runtime_s'] for r in okr]):.2f} | {dnf} |")
         else:
             L.append(f"| n{n} | 0/{len(rs)} | — | — | — | — | — | — | {dnf} |")
     L.append("")

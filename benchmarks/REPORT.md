@@ -542,7 +542,14 @@ pre-pattern-chain engine and are superseded, not wrong-in-table.
 
 ### §10.3 Stage timing — bottleneck reconciliation
 
-Timing captures: 37 graphs, grand total 753.8s wall. Full per-graph tables in
+Timing-capture inclusion rule: `raw/v082/timing/` holds 38 stderr
+captures for the 60-graph re-run scope (20 classic + 20 random n10 +
+20 random n20); a capture enters the aggregation only when it carries
+a parseable `total N ms` header line. 37 captures qualify and form
+the 37-graph timing caliber aggregated below; `random-n20-i09`
+(killed at the 100s n20 budget) captured a stderr fragment without
+a total line and is excluded; the 22 DNF graphs produced no capture
+at all and are likewise not aggregated. Full per-graph tables in
 `raw/v082/timing-summary.md`; aggregate shares:
 
 | stage | summed ms | % of grand total |
@@ -578,12 +585,16 @@ Reconciliation answer (which side is the bottleneck):
   the wall sits in the routing/reposition/polish side (§9.3 finding 1
   already pointed there; this full-corpus sweep confirms it corpus-wide).
 
+Timing variance caveat: same-machine re-runs of identical graphs
+scatter 0.49-0.90x wall-to-wall, so absolute-runtime comparisons
+against this table should carry a ±2x noise band.
+
 ### §10.4 random family re-measure (n10 + n20; n30/n50 not re-run)
 
 | family | graphs ok | mean crossings | mean box-press | mean clearance viol. | mean CV | mean row-align | median runtime(s) | DNF |
 |---|---|---|---|---|---|---|---|---|
-| n10 | 15/20 | 1.4 | 0.00 | 0.00 | 0.224 | 0.73 | 28.3 | 5 |
-| n20 | 2/20 | 2.0 | 0.00 | 0.00 | 0.818 | 0.30 | 15.5 | 18 |
+| n10 | 15/20 | 1.4 | 0.00 | 0.00 | 0.224 | 0.73 | 28.25 | 5 |
+| n20 | 2/20 | 2.0 | 0.00 | 0.00 | 0.818 | 0.30 | 14.29 | 18 |
 
 Baselines (Graphviz/ELK) and stdraw-ortho rows are unchanged from §4
 (outside this card's re-run scope; engine unchanged for them).
