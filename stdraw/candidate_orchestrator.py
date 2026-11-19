@@ -117,13 +117,19 @@ class Orchestrator:
                     detail=f"unexpected {type(e).__name__}: {e}"))
                 continue
             # structural quota: deterministic per-source cap (never
-            # quality-based — takes the source's own deterministic order)
-            kept = cands[:self.max_per_source]
+            # quality-based — takes the source's own deterministic order);
+            # the total budget clips the batch too, so a whole batch can no
+            # longer cross the total ceiling (measured overrun: max_total=3
+            # used to keep 4).
+            room = self.max_total - total
+            kept = cands[:min(self.max_per_source, room)]
             result.candidates.extend(kept)
             total += len(kept)
+            detail = (f"emitted {len(cands)}, kept {len(kept)} "
+                      f"(per-source budget {self.max_per_source})")
+            if len(kept) < min(len(cands), self.max_per_source):
+                detail += f" [clipped by the total budget {self.max_total}]"
             result.records.append(SourceRecord(
                 source=source, outcome="generated",
-                candidates=len(kept),
-                detail=(f"emitted {len(cands)}, kept {len(kept)} "
-                        f"(per-source budget {self.max_per_source})")))
+                candidates=len(kept), detail=detail))
         return result

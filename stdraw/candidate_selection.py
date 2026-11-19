@@ -7,15 +7,22 @@ Plan v1.3.1 section 3 — candidate three-tier screening, M1 initial form:
            = 0, edge-box clearance >= 16px, card gap >= 16px rect-gap
            caliber, mutual-pair separation >= 4px). Violators are OUT; this
            is a constraint check, not a preference.
-  Stage 2  epsilon-Pareto + Diversity Preservation — metric vector
-           normalized by FROZEN constants (never by the candidate pool's own
-           min/max — plan section 8); epsilon-domination compresses
-           near-duplicates; diversity keeps the best candidate per
-           structural_signature group (ring/symmetric/centered forms all
-           survive to the ranking tier).
+  Stage 2  Diversity Preservation THEN epsilon-Pareto per structural group
+           — candidates whose metrics are close but structural forms differ
+           must keep their class representative, so grouping by
+           structural_signature runs FIRST and a metric-dominant peer from
+           another group can never eliminate a form; within a group the
+           epsilon-domination compresses near-duplicates and the
+           deterministic group-best survives. Metric normalization uses
+           FROZEN constants (never the candidate pool's own min/max — plan
+           section 8).
   Stage 3  Preference Ranking (M1 placeholder) — a FIXED preregistered
            heuristic score. The learned ranker lands in Phase 3; until then
            the placeholder is deterministic and honest about being one.
+           Score buckets are chained eps groups (see _score_buckets): two
+           scores within SCORE_TIE_EPS of the same chain are one bucket,
+           so a 2e-13 gap can no longer split ranks across a floor
+           boundary.
 
 Routing-in-the-loop: candidates are routed (same Router caliber as the
 auto-v2 trial gates) under a DETERMINISTIC operation budget — each routed
@@ -33,7 +40,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 from .candidate_contract import (LayoutCandidate, SCORE_TIE_EPS,
-                                 score_rank_bucket, structural_tiebreak_key)
+                                 structural_tiebreak_key)
 
 # ---- routing-in-the-loop operation budget (preregistered) ----
 # ops = routed edges; budget allows every generated candidate to be routed
@@ -251,49 +258,58 @@ def _dominates(a: CandidateReport, b: CandidateReport) -> bool:
     return better_any
 
 
+def _score_buckets(reports) -> Dict[float, int]:
+    """Deterministic rank buckets by CHAINED SCORE_TIE_EPS grouping.
+
+    Scores are sorted ascending; a new bucket starts when a score sits more
+    than SCORE_TIE_EPS away from its bucket's first member. This replaces
+    the old floor(score / eps) form, whose hard boundaries at integer
+    multiples of eps let a sub-eps gap (measured: 2e-13) split two scores
+    into different buckets — i.e. the float, not the declared eps band,
+    decided the rank. Bucket membership is now decided by the eps band
+    itself; anything inside the band falls to the structural tie-break
+    chain (floats never the sole tie-breaker).
+    """
+    buckets: Dict[float, int] = {}
+    b = -1
+    anchor = None
+    for s in sorted(heuristic_score(r) for r in reports):
+        if anchor is None or s - anchor > SCORE_TIE_EPS:
+            b += 1
+            anchor = s
+        buckets[s] = b
+    return buckets
+
+
+def _rank_key(r: CandidateReport, buckets: Dict[float, int]):
+    """Rank key: eps-chain score bucket first (scores inside the tie band
+    are an exact tie), then the structural tie-break chain."""
+    return (buckets[heuristic_score(r)], structural_tiebreak_key(r.cand))
+
+
 def pareto_and_diversity(reports: List[CandidateReport]) -> List[CandidateReport]:
-    """Stage 2: epsilon-Pareto compression + diversity preservation.
+    """Stage 2: diversity preservation FIRST, then epsilon-Pareto within
+    each structural group.
 
-    Diversity: candidates whose metrics are close but structural forms
-    differ must all keep a representative — group by structural_signature
-    and keep the group-best (deterministic tie-break chain). The Pareto
-    comparison runs within the full pool; per group the deterministic best
-    survives."""
+    Grouping by structural_signature precedes the Pareto sweep: candidates
+    whose metrics are close but structural forms differ must all keep a
+    representative, so a metric-dominant candidate from ANOTHER structural
+    group may not eliminate a form (the former full-pool-first order let
+    cross-group domination bypass the diversity protection on 12/20 classic
+    corpus graphs). Within a group, epsilon-domination compresses
+    near-duplicates and the deterministic group-best (eps-chain score
+    bucket -> structural tie-break chain) survives."""
     routed = [r for r in reports if r.routed and r.hard_pass]
-    # epsilon-Pareto: drop candidates dominated by another candidate
-    survivors = []
-    for r in routed:
-        dominated = False
-        for other in routed:
-            if other is r:
-                continue
-            if _dominates(other, r):
-                # identical structural form dominated by a peer -> drop;
-                # different structural forms survive for diversity unless
-                # strictly dominated beyond epsilon in ALL metrics including
-                # a strictly-better one (handled by _dominates).
-                dominated = True
-                break
-        if not dominated:
-            survivors.append(r)
-    # diversity preservation: one representative per structural_signature
-    best_by_sig: Dict[str, CandidateReport] = {}
-    for r in sorted(survivors, key=lambda r: structural_tiebreak_key(r.cand)):
-        sig = r.cand.structural_signature
-        cur = best_by_sig.get(sig)
-        if cur is None or _group_rank_key(r) < _group_rank_key(cur):
-            best_by_sig[sig] = r
-    out = sorted(best_by_sig.values(),
-                 key=lambda r: structural_tiebreak_key(r.cand))
-    return out
-
-
-def _group_rank_key(r: CandidateReport):
-    """Group-best choice: quantized heuristic score bucket first (scores
-    inside the tie band are an exact tie), then the structural tie-break
-    chain."""
-    return (score_rank_bucket(heuristic_score(r)),
-            structural_tiebreak_key(r.cand))
+    out = []
+    for sig in sorted({r.cand.structural_signature for r in routed}):
+        group = [r for r in routed if r.cand.structural_signature == sig]
+        survivors = [r for r in group
+                     if not any(_dominates(o, r) for o in group
+                                if o is not r)]
+        pool = survivors if survivors else group
+        buckets = _score_buckets(pool)
+        out.append(min(pool, key=lambda r: _rank_key(r, buckets)))
+    return sorted(out, key=lambda r: structural_tiebreak_key(r.cand))
 
 
 def heuristic_score(rep: CandidateReport) -> float:
@@ -304,10 +320,8 @@ def heuristic_score(rep: CandidateReport) -> float:
 
 
 def rank_candidates(reports: List[CandidateReport]) -> List[CandidateReport]:
-    """Stage 3: fixed heuristic ranking, deterministic tie-break chain
-    (score bucket within the tie-epsilon band -> structural_signature ->
-    coordinate sequence -> candidate_id)."""
-    def key(r):
-        return (score_rank_bucket(heuristic_score(r)),
-                structural_tiebreak_key(r.cand))
-    return sorted(reports, key=key)
+    """Stage 3: fixed heuristic ranking over eps-chain score buckets,
+    deterministic tie-break chain (score bucket within the tie-epsilon band
+    -> structural_signature -> coordinate sequence -> candidate_id)."""
+    buckets = _score_buckets(reports)
+    return sorted(reports, key=lambda r: _rank_key(r, buckets))

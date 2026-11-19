@@ -11,13 +11,29 @@ Flow (plan v1.3.1 section 2, M1 scope):
      -> routing-in-the-loop under a deterministic operation budget
      -> three-tier selection (Hard Filter -> epsilon-Pareto + diversity ->
         fixed heuristic placeholder ranking, deterministic tie-breaks)
-     -> delivery of the best candidate through the incumbent's manual-path
-        machinery (same routing + hard-gate repair + certificate pipeline)
-     -> NOT-WORSE-than-incumbent guard: the delivered candidate is compared
-        against the v0.8.2 incumbent with a deterministic routing-metric
-        tuple; the incumbent wins the comparison on any regression. The
-        pipeline's quality floor is therefore, by construction, the v0.8.2
-        path (M1-A "v0.8.2 回退" acceptance item).
+     -> delivery of the best candidate through the manual-path replay
+        machinery (routing + hard-gate repair + certificate pipeline on the
+        candidate coordinates). NOTE: this replay is NOT byte-equivalent to
+        the auto path's routing — on layered graphs the auto path
+        additionally runs the edgerules anchor presets + bounded local
+        re-enumeration (layout_auto stage 2), which the manual caliber
+        skips by design ("user authority over endpoints") — so a
+        candidate's DELIVERED metrics can differ from its routing-time
+        proxy metrics.
+     -> NOT-WORSE-than-incumbent guard: BOTH sides are measured on their
+        DELIVERED coordinates with the certificate machinery itself
+        (certificate_auto metrics + the auto_geometry_report fail count —
+        the exact values the delivered certificate / CLI rc report), and a
+        delivered candidate is accepted only if it is not worse than the
+        incumbent on every guard component; any regression falls back to
+        the untouched v0.8.2 incumbent. The guard deliberately does NOT
+        compare Router-proxy tuples: the proxy caliber can disagree with
+        the delivery certificate (measured on random-n10-i04: incumbent
+        proxy (4,0,0) vs its own delivered crossings=2), which let a
+        4-crossing delivery tie and win. The pipeline's quality floor is
+        therefore, by construction, the v0.8.2 path on the metrics the
+        delivered certificate actually reports (M1-A "v0.8.2 回退"
+        acceptance item).
 
   Failure paths: see candidate_orchestrator (source level) and below
   (delivery level). The planarization L1 ladder takes precedence exactly as
@@ -32,17 +48,82 @@ from typing import Optional
 
 from .candidate_contract import LayoutCandidate
 from .candidate_orchestrator import Orchestrator
-from .candidate_selection import (pareto_and_diversity, rank_candidates,
-                                  route_and_evaluate)
+from .candidate_selection import (ROUTING_OP_BUDGET_CANDIDATES,
+                                  ROUTING_OP_MARGIN_OPS, pareto_and_diversity,
+                                  rank_candidates, route_and_evaluate)
 from .candidate_sources import SourceContext
 from .layout_auto import layout as _auto_layout
 from .planarized_layout import planarized_entry
 from .structure_analyzer import analyze_graph
 
-# Deterministic routing-metric tuple caliber for the not-worse guard and the
-# delivery verification: (router-theory crossing pairs, edges pressing a
-# box, edges below clearance). Same Router class as the auto-v2 trial gates.
-GUARD_TUPLE_LEN = 3
+# ---- not-worse guard: DELIVERED-certificate caliber ----
+# Both guard sides are computed by _cert_guard below: certificate metrics +
+# the geometry-report fail count on the DELIVERED v4 (the values the
+# delivered certificate reports / the CLI rc is derived from). Component
+# order (lexicographic, lower is better):
+#   0 geo gate fails      auto_geometry_report fail count (rc determinant)
+#   1..8 hard breaches    box press / clearance deficit / anchor smoothing /
+#                         anchor standard / visual crossings / line
+#                         coincidence / card-gap deficit / mutual-pair deficit
+#   9 crossings           delivered crossing count (soft <= 2, still ordered)
+#   10..12 soft floor     spacing_cv / -min_card_gap / -edge_box_min_clear
+#                         (soft metrics are part of "not worse than v0.8.2")
+GUARD_TUPLE_LEN = 13
+
+
+def _cert_guard(v4, cfg):
+    """Certificate-caliber guard metrics on DELIVERED coordinates.
+
+    One function for candidate and incumbent — the tuple is computed from
+    the delivered v4 exactly the way the delivered certificate computes it
+    (same scene, same metric machinery), so the guard comparison and the
+    delivered certificate cannot disagree the way the old Router-proxy
+    tuple did (incumbent proxy (4,0,0) vs its own delivered crossings=2 on
+    random-n10-i04). Returns (tuple, metrics_dict) — the dict is provenance.
+    """
+    import contextlib
+    import io
+    import math as _math
+    from . import check as _check
+    from . import metrics as _metrics
+    scene = _metrics.scene_from_auto(v4)
+    cert = _metrics.certificate_auto(scene)
+    m = cert["metrics"]
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        geo_fails = int(_check.auto_geometry_report(v4)["fail"])
+    min_clear = m.get("edge_box_min_clear")
+    clr_deficit = (0 if min_clear is None
+                   else max(0, int(_math.ceil(cfg.clearance - min_clear))))
+    gap = m.get("min_card_gap")
+    gap_deficit = (0 if gap is None
+                   else max(0, int(_math.ceil(cfg.min_gap - gap))))
+    mutual = m.get("mutual_pair_min_sep")
+    mutual_deficit = (0 if mutual is None
+                      else max(0, int(_math.ceil(4.0 - mutual))))
+    cv = m.get("spacing_cv")
+    tup = (
+        geo_fails,
+        int(m["box_press_1px"]),
+        clr_deficit,
+        int(m["anchor_violations"]),
+        int(m.get("anchor_standard_violations") or 0),
+        int(m["visual_crossings"]),
+        int(m.get("line_line_coincident_pairs") or 0),
+        gap_deficit,
+        mutual_deficit,
+        int(m["crossings"]),
+        float(cv) if cv is not None else 0.0,
+        (-round(gap, 1)) if gap is not None else 0.0,
+        (-round(min_clear, 1)) if min_clear is not None else 0.0,
+    )
+    metrics = {k: m[k] for k in ("crossings", "box_press_1px",
+                                 "edge_box_min_clear", "min_card_gap",
+                                 "spacing_cv", "visual_crossings",
+                                 "anchor_violations",
+                                 "anchor_standard_violations",
+                                 "line_line_coincident_pairs")}
+    return tup, metrics
 
 
 @dataclass
@@ -76,23 +157,6 @@ def _dense_hub(graph, adj):
     return None, deg_max
 
 
-def _guard_tuple(v4, graph, cfg, widths, card_h, edges):
-    """Routing-metric tuple on DELIVERED coordinates (same caliber for
-    candidate and incumbent)."""
-    from .routing import Router
-    nodes = sorted(graph.node_ids())
-    nodes_px = {v: (v4["nodes"][v]["x"], v4["nodes"][v]["y"], widths[v],
-                    card_h) for v in nodes}
-    router = Router(nodes_px, list(edges), cfg.clearance, cfg.pitch)
-    routes = router.route_all()
-    pairs = router.final_crossing_pairs(routes)
-    press = sum(1 for info in routes.values() if info.get("press", 0))
-    clr = sum(1 for info in routes.values()
-              if info.get("min_clear") is not None
-              and info["min_clear"] < cfg.clearance - 1e-6)
-    return (pairs, press, clr)
-
-
 def _bbox(positions, widths, card_h, margin):
     xs0 = [positions[v][0] - widths[v] / 2 for v in positions]
     xs1 = [positions[v][0] + widths[v] / 2 for v in positions]
@@ -118,9 +182,11 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
     if pl_mode == "L1":
         v4 = _auto_layout(graph, cfg, linestyle)
         provenance = {
-            "delivery": "planarized-l1-incumbent",
-            "note": "planarized L1 witness drawing: incumbent output kept "
-                    "(candidate pool out of scope for the L1 ladder in M1)",
+            "delivery": {
+                "mode": "planarized-l1-incumbent",
+                "note": "planarized L1 witness drawing: incumbent output kept "
+                        "(candidate pool out of scope for the L1 ladder in M1)",
+            },
         }
         _annotate(v4, provenance, graph, edges)
         return v4
@@ -163,8 +229,19 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
     reports = route_and_evaluate(candidates, ctx)
     shortlist = pareto_and_diversity(reports)
     ranked = rank_candidates(shortlist)
+    total_ops = (ROUTING_OP_BUDGET_CANDIDATES * max(1, len(edges))
+                 + ROUTING_OP_MARGIN_OPS)
+    consumed_ops = sum(len(edges) for r in reports if r.routed)
     provenance["selection"] = {
-        "op_budget": None,
+        # actual budget + consumption (MINOR-4 fix: the placeholder None
+        # never reached the artifacts; now the artifact records the formula
+        # value and the deterministic consumption, 1 op per routed edge)
+        "op_budget": {
+            "total": total_ops,
+            "consumed": consumed_ops,
+            "per_routed_edge": 1,
+            "granularity": "per-candidate",
+        },
         "evaluated": len(reports),
         "hard_pass": sum(1 for r in reports if r.hard_pass),
         "reports": [r.to_dict() for r in sorted(
@@ -172,11 +249,12 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
         "ranked_ids": [r.cand.candidate_id for r in ranked],
     }
 
-    incumbent_tuple = _guard_tuple(incumbent_v4, graph, cfg, widths, card_h,
-                                   edges)
+    incumbent_tup, incumbent_metrics = _cert_guard(incumbent_v4, cfg)
     # ---- delivery attempts in rank order; not-worse guard vs incumbent ----
     best_v4 = None
     best_id = None
+    best_tup = None
+    consistency_ok = False
     delivery_log = []
     for rep in ranked:
         cand = rep.cand
@@ -194,35 +272,63 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
                                  "outcome": "delivery_error",
                                  "detail": f"{type(e).__name__}: {e}"})
             continue
-        tup = _guard_tuple(v4c, graph, cfg, widths, card_h, edges)
+        tup, mets = _cert_guard(v4c, cfg)
         delivery_log.append({
             "candidate_id": cand.candidate_id,
             "outcome": "evaluated",
             "guard_tuple": list(tup),
-            "incumbent_guard_tuple": list(incumbent_tuple),
+            "delivered_metrics": mets,
+            "incumbent_guard_tuple": list(incumbent_tup),
         })
-        # not-worse guard: candidate wins only if strictly better on the
-        # deterministic tuple; on a tie the candidate wins (progressive;
-        # metrics are equal so "not worse than v0.8.2" holds either way).
-        if tup < incumbent_tuple or tup == incumbent_tuple:
-            best_v4, best_id = v4c, cand.candidate_id
+        # not-worse guard on DELIVERED certificate metrics: the candidate
+        # wins only if it is not worse than the incumbent on every guard
+        # component; on an exact tie the candidate wins (progressive — the
+        # delivered metrics are equal, so "not worse" holds either way).
+        if tup <= incumbent_tup:
+            best_v4, best_id, best_tup = v4c, cand.candidate_id, tup
             delivery_log[-1]["outcome"] = "delivered"
             break
         delivery_log[-1]["outcome"] = "worse-than-incumbent"
     if best_v4 is not None:
+        # delivery pre/post consistency check (fail-closed): the metrics the
+        # guard just compared must be exactly the delivered artifact's
+        # certificate metrics; on any mismatch the incumbent is delivered.
+        recheck_tup, recheck_metrics = _cert_guard(best_v4, cfg)
+        consistency_ok = (recheck_tup == best_tup)
+    if best_v4 is not None and consistency_ok:
         provenance["delivery"] = {
             "mode": "candidate",
             "candidate_id": best_id,
-            "incumbent_guard_tuple": list(incumbent_tuple),
+            "guard_caliber": "delivered-certificate-metrics",
+            "incumbent_guard_tuple": list(incumbent_tup),
+            "incumbent_delivered_metrics": incumbent_metrics,
+            "delivered_metrics": recheck_metrics,
             "attempts": delivery_log,
         }
         v4 = best_v4
     else:
+        # fallback reason: honest about WHICH gate emptied the delivery
+        if best_v4 is not None:
+            reason = ("delivery pre/post metric consistency check failed; "
+                      "fail-closed to the incumbent")
+        elif delivery_log and all(
+                a.get("outcome") == "delivery_error" for a in delivery_log):
+            reason = "every candidate delivery raised an error"
+        elif delivery_log:
+            reason = "no candidate delivery passed the not-worse guard"
+        elif reports and all(r.hard_pass is False for r in reports):
+            reason = "no candidate survived the Stage-1 hard filter"
+        elif reports and all(r.budget_exhausted for r in reports):
+            reason = ("routing op budget exhausted before any candidate "
+                      "was evaluated")
+        else:
+            reason = "no candidate delivery passed the not-worse guard"
         provenance["delivery"] = {
             "mode": "incumbent-fallback",
-            "reason": ("no candidate delivery passed the not-worse guard"
-                       if delivery_log else
-                       "no candidate was routable under the op budget"),
+            "reason": reason,
+            "guard_caliber": "delivered-certificate-metrics",
+            "incumbent_guard_tuple": list(incumbent_tup),
+            "incumbent_delivered_metrics": incumbent_metrics,
             "attempts": delivery_log,
         }
         v4 = incumbent_v4
@@ -236,7 +342,14 @@ def _annotate(v4, provenance, graph, edges):
 
     meta["recipe"] stays "auto-v2": it is a dispatch/caliber key consumed by
     check.py (geometry_report routing + anchor-gate caliber) and the
-    certificate contract — the delivery machinery IS the auto-v2 caliber.
+    certificate contract. HONESTY NOTE (corrects the former claim that the
+    delivery machinery "IS the auto-v2 caliber", which measured false on
+    layered graphs): the delivery REPLAYS candidate coordinates through the
+    manual-path machinery — the auto path additionally runs edgerules
+    anchor presets + bounded re-enumeration there — so delivered metrics
+    can differ from routing-time proxies. That gap is exactly what the
+    not-worse guard now measures: both sides are compared on their
+    DELIVERED certificate metrics (see _cert_guard), never on proxies.
     The pipeline identity travels on "recipe_requested" + "candidate_pool".
     """
     meta = v4.setdefault("meta", {})
