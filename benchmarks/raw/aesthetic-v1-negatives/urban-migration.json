@@ -1,0 +1,553 @@
+{
+ "viewBox": [
+  0,
+  0,
+  832,
+  400
+ ],
+ "nodes": {
+  "jobs": {
+   "x": 600,
+   "y": 332,
+   "w": 96
+  },
+  "amenity": {
+   "x": 600,
+   "y": 92,
+   "w": 108
+  },
+  "in_migration": {
+   "x": 600,
+   "y": 172,
+   "w": 96
+  },
+  "population": {
+   "x": 600,
+   "y": 252,
+   "w": 96
+  },
+  "congestion": {
+   "x": 738,
+   "y": 172,
+   "w": 96
+  },
+  "housing_cost": {
+   "x": 462,
+   "y": 172,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "jobs",
+   "b": "amenity",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      555.0,
+      332.0
+     ],
+     [
+      514.9,
+      322.0
+     ],
+     [
+      478.3,
+      312.0
+     ],
+     [
+      445.1,
+      302.0
+     ],
+     [
+      415.4,
+      292.0
+     ],
+     [
+      389.1,
+      282.0
+     ],
+     [
+      366.4,
+      272.0
+     ],
+     [
+      347.1,
+      262.0
+     ],
+     [
+      331.2,
+      252.0
+     ],
+     [
+      318.8,
+      242.0
+     ],
+     [
+      309.9,
+      232.0
+     ],
+     [
+      304.5,
+      222.0
+     ],
+     [
+      302.5,
+      212.0
+     ],
+     [
+      304.0,
+      202.0
+     ],
+     [
+      308.9,
+      192.0
+     ],
+     [
+      317.3,
+      182.0
+     ],
+     [
+      329.2,
+      172.0
+     ],
+     [
+      344.6,
+      162.0
+     ],
+     [
+      363.4,
+      152.0
+     ],
+     [
+      385.6,
+      142.0
+     ],
+     [
+      411.4,
+      132.0
+     ],
+     [
+      440.6,
+      122.0
+     ],
+     [
+      473.3,
+      112.0
+     ],
+     [
+      509.4,
+      102.0
+     ],
+     [
+      549.0,
+      92.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     53.0,
+     212.0
+    ]
+   },
+   "anchors": {
+    "a": [
+     555.0,
+     332.0
+    ],
+    "b": [
+     549.0,
+     92.0
+    ]
+   },
+   "arrow": [
+    549.0,
+    92.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "amenity",
+   "b": "in_migration",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      600.0,
+      111.0
+     ],
+     [
+      600.0,
+      153.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     600.0,
+     111.0
+    ],
+    "b": [
+     600.0,
+     153.0
+    ]
+   },
+   "arrow": [
+    600.0,
+    153.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "in_migration",
+   "b": "population",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      600.0,
+      191.0
+     ],
+     [
+      600.0,
+      233.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     600.0,
+     191.0
+    ],
+    "b": [
+     600.0,
+     233.0
+    ]
+   },
+   "arrow": [
+    600.0,
+    233.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "population",
+   "b": "jobs",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      600.0,
+      271.0
+     ],
+     [
+      600.0,
+      313.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     600.0,
+     271.0
+    ],
+    "b": [
+     600.0,
+     313.0
+    ]
+   },
+   "arrow": [
+    600.0,
+    313.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "population",
+   "b": "congestion",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      645.0,
+      233.0
+     ],
+     [
+      693.0,
+      191.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     645.0,
+     233.0
+    ],
+    "b": [
+     693.0,
+     191.0
+    ]
+   },
+   "arrow": [
+    693.0,
+    191.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "congestion",
+   "b": "amenity",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      693.0,
+      153.0
+     ],
+     [
+      651.0,
+      111.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     693.0,
+     153.0
+    ],
+    "b": [
+     651.0,
+     111.0
+    ]
+   },
+   "arrow": [
+    651.0,
+    111.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "population",
+   "b": "housing_cost",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      555.0,
+      233.0
+     ],
+     [
+      507.0,
+      191.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     555.0,
+     233.0
+    ],
+    "b": [
+     507.0,
+     191.0
+    ]
+   },
+   "arrow": [
+    507.0,
+    191.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "housing_cost",
+   "b": "amenity",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      507.0,
+      153.0
+     ],
+     [
+      549.0,
+      111.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     507.0,
+     153.0
+    ],
+    "b": [
+     549.0,
+     111.0
+    ]
+   },
+   "arrow": [
+    549.0,
+    111.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 4,
+  "rowY": [
+   92,
+   172,
+   252,
+   332
+  ],
+  "pitch": 80,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "column-construct",
+  "mode_decision_trace": {
+   "engine": "column-construct",
+   "placement": "column-chain",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=6, edges m=8 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "6 simple loops enumerated (need exactly 2)",
+     "trial_gate": null
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": false,
+     "reason": "no hub-pair candidate: no directed edge whose endpoints share 3..4 common neighbors",
+     "trial_gate": null
+    },
+    {
+     "tier": 3,
+     "rule": "column-chain",
+     "triggered": true,
+     "reason": "main ring k=4 < n=6 (small main ring -> strong chain reading)",
+     "trial_gate": "pass"
+    },
+    {
+     "tier": 2,
+     "rule": "comb-bilateral",
+     "triggered": false,
+     "reason": "detected, but not adopted: the comb source column is not strictly longer than the best column spine (salience rule — the column reading wins)",
+     "trial_gate": null
+    },
+    {
+     "tier": 4,
+     "rule": "ring-cycle",
+     "triggered": false,
+     "reason": "detected, but a higher-tier plan was adopted — trial not run",
+     "trial_gate": null
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "column-chain: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "column-chain",
+  "column": {
+   "spine": [
+    "amenity",
+    "in_migration",
+    "population",
+    "jobs"
+   ],
+   "pitch": 80,
+   "axis_x": 600,
+   "declared_loop": "R1",
+   "closing": [
+    "jobs",
+    "amenity"
+   ],
+   "closing_side": "left",
+   "side_columns": {
+    "1": [
+     "congestion"
+    ],
+    "-1": [
+     "housing_cost"
+    ]
+   },
+   "residuals": [
+    "congestion",
+    "housing_cost"
+   ]
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

@@ -1,0 +1,278 @@
+{
+ "viewBox": [
+  0,
+  0,
+  528,
+  440
+ ],
+ "nodes": {
+  "our_arms": {
+   "x": 270,
+   "y": 70,
+   "w": 96
+  },
+  "their_arms": {
+   "x": 270,
+   "y": 370,
+   "w": 96
+  },
+  "our_fear": {
+   "x": 420,
+   "y": 220,
+   "w": 124
+  },
+  "their_fear": {
+   "x": 120,
+   "y": 220,
+   "w": 124
+  }
+ },
+ "edges": [
+  {
+   "a": "their_arms",
+   "b": "our_fear",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      280.6,
+      351.0
+     ],
+     [
+      406.1,
+      239.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     280.62,
+     351.0
+    ],
+    "b": [
+     406.076,
+     239.0
+    ]
+   },
+   "arrow": [
+    406.1,
+    239.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "our_fear",
+   "b": "our_arms",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      406.1,
+      201.0
+     ],
+     [
+      280.6,
+      89.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     406.076,
+     201.0
+    ],
+    "b": [
+     280.62,
+     89.0
+    ]
+   },
+   "arrow": [
+    280.6,
+    89.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "our_arms",
+   "b": "their_fear",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      259.4,
+      89.0
+     ],
+     [
+      133.9,
+      201.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     259.38,
+     89.0
+    ],
+    "b": [
+     133.924,
+     201.0
+    ]
+   },
+   "arrow": [
+    133.9,
+    201.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "their_fear",
+   "b": "their_arms",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      133.9,
+      239.0
+     ],
+     [
+      259.4,
+      351.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     133.924,
+     239.0
+    ],
+    "b": [
+     259.38,
+     351.0
+    ]
+   },
+   "arrow": [
+    259.4,
+    351.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 3,
+  "rowY": [
+   78,
+   228,
+   378
+  ],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "ring-construct",
+  "mode_decision_trace": {
+   "engine": "ring-construct",
+   "placement": "ring-cycle",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=4, edges m=4 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "core n=4 (need 5..12)",
+     "trial_gate": null
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": false,
+     "reason": "core n=4 (need 6..12)",
+     "trial_gate": null
+    },
+    {
+     "tier": 3,
+     "rule": "column-chain",
+     "triggered": false,
+     "reason": "not evaluated: ring detection would take the pure-cycle branch (pure-cycle/ratio graphs go to ring-cycle)",
+     "trial_gate": null
+    },
+    {
+     "tier": 4,
+     "rule": "ring-cycle",
+     "triggered": true,
+     "reason": "pure cycle, all degree-2, k=n=4",
+     "trial_gate": "pass"
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "ring-cycle: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "ring-cycle",
+  "ring": {
+   "nodes": [
+    "our_arms",
+    "our_fear",
+    "their_arms",
+    "their_fear"
+   ],
+   "radius": 150,
+   "center": [
+    150,
+    212
+   ],
+   "declared_loop": null,
+   "polarity": null,
+   "trigger": "pure-cycle",
+   "chord_crossings": 0,
+   "residuals": {}
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

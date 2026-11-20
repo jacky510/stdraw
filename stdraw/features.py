@@ -77,6 +77,20 @@ FEATURE_KEYS = (
     "visual_centroid_offset",
     "voronoi_cell_area_cv",
     "angular_resolution_deg",
+    # scalar convenience keys — single-source extension for the aesthetic
+    # scorer (kanban-card directive 2026-11-20): the scorer stays a thin layer
+    # ("take key -> normalize -> weight -> 0-100") and never re-implements
+    # geometry.  Order is documentation only; JSON keys are emitted sorted.
+    "avg_edge_length",
+    "symmetry_axis_err_px",
+    # shape-conditional scorer extensions (2026-11-20 directive): in-shape
+    # regularity measures — degree-centroid correlation (negative on
+    # ring-dominant layouts, positive on hub+spoke) and hub-neighbor vs
+    # low-degree centroid distance ratio.  Dedupe check: no existing key
+    # measures degree-vs-centrality correlation (hub_centroid_distance is a
+    # single-node statistic, not a rank correlation).
+    "degree_centroid_spearman",
+    "hub_neighbor_centrality_ratio",
 )
 
 
@@ -878,6 +892,11 @@ def _feat_symmetry(layout):
             "note": "confidence weights pending data calibration (RFC §15.1)",
         },
         "mirror_axis_residual": mirror,
+        "symmetry_axis_err_px": {
+            "err_px": mirror["residual"] if mirror else None,
+            "note": "single-source scalar mirror of mirror_axis_residual "
+                    "(None when no automorphism pairing admits a reflection fit)",
+        },
     }
 
 
@@ -901,6 +920,87 @@ class _sub_layout(Layout):
 
 # ────────────────────── features 11-18 (distribution / canvas) ──────────────────────
 
+def _spearman_rho(xs, ys):
+    """Spearman rank correlation with average ranks (deterministic)."""
+    n = len(xs)
+    if n < 3:
+        return None
+
+    def _avg_ranks(vals):
+        order = sorted(range(n), key=lambda i: vals[i])
+        ranks = [0.0] * n
+        i = 0
+        while i < n:
+            j = i
+            while j + 1 < n and vals[order[j + 1]] == vals[order[i]]:
+                j += 1
+            avg = (i + j) / 2.0 + 1.0
+            for k in range(i, j + 1):
+                ranks[order[k]] = avg
+            i = j + 1
+        return ranks
+
+    rx = _avg_ranks(list(xs))
+    ry = _avg_ranks(list(ys))
+    mx = fsum(rx) / n
+    my = fsum(ry) / n
+    num = fsum((a - mx) * (b - my) for a, b in zip(rx, ry))
+    den = math.sqrt(fsum((a - mx) ** 2 for a in rx) * fsum((b - my) ** 2 for b in ry))
+    if den < EPS:
+        return None
+    return num / den
+
+
+def _feat_degree_centrality(layout):
+    """Shape-regularity features (2026-11-20 directive, single-source here):
+
+    - degree_centroid_spearman: rank correlation between node degree and
+      node distance to the area centroid.  Negative on ring-dominant
+      layouts (high-degree nodes ride the ring, not the centre), positive
+      on hub+spoke layouts.  Measured on jacky's hand-drawn fixtures:
+      i05 -0.26 / brand-flywheel -0.14 / epidemic -0.24 (ring) vs
+      classic-cld +0.40 / i00 +0.59 (hub).
+    - hub_neighbor_centrality_ratio: mean centroid distance of the hub
+      nodes' neighbors over that of the minimum-degree nodes.
+    """
+    ids = layout.ids
+    if len(ids) < 3 or not layout.edges:
+        return {
+            "degree_centroid_spearman": {"rho": None, "n_nodes": len(ids)},
+            "hub_neighbor_centrality_ratio": {"ratio": None},
+        }
+    cx = layout.vx + layout.vw / 2.0
+    cy = layout.vy + layout.vh / 2.0
+    dists = {nid: _dist(layout.pos[nid], (cx, cy)) for nid in ids}
+    degs = {nid: layout.degree[nid] for nid in ids}
+    ordered = sorted(ids)
+    rho = _spearman_rho([degs[n] for n in ordered], [dists[n] for n in ordered])
+    max_deg = max(degs[n] for n in ids)
+    min_deg = min(degs[n] for n in ids)
+    hub_ids = [n for n in ordered if degs[n] == max_deg]
+    low_ids = [n for n in ordered if degs[n] == min_deg]
+    nb = sorted({e["a"] for e in layout.edges if e["a"] != e["b"] and degs[e["a"]] == max_deg} |
+                {e["b"] for e in layout.edges if e["a"] != e["b"] and degs[e["b"]] == max_deg})
+    ratio = None
+    if nb and low_ids:
+        hub_mean = fsum(dists[n] for n in nb) / len(nb)
+        low_mean = fsum(dists[n] for n in low_ids) / len(low_ids)
+        if low_mean > EPS:
+            ratio = hub_mean / low_mean
+    return {
+        "degree_centroid_spearman": {
+            "rho": _r(rho) if rho is not None else None,
+            "n_nodes": len(ids),
+        },
+        "hub_neighbor_centrality_ratio": {
+            "ratio": _r(ratio),
+            "hub_nodes": hub_ids,
+            "n_hub_neighbors": len(nb),
+            "n_low_nodes": len(low_ids),
+        },
+    }
+
+
 def _feat_edge_stats(layout):
     lens = [_dist(layout.pos[e["a"]], layout.pos[e["b"]]) for e in layout.edges]
     cv = _cv(lens)
@@ -910,6 +1010,7 @@ def _feat_edge_stats(layout):
     return {
         "edge_length_cv": {"cv": _r(cv), "n_edges": len(lens)},
         "max_min_edge_ratio": {"ratio": _r(ratio)},
+        "avg_edge_length": {"mean_px": _r(_mean(lens)) if lens else None},
     }
 
 
@@ -1208,6 +1309,7 @@ def extract_features(doc):
     features.update(_feat_spacing(layout))
     features.update(_feat_bends(layout))
     features.update(_feat_centroid_hub(layout))
+    features.update(_feat_degree_centrality(layout))
     features.update(_feat_voronoi(layout))
     features.update(_feat_canvas(layout))
     features.update(_feat_soft_clearance(layout))

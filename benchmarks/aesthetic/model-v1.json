@@ -1,0 +1,161 @@
+{
+  "caliber": "normalized",
+  "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+  "family_labels": {
+    "arms-race": "单环",
+    "brand-flywheel": "嵌套环",
+    "bullwhip": "多环耦合",
+    "burnout-attrition": "多环耦合",
+    "classic-cld-growth-and-burden": "嵌套环",
+    "debt-spiral": "多环耦合",
+    "eroding-goals": "多环耦合",
+    "fishing-collapse": "嵌套环",
+    "fixes-that-fail": "多环耦合",
+    "induced-demand": "嵌套环",
+    "learning-flywheel": "多环耦合",
+    "limits-to-growth": "多环耦合",
+    "population-logistic": "嵌套环",
+    "renewable-resource": "多环耦合",
+    "shifting-the-burden": "嵌套环",
+    "soil-erosion": "嵌套环",
+    "success-to-the-successful": "嵌套环",
+    "tragedy-of-the-commons": "多环耦合",
+    "urban-migration": "多环耦合",
+    "wage-price-spiral": "多环耦合"
+  },
+  "kind": "shape-conditional",
+  "models": {
+    "global": {
+      "bias": -0.996633274,
+      "caliber": "normalized",
+      "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+      "fit_sample_counts": {
+        "negative": 40,
+        "positive": 10
+      },
+      "human_lower_bound": 34.5,
+      "hyper": {
+        "class_balanced": true,
+        "irls_iters": 50,
+        "l2": 1.0
+      },
+      "impute_median": {
+        "bend_soft_margin": 0.0037119296546380123,
+        "bend_total_curvature": 169.5757508025
+      },
+      "names": [
+        "bend_soft_margin",
+        "bend_total_curvature"
+      ],
+      "schema": "stdraw.aesthetic_model/v1",
+      "standardize_mean": [
+        0.020456332,
+        234.309975545
+      ],
+      "standardize_std": [
+        0.045982335,
+        246.827165094
+      ],
+      "weights": {
+        "bend_soft_margin": -1.520474934,
+        "bend_total_curvature": -1.744565883
+      }
+    },
+    "hub": {
+      "bias": -1.043838155,
+      "caliber": "normalized",
+      "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+      "fit_sample_counts": {
+        "negative": 23,
+        "positive": 3
+      },
+      "human_lower_bound": 68.8,
+      "hyper": {
+        "class_balanced": true,
+        "irls_iters": 50,
+        "l2": 1.0
+      },
+      "impute_median": {
+        "avg_edge_length": 0.24532653286055217,
+        "hub_centroid_px": 0.12125933141853701,
+        "hub_degree": 4.5
+      },
+      "names": [
+        "avg_edge_length",
+        "hub_centroid_px",
+        "hub_degree"
+      ],
+      "schema": "stdraw.aesthetic_model/v1",
+      "standardize_mean": [
+        0.244176272,
+        0.138198663,
+        5.384615385
+      ],
+      "standardize_std": [
+        0.066853516,
+        0.098439625,
+        2.94927531
+      ],
+      "weights": {
+        "avg_edge_length": -0.698469761,
+        "hub_centroid_px": -0.695270748,
+        "hub_degree": 1.434460664
+      }
+    },
+    "ring": {
+      "bias": -0.70430061,
+      "caliber": "normalized",
+      "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+      "fit_sample_counts": {
+        "negative": 17,
+        "positive": 7
+      },
+      "human_lower_bound": 56.5,
+      "hyper": {
+        "class_balanced": true,
+        "irls_iters": 50,
+        "l2": 1.0
+      },
+      "impute_median": {
+        "bend_soft_margin": 0.002634875102927838,
+        "bend_total_curvature": 335.62927296600003,
+        "crossing_count": 1.0
+      },
+      "names": [
+        "bend_soft_margin",
+        "bend_total_curvature",
+        "crossing_count"
+      ],
+      "schema": "stdraw.aesthetic_model/v1",
+      "standardize_mean": [
+        0.010042596,
+        309.255749648,
+        1.791666667
+      ],
+      "standardize_std": [
+        0.038866919,
+        270.26890496,
+        2.466089459
+      ],
+      "weights": {
+        "bend_soft_margin": -0.817371602,
+        "bend_total_curvature": -1.373114145,
+        "crossing_count": -0.799962997
+      }
+    }
+  },
+  "routing": {
+    "family_map_source": "benchmarks/corpus/classic/topology-families.json",
+    "hub_intensity_threshold": 0.75,
+    "rho_threshold": 0.0,
+    "rule": "(1) family label: single-cycle->ring, multi-cycle-coupled/chain/star->hub; (2) nested-cycle + unlabeled: hub intensity (hub_degree/n >= 0.75 -> hub) first, then degree_centroid_spearman (canvas-centre caliber, <=0->ring, >0->hub); (3) undefined rho -> global fallback. KNOWN LIMITATION: in-repo i00 fixture measures rho=-0.53 / hub intensity 0.5 -> routed ring, conflicting with the operator reference (+0.59, measured on the WorkBuddy-side copy this card may not read) — logged per-sample in routing_log for review",
+    "shape_excluded_features": {
+      "global": [],
+      "hub": [],
+      "ring": [
+        "alignment_max_coverage"
+      ]
+    }
+  },
+  "schema": "stdraw.aesthetic_model/v1"
+}

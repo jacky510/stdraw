@@ -1,0 +1,749 @@
+{
+ "viewBox": [
+  0,
+  0,
+  4688,
+  2344
+ ],
+ "nodes": {
+  "N00": {
+   "x": 52.0,
+   "y": 26.0,
+   "w": 96
+  },
+  "N01": {
+   "x": 4612.0,
+   "y": 26.0,
+   "w": 96
+  },
+  "N03": {
+   "x": 4046.0,
+   "y": 602.0,
+   "w": 96
+  },
+  "N04": {
+   "x": 2616.0,
+   "y": 1736.0,
+   "w": 96
+  },
+  "N05": {
+   "x": 2616.0,
+   "y": 880.0,
+   "w": 96
+  },
+  "N06": {
+   "x": 2050.0,
+   "y": 314.0,
+   "w": 96
+  },
+  "N07": {
+   "x": 906.0,
+   "y": 602.0,
+   "w": 96
+  },
+  "N08": {
+   "x": 3192.0,
+   "y": 1168.0,
+   "w": 96
+  },
+  "N09": {
+   "x": 2050.0,
+   "y": 2024.0,
+   "w": 96
+  },
+  "N02": {
+   "x": 130.0,
+   "y": 2106.0,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "N00",
+   "b": "N01",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      100.0,
+      26.0
+     ],
+     [
+      4564.0,
+      26.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     100.0,
+     26.0
+    ],
+    "b": [
+     4564.0,
+     26.0
+    ]
+   },
+   "arrow": [
+    4564.0,
+    26.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N00",
+   "b": "N06",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      100.0,
+      32.9
+     ],
+     [
+      2002.0,
+      307.1
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     100.0,
+     32.9
+    ],
+    "b": [
+     2002.0,
+     307.1
+    ]
+   },
+   "arrow": [
+    2002.0,
+    307.1
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N00",
+   "b": "N09",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      74.0,
+      48.0
+     ],
+     [
+      2028.0,
+      2002.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     74.0,
+     48.0
+    ],
+    "b": [
+     2028.0,
+     2002.0
+    ]
+   },
+   "arrow": [
+    2028.0,
+    2002.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N01",
+   "b": "N03",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      4590.4,
+      48.0
+     ],
+     [
+      4067.6,
+      580.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     4590.4,
+     48.0
+    ],
+    "b": [
+     4067.6,
+     580.0
+    ]
+   },
+   "arrow": [
+    4067.6,
+    580.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N01",
+   "b": "N06",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      4564.0,
+      31.4
+     ],
+     [
+      2098.0,
+      308.6
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     4564.0,
+     31.4
+    ],
+    "b": [
+     2098.0,
+     308.6
+    ]
+   },
+   "arrow": [
+    2098.0,
+    308.6
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N03",
+   "b": "N04",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      4024.0,
+      624.0
+     ],
+     [
+      2337.2,
+      2312.8
+     ],
+     [
+      2337.5,
+      2313.1
+     ],
+     [
+      2605.4,
+      1758.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     4024.0,
+     624.0
+    ],
+    "b": [
+     2605.4,
+     1758.0
+    ]
+   },
+   "arrow": [
+    2605.4,
+    1758.0
+   ],
+   "route_cross_edges": 1
+  },
+  {
+   "a": "N03",
+   "b": "N06",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      3998.0,
+      595.1
+     ],
+     [
+      2098.0,
+      320.9
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     3998.0,
+     595.1
+    ],
+    "b": [
+     2098.0,
+     320.9
+    ]
+   },
+   "arrow": [
+    2098.0,
+    320.9
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N03",
+   "b": "N08",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      4012.8,
+      624.0
+     ],
+     [
+      3225.2,
+      1146.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     4012.8,
+     624.0
+    ],
+    "b": [
+     3225.2,
+     1146.0
+    ]
+   },
+   "arrow": [
+    3225.2,
+    1146.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N04",
+   "b": "N06",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      2607.2,
+      1714.0
+     ],
+     [
+      2058.8,
+      336.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     2607.2,
+     1714.0
+    ],
+    "b": [
+     2058.8,
+     336.0
+    ]
+   },
+   "arrow": [
+    2058.8,
+    336.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N04",
+   "b": "N07",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      2582.8,
+      1714.0
+     ],
+     [
+      939.2,
+      624.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     2582.8,
+     1714.0
+    ],
+    "b": [
+     939.2,
+     624.0
+    ]
+   },
+   "arrow": [
+    939.2,
+    624.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N04",
+   "b": "N09",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      2572.8,
+      1758.0
+     ],
+     [
+      2093.2,
+      2002.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     2572.8,
+     1758.0
+    ],
+    "b": [
+     2093.2,
+     2002.0
+    ]
+   },
+   "arrow": [
+    2093.2,
+    2002.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N05",
+   "b": "N06",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      2594.0,
+      858.0
+     ],
+     [
+      2072.0,
+      336.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     2594.0,
+     858.0
+    ],
+    "b": [
+     2072.0,
+     336.0
+    ]
+   },
+   "arrow": [
+    2072.0,
+    336.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N05",
+   "b": "N08",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      2660.0,
+      902.0
+     ],
+     [
+      3148.0,
+      1146.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     2660.0,
+     902.0
+    ],
+    "b": [
+     3148.0,
+     1146.0
+    ]
+   },
+   "arrow": [
+    3148.0,
+    1146.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N06",
+   "b": "N07",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      2002.0,
+      326.1
+     ],
+     [
+      954.0,
+      589.9
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     2002.0,
+     326.1
+    ],
+    "b": [
+     954.0,
+     589.9
+    ]
+   },
+   "arrow": [
+    954.0,
+    589.9
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N07",
+   "b": "N09",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      923.7,
+      624.0
+     ],
+     [
+      2032.3,
+      2002.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     923.7,
+     624.0
+    ],
+    "b": [
+     2032.3,
+     2002.0
+    ]
+   },
+   "arrow": [
+    2032.3,
+    2002.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "N08",
+   "b": "N09",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      3175.6,
+      1190.0
+     ],
+     [
+      2337.3,
+      2313.0
+     ],
+     [
+      2338.8,
+      2312.8
+     ],
+     [
+      2072.0,
+      2046.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     3175.6,
+     1190.0
+    ],
+    "b": [
+     2072.0,
+     2046.0
+    ]
+   },
+   "arrow": [
+    2072.0,
+    2046.0
+   ],
+   "route_cross_edges": 1
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 0,
+  "rowY": [],
+  "pitch": null,
+  "deg0": [
+   "N02"
+  ],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "planarized",
+  "mode_decision_trace": {
+   "engine": "planarized",
+   "placement": "planarized",
+   "manual": false,
+   "rules": [],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "planarization": {
+    "mode": "L1",
+    "cap": 30,
+    "ub": 1,
+    "h_vertices": 10,
+    "cores": 1
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 1,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "planarized",
+  "method": "per-core planarization (greedy U + oil-optimal insertion) + Tutte straight-line drawing on H; crossings are witness-marked planarization points",
+  "planarization": {
+   "mode": "L1",
+   "cap": 30,
+   "budget": {
+    "insert_steps": 2000,
+    "h_vertices": 600
+   },
+   "ub": 1,
+   "lb": 1,
+   "gap": 0,
+   "witness_count": 1,
+   "markers": [
+    {
+     "witness_id": 1,
+     "point": [
+      2338.0,
+      2312.0
+     ],
+     "edges": [
+      [
+       "N08",
+       "N09"
+      ],
+      [
+       "N03",
+       "N04"
+      ]
+     ]
+    }
+   ],
+   "exactness": {
+    "crossing_number": 1,
+    "proven_optimal": true,
+    "lb": 1,
+    "gap": 0,
+    "coverage": "full",
+    "method": "exact (Kuratowski-z lower bound meets planarization upper bound)",
+    "witness": [
+     {
+      "F": [
+       4
+      ],
+      "routes": {
+       "4": {
+        "a": "N08",
+        "b": "N09",
+        "crossings": [
+         7
+        ]
+       }
+      },
+      "mutual": []
+     }
+    ],
+    "reduced": null
+   },
+   "caliber": "planarized L1 (docs/planarization-degrade-contract.md): every crossing sits on a planarization witness; the three accounts (geometric recount == witness count == oracle UB) must agree for crossed-certified",
+   "marker_style": {
+    "size_px": 9,
+    "stroke_px": 1.2,
+    "color": "#64748b",
+    "color_by_theme": {
+     "light": "#64748b",
+     "dark": "#8b98ab"
+    }
+   }
+  }
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

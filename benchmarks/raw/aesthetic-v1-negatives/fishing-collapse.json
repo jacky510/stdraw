@@ -1,0 +1,674 @@
+{
+ "viewBox": [
+  0,
+  0,
+  560,
+  480
+ ],
+ "nodes": {
+  "fleet": {
+   "x": 174,
+   "y": 414,
+   "w": 124
+  },
+  "catch_amount": {
+   "x": 106,
+   "y": 202,
+   "w": 96
+  },
+  "profit": {
+   "x": 398,
+   "y": 414,
+   "w": 96
+  },
+  "fish_stock": {
+   "x": 286,
+   "y": 70,
+   "w": 96
+  },
+  "price": {
+   "x": 466,
+   "y": 202,
+   "w": 96
+  },
+  "quota": {
+   "x": 224,
+   "y": 210,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "profit",
+   "b": "fleet",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      353.0,
+      414.0
+     ],
+     [
+      233.0,
+      414.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     353.0,
+     414.0
+    ],
+    "b": [
+     233.0,
+     414.0
+    ]
+   },
+   "arrow": [
+    233.0,
+    414.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "fleet",
+   "b": "catch_amount",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      160.1,
+      395.0
+     ],
+     [
+      95.4,
+      221.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     160.076,
+     395.0
+    ],
+    "b": [
+     95.38,
+     221.0
+    ]
+   },
+   "arrow": [
+    95.4,
+    221.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "catch_amount",
+   "b": "profit",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      116.6,
+      221.0
+     ],
+     [
+      387.4,
+      395.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     116.62,
+     221.0
+    ],
+    "b": [
+     387.38,
+     395.0
+    ]
+   },
+   "arrow": [
+    387.4,
+    395.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "catch_amount",
+   "b": "fish_stock",
+   "polarity": "-",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      151.0,
+      183.0
+     ],
+     [
+      160.4,
+      176.5
+     ],
+     [
+      169.5,
+      170.2
+     ],
+     [
+      178.2,
+      164.1
+     ],
+     [
+      186.6,
+      158.2
+     ],
+     [
+      194.5,
+      152.6
+     ],
+     [
+      202.1,
+      147.2
+     ],
+     [
+      209.3,
+      142.0
+     ],
+     [
+      216.2,
+      137.1
+     ],
+     [
+      222.7,
+      132.4
+     ],
+     [
+      228.8,
+      127.9
+     ],
+     [
+      234.5,
+      123.6
+     ],
+     [
+      239.9,
+      119.6
+     ],
+     [
+      244.9,
+      115.8
+     ],
+     [
+      249.5,
+      112.2
+     ],
+     [
+      253.8,
+      108.9
+     ],
+     [
+      257.6,
+      105.7
+     ],
+     [
+      261.2,
+      102.9
+     ],
+     [
+      264.3,
+      100.2
+     ],
+     [
+      267.1,
+      97.8
+     ],
+     [
+      269.5,
+      95.6
+     ],
+     [
+      271.5,
+      93.6
+     ],
+     [
+      273.2,
+      91.8
+     ],
+     [
+      274.5,
+      90.3
+     ],
+     [
+      275.4,
+      89.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     266.6,
+     103.2
+    ]
+   },
+   "anchors": {
+    "a": [
+     151.0,
+     183.0
+    ],
+    "b": [
+     275.38,
+     89.0
+    ]
+   },
+   "arrow": [
+    275.4,
+    89.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "fish_stock",
+   "b": "catch_amount",
+   "polarity": "-",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      241.0,
+      89.0
+     ],
+     [
+      231.6,
+      95.5
+     ],
+     [
+      222.5,
+      101.8
+     ],
+     [
+      213.8,
+      107.9
+     ],
+     [
+      205.4,
+      113.8
+     ],
+     [
+      197.5,
+      119.4
+     ],
+     [
+      189.9,
+      124.8
+     ],
+     [
+      182.7,
+      130.0
+     ],
+     [
+      175.8,
+      134.9
+     ],
+     [
+      169.3,
+      139.6
+     ],
+     [
+      163.2,
+      144.1
+     ],
+     [
+      157.5,
+      148.4
+     ],
+     [
+      152.1,
+      152.4
+     ],
+     [
+      147.1,
+      156.2
+     ],
+     [
+      142.5,
+      159.8
+     ],
+     [
+      138.2,
+      163.1
+     ],
+     [
+      134.4,
+      166.3
+     ],
+     [
+      130.8,
+      169.1
+     ],
+     [
+      127.7,
+      171.8
+     ],
+     [
+      124.9,
+      174.2
+     ],
+     [
+      122.5,
+      176.4
+     ],
+     [
+      120.5,
+      178.4
+     ],
+     [
+      118.8,
+      180.2
+     ],
+     [
+      117.5,
+      181.7
+     ],
+     [
+      116.6,
+      183.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     125.4,
+     168.8
+    ]
+   },
+   "anchors": {
+    "a": [
+     241.0,
+     89.0
+    ],
+    "b": [
+     116.62,
+     183.0
+    ]
+   },
+   "arrow": [
+    116.6,
+    183.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "fish_stock",
+   "b": "price",
+   "polarity": "-",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      296.6,
+      89.0
+     ],
+     [
+      421.0,
+      183.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     296.62,
+     89.0
+    ],
+    "b": [
+     421.0,
+     183.0
+    ]
+   },
+   "arrow": [
+    421.0,
+    183.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "price",
+   "b": "profit",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      455.4,
+      221.0
+     ],
+     [
+      408.6,
+      395.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     455.38,
+     221.0
+    ],
+    "b": [
+     408.62,
+     395.0
+    ]
+   },
+   "arrow": [
+    408.6,
+    395.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "catch_amount",
+   "b": "quota",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      151.0,
+      197.5
+     ],
+     [
+      179.0,
+      205.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     151.0,
+     197.516
+    ],
+    "b": [
+     179.0,
+     205.516
+    ]
+   },
+   "arrow": [
+    179.0,
+    205.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "quota",
+   "b": "catch_amount",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      179.0,
+      214.5
+     ],
+     [
+      151.0,
+      206.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     179.0,
+     214.484
+    ],
+    "b": [
+     151.0,
+     206.484
+    ]
+   },
+   "arrow": [
+    151.0,
+    206.5
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 4,
+  "rowY": [
+   78,
+   210,
+   218,
+   422
+  ],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "ring-construct",
+  "mode_decision_trace": {
+   "engine": "ring-construct",
+   "placement": "ring-cycle",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=6, edges m=9 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "3 simple loops enumerated (need exactly 2)",
+     "trial_gate": null
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": false,
+     "reason": "no hub-pair candidate: no directed edge whose endpoints share 3..4 common neighbors",
+     "trial_gate": null
+    },
+    {
+     "tier": 3,
+     "rule": "column-chain",
+     "triggered": false,
+     "reason": "longest simple loop k=5 (need 3..4)",
+     "trial_gate": null
+    },
+    {
+     "tier": 4,
+     "rule": "ring-cycle",
+     "triggered": true,
+     "reason": "loop-dominated (trigger=cover), main ring k=5, chord crossings=0",
+     "trial_gate": "pass"
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "ring-cycle: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "ring-cycle",
+  "ring": {
+   "nodes": [
+    "fish_stock",
+    "price",
+    "profit",
+    "fleet",
+    "catch_amount"
+   ],
+   "radius": 190,
+   "center": [
+    190,
+    252
+   ],
+   "declared_loop": "R3",
+   "polarity": "R",
+   "trigger": "cover",
+   "chord_crossings": 0,
+   "residuals": {
+    "quota": [
+     "inner",
+     0.42
+    ]
+   }
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

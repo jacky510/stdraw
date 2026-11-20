@@ -1,0 +1,423 @@
+{
+ "viewBox": [
+  0,
+  0,
+  464,
+  400
+ ],
+ "nodes": {
+  "problem": {
+   "x": 240,
+   "y": 200,
+   "w": 96
+  },
+  "symptom_fix": {
+   "x": 108,
+   "y": 68,
+   "w": 96
+  },
+  "side_effect": {
+   "x": 372,
+   "y": 68,
+   "w": 96
+  },
+  "fundamental": {
+   "x": 108,
+   "y": 332,
+   "w": 96
+  },
+  "capability": {
+   "x": 372,
+   "y": 332,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "problem",
+   "b": "symptom_fix",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      195.0,
+      181.0
+     ],
+     [
+      118.6,
+      87.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     195.0,
+     181.0
+    ],
+    "b": [
+     118.62,
+     87.0
+    ]
+   },
+   "arrow": [
+    118.6,
+    87.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "symptom_fix",
+   "b": "problem",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      108.0,
+      87.0
+     ],
+     [
+      195.0,
+      195.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     108.0,
+     87.0
+    ],
+    "b": [
+     195.0,
+     195.516
+    ]
+   },
+   "arrow": [
+    195.0,
+    195.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "symptom_fix",
+   "b": "side_effect",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      153.0,
+      68.0
+     ],
+     [
+      327.0,
+      68.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     153.0,
+     68.0
+    ],
+    "b": [
+     327.0,
+     68.0
+    ]
+   },
+   "arrow": [
+    327.0,
+    68.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "side_effect",
+   "b": "problem",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      361.4,
+      87.0
+     ],
+     [
+      285.0,
+      181.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     361.38,
+     87.0
+    ],
+    "b": [
+     285.0,
+     181.0
+    ]
+   },
+   "arrow": [
+    285.0,
+    181.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "problem",
+   "b": "fundamental",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      195.0,
+      204.5
+     ],
+     [
+      108.0,
+      313.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     195.0,
+     204.484
+    ],
+    "b": [
+     108.0,
+     313.0
+    ]
+   },
+   "arrow": [
+    108.0,
+    313.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "fundamental",
+   "b": "problem",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      118.6,
+      313.0
+     ],
+     [
+      195.0,
+      219.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     118.62,
+     313.0
+    ],
+    "b": [
+     195.0,
+     219.0
+    ]
+   },
+   "arrow": [
+    195.0,
+    219.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "fundamental",
+   "b": "capability",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      153.0,
+      332.0
+     ],
+     [
+      327.0,
+      332.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     153.0,
+     332.0
+    ],
+    "b": [
+     327.0,
+     332.0
+    ]
+   },
+   "arrow": [
+    327.0,
+    332.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "capability",
+   "b": "problem",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      361.4,
+      313.0
+     ],
+     [
+      285.0,
+      219.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     361.38,
+     313.0
+    ],
+    "b": [
+     285.0,
+     219.0
+    ]
+   },
+   "arrow": [
+    285.0,
+    219.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 3,
+  "rowY": [
+   292,
+   372,
+   452
+  ],
+  "pitch": 80,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "bowtie-construct",
+  "mode_decision_trace": {
+   "engine": "bowtie-construct",
+   "placement": "bowtie-vertex",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=5, edges m=8 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": true,
+     "reason": "exactly 2 simple loops sharing exactly 1 node (shared=problem), rings cover all 5 core nodes",
+     "trial_gate": "pass"
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "bowtie-vertex: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "bowtie-vertex",
+  "symmetry": {
+   "axis": "vertical",
+   "axis_x": 240,
+   "axis_y": 200,
+   "shared_node": "problem",
+   "loops": [
+    [
+     "problem",
+     "symptom_fix",
+     "side_effect"
+    ],
+    [
+     "problem",
+     "fundamental",
+     "capability"
+    ]
+   ],
+   "mirror_pairs": [
+    [
+     "symptom_fix",
+     "fundamental"
+    ],
+    [
+     "side_effect",
+     "capability"
+    ]
+   ],
+   "gap": 36,
+   "line_style_rule": "all-straight (horizontal outer edges + spokes)"
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

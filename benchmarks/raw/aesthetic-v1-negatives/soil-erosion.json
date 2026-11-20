@@ -1,0 +1,638 @@
+{
+ "viewBox": [
+  0,
+  0,
+  560,
+  480
+ ],
+ "nodes": {
+  "farming": {
+   "x": 106,
+   "y": 202,
+   "w": 96
+  },
+  "vegetation": {
+   "x": 286,
+   "y": 180,
+   "w": 96
+  },
+  "erosion": {
+   "x": 466,
+   "y": 202,
+   "w": 96
+  },
+  "soil_quality": {
+   "x": 398,
+   "y": 414,
+   "w": 96
+  },
+  "crop_yield": {
+   "x": 174,
+   "y": 414,
+   "w": 96
+  },
+  "abandonment": {
+   "x": 286,
+   "y": 70,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "farming",
+   "b": "crop_yield",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      95.4,
+      221.0
+     ],
+     [
+      97.1,
+      225.5
+     ],
+     [
+      98.8,
+      230.2
+     ],
+     [
+      100.7,
+      235.2
+     ],
+     [
+      102.7,
+      240.4
+     ],
+     [
+      104.8,
+      245.9
+     ],
+     [
+      106.9,
+      251.6
+     ],
+     [
+      109.2,
+      257.5
+     ],
+     [
+      111.6,
+      263.7
+     ],
+     [
+      114.1,
+      270.1
+     ],
+     [
+      116.6,
+      276.8
+     ],
+     [
+      119.3,
+      283.7
+     ],
+     [
+      122.1,
+      290.8
+     ],
+     [
+      125.0,
+      298.2
+     ],
+     [
+      128.0,
+      305.8
+     ],
+     [
+      131.1,
+      313.6
+     ],
+     [
+      134.3,
+      321.7
+     ],
+     [
+      137.5,
+      330.0
+     ],
+     [
+      140.9,
+      338.6
+     ],
+     [
+      144.4,
+      347.4
+     ],
+     [
+      148.0,
+      356.4
+     ],
+     [
+      151.7,
+      365.7
+     ],
+     [
+      155.5,
+      375.2
+     ],
+     [
+      159.4,
+      385.0
+     ],
+     [
+      163.4,
+      395.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     114.8,
+     273.6
+    ]
+   },
+   "anchors": {
+    "a": [
+     95.38,
+     221.0
+    ],
+    "b": [
+     163.38,
+     395.0
+    ]
+   },
+   "arrow": [
+    163.4,
+    395.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "crop_yield",
+   "b": "farming",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      184.6,
+      395.0
+     ],
+     [
+      182.9,
+      390.5
+     ],
+     [
+      181.2,
+      385.8
+     ],
+     [
+      179.3,
+      380.8
+     ],
+     [
+      177.3,
+      375.6
+     ],
+     [
+      175.2,
+      370.1
+     ],
+     [
+      173.1,
+      364.4
+     ],
+     [
+      170.8,
+      358.5
+     ],
+     [
+      168.4,
+      352.3
+     ],
+     [
+      165.9,
+      345.9
+     ],
+     [
+      163.4,
+      339.2
+     ],
+     [
+      160.7,
+      332.3
+     ],
+     [
+      157.9,
+      325.2
+     ],
+     [
+      155.0,
+      317.8
+     ],
+     [
+      152.0,
+      310.2
+     ],
+     [
+      148.9,
+      302.4
+     ],
+     [
+      145.7,
+      294.3
+     ],
+     [
+      142.5,
+      286.0
+     ],
+     [
+      139.1,
+      277.4
+     ],
+     [
+      135.6,
+      268.6
+     ],
+     [
+      132.0,
+      259.6
+     ],
+     [
+      128.3,
+      250.3
+     ],
+     [
+      124.5,
+      240.8
+     ],
+     [
+      120.6,
+      231.0
+     ],
+     [
+      116.6,
+      221.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     165.2,
+     342.4
+    ]
+   },
+   "anchors": {
+    "a": [
+     184.62,
+     395.0
+    ],
+    "b": [
+     116.62,
+     221.0
+    ]
+   },
+   "arrow": [
+    116.6,
+    221.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "farming",
+   "b": "vegetation",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      151.0,
+      197.5
+     ],
+     [
+      241.0,
+      184.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     151.0,
+     197.516
+    ],
+    "b": [
+     241.0,
+     184.484
+    ]
+   },
+   "arrow": [
+    241.0,
+    184.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "vegetation",
+   "b": "erosion",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      331.0,
+      184.5
+     ],
+     [
+      421.0,
+      197.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     331.0,
+     184.484
+    ],
+    "b": [
+     421.0,
+     197.516
+    ]
+   },
+   "arrow": [
+    421.0,
+    197.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "erosion",
+   "b": "soil_quality",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      455.4,
+      221.0
+     ],
+     [
+      408.6,
+      395.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     455.38,
+     221.0
+    ],
+    "b": [
+     408.62,
+     395.0
+    ]
+   },
+   "arrow": [
+    408.6,
+    395.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "soil_quality",
+   "b": "crop_yield",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      353.0,
+      414.0
+     ],
+     [
+      219.0,
+      414.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     353.0,
+     414.0
+    ],
+    "b": [
+     219.0,
+     414.0
+    ]
+   },
+   "arrow": [
+    219.0,
+    414.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "erosion",
+   "b": "abandonment",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      421.0,
+      183.0
+     ],
+     [
+      296.6,
+      89.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     421.0,
+     183.0
+    ],
+    "b": [
+     296.62,
+     89.0
+    ]
+   },
+   "arrow": [
+    296.6,
+    89.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "abandonment",
+   "b": "farming",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      275.4,
+      89.0
+     ],
+     [
+      151.0,
+      183.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     275.38,
+     89.0
+    ],
+    "b": [
+     151.0,
+     183.0
+    ]
+   },
+   "arrow": [
+    151.0,
+    183.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 4,
+  "rowY": [
+   78,
+   188,
+   210,
+   422
+  ],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "ring-construct",
+  "mode_decision_trace": {
+   "engine": "ring-construct",
+   "placement": "ring-cycle",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=6, edges m=8 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "3 simple loops enumerated (need exactly 2)",
+     "trial_gate": null
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": false,
+     "reason": "no hub-pair candidate: no directed edge whose endpoints share 3..4 common neighbors",
+     "trial_gate": null
+    },
+    {
+     "tier": 3,
+     "rule": "column-chain",
+     "triggered": false,
+     "reason": "longest simple loop k=5 (need 3..4)",
+     "trial_gate": null
+    },
+    {
+     "tier": 4,
+     "rule": "ring-cycle",
+     "triggered": true,
+     "reason": "loop-dominated (trigger=cover), main ring k=5, chord crossings=0",
+     "trial_gate": "pass"
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "ring-cycle: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "ring-cycle",
+  "ring": {
+   "nodes": [
+    "abandonment",
+    "erosion",
+    "soil_quality",
+    "crop_yield",
+    "farming"
+   ],
+   "radius": 190,
+   "center": [
+    190,
+    252
+   ],
+   "declared_loop": null,
+   "polarity": null,
+   "trigger": "cover",
+   "chord_crossings": 0,
+   "residuals": {
+    "vegetation": [
+     "inner",
+     0.42
+    ]
+   }
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

@@ -1,0 +1,2474 @@
+{
+  "anchor_sources": {
+    "load_failures": [],
+    "n_negatives": 40,
+    "positives": [
+      "benchmarks/manual/brand-flywheel-manual-layout.json",
+      "benchmarks/manual/classic-cld-manual-layout.json",
+      "benchmarks/manual/fan-d12-manual-layout.json",
+      "benchmarks/manual/fan-d17-manual-layout.json",
+      "benchmarks/manual/random-n10-i00-manual-layout.json",
+      "benchmarks/manual/random-n10-i05-manual-layout.json",
+      "benchmarks/manual/user-2026-11-20/i05.json",
+      "benchmarks/manual/user-2026-11-20/i11-a.json",
+      "benchmarks/manual/user-2026-11-20/i11-b.json",
+      "tests/data/epidemic-feedback-manual-layout.json"
+    ],
+    "workbuddy_note": "红线遵守：stdraw-workbuddy 目录零读取；三份 2026-11-20 锚点经 default@main (a5a18fc) 入仓后从 benchmarks/manual/user-2026-11-20/ 消费",
+    "workbuddy_workspace_read": false
+  },
+  "caliber_comparison": {
+    "cross_class_order_disagreements": 1,
+    "cross_class_pairs": 400,
+    "ranking_reversal_observed": true,
+    "spearman_negatives": 0.8164,
+    "spearman_positives": 0.9387,
+    "verdict": {
+      "rule": "max worst-shape LOSO-min, tie-break worst-shape AUC",
+      "winning_caliber": "normalized",
+      "winning_domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)"
+    },
+    "worst_shape_auc_absolute": 0.97479,
+    "worst_shape_auc_normalized": 0.97479,
+    "worst_shape_loso_min_absolute": 12.6,
+    "worst_shape_loso_min_normalized": 50.8
+  },
+  "calibers": {
+    "absolute": {
+      "domain": "same-canvas-family (~960px viewBox) only",
+      "loso": {
+        "caliber": "absolute",
+        "hub_mean": null,
+        "hub_min": null,
+        "per_anchor": [
+          {
+            "held_out": "brand-flywheel",
+            "path": "brand-flywheel-manual-layout.json",
+            "score": 77.0,
+            "shape": "ring"
+          },
+          {
+            "held_out": "classic-cld-growth-and-burden",
+            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
+            "score": null,
+            "shape": "hub"
+          },
+          {
+            "held_out": "fan-d12",
+            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
+            "score": null,
+            "shape": "hub"
+          },
+          {
+            "held_out": "fan-d17",
+            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
+            "score": null,
+            "shape": "hub"
+          },
+          {
+            "held_out": "random-n10-i00",
+            "path": "random-n10-i00-manual-layout.json",
+            "score": 86.6,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i05",
+            "path": "random-n10-i05-manual-layout.json",
+            "score": 87.8,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i05",
+            "path": "i05.json",
+            "score": 87.8,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i11",
+            "path": "i11-a.json",
+            "score": 83.5,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i11",
+            "path": "i11-b.json",
+            "score": 87.8,
+            "shape": "ring"
+          },
+          {
+            "held_out": "epidemic-feedback",
+            "path": "epidemic-feedback-manual-layout.json",
+            "score": 12.6,
+            "shape": "ring"
+          }
+        ],
+        "ring_mean": 74.7,
+        "ring_min": 12.6
+      },
+      "negative_scores_by_sample": {
+        "classic/单环/arms-race": [
+          10.5
+        ],
+        "classic/多环耦合/bullwhip": [
+          11.7
+        ],
+        "classic/多环耦合/burnout-attrition": [
+          5.1
+        ],
+        "classic/多环耦合/debt-spiral": [
+          4.1
+        ],
+        "classic/多环耦合/eroding-goals": [
+          21.7
+        ],
+        "classic/多环耦合/fixes-that-fail": [
+          38.5
+        ],
+        "classic/多环耦合/learning-flywheel": [
+          47.2
+        ],
+        "classic/多环耦合/limits-to-growth": [
+          11.8
+        ],
+        "classic/多环耦合/renewable-resource": [
+          12.4
+        ],
+        "classic/多环耦合/tragedy-of-the-commons": [
+          6.1
+        ],
+        "classic/多环耦合/urban-migration": [
+          14.7
+        ],
+        "classic/多环耦合/wage-price-spiral": [
+          22.5
+        ],
+        "classic/嵌套环/brand-flywheel": [
+          64.3
+        ],
+        "classic/嵌套环/classic-cld-growth-and-burden": [
+          67.8
+        ],
+        "classic/嵌套环/fishing-collapse": [
+          16.7
+        ],
+        "classic/嵌套环/induced-demand": [
+          7.5
+        ],
+        "classic/嵌套环/population-logistic": [
+          17.3
+        ],
+        "classic/嵌套环/shifting-the-burden": [
+          46.0
+        ],
+        "classic/嵌套环/soil-erosion": [
+          6.0
+        ],
+        "classic/嵌套环/success-to-the-successful": [
+          23.5
+        ],
+        "random-n10/random-n10-i00": [
+          13.5
+        ],
+        "random-n10/random-n10-i01": [
+          4.4
+        ],
+        "random-n10/random-n10-i02": [
+          70.9
+        ],
+        "random-n10/random-n10-i03": [
+          19.7
+        ],
+        "random-n10/random-n10-i04": [
+          22.9
+        ],
+        "random-n10/random-n10-i05": [
+          22.3
+        ],
+        "random-n10/random-n10-i06": [
+          19.2
+        ],
+        "random-n10/random-n10-i07": [
+          26.9
+        ],
+        "random-n10/random-n10-i08": [
+          59.0
+        ],
+        "random-n10/random-n10-i09": [
+          4.3
+        ],
+        "random-n10/random-n10-i10": [
+          2.4
+        ],
+        "random-n10/random-n10-i11": [
+          19.7
+        ],
+        "random-n10/random-n10-i12": [
+          2.5
+        ],
+        "random-n10/random-n10-i13": [
+          33.1
+        ],
+        "random-n10/random-n10-i14": [
+          40.2
+        ],
+        "random-n10/random-n10-i15": [
+          8.4
+        ],
+        "random-n10/random-n10-i16": [
+          2.7
+        ],
+        "random-n10/random-n10-i17": [
+          7.9
+        ],
+        "random-n10/random-n10-i18": [
+          14.4
+        ],
+        "random-n10/random-n10-i19": [
+          1.5
+        ]
+      },
+      "positive_scores": {
+        "brand-flywheel:brand-flywheel-manual-layout.json": {
+          "score": 81.8,
+          "shape": "ring"
+        },
+        "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
+          "score": 72.3,
+          "shape": "hub"
+        },
+        "epidemic-feedback:epidemic-feedback-manual-layout.json": {
+          "score": 54.0,
+          "shape": "ring"
+        },
+        "fan-d12:fan-d12-manual-layout.json": {
+          "score": 94.7,
+          "shape": "hub"
+        },
+        "fan-d17:fan-d17-manual-layout.json": {
+          "score": 99.7,
+          "shape": "hub"
+        },
+        "random-n10-i00:random-n10-i00-manual-layout.json": {
+          "score": 87.1,
+          "shape": "ring"
+        },
+        "random-n10-i05:i05.json": {
+          "score": 88.2,
+          "shape": "ring"
+        },
+        "random-n10-i05:random-n10-i05-manual-layout.json": {
+          "score": 88.2,
+          "shape": "ring"
+        },
+        "random-n10-i11:i11-a.json": {
+          "score": 84.7,
+          "shape": "ring"
+        },
+        "random-n10-i11:i11-b.json": {
+          "score": 88.2,
+          "shape": "ring"
+        }
+      },
+      "routing_log": [
+        {
+          "graph": "brand-flywheel",
+          "kind": "positive",
+          "path": "brand-flywheel-manual-layout.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "classic-cld-growth-and-burden",
+          "kind": "positive",
+          "path": "classic-cld-manual-layout.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "fan-d12",
+          "kind": "positive",
+          "path": "fan-d12-manual-layout.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "fan-d17",
+          "kind": "positive",
+          "path": "fan-d17-manual-layout.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i00",
+          "kind": "positive",
+          "path": "random-n10-i00-manual-layout.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i05",
+          "kind": "positive",
+          "path": "random-n10-i05-manual-layout.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i05",
+          "kind": "positive",
+          "path": "i05.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i11",
+          "kind": "positive",
+          "path": "i11-a.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i11",
+          "kind": "positive",
+          "path": "i11-b.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "epidemic-feedback",
+          "kind": "positive",
+          "path": "epidemic-feedback-manual-layout.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "arms-race",
+          "kind": "negative",
+          "path": "arms-race.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "brand-flywheel",
+          "kind": "negative",
+          "path": "brand-flywheel.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "bullwhip",
+          "kind": "negative",
+          "path": "bullwhip.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "burnout-attrition",
+          "kind": "negative",
+          "path": "burnout-attrition.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "classic-cld-growth-and-burden",
+          "kind": "negative",
+          "path": "classic-cld-growth-and-burden.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "debt-spiral",
+          "kind": "negative",
+          "path": "debt-spiral.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "eroding-goals",
+          "kind": "negative",
+          "path": "eroding-goals.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "fishing-collapse",
+          "kind": "negative",
+          "path": "fishing-collapse.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "fixes-that-fail",
+          "kind": "negative",
+          "path": "fixes-that-fail.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "induced-demand",
+          "kind": "negative",
+          "path": "induced-demand.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "learning-flywheel",
+          "kind": "negative",
+          "path": "learning-flywheel.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "limits-to-growth",
+          "kind": "negative",
+          "path": "limits-to-growth.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "population-logistic",
+          "kind": "negative",
+          "path": "population-logistic.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i00",
+          "kind": "negative",
+          "path": "random-n10-i00.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i01",
+          "kind": "negative",
+          "path": "random-n10-i01.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i02",
+          "kind": "negative",
+          "path": "random-n10-i02.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i03",
+          "kind": "negative",
+          "path": "random-n10-i03.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i04",
+          "kind": "negative",
+          "path": "random-n10-i04.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i05",
+          "kind": "negative",
+          "path": "random-n10-i05.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i06",
+          "kind": "negative",
+          "path": "random-n10-i06.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i07",
+          "kind": "negative",
+          "path": "random-n10-i07.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i08",
+          "kind": "negative",
+          "path": "random-n10-i08.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i09",
+          "kind": "negative",
+          "path": "random-n10-i09.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i10",
+          "kind": "negative",
+          "path": "random-n10-i10.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i11",
+          "kind": "negative",
+          "path": "random-n10-i11.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i12",
+          "kind": "negative",
+          "path": "random-n10-i12.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i13",
+          "kind": "negative",
+          "path": "random-n10-i13.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i14",
+          "kind": "negative",
+          "path": "random-n10-i14.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i15",
+          "kind": "negative",
+          "path": "random-n10-i15.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i16",
+          "kind": "negative",
+          "path": "random-n10-i16.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i17",
+          "kind": "negative",
+          "path": "random-n10-i17.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i18",
+          "kind": "negative",
+          "path": "random-n10-i18.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i19",
+          "kind": "negative",
+          "path": "random-n10-i19.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "renewable-resource",
+          "kind": "negative",
+          "path": "renewable-resource.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "shifting-the-burden",
+          "kind": "negative",
+          "path": "shifting-the-burden.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "soil-erosion",
+          "kind": "negative",
+          "path": "soil-erosion.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "success-to-the-successful",
+          "kind": "negative",
+          "path": "success-to-the-successful.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "tragedy-of-the-commons",
+          "kind": "negative",
+          "path": "tragedy-of-the-commons.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "urban-migration",
+          "kind": "negative",
+          "path": "urban-migration.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "wage-price-spiral",
+          "kind": "negative",
+          "path": "wage-price-spiral.json",
+          "shape": "hub"
+        }
+      ],
+      "shapes": {
+        "global": {
+          "domain": "same-canvas-family (~960px viewBox) only",
+          "excluded_features": [],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.7525,
+              "coverage": 1.0,
+              "impute_median": 0.91302521,
+              "kept": false
+            },
+            "angular_resolution_min": {
+              "auc": 0.6025,
+              "coverage": 1.0,
+              "impute_median": 4.1267595155,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.7675,
+              "coverage": 1.0,
+              "impute_median": 0.205487459,
+              "kept": false
+            },
+            "automorphism_residual": {
+              "auc": 0.604167,
+              "coverage": 0.28,
+              "impute_median": 6987.9,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.5925,
+              "coverage": 1.0,
+              "impute_median": 206.76896440500002,
+              "kept": false
+            },
+            "bend_soft_margin": {
+              "auc": 0.2125,
+              "coverage": 1.0,
+              "impute_median": 4.000827972,
+              "kept": false
+            },
+            "bend_total_curvature": {
+              "auc": 0.12375,
+              "coverage": 1.0,
+              "impute_median": 169.5757508025,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.4425,
+              "coverage": 1.0,
+              "impute_median": 0.107632094,
+              "kept": false
+            },
+            "crossing_count": {
+              "auc": 0.2875,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "degree_centroid_spearman": {
+              "auc": 0.353846,
+              "coverage": 0.98,
+              "impute_median": -0.201007563,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.33,
+              "coverage": 1.0,
+              "impute_median": 0.35422770049999996,
+              "kept": false
+            },
+            "hub_centroid_px": {
+              "auc": 0.3825,
+              "coverage": 1.0,
+              "impute_median": 117.252191161,
+              "kept": false
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.34,
+              "coverage": 1.0,
+              "impute_median": 0.140737104,
+              "kept": false
+            },
+            "hub_degree": {
+              "auc": 0.64875,
+              "coverage": 1.0,
+              "impute_median": 5.0,
+              "kept": false
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.3675,
+              "coverage": 1.0,
+              "impute_median": 0.8159899605000001,
+              "kept": false
+            },
+            "loop_compactness_mean": {
+              "auc": 0.375,
+              "coverage": 0.28,
+              "impute_median": 0.539012084,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": 0.470588,
+              "coverage": 0.38,
+              "impute_median": 0.256490259,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.4625,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.395,
+              "coverage": 1.0,
+              "impute_median": 3.0,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": null,
+              "coverage": 0.34,
+              "impute_median": 67.823387037,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.505,
+              "coverage": 1.0,
+              "impute_median": 113.8682471585,
+              "kept": false
+            },
+            "min_spacing_ratio": {
+              "auc": 0.3225,
+              "coverage": 1.0,
+              "impute_median": 0.138422821,
+              "kept": false
+            },
+            "mirror_axis_err": {
+              "auc": 0.979167,
+              "coverage": 0.28,
+              "impute_median": 31924.0331023075,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.5325,
+              "coverage": 1.0,
+              "impute_median": 0.1599778045,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 0.979167,
+              "coverage": 0.28,
+              "impute_median": 31924.0331023075,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.6725,
+              "coverage": 1.0,
+              "impute_median": 22.3801590045,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.6025,
+              "coverage": 1.0,
+              "impute_median": 0.0288931625,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.6625,
+              "coverage": 1.0,
+              "impute_median": 0.337420459,
+              "kept": false
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "bend_total_curvature"
+          ],
+          "n_negative": 40,
+          "n_positive": 10,
+          "negative_scores_max": 72.0,
+          "positive_scores_min": 32.5,
+          "score_auc": 0.87625,
+          "separation_margin": -39.5
+        },
+        "hub": {
+          "domain": "same-canvas-family (~960px viewBox) only",
+          "excluded_features": [],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.797101,
+              "coverage": 1.0,
+              "impute_median": 0.8376623375000001,
+              "kept": false
+            },
+            "angular_resolution_min": {
+              "auc": 0.586957,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.884058,
+              "coverage": 1.0,
+              "impute_median": 0.1888392855,
+              "kept": true
+            },
+            "automorphism_residual": {
+              "auc": 0.285714,
+              "coverage": 0.346154,
+              "impute_median": 2560.0,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.797101,
+              "coverage": 1.0,
+              "impute_median": 210.07919865949998,
+              "kept": false
+            },
+            "bend_soft_margin": {
+              "auc": 0.376812,
+              "coverage": 1.0,
+              "impute_median": 7.2627472520000005,
+              "kept": false
+            },
+            "bend_total_curvature": {
+              "auc": 0.166667,
+              "coverage": 1.0,
+              "impute_median": 94.9237921135,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.15942,
+              "coverage": 1.0,
+              "impute_median": 0.105146147,
+              "kept": true
+            },
+            "crossing_count": {
+              "auc": 0.434783,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "degree_centroid_spearman": {
+              "auc": 0.304348,
+              "coverage": 1.0,
+              "impute_median": 0.015430335,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.144928,
+              "coverage": 1.0,
+              "impute_median": 0.291676614,
+              "kept": true
+            },
+            "hub_centroid_px": {
+              "auc": 0.188406,
+              "coverage": 1.0,
+              "impute_median": 90.192229881,
+              "kept": true
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.101449,
+              "coverage": 1.0,
+              "impute_median": 0.12125933149999998,
+              "kept": true
+            },
+            "hub_degree": {
+              "auc": 0.978261,
+              "coverage": 1.0,
+              "impute_median": 4.5,
+              "kept": true
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.188406,
+              "coverage": 1.0,
+              "impute_median": 0.9799433694999999,
+              "kept": true
+            },
+            "loop_compactness_mean": {
+              "auc": 0.2,
+              "coverage": 0.423077,
+              "impute_median": 0.523959306,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": 0.666667,
+              "coverage": 0.615385,
+              "impute_median": 0.284251521,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.434783,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.231884,
+              "coverage": 1.0,
+              "impute_median": 2.0756609455,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": null,
+              "coverage": 0.115385,
+              "impute_median": 63.186697724,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.434783,
+              "coverage": 1.0,
+              "impute_median": 104.040799341,
+              "kept": false
+            },
+            "min_spacing_ratio": {
+              "auc": 0.144928,
+              "coverage": 1.0,
+              "impute_median": 0.145925047,
+              "kept": true
+            },
+            "mirror_axis_err": {
+              "auc": 1.0,
+              "coverage": 0.346154,
+              "impute_median": 14933.990965187,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.594203,
+              "coverage": 1.0,
+              "impute_median": 0.20407571549999998,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 1.0,
+              "coverage": 0.346154,
+              "impute_median": 14933.990965187,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.797101,
+              "coverage": 1.0,
+              "impute_median": 18.1120249675,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.666667,
+              "coverage": 1.0,
+              "impute_median": 0.0275369575,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.811594,
+              "coverage": 1.0,
+              "impute_median": 0.29347337900000003,
+              "kept": true
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "aspect_deviation",
+            "hub_centroid_ratio",
+            "hub_degree"
+          ],
+          "n_negative": 23,
+          "n_positive": 3,
+          "negative_scores_max": 67.8,
+          "positive_scores_min": 72.3,
+          "score_auc": 1.0,
+          "separation_margin": 4.5
+        },
+        "ring": {
+          "domain": "same-canvas-family (~960px viewBox) only",
+          "excluded_features": [
+            "alignment_max_coverage"
+          ],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.693277,
+              "coverage": 1.0,
+              "impute_median": 0.937969925,
+              "kept": false
+            },
+            "angular_resolution_min": {
+              "auc": 0.605042,
+              "coverage": 1.0,
+              "impute_median": 5.0370643180000005,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.638655,
+              "coverage": 1.0,
+              "impute_median": 0.2237557055,
+              "kept": false
+            },
+            "automorphism_residual": {
+              "auc": 1.0,
+              "coverage": 0.208333,
+              "impute_median": 8081.0,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.504202,
+              "coverage": 1.0,
+              "impute_median": 203.650678862,
+              "kept": false
+            },
+            "bend_soft_margin": {
+              "auc": 0.151261,
+              "coverage": 1.0,
+              "impute_median": 2.1029204135,
+              "kept": true
+            },
+            "bend_total_curvature": {
+              "auc": 0.058824,
+              "coverage": 1.0,
+              "impute_median": 335.62927296600003,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.571429,
+              "coverage": 1.0,
+              "impute_median": 0.10962528099999999,
+              "kept": false
+            },
+            "crossing_count": {
+              "auc": 0.088235,
+              "coverage": 1.0,
+              "impute_median": 1.0,
+              "kept": true
+            },
+            "degree_centroid_spearman": {
+              "auc": 0.4375,
+              "coverage": 0.958333,
+              "impute_median": -0.25425669,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.294118,
+              "coverage": 1.0,
+              "impute_median": 0.3764055135,
+              "kept": false
+            },
+            "hub_centroid_px": {
+              "auc": 0.394958,
+              "coverage": 1.0,
+              "impute_median": 154.23635529249998,
+              "kept": false
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.420168,
+              "coverage": 1.0,
+              "impute_median": 0.172389662,
+              "kept": false
+            },
+            "hub_degree": {
+              "auc": 0.445378,
+              "coverage": 1.0,
+              "impute_median": 5.0,
+              "kept": false
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.504202,
+              "coverage": 1.0,
+              "impute_median": 0.6569500545,
+              "kept": false
+            },
+            "loop_compactness_mean": {
+              "auc": 0.0,
+              "coverage": 0.125,
+              "impute_median": 0.785398163,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": 0.5,
+              "coverage": 0.125,
+              "impute_median": 0.141881407,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.310924,
+              "coverage": 1.0,
+              "impute_median": 3.2798699344999998,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": null,
+              "coverage": 0.583333,
+              "impute_median": 68.6336709085,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.487395,
+              "coverage": 1.0,
+              "impute_median": 126.87891114349999,
+              "kept": false
+            },
+            "min_spacing_ratio": {
+              "auc": 0.478992,
+              "coverage": 1.0,
+              "impute_median": 0.11762128799999999,
+              "kept": false
+            },
+            "mirror_axis_err": {
+              "auc": 1.0,
+              "coverage": 0.208333,
+              "impute_median": 46534.959936487,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.537815,
+              "coverage": 1.0,
+              "impute_median": 0.139829605,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 1.0,
+              "coverage": 0.208333,
+              "impute_median": 46534.959936487,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.571429,
+              "coverage": 1.0,
+              "impute_median": 26.601636554000002,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.529412,
+              "coverage": 1.0,
+              "impute_median": 0.03462739,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.596639,
+              "coverage": 1.0,
+              "impute_median": 0.3650418515,
+              "kept": false
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "bend_soft_margin",
+            "bend_total_curvature",
+            "crossing_count"
+          ],
+          "n_negative": 17,
+          "n_positive": 7,
+          "negative_scores_max": 70.9,
+          "positive_scores_min": 54.0,
+          "score_auc": 0.97479,
+          "separation_margin": -16.9
+        }
+      }
+    },
+    "normalized": {
+      "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+      "loso": {
+        "caliber": "normalized",
+        "hub_mean": null,
+        "hub_min": null,
+        "per_anchor": [
+          {
+            "held_out": "brand-flywheel",
+            "path": "brand-flywheel-manual-layout.json",
+            "score": 82.7,
+            "shape": "ring"
+          },
+          {
+            "held_out": "classic-cld-growth-and-burden",
+            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
+            "score": null,
+            "shape": "hub"
+          },
+          {
+            "held_out": "fan-d12",
+            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
+            "score": null,
+            "shape": "hub"
+          },
+          {
+            "held_out": "fan-d17",
+            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
+            "score": null,
+            "shape": "hub"
+          },
+          {
+            "held_out": "random-n10-i00",
+            "path": "random-n10-i00-manual-layout.json",
+            "score": 87.9,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i05",
+            "path": "random-n10-i05-manual-layout.json",
+            "score": 89.2,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i05",
+            "path": "i05.json",
+            "score": 87.4,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i11",
+            "path": "i11-a.json",
+            "score": 84.7,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i11",
+            "path": "i11-b.json",
+            "score": 86.4,
+            "shape": "ring"
+          },
+          {
+            "held_out": "epidemic-feedback",
+            "path": "epidemic-feedback-manual-layout.json",
+            "score": 50.8,
+            "shape": "ring"
+          }
+        ],
+        "ring_mean": 81.3,
+        "ring_min": 50.8
+      },
+      "negative_scores_by_sample": {
+        "classic/单环/arms-race": [
+          8.7
+        ],
+        "classic/多环耦合/bullwhip": [
+          32.0
+        ],
+        "classic/多环耦合/burnout-attrition": [
+          7.8
+        ],
+        "classic/多环耦合/debt-spiral": [
+          2.7
+        ],
+        "classic/多环耦合/eroding-goals": [
+          11.8
+        ],
+        "classic/多环耦合/fixes-that-fail": [
+          14.9
+        ],
+        "classic/多环耦合/learning-flywheel": [
+          14.6
+        ],
+        "classic/多环耦合/limits-to-growth": [
+          33.2
+        ],
+        "classic/多环耦合/renewable-resource": [
+          25.3
+        ],
+        "classic/多环耦合/tragedy-of-the-commons": [
+          22.2
+        ],
+        "classic/多环耦合/urban-migration": [
+          36.1
+        ],
+        "classic/多环耦合/wage-price-spiral": [
+          12.7
+        ],
+        "classic/嵌套环/brand-flywheel": [
+          65.1
+        ],
+        "classic/嵌套环/classic-cld-growth-and-burden": [
+          61.0
+        ],
+        "classic/嵌套环/fishing-collapse": [
+          12.6
+        ],
+        "classic/嵌套环/induced-demand": [
+          4.1
+        ],
+        "classic/嵌套环/population-logistic": [
+          22.8
+        ],
+        "classic/嵌套环/shifting-the-burden": [
+          32.5
+        ],
+        "classic/嵌套环/soil-erosion": [
+          4.8
+        ],
+        "classic/嵌套环/success-to-the-successful": [
+          23.6
+        ],
+        "random-n10/random-n10-i00": [
+          12.3
+        ],
+        "random-n10/random-n10-i01": [
+          3.8
+        ],
+        "random-n10/random-n10-i02": [
+          72.0
+        ],
+        "random-n10/random-n10-i03": [
+          14.3
+        ],
+        "random-n10/random-n10-i04": [
+          33.8
+        ],
+        "random-n10/random-n10-i05": [
+          21.5
+        ],
+        "random-n10/random-n10-i06": [
+          18.4
+        ],
+        "random-n10/random-n10-i07": [
+          26.2
+        ],
+        "random-n10/random-n10-i08": [
+          59.9
+        ],
+        "random-n10/random-n10-i09": [
+          4.9
+        ],
+        "random-n10/random-n10-i10": [
+          3.2
+        ],
+        "random-n10/random-n10-i11": [
+          14.0
+        ],
+        "random-n10/random-n10-i12": [
+          2.0
+        ],
+        "random-n10/random-n10-i13": [
+          33.0
+        ],
+        "random-n10/random-n10-i14": [
+          38.9
+        ],
+        "random-n10/random-n10-i15": [
+          7.3
+        ],
+        "random-n10/random-n10-i16": [
+          3.8
+        ],
+        "random-n10/random-n10-i17": [
+          8.6
+        ],
+        "random-n10/random-n10-i18": [
+          13.8
+        ],
+        "random-n10/random-n10-i19": [
+          4.0
+        ]
+      },
+      "positive_scores": {
+        "brand-flywheel:brand-flywheel-manual-layout.json": {
+          "score": 83.1,
+          "shape": "ring"
+        },
+        "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
+          "score": 68.8,
+          "shape": "hub"
+        },
+        "epidemic-feedback:epidemic-feedback-manual-layout.json": {
+          "score": 56.5,
+          "shape": "ring"
+        },
+        "fan-d12:fan-d12-manual-layout.json": {
+          "score": 97.6,
+          "shape": "hub"
+        },
+        "fan-d17:fan-d17-manual-layout.json": {
+          "score": 99.9,
+          "shape": "hub"
+        },
+        "random-n10-i00:random-n10-i00-manual-layout.json": {
+          "score": 88.0,
+          "shape": "ring"
+        },
+        "random-n10-i05:i05.json": {
+          "score": 87.5,
+          "shape": "ring"
+        },
+        "random-n10-i05:random-n10-i05-manual-layout.json": {
+          "score": 89.3,
+          "shape": "ring"
+        },
+        "random-n10-i11:i11-a.json": {
+          "score": 84.9,
+          "shape": "ring"
+        },
+        "random-n10-i11:i11-b.json": {
+          "score": 86.5,
+          "shape": "ring"
+        }
+      },
+      "routing_log": [
+        {
+          "graph": "brand-flywheel",
+          "kind": "positive",
+          "path": "brand-flywheel-manual-layout.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "classic-cld-growth-and-burden",
+          "kind": "positive",
+          "path": "classic-cld-manual-layout.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "fan-d12",
+          "kind": "positive",
+          "path": "fan-d12-manual-layout.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "fan-d17",
+          "kind": "positive",
+          "path": "fan-d17-manual-layout.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i00",
+          "kind": "positive",
+          "path": "random-n10-i00-manual-layout.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i05",
+          "kind": "positive",
+          "path": "random-n10-i05-manual-layout.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i05",
+          "kind": "positive",
+          "path": "i05.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i11",
+          "kind": "positive",
+          "path": "i11-a.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i11",
+          "kind": "positive",
+          "path": "i11-b.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "epidemic-feedback",
+          "kind": "positive",
+          "path": "epidemic-feedback-manual-layout.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "arms-race",
+          "kind": "negative",
+          "path": "arms-race.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "brand-flywheel",
+          "kind": "negative",
+          "path": "brand-flywheel.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "bullwhip",
+          "kind": "negative",
+          "path": "bullwhip.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "burnout-attrition",
+          "kind": "negative",
+          "path": "burnout-attrition.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "classic-cld-growth-and-burden",
+          "kind": "negative",
+          "path": "classic-cld-growth-and-burden.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "debt-spiral",
+          "kind": "negative",
+          "path": "debt-spiral.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "eroding-goals",
+          "kind": "negative",
+          "path": "eroding-goals.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "fishing-collapse",
+          "kind": "negative",
+          "path": "fishing-collapse.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "fixes-that-fail",
+          "kind": "negative",
+          "path": "fixes-that-fail.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "induced-demand",
+          "kind": "negative",
+          "path": "induced-demand.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "learning-flywheel",
+          "kind": "negative",
+          "path": "learning-flywheel.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "limits-to-growth",
+          "kind": "negative",
+          "path": "limits-to-growth.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "population-logistic",
+          "kind": "negative",
+          "path": "population-logistic.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i00",
+          "kind": "negative",
+          "path": "random-n10-i00.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i01",
+          "kind": "negative",
+          "path": "random-n10-i01.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i02",
+          "kind": "negative",
+          "path": "random-n10-i02.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i03",
+          "kind": "negative",
+          "path": "random-n10-i03.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i04",
+          "kind": "negative",
+          "path": "random-n10-i04.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i05",
+          "kind": "negative",
+          "path": "random-n10-i05.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i06",
+          "kind": "negative",
+          "path": "random-n10-i06.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i07",
+          "kind": "negative",
+          "path": "random-n10-i07.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i08",
+          "kind": "negative",
+          "path": "random-n10-i08.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i09",
+          "kind": "negative",
+          "path": "random-n10-i09.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i10",
+          "kind": "negative",
+          "path": "random-n10-i10.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i11",
+          "kind": "negative",
+          "path": "random-n10-i11.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i12",
+          "kind": "negative",
+          "path": "random-n10-i12.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i13",
+          "kind": "negative",
+          "path": "random-n10-i13.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i14",
+          "kind": "negative",
+          "path": "random-n10-i14.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i15",
+          "kind": "negative",
+          "path": "random-n10-i15.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i16",
+          "kind": "negative",
+          "path": "random-n10-i16.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "random-n10-i17",
+          "kind": "negative",
+          "path": "random-n10-i17.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i18",
+          "kind": "negative",
+          "path": "random-n10-i18.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "random-n10-i19",
+          "kind": "negative",
+          "path": "random-n10-i19.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "renewable-resource",
+          "kind": "negative",
+          "path": "renewable-resource.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "shifting-the-burden",
+          "kind": "negative",
+          "path": "shifting-the-burden.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "soil-erosion",
+          "kind": "negative",
+          "path": "soil-erosion.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "success-to-the-successful",
+          "kind": "negative",
+          "path": "success-to-the-successful.json",
+          "shape": "ring"
+        },
+        {
+          "graph": "tragedy-of-the-commons",
+          "kind": "negative",
+          "path": "tragedy-of-the-commons.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "urban-migration",
+          "kind": "negative",
+          "path": "urban-migration.json",
+          "shape": "hub"
+        },
+        {
+          "graph": "wage-price-spiral",
+          "kind": "negative",
+          "path": "wage-price-spiral.json",
+          "shape": "hub"
+        }
+      ],
+      "shapes": {
+        "global": {
+          "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+          "excluded_features": [],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.7525,
+              "coverage": 1.0,
+              "impute_median": 0.91302521,
+              "kept": false
+            },
+            "angular_resolution_min": {
+              "auc": 0.6025,
+              "coverage": 1.0,
+              "impute_median": 4.1267595155,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.7675,
+              "coverage": 1.0,
+              "impute_median": 0.205487459,
+              "kept": false
+            },
+            "automorphism_residual": {
+              "auc": 0.583333,
+              "coverage": 0.28,
+              "impute_median": 4.629256599294169,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.27,
+              "coverage": 1.0,
+              "impute_median": 0.24532653286055217,
+              "kept": false
+            },
+            "bend_soft_margin": {
+              "auc": 0.1975,
+              "coverage": 1.0,
+              "impute_median": 0.0037119296546380123,
+              "kept": true
+            },
+            "bend_total_curvature": {
+              "auc": 0.12375,
+              "coverage": 1.0,
+              "impute_median": 169.5757508025,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.4425,
+              "coverage": 1.0,
+              "impute_median": 0.107632094,
+              "kept": false
+            },
+            "crossing_count": {
+              "auc": 0.2875,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "degree_centroid_spearman": {
+              "auc": 0.353846,
+              "coverage": 0.98,
+              "impute_median": -0.201007563,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.33,
+              "coverage": 1.0,
+              "impute_median": 0.35422770049999996,
+              "kept": false
+            },
+            "hub_centroid_px": {
+              "auc": 0.34,
+              "coverage": 1.0,
+              "impute_median": 0.1407371042993682,
+              "kept": false
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.34,
+              "coverage": 1.0,
+              "impute_median": 0.140737104,
+              "kept": false
+            },
+            "hub_degree": {
+              "auc": 0.64875,
+              "coverage": 1.0,
+              "impute_median": 5.0,
+              "kept": false
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.3675,
+              "coverage": 1.0,
+              "impute_median": 0.8159899605000001,
+              "kept": false
+            },
+            "loop_compactness_mean": {
+              "auc": 0.375,
+              "coverage": 0.28,
+              "impute_median": 0.539012084,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": 0.470588,
+              "coverage": 0.38,
+              "impute_median": 0.256490259,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.4625,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.395,
+              "coverage": 1.0,
+              "impute_median": 3.0,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": null,
+              "coverage": 0.34,
+              "impute_median": 67.823387037,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.3225,
+              "coverage": 1.0,
+              "impute_median": 0.13842282136794024,
+              "kept": false
+            },
+            "min_spacing_ratio": {
+              "auc": 0.3225,
+              "coverage": 1.0,
+              "impute_median": 0.138422821,
+              "kept": false
+            },
+            "mirror_axis_err": {
+              "auc": 0.875,
+              "coverage": 0.28,
+              "impute_median": 39.954239769778816,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.5325,
+              "coverage": 1.0,
+              "impute_median": 0.1599778045,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 0.875,
+              "coverage": 0.28,
+              "impute_median": 39.954239769778816,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.6025,
+              "coverage": 1.0,
+              "impute_median": 0.028893162498650357,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.6025,
+              "coverage": 1.0,
+              "impute_median": 0.0288931625,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.6625,
+              "coverage": 1.0,
+              "impute_median": 0.337420459,
+              "kept": false
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "bend_soft_margin",
+            "bend_total_curvature"
+          ],
+          "n_negative": 40,
+          "n_positive": 10,
+          "negative_scores_max": 70.2,
+          "positive_scores_min": 34.5,
+          "score_auc": 0.9625,
+          "separation_margin": -35.7
+        },
+        "hub": {
+          "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+          "excluded_features": [],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.797101,
+              "coverage": 1.0,
+              "impute_median": 0.8376623375000001,
+              "kept": false
+            },
+            "angular_resolution_min": {
+              "auc": 0.586957,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.884058,
+              "coverage": 1.0,
+              "impute_median": 0.1888392855,
+              "kept": true
+            },
+            "automorphism_residual": {
+              "auc": 0.285714,
+              "coverage": 0.346154,
+              "impute_median": 4.423164783537631,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.057971,
+              "coverage": 1.0,
+              "impute_median": 0.24532653286055217,
+              "kept": true
+            },
+            "bend_soft_margin": {
+              "auc": 0.304348,
+              "coverage": 1.0,
+              "impute_median": 0.007661658322244474,
+              "kept": false
+            },
+            "bend_total_curvature": {
+              "auc": 0.166667,
+              "coverage": 1.0,
+              "impute_median": 94.9237921135,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.15942,
+              "coverage": 1.0,
+              "impute_median": 0.105146147,
+              "kept": true
+            },
+            "crossing_count": {
+              "auc": 0.434783,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "degree_centroid_spearman": {
+              "auc": 0.304348,
+              "coverage": 1.0,
+              "impute_median": 0.015430335,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.144928,
+              "coverage": 1.0,
+              "impute_median": 0.291676614,
+              "kept": true
+            },
+            "hub_centroid_px": {
+              "auc": 0.101449,
+              "coverage": 1.0,
+              "impute_median": 0.12125933141853701,
+              "kept": true
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.101449,
+              "coverage": 1.0,
+              "impute_median": 0.12125933149999998,
+              "kept": true
+            },
+            "hub_degree": {
+              "auc": 0.978261,
+              "coverage": 1.0,
+              "impute_median": 4.5,
+              "kept": true
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.188406,
+              "coverage": 1.0,
+              "impute_median": 0.9799433694999999,
+              "kept": true
+            },
+            "loop_compactness_mean": {
+              "auc": 0.2,
+              "coverage": 0.423077,
+              "impute_median": 0.523959306,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": 0.666667,
+              "coverage": 0.615385,
+              "impute_median": 0.284251521,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.434783,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.231884,
+              "coverage": 1.0,
+              "impute_median": 2.0756609455,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": null,
+              "coverage": 0.115385,
+              "impute_median": 63.186697724,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.144928,
+              "coverage": 1.0,
+              "impute_median": 0.14592504711294657,
+              "kept": true
+            },
+            "min_spacing_ratio": {
+              "auc": 0.144928,
+              "coverage": 1.0,
+              "impute_median": 0.145925047,
+              "kept": true
+            },
+            "mirror_axis_err": {
+              "auc": 0.785714,
+              "coverage": 0.346154,
+              "impute_median": 17.24631109355104,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.594203,
+              "coverage": 1.0,
+              "impute_median": 0.20407571549999998,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 0.785714,
+              "coverage": 0.346154,
+              "impute_median": 17.24631109355104,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.666667,
+              "coverage": 1.0,
+              "impute_median": 0.027536957338166954,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.666667,
+              "coverage": 1.0,
+              "impute_median": 0.0275369575,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.811594,
+              "coverage": 1.0,
+              "impute_median": 0.29347337900000003,
+              "kept": true
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "avg_edge_length",
+            "hub_centroid_px",
+            "hub_degree"
+          ],
+          "n_negative": 23,
+          "n_positive": 3,
+          "negative_scores_max": 61.0,
+          "positive_scores_min": 68.8,
+          "score_auc": 1.0,
+          "separation_margin": 7.8
+        },
+        "ring": {
+          "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+          "excluded_features": [
+            "alignment_max_coverage"
+          ],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.693277,
+              "coverage": 1.0,
+              "impute_median": 0.937969925,
+              "kept": false
+            },
+            "angular_resolution_min": {
+              "auc": 0.605042,
+              "coverage": 1.0,
+              "impute_median": 5.0370643180000005,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.638655,
+              "coverage": 1.0,
+              "impute_median": 0.2237557055,
+              "kept": false
+            },
+            "automorphism_residual": {
+              "auc": 1.0,
+              "coverage": 0.208333,
+              "impute_median": 4.8353484150507064,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.394958,
+              "coverage": 1.0,
+              "impute_median": 0.24984313820781373,
+              "kept": false
+            },
+            "bend_soft_margin": {
+              "auc": 0.151261,
+              "coverage": 1.0,
+              "impute_median": 0.002634875102927838,
+              "kept": true
+            },
+            "bend_total_curvature": {
+              "auc": 0.058824,
+              "coverage": 1.0,
+              "impute_median": 335.62927296600003,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.571429,
+              "coverage": 1.0,
+              "impute_median": 0.10962528099999999,
+              "kept": false
+            },
+            "crossing_count": {
+              "auc": 0.088235,
+              "coverage": 1.0,
+              "impute_median": 1.0,
+              "kept": true
+            },
+            "degree_centroid_spearman": {
+              "auc": 0.4375,
+              "coverage": 0.958333,
+              "impute_median": -0.25425669,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.294118,
+              "coverage": 1.0,
+              "impute_median": 0.3764055135,
+              "kept": false
+            },
+            "hub_centroid_px": {
+              "auc": 0.420168,
+              "coverage": 1.0,
+              "impute_median": 0.17238966207745016,
+              "kept": false
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.420168,
+              "coverage": 1.0,
+              "impute_median": 0.172389662,
+              "kept": false
+            },
+            "hub_degree": {
+              "auc": 0.445378,
+              "coverage": 1.0,
+              "impute_median": 5.0,
+              "kept": false
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.504202,
+              "coverage": 1.0,
+              "impute_median": 0.6569500545,
+              "kept": false
+            },
+            "loop_compactness_mean": {
+              "auc": 0.0,
+              "coverage": 0.125,
+              "impute_median": 0.785398163,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": 0.5,
+              "coverage": 0.125,
+              "impute_median": 0.141881407,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.310924,
+              "coverage": 1.0,
+              "impute_median": 3.2798699344999998,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": null,
+              "coverage": 0.583333,
+              "impute_median": 68.6336709085,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.478992,
+              "coverage": 1.0,
+              "impute_median": 0.11762128789621419,
+              "kept": false
+            },
+            "min_spacing_ratio": {
+              "auc": 0.478992,
+              "coverage": 1.0,
+              "impute_median": 0.11762128799999999,
+              "kept": false
+            },
+            "mirror_axis_err": {
+              "auc": 1.0,
+              "coverage": 0.208333,
+              "impute_median": 48.76191765521537,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.537815,
+              "coverage": 1.0,
+              "impute_median": 0.139829605,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 1.0,
+              "coverage": 0.208333,
+              "impute_median": 48.76191765521537,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.529412,
+              "coverage": 1.0,
+              "impute_median": 0.03462739024757828,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.529412,
+              "coverage": 1.0,
+              "impute_median": 0.03462739,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.596639,
+              "coverage": 1.0,
+              "impute_median": 0.3650418515,
+              "kept": false
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "bend_soft_margin",
+            "bend_total_curvature",
+            "crossing_count"
+          ],
+          "n_negative": 17,
+          "n_positive": 7,
+          "negative_scores_max": 72.0,
+          "positive_scores_min": 56.5,
+          "score_auc": 0.97479,
+          "separation_margin": -15.5
+        }
+      }
+    }
+  },
+  "family_separation_absolute": {
+    "classic/单环": {
+      "n_negative": 1,
+      "n_positive": 0,
+      "negative_max": 10.5,
+      "negative_mean": 10.5,
+      "positive_min": null,
+      "separated_min_pos_gt_max_neg": false
+    },
+    "classic/多环耦合": {
+      "n_negative": 11,
+      "n_positive": 0,
+      "negative_max": 47.2,
+      "negative_mean": 17.8,
+      "positive_min": null,
+      "separated_min_pos_gt_max_neg": false
+    },
+    "classic/嵌套环": {
+      "n_negative": 8,
+      "n_positive": 0,
+      "negative_max": 67.8,
+      "negative_mean": 31.1,
+      "positive_min": null,
+      "separated_min_pos_gt_max_neg": false
+    },
+    "hub": {
+      "n_negative": 0,
+      "n_positive": 3,
+      "negative_max": null,
+      "negative_mean": null,
+      "positive_min": 72.3,
+      "separated_min_pos_gt_max_neg": false
+    },
+    "random-n10": {
+      "n_negative": 20,
+      "n_positive": 0,
+      "negative_max": 70.9,
+      "negative_mean": 19.8,
+      "positive_min": null,
+      "separated_min_pos_gt_max_neg": false
+    },
+    "ring": {
+      "n_negative": 0,
+      "n_positive": 7,
+      "negative_max": null,
+      "negative_mean": null,
+      "positive_min": 54.0,
+      "separated_min_pos_gt_max_neg": false
+    }
+  },
+  "human_lower_bound": {
+    "absolute": {
+      "global": 32.5,
+      "hub": 72.3,
+      "ring": 54.0
+    },
+    "normalized": {
+      "global": 34.5,
+      "hub": 68.8,
+      "ring": 56.5
+    }
+  },
+  "human_lower_bound_note": "recomputed at every calibration; MUST be re-derived as anchors grow (not a constant)",
+  "i05_retest_pair": {
+    "absolute": {
+      "delta": 0.0,
+      "i05_2026_11_16": 88.2,
+      "i05_2026_11_20": 88.2,
+      "shape_11_16": "ring",
+      "shape_11_20": "ring"
+    },
+    "normalized": {
+      "delta": 1.8,
+      "i05_2026_11_16": 89.3,
+      "i05_2026_11_20": 87.5,
+      "shape_11_16": "ring",
+      "shape_11_20": "ring"
+    }
+  },
+  "new_feature_sign_check": {
+    "brand-flywheel": {
+      "expected_shape": "ring",
+      "hub_neighbor_ratio": 1.017682332,
+      "measured_rho": -0.097590007,
+      "reference_rho": -0.14,
+      "routed_shape": "ring",
+      "sign_matches_reference": true
+    },
+    "classic-cld-growth-and-burden": {
+      "expected_shape": "hub",
+      "hub_neighbor_ratio": 0.48294243,
+      "measured_rho": -0.536349916,
+      "reference_rho": 0.4,
+      "routed_shape": "hub",
+      "sign_matches_reference": false
+    },
+    "epidemic-feedback": {
+      "expected_shape": "ring",
+      "hub_neighbor_ratio": 2.581955417,
+      "measured_rho": -0.107700688,
+      "reference_rho": -0.24,
+      "routed_shape": "ring",
+      "sign_matches_reference": true
+    },
+    "random-n10-i00": {
+      "expected_shape": "hub",
+      "hub_neighbor_ratio": 0.471876446,
+      "measured_rho": -0.532632835,
+      "reference_rho": 0.59,
+      "routed_shape": "ring",
+      "sign_matches_reference": false
+    },
+    "random-n10-i05": {
+      "expected_shape": "ring",
+      "hub_neighbor_ratio": 0.120705275,
+      "measured_rho": -0.671545463,
+      "reference_rho": -0.26,
+      "routed_shape": "ring",
+      "sign_matches_reference": true
+    }
+  },
+  "schema": "stdraw.aesthetic_calibration/v2",
+  "shape_routing": {
+    "hub_intensity_threshold": 0.75,
+    "rho_threshold": 0.0,
+    "ring_excluded_features": [
+      "alignment_max_coverage"
+    ],
+    "ring_exclusion_rationale": "operator 令：行/列对齐在环族天然低（brand-flywheel 33%），权重必须为 0",
+    "rule": "① 族标签：单环→ring，多环耦合/链/星→hub；② 嵌套环与无标签图：先 hub 强度（hub_degree/n ≥ 0.75 → hub），再 degree_centroid_spearman（canvas 中心口径，≤0→ring，>0→hub）；③ ρ 退化→全局公式回退。已知局限：i00 仓内 fixture 实测 ρ=-0.53、hub 强度 0.5，按本路由入 ring，与 jacky 参考值（+0.59，测自本卡禁读的 WorkBuddy 侧副本）冲突——逐样本记录在 routing_log 待复核"
+  }
+}
