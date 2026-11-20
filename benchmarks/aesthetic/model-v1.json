@@ -26,129 +26,150 @@
   "kind": "shape-conditional",
   "models": {
     "global": {
-      "bias": -0.996633274,
+      "bias": -1.014369544,
       "caliber": "normalized",
       "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
       "fit_sample_counts": {
         "negative": 40,
         "positive": 10
       },
-      "human_lower_bound": 34.5,
+      "human_lower_bound": 36.1,
       "hyper": {
         "class_balanced": true,
         "irls_iters": 50,
         "l2": 1.0
       },
       "impute_median": {
-        "bend_soft_margin": 0.0037119296546380123,
+        "alignment_max_coverage": 0.9150717705,
         "bend_total_curvature": 169.5757508025
       },
       "names": [
-        "bend_soft_margin",
+        "alignment_max_coverage",
         "bend_total_curvature"
       ],
       "schema": "stdraw.aesthetic_model/v1",
       "standardize_mean": [
-        0.020456332,
-        234.309975545
+        0.86514275,
+        233.208054595
       ],
       "standardize_std": [
-        0.045982335,
-        246.827165094
+        0.155239968,
+        247.746051131
       ],
       "weights": {
-        "bend_soft_margin": -1.520474934,
-        "bend_total_curvature": -1.744565883
+        "alignment_max_coverage": 1.368508054,
+        "bend_total_curvature": -1.628833414
       }
     },
     "hub": {
-      "bias": -1.043838155,
+      "bias": -0.913753835,
       "caliber": "normalized",
       "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
       "fit_sample_counts": {
-        "negative": 23,
-        "positive": 3
+        "negative": 22,
+        "positive": 5
       },
-      "human_lower_bound": 68.8,
+      "human_lower_bound": 67.4,
       "hyper": {
         "class_balanced": true,
         "irls_iters": 50,
         "l2": 1.0
       },
       "impute_median": {
-        "avg_edge_length": 0.24532653286055217,
-        "hub_centroid_px": 0.12125933141853701,
-        "hub_degree": 4.5
+        "alignment_max_coverage": 0.857142857,
+        "aspect_deviation": 0.196428571,
+        "bend_total_curvature": 68.431404265
       },
       "names": [
-        "avg_edge_length",
-        "hub_centroid_px",
-        "hub_degree"
+        "alignment_max_coverage",
+        "aspect_deviation",
+        "bend_total_curvature"
       ],
       "schema": "stdraw.aesthetic_model/v1",
       "standardize_mean": [
-        0.244176272,
-        0.138198663,
-        5.384615385
+        0.817209104,
+        0.393019023,
+        155.555903286
       ],
       "standardize_std": [
-        0.066853516,
-        0.098439625,
-        2.94927531
+        0.181175935,
+        0.534940161,
+        200.460563281
       ],
       "weights": {
-        "avg_edge_length": -0.698469761,
-        "hub_centroid_px": -0.695270748,
-        "hub_degree": 1.434460664
+        "alignment_max_coverage": 1.191118077,
+        "aspect_deviation": 0.183170895,
+        "bend_total_curvature": -1.385754574
       }
     },
     "ring": {
-      "bias": -0.70430061,
+      "bias": -0.698727217,
       "caliber": "normalized",
       "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
       "fit_sample_counts": {
-        "negative": 17,
-        "positive": 7
+        "negative": 18,
+        "positive": 5
       },
-      "human_lower_bound": 56.5,
+      "human_lower_bound": 45.4,
       "hyper": {
         "class_balanced": true,
         "irls_iters": 50,
         "l2": 1.0
       },
       "impute_median": {
-        "bend_soft_margin": 0.002634875102927838,
-        "bend_total_curvature": 335.62927296600003,
-        "crossing_count": 1.0
+        "bend_soft_margin": 0.00270465311546357,
+        "bend_total_curvature": 391.785430105,
+        "crossing_count": 1.0,
+        "hub_centroid_px": 0.15261046212241014,
+        "hub_centroid_ratio": 0.152610462
       },
       "names": [
         "bend_soft_margin",
         "bend_total_curvature",
-        "crossing_count"
+        "crossing_count",
+        "hub_centroid_ratio",
+        "hub_centroid_px"
       ],
       "schema": "stdraw.aesthetic_model/v1",
       "standardize_mean": [
-        0.010042596,
-        309.255749648,
-        1.791666667
+        0.013110097,
+        324.364927871,
+        1.869565217,
+        0.162617559,
+        0.162617559
       ],
       "standardize_std": [
-        0.038866919,
-        270.26890496,
-        2.466089459
+        0.039561269,
+        266.213310687,
+        2.490055837,
+        0.083245657,
+        0.083245657
       ],
       "weights": {
-        "bend_soft_margin": -0.817371602,
-        "bend_total_curvature": -1.373114145,
-        "crossing_count": -0.799962997
+        "bend_soft_margin": -0.58685659,
+        "bend_total_curvature": -1.031272372,
+        "crossing_count": -0.986240968,
+        "hub_centroid_px": -0.373120253,
+        "hub_centroid_ratio": -0.373120251
       }
     }
   },
   "routing": {
     "family_map_source": "benchmarks/corpus/classic/topology-families.json",
-    "hub_intensity_threshold": 0.75,
+    "hub_intensity_threshold": 0.81,
+    "hub_intensity_threshold_derivation": {
+      "derived_threshold": 0.81,
+      "empty_band": [
+        0.7,
+        0.923
+      ],
+      "measured_high_band_min": 0.923,
+      "measured_low_band_max": 0.7,
+      "method": "midpoint of the measured empty hub-intensity band over the threshold-eligible (unlabeled/nested-cycle) population",
+      "rederive_rule": "re-measure whenever the corpus grows; band closure must be reported, not tuned around"
+    },
     "rho_threshold": 0.0,
-    "rule": "(1) family label: single-cycle->ring, multi-cycle-coupled/chain/star->hub; (2) nested-cycle + unlabeled: hub intensity (hub_degree/n >= 0.75 -> hub) first, then degree_centroid_spearman (canvas-centre caliber, <=0->ring, >0->hub); (3) undefined rho -> global fallback. KNOWN LIMITATION: in-repo i00 fixture measures rho=-0.53 / hub intensity 0.5 -> routed ring, conflicting with the operator reference (+0.59, measured on the WorkBuddy-side copy this card may not read) — logged per-sample in routing_log for review",
+    "rule": "(1) family label: single-cycle->ring, multi-cycle-coupled/chain/star->hub; (2) nested-cycle + unlabeled: hub intensity (hub_degree/n >= 0.81 -> hub; DERIVED = midpoint of the measured empty band [0.70, 0.923] over the threshold-eligible population) first, then degree_canvas_spearman (canvas-centre caliber, <=0->ring, >0->hub); (3) undefined rho -> global fallback. Anchor edge sets are completed from the graph source before any feature is measured (review MAJOR-1); operator reference rho values are out-of-repo and not reproducible in-repo — routing follows in-repo measurements, logged per-sample in routing_log",
     "shape_excluded_features": {
       "global": [],
       "hub": [],

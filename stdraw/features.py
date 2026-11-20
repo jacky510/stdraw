@@ -84,12 +84,17 @@ FEATURE_KEYS = (
     "avg_edge_length",
     "symmetry_axis_err_px",
     # shape-conditional scorer extensions (2026-11-20 directive): in-shape
-    # regularity measures — degree-centroid correlation (negative on
+    # regularity measures — degree-vs-canvas-centre correlation (negative on
     # ring-dominant layouts, positive on hub+spoke) and hub-neighbor vs
-    # low-degree centroid distance ratio.  Dedupe check: no existing key
+    # low-degree centre distance ratio.  Dedupe check: no existing key
     # measures degree-vs-centrality correlation (hub_centroid_distance is a
     # single-node statistic, not a rank correlation).
-    "degree_centroid_spearman",
+    # Naming (one definition, one name): the implementation measures distance
+    # to the CANVAS centre (viewBox centre), not the node-area centroid — the
+    # key is therefore named degree_canvas_spearman (renamed from
+    # degree_centroid_spearman, whose "centroid" wording misdescribed the
+    # implementation).
+    "degree_canvas_spearman",
     "hub_neighbor_centrality_ratio",
 )
 
@@ -954,19 +959,21 @@ def _spearman_rho(xs, ys):
 def _feat_degree_centrality(layout):
     """Shape-regularity features (2026-11-20 directive, single-source here):
 
-    - degree_centroid_spearman: rank correlation between node degree and
-      node distance to the area centroid.  Negative on ring-dominant
-      layouts (high-degree nodes ride the ring, not the centre), positive
-      on hub+spoke layouts.  Measured on jacky's hand-drawn fixtures:
-      i05 -0.26 / brand-flywheel -0.14 / epidemic -0.24 (ring) vs
-      classic-cld +0.40 / i00 +0.59 (hub).
+    - degree_canvas_spearman: rank correlation between node degree and
+      node distance to the CANVAS centre (viewBox centre).  Negative on
+      ring-dominant layouts (high-degree nodes ride the ring, not the
+      centre), positive on hub+spoke layouts.  Naming note: one definition,
+      one name — this is the canvas-centre caliber (the former key name
+      degree_centroid_spearman misdescribed it as a node-area centroid;
+      the operator's hand-measured reference values were taken on an
+      out-of-repo copy and are not reproducible in-repo).
     - hub_neighbor_centrality_ratio: mean centroid distance of the hub
       nodes' neighbors over that of the minimum-degree nodes.
     """
     ids = layout.ids
     if len(ids) < 3 or not layout.edges:
         return {
-            "degree_centroid_spearman": {"rho": None, "n_nodes": len(ids)},
+            "degree_canvas_spearman": {"rho": None, "n_nodes": len(ids)},
             "hub_neighbor_centrality_ratio": {"ratio": None},
         }
     cx = layout.vx + layout.vw / 2.0
@@ -988,7 +995,7 @@ def _feat_degree_centrality(layout):
         if low_mean > EPS:
             ratio = hub_mean / low_mean
     return {
-        "degree_centroid_spearman": {
+        "degree_canvas_spearman": {
             "rho": _r(rho) if rho is not None else None,
             "n_nodes": len(ids),
         },

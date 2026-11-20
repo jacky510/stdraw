@@ -1,5 +1,88 @@
 {
   "anchor_sources": {
+    "edge_set_caliber": "anchor edge sets completed from the graph source BEFORE any feature is measured (manual 'Export layout' JSONs carry only the edges the user touched — review MAJOR-1).  Untouched edges appended as minimal {'a','b'} pairs (renderer behavior: untouched = straight line between card centres); manual routing info kept verbatim.  Per-anchor log: edge_supplement_log",
+    "edge_supplement_log": [
+      {
+        "graph": "brand-flywheel",
+        "manual_edges": 6,
+        "path": "benchmarks/manual/brand-flywheel-manual-layout.json",
+        "source": "engine layout",
+        "supplemented": 2,
+        "total_edges": 8
+      },
+      {
+        "graph": "classic-cld-growth-and-burden",
+        "manual_edges": 0,
+        "path": "benchmarks/manual/classic-cld-manual-layout.json",
+        "source": "engine layout",
+        "supplemented": 13,
+        "total_edges": 13
+      },
+      {
+        "graph": "fan-d12",
+        "manual_edges": 11,
+        "path": "benchmarks/manual/fan-d12-manual-layout.json",
+        "source": "structural (fan family)",
+        "supplemented": 1,
+        "total_edges": 12
+      },
+      {
+        "graph": "fan-d17",
+        "manual_edges": 17,
+        "path": "benchmarks/manual/fan-d17-manual-layout.json",
+        "source": "none needed",
+        "supplemented": 0,
+        "total_edges": 17
+      },
+      {
+        "graph": "random-n10-i00",
+        "manual_edges": 13,
+        "path": "benchmarks/manual/random-n10-i00-manual-layout.json",
+        "source": "engine layout",
+        "supplemented": 3,
+        "total_edges": 16
+      },
+      {
+        "graph": "random-n10-i05",
+        "manual_edges": 11,
+        "path": "benchmarks/manual/random-n10-i05-manual-layout.json",
+        "source": "engine layout",
+        "supplemented": 5,
+        "total_edges": 16
+      },
+      {
+        "graph": "random-n10-i05",
+        "manual_edges": 9,
+        "path": "benchmarks/manual/user-2026-11-20/i05.json",
+        "source": "engine layout",
+        "supplemented": 7,
+        "total_edges": 16
+      },
+      {
+        "graph": "random-n10-i11",
+        "manual_edges": 12,
+        "path": "benchmarks/manual/user-2026-11-20/i11-a.json",
+        "source": "engine layout",
+        "supplemented": 4,
+        "total_edges": 16
+      },
+      {
+        "graph": "random-n10-i11",
+        "manual_edges": 14,
+        "path": "benchmarks/manual/user-2026-11-20/i11-b.json",
+        "source": "engine layout",
+        "supplemented": 2,
+        "total_edges": 16
+      },
+      {
+        "graph": "epidemic-feedback",
+        "manual_edges": 14,
+        "path": "tests/data/epidemic-feedback-manual-layout.json",
+        "source": "none needed",
+        "supplemented": 0,
+        "total_edges": 14
+      }
+    ],
     "load_failures": [],
     "n_negatives": 40,
     "positives": [
@@ -18,254 +101,254 @@
     "workbuddy_workspace_read": false
   },
   "caliber_comparison": {
-    "cross_class_order_disagreements": 1,
+    "cross_class_order_disagreements": 0,
     "cross_class_pairs": 400,
-    "ranking_reversal_observed": true,
-    "spearman_negatives": 0.8164,
-    "spearman_positives": 0.9387,
+    "ranking_reversal_observed": false,
+    "spearman_negatives": 0.9968,
+    "spearman_positives": 0.9786,
     "verdict": {
       "rule": "max worst-shape LOSO-min, tie-break worst-shape AUC",
       "winning_caliber": "normalized",
       "winning_domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)"
     },
-    "worst_shape_auc_absolute": 0.97479,
-    "worst_shape_auc_normalized": 0.97479,
-    "worst_shape_loso_min_absolute": 12.6,
-    "worst_shape_loso_min_normalized": 50.8
+    "worst_shape_auc_absolute": 0.955556,
+    "worst_shape_auc_normalized": 0.955556,
+    "worst_shape_loso_min_absolute": 0.3,
+    "worst_shape_loso_min_normalized": 15.2
   },
   "calibers": {
     "absolute": {
       "domain": "same-canvas-family (~960px viewBox) only",
       "loso": {
         "caliber": "absolute",
-        "hub_mean": null,
-        "hub_min": null,
+        "hub_mean": 67.4,
+        "hub_min": 57.4,
         "per_anchor": [
           {
             "held_out": "brand-flywheel",
             "path": "brand-flywheel-manual-layout.json",
-            "score": 77.0,
-            "shape": "ring"
+            "score": 57.4,
+            "shape": "hub"
           },
           {
             "held_out": "classic-cld-growth-and-burden",
-            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
-            "score": null,
+            "path": "classic-cld-manual-layout.json",
+            "score": 80.5,
             "shape": "hub"
           },
           {
             "held_out": "fan-d12",
-            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
-            "score": null,
+            "path": "fan-d12-manual-layout.json",
+            "score": 62.2,
             "shape": "hub"
           },
           {
             "held_out": "fan-d17",
-            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
-            "score": null,
+            "path": "fan-d17-manual-layout.json",
+            "score": 79.2,
             "shape": "hub"
           },
           {
             "held_out": "random-n10-i00",
             "path": "random-n10-i00-manual-layout.json",
-            "score": 86.6,
+            "score": 74.8,
             "shape": "ring"
           },
           {
             "held_out": "random-n10-i05",
             "path": "random-n10-i05-manual-layout.json",
-            "score": 87.8,
-            "shape": "ring"
+            "score": 57.5,
+            "shape": "hub"
           },
           {
             "held_out": "random-n10-i05",
             "path": "i05.json",
-            "score": 87.8,
+            "score": 0.3,
             "shape": "ring"
           },
           {
             "held_out": "random-n10-i11",
             "path": "i11-a.json",
-            "score": 83.5,
+            "score": 2.6,
             "shape": "ring"
           },
           {
             "held_out": "random-n10-i11",
             "path": "i11-b.json",
-            "score": 87.8,
+            "score": 0.3,
             "shape": "ring"
           },
           {
             "held_out": "epidemic-feedback",
             "path": "epidemic-feedback-manual-layout.json",
-            "score": 12.6,
+            "score": 16.1,
             "shape": "ring"
           }
         ],
-        "ring_mean": 74.7,
-        "ring_min": 12.6
+        "ring_mean": 18.8,
+        "ring_min": 0.3
       },
       "negative_scores_by_sample": {
         "classic/单环/arms-race": [
           10.5
         ],
         "classic/多环耦合/bullwhip": [
-          11.7
+          14.1
         ],
         "classic/多环耦合/burnout-attrition": [
-          5.1
+          13.2
         ],
         "classic/多环耦合/debt-spiral": [
-          4.1
+          19.6
         ],
         "classic/多环耦合/eroding-goals": [
-          21.7
+          10.1
         ],
         "classic/多环耦合/fixes-that-fail": [
-          38.5
+          38.8
         ],
         "classic/多环耦合/learning-flywheel": [
-          47.2
+          45.8
         ],
         "classic/多环耦合/limits-to-growth": [
-          11.8
+          11.4
         ],
         "classic/多环耦合/renewable-resource": [
-          12.4
+          5.1
         ],
         "classic/多环耦合/tragedy-of-the-commons": [
-          6.1
+          4.1
         ],
         "classic/多环耦合/urban-migration": [
-          14.7
+          28.7
         ],
         "classic/多环耦合/wage-price-spiral": [
-          22.5
+          10.1
         ],
         "classic/嵌套环/brand-flywheel": [
-          64.3
+          45.4
         ],
         "classic/嵌套环/classic-cld-growth-and-burden": [
-          67.8
+          31.5
         ],
         "classic/嵌套环/fishing-collapse": [
-          16.7
+          70.8
         ],
         "classic/嵌套环/induced-demand": [
-          7.5
+          49.7
         ],
         "classic/嵌套环/population-logistic": [
-          17.3
+          0.3
         ],
         "classic/嵌套环/shifting-the-burden": [
-          46.0
+          50.9
         ],
         "classic/嵌套环/soil-erosion": [
-          6.0
+          76.4
         ],
         "classic/嵌套环/success-to-the-successful": [
-          23.5
+          16.1
         ],
         "random-n10/random-n10-i00": [
-          13.5
+          28.2
         ],
         "random-n10/random-n10-i01": [
-          4.4
+          9.3
         ],
         "random-n10/random-n10-i02": [
-          70.9
+          44.1
         ],
         "random-n10/random-n10-i03": [
-          19.7
+          35.3
         ],
         "random-n10/random-n10-i04": [
-          22.9
+          0.4
         ],
         "random-n10/random-n10-i05": [
-          22.3
+          27.8
         ],
         "random-n10/random-n10-i06": [
-          19.2
+          33.3
         ],
         "random-n10/random-n10-i07": [
-          26.9
+          24.6
         ],
         "random-n10/random-n10-i08": [
-          59.0
+          38.9
         ],
         "random-n10/random-n10-i09": [
-          4.3
+          2.1
         ],
         "random-n10/random-n10-i10": [
-          2.4
+          8.6
         ],
         "random-n10/random-n10-i11": [
-          19.7
+          27.9
         ],
         "random-n10/random-n10-i12": [
-          2.5
+          5.1
         ],
         "random-n10/random-n10-i13": [
-          33.1
+          21.0
         ],
         "random-n10/random-n10-i14": [
-          40.2
+          46.7
         ],
         "random-n10/random-n10-i15": [
-          8.4
+          19.3
         ],
         "random-n10/random-n10-i16": [
-          2.7
+          7.3
         ],
         "random-n10/random-n10-i17": [
-          7.9
+          60.0
         ],
         "random-n10/random-n10-i18": [
-          14.4
+          68.2
         ],
         "random-n10/random-n10-i19": [
-          1.5
+          4.7
         ]
       },
       "positive_scores": {
         "brand-flywheel:brand-flywheel-manual-layout.json": {
-          "score": 81.8,
-          "shape": "ring"
+          "score": 78.6,
+          "shape": "hub"
         },
         "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
-          "score": 72.3,
+          "score": 83.4,
           "shape": "hub"
         },
         "epidemic-feedback:epidemic-feedback-manual-layout.json": {
-          "score": 54.0,
+          "score": 42.1,
           "shape": "ring"
         },
         "fan-d12:fan-d12-manual-layout.json": {
-          "score": 94.7,
+          "score": 67.4,
           "shape": "hub"
         },
         "fan-d17:fan-d17-manual-layout.json": {
-          "score": 99.7,
+          "score": 79.6,
           "shape": "hub"
         },
         "random-n10-i00:random-n10-i00-manual-layout.json": {
-          "score": 87.1,
+          "score": 91.8,
           "shape": "ring"
         },
         "random-n10-i05:i05.json": {
-          "score": 88.2,
+          "score": 93.8,
           "shape": "ring"
         },
         "random-n10-i05:random-n10-i05-manual-layout.json": {
-          "score": 88.2,
-          "shape": "ring"
+          "score": 78.6,
+          "shape": "hub"
         },
         "random-n10-i11:i11-a.json": {
-          "score": 84.7,
+          "score": 92.6,
           "shape": "ring"
         },
         "random-n10-i11:i11-b.json": {
-          "score": 88.2,
+          "score": 93.4,
           "shape": "ring"
         }
       },
@@ -274,7 +357,7 @@
           "graph": "brand-flywheel",
           "kind": "positive",
           "path": "brand-flywheel-manual-layout.json",
-          "shape": "ring"
+          "shape": "hub"
         },
         {
           "graph": "classic-cld-growth-and-burden",
@@ -304,7 +387,7 @@
           "graph": "random-n10-i05",
           "kind": "positive",
           "path": "random-n10-i05-manual-layout.json",
-          "shape": "ring"
+          "shape": "hub"
         },
         {
           "graph": "random-n10-i05",
@@ -388,7 +471,7 @@
           "graph": "induced-demand",
           "kind": "negative",
           "path": "induced-demand.json",
-          "shape": "hub"
+          "shape": "ring"
         },
         {
           "graph": "learning-flywheel",
@@ -577,13 +660,13 @@
           "excluded_features": [],
           "feature_report": {
             "alignment_max_coverage": {
-              "auc": 0.7525,
+              "auc": 0.81125,
               "coverage": 1.0,
-              "impute_median": 0.91302521,
-              "kept": false
+              "impute_median": 0.9150717705,
+              "kept": true
             },
             "angular_resolution_min": {
-              "auc": 0.6025,
+              "auc": 0.59,
               "coverage": 1.0,
               "impute_median": 4.1267595155,
               "kept": false
@@ -595,25 +678,25 @@
               "kept": false
             },
             "automorphism_residual": {
-              "auc": 0.604167,
+              "auc": 0.5625,
               "coverage": 0.28,
               "impute_median": 6987.9,
               "kept": false
             },
             "avg_edge_length": {
-              "auc": 0.5925,
+              "auc": 0.6275,
               "coverage": 1.0,
-              "impute_median": 206.76896440500002,
+              "impute_median": 209.8314102455,
               "kept": false
             },
             "bend_soft_margin": {
-              "auc": 0.2125,
+              "auc": 0.2825,
               "coverage": 1.0,
-              "impute_median": 4.000827972,
+              "impute_median": 4.36386201,
               "kept": false
             },
             "bend_total_curvature": {
-              "auc": 0.12375,
+              "auc": 0.10875,
               "coverage": 1.0,
               "impute_median": 169.5757508025,
               "kept": true
@@ -630,45 +713,45 @@
               "impute_median": 0.0,
               "kept": false
             },
-            "degree_centroid_spearman": {
-              "auc": 0.353846,
+            "degree_canvas_spearman": {
+              "auc": 0.384615,
               "coverage": 0.98,
-              "impute_median": -0.201007563,
+              "impute_median": -0.207019668,
               "kept": false
             },
             "edge_length_cv": {
-              "auc": 0.33,
+              "auc": 0.365,
               "coverage": 1.0,
               "impute_median": 0.35422770049999996,
               "kept": false
             },
             "hub_centroid_px": {
-              "auc": 0.3825,
+              "auc": 0.36,
               "coverage": 1.0,
-              "impute_median": 117.252191161,
+              "impute_median": 115.1702352705,
               "kept": false
             },
             "hub_centroid_ratio": {
-              "auc": 0.34,
+              "auc": 0.32,
               "coverage": 1.0,
-              "impute_median": 0.140737104,
+              "impute_median": 0.136508048,
               "kept": false
             },
             "hub_degree": {
-              "auc": 0.64875,
+              "auc": 0.71375,
               "coverage": 1.0,
               "impute_median": 5.0,
               "kept": false
             },
             "hub_neighbor_centrality_ratio": {
-              "auc": 0.3675,
+              "auc": 0.395,
               "coverage": 1.0,
-              "impute_median": 0.8159899605000001,
+              "impute_median": 0.8374121545,
               "kept": false
             },
             "loop_compactness_mean": {
-              "auc": 0.375,
-              "coverage": 0.28,
+              "auc": 0.583333,
+              "coverage": 0.26,
               "impute_median": 0.539012084,
               "kept": false
             },
@@ -679,9 +762,9 @@
               "kept": false
             },
             "loop_edge_length_cv": {
-              "auc": 0.470588,
-              "coverage": 0.38,
-              "impute_median": 0.256490259,
+              "auc": 0.235294,
+              "coverage": 0.36,
+              "impute_median": 0.249696841,
               "kept": false
             },
             "loop_foreign_nodes": {
@@ -703,7 +786,7 @@
               "kept": false
             },
             "max_min_edge_ratio": {
-              "auc": 0.395,
+              "auc": 0.41,
               "coverage": 1.0,
               "impute_median": 3.0,
               "kept": false
@@ -727,9 +810,9 @@
               "kept": false
             },
             "mirror_axis_err": {
-              "auc": 0.979167,
+              "auc": 1.0,
               "coverage": 0.28,
-              "impute_median": 31924.0331023075,
+              "impute_median": 32288.0,
               "kept": false
             },
             "node_spacing_cv": {
@@ -739,9 +822,9 @@
               "kept": false
             },
             "symmetry_axis_err_px": {
-              "auc": 0.979167,
+              "auc": 1.0,
               "coverage": 0.28,
-              "impute_median": 31924.0331023075,
+              "impute_median": 32288.0,
               "kept": false
             },
             "visual_centroid_px": {
@@ -765,113 +848,114 @@
           },
           "fitted": true,
           "kept_features": [
+            "alignment_max_coverage",
             "bend_total_curvature"
           ],
           "n_negative": 40,
           "n_positive": 10,
-          "negative_scores_max": 72.0,
-          "positive_scores_min": 32.5,
-          "score_auc": 0.87625,
-          "separation_margin": -39.5
+          "negative_scores_max": 83.2,
+          "positive_scores_min": 36.1,
+          "score_auc": 0.955,
+          "separation_margin": -47.1
         },
         "hub": {
           "domain": "same-canvas-family (~960px viewBox) only",
           "excluded_features": [],
           "feature_report": {
             "alignment_max_coverage": {
-              "auc": 0.797101,
+              "auc": 0.854545,
               "coverage": 1.0,
-              "impute_median": 0.8376623375000001,
-              "kept": false
+              "impute_median": 0.857142857,
+              "kept": true
             },
             "angular_resolution_min": {
-              "auc": 0.586957,
+              "auc": 0.536364,
               "coverage": 1.0,
               "impute_median": 0.0,
               "kept": false
             },
             "aspect_deviation": {
-              "auc": 0.884058,
+              "auc": 0.836364,
               "coverage": 1.0,
-              "impute_median": 0.1888392855,
+              "impute_median": 0.196428571,
               "kept": true
             },
             "automorphism_residual": {
-              "auc": 0.285714,
-              "coverage": 0.346154,
-              "impute_median": 2560.0,
+              "auc": 0.380952,
+              "coverage": 0.37037,
+              "impute_median": 7668.5384615385,
               "kept": false
             },
             "avg_edge_length": {
-              "auc": 0.797101,
+              "auc": 0.727273,
               "coverage": 1.0,
-              "impute_median": 210.07919865949998,
+              "impute_median": 212.627611184,
               "kept": false
             },
             "bend_soft_margin": {
-              "auc": 0.376812,
+              "auc": 0.436364,
               "coverage": 1.0,
-              "impute_median": 7.2627472520000005,
+              "impute_median": 7.127194994,
               "kept": false
             },
             "bend_total_curvature": {
-              "auc": 0.166667,
+              "auc": 0.090909,
               "coverage": 1.0,
-              "impute_median": 94.9237921135,
+              "impute_median": 68.431404265,
               "kept": true
             },
             "canvas_fill_rate": {
-              "auc": 0.15942,
+              "auc": 0.5,
               "coverage": 1.0,
-              "impute_median": 0.105146147,
-              "kept": true
+              "impute_median": 0.107632094,
+              "kept": false
             },
             "crossing_count": {
-              "auc": 0.434783,
+              "auc": 0.431818,
               "coverage": 1.0,
               "impute_median": 0.0,
               "kept": false
             },
-            "degree_centroid_spearman": {
-              "auc": 0.304348,
+            "degree_canvas_spearman": {
+              "auc": 0.418182,
               "coverage": 1.0,
-              "impute_median": 0.015430335,
+              "impute_median": 0.065653216,
               "kept": false
             },
             "edge_length_cv": {
-              "auc": 0.144928,
+              "auc": 0.318182,
               "coverage": 1.0,
-              "impute_median": 0.291676614,
-              "kept": true
+              "impute_median": 0.311349965,
+              "kept": false
             },
             "hub_centroid_px": {
-              "auc": 0.188406,
+              "auc": 0.454545,
               "coverage": 1.0,
-              "impute_median": 90.192229881,
-              "kept": true
+              "impute_median": 104.489795918,
+              "kept": false
             },
             "hub_centroid_ratio": {
-              "auc": 0.101449,
+              "auc": 0.427273,
               "coverage": 1.0,
-              "impute_median": 0.12125933149999998,
-              "kept": true
+              "impute_median": 0.128877008,
+              "kept": false
             },
             "hub_degree": {
-              "auc": 0.978261,
+              "auc": 0.75,
               "coverage": 1.0,
-              "impute_median": 4.5,
-              "kept": true
+              "impute_median": 4.0,
+              "kept": false
             },
             "hub_neighbor_centrality_ratio": {
-              "auc": 0.188406,
+              "auc": 0.390909,
               "coverage": 1.0,
-              "impute_median": 0.9799433694999999,
-              "kept": true
+              "impute_median": 1.024677012,
+              "kept": false
             },
             "loop_compactness_mean": {
-              "auc": 0.2,
-              "coverage": 0.423077,
-              "impute_median": 0.523959306,
+              "auc": null,
+              "coverage": 0.333333,
+              "impute_median": 0.539012084,
               "kept": false
             },
             "loop_edge_crossings": {
@@ -881,13 +965,13 @@
               "kept": false
             },
             "loop_edge_length_cv": {
-              "auc": 0.666667,
-              "coverage": 0.615385,
+              "auc": null,
+              "coverage": 0.518519,
               "impute_median": 0.284251521,
               "kept": false
             },
             "loop_foreign_nodes": {
-              "auc": 0.434783,
+              "auc": 0.431818,
               "coverage": 1.0,
               "impute_median": 0.0,
               "kept": false
@@ -905,78 +989,78 @@
               "kept": false
             },
             "max_min_edge_ratio": {
-              "auc": 0.231884,
+              "auc": 0.390909,
               "coverage": 1.0,
-              "impute_median": 2.0756609455,
+              "impute_median": 2.092195863,
               "kept": false
             },
             "min_crossing_angle": {
               "auc": null,
-              "coverage": 0.115385,
+              "coverage": 0.111111,
               "impute_median": 63.186697724,
               "kept": false
             },
             "min_spacing_px": {
-              "auc": 0.434783,
+              "auc": 0.527273,
               "coverage": 1.0,
-              "impute_median": 104.040799341,
+              "impute_median": 98.081598682,
               "kept": false
             },
             "min_spacing_ratio": {
-              "auc": 0.144928,
+              "auc": 0.318182,
               "coverage": 1.0,
-              "impute_median": 0.145925047,
-              "kept": true
+              "impute_median": 0.143364943,
+              "kept": false
             },
             "mirror_axis_err": {
               "auc": 1.0,
-              "coverage": 0.346154,
-              "impute_median": 14933.990965187,
+              "coverage": 0.37037,
+              "impute_median": 22702.195482593503,
               "kept": false
             },
             "node_spacing_cv": {
-              "auc": 0.594203,
+              "auc": 0.490909,
               "coverage": 1.0,
-              "impute_median": 0.20407571549999998,
+              "impute_median": 0.188104217,
               "kept": false
             },
             "symmetry_axis_err_px": {
               "auc": 1.0,
-              "coverage": 0.346154,
-              "impute_median": 14933.990965187,
+              "coverage": 0.37037,
+              "impute_median": 22702.195482593503,
               "kept": false
             },
             "visual_centroid_px": {
-              "auc": 0.797101,
+              "auc": 0.672727,
               "coverage": 1.0,
-              "impute_median": 18.1120249675,
+              "impute_median": 17.837040113,
               "kept": false
             },
             "visual_centroid_ratio": {
-              "auc": 0.666667,
+              "auc": 0.609091,
               "coverage": 1.0,
-              "impute_median": 0.0275369575,
+              "impute_median": 0.027466033,
               "kept": false
             },
             "voronoi_area_cv": {
-              "auc": 0.811594,
+              "auc": 0.636364,
               "coverage": 1.0,
-              "impute_median": 0.29347337900000003,
-              "kept": true
+              "impute_median": 0.296281809,
+              "kept": false
             }
           },
           "fitted": true,
           "kept_features": [
+            "alignment_max_coverage",
             "aspect_deviation",
-            "hub_centroid_ratio",
-            "hub_degree"
+            "bend_total_curvature"
           ],
-          "n_negative": 23,
-          "n_positive": 3,
-          "negative_scores_max": 67.8,
-          "positive_scores_min": 72.3,
-          "score_auc": 1.0,
-          "separation_margin": 4.5
+          "n_negative": 22,
+          "n_positive": 5,
+          "negative_scores_max": 76.4,
+          "positive_scores_min": 67.4,
+          "score_auc": 0.972727,
+          "separation_margin": -9.0
         },
         "ring": {
           "domain": "same-canvas-family (~960px viewBox) only",
@@ -985,99 +1069,99 @@
           ],
           "feature_report": {
             "alignment_max_coverage": {
-              "auc": 0.693277,
+              "auc": 0.755556,
               "coverage": 1.0,
-              "impute_median": 0.937969925,
+              "impute_median": 0.928571429,
               "kept": false
             },
             "angular_resolution_min": {
-              "auc": 0.605042,
+              "auc": 0.644444,
               "coverage": 1.0,
-              "impute_median": 5.0370643180000005,
+              "impute_median": 4.879699728,
               "kept": false
             },
             "aspect_deviation": {
-              "auc": 0.638655,
+              "auc": 0.711111,
               "coverage": 1.0,
-              "impute_median": 0.2237557055,
+              "impute_median": 0.246835443,
               "kept": false
             },
             "automorphism_residual": {
               "auc": 1.0,
-              "coverage": 0.208333,
-              "impute_median": 8081.0,
+              "coverage": 0.173913,
+              "impute_median": 6987.9,
               "kept": false
             },
             "avg_edge_length": {
-              "auc": 0.504202,
+              "auc": 0.544444,
               "coverage": 1.0,
-              "impute_median": 203.650678862,
+              "impute_median": 207.530786135,
               "kept": false
             },
             "bend_soft_margin": {
-              "auc": 0.151261,
+              "auc": 0.122222,
               "coverage": 1.0,
-              "impute_median": 2.1029204135,
+              "impute_median": 2.5,
               "kept": true
             },
             "bend_total_curvature": {
-              "auc": 0.058824,
+              "auc": 0.077778,
               "coverage": 1.0,
-              "impute_median": 335.62927296600003,
+              "impute_median": 391.785430105,
               "kept": true
             },
             "canvas_fill_rate": {
-              "auc": 0.571429,
+              "auc": 0.422222,
               "coverage": 1.0,
-              "impute_median": 0.10962528099999999,
+              "impute_median": 0.107632094,
               "kept": false
             },
             "crossing_count": {
-              "auc": 0.088235,
+              "auc": 0.111111,
               "coverage": 1.0,
               "impute_median": 1.0,
               "kept": true
             },
-            "degree_centroid_spearman": {
-              "auc": 0.4375,
-              "coverage": 0.958333,
-              "impute_median": -0.25425669,
+            "degree_canvas_spearman": {
+              "auc": 0.294118,
+              "coverage": 0.956522,
+              "impute_median": -0.332052091,
               "kept": false
             },
             "edge_length_cv": {
-              "auc": 0.294118,
+              "auc": 0.344444,
               "coverage": 1.0,
-              "impute_median": 0.3764055135,
+              "impute_median": 0.372776857,
               "kept": false
             },
             "hub_centroid_px": {
-              "auc": 0.394958,
+              "auc": 0.188889,
               "coverage": 1.0,
-              "impute_median": 154.23635529249998,
-              "kept": false
+              "impute_median": 144.38257611,
+              "kept": true
             },
             "hub_centroid_ratio": {
-              "auc": 0.420168,
+              "auc": 0.177778,
               "coverage": 1.0,
-              "impute_median": 0.172389662,
-              "kept": false
+              "impute_median": 0.152610462,
+              "kept": true
             },
             "hub_degree": {
-              "auc": 0.445378,
+              "auc": 0.677778,
               "coverage": 1.0,
               "impute_median": 5.0,
               "kept": false
             },
             "hub_neighbor_centrality_ratio": {
-              "auc": 0.504202,
+              "auc": 0.411111,
               "coverage": 1.0,
-              "impute_median": 0.6569500545,
+              "impute_median": 0.661892525,
               "kept": false
             },
             "loop_compactness_mean": {
-              "auc": 0.0,
-              "coverage": 0.125,
-              "impute_median": 0.785398163,
+              "auc": 0.333333,
+              "coverage": 0.173913,
+              "impute_median": 0.6758450235,
               "kept": false
             },
             "loop_edge_crossings": {
@@ -1087,9 +1171,9 @@
               "kept": false
             },
             "loop_edge_length_cv": {
-              "auc": 0.5,
-              "coverage": 0.125,
-              "impute_median": 0.141881407,
+              "auc": 0.333333,
+              "coverage": 0.173913,
+              "impute_median": 0.19239241499999998,
               "kept": false
             },
             "loop_foreign_nodes": {
@@ -1111,63 +1195,63 @@
               "kept": false
             },
             "max_min_edge_ratio": {
-              "auc": 0.310924,
+              "auc": 0.344444,
               "coverage": 1.0,
-              "impute_median": 3.2798699344999998,
+              "impute_median": 3.259739869,
               "kept": false
             },
             "min_crossing_angle": {
               "auc": null,
-              "coverage": 0.583333,
+              "coverage": 0.608696,
               "impute_median": 68.6336709085,
               "kept": false
             },
             "min_spacing_px": {
-              "auc": 0.487395,
+              "auc": 0.422222,
               "coverage": 1.0,
-              "impute_median": 126.87891114349999,
+              "impute_median": 133.416640641,
               "kept": false
             },
             "min_spacing_ratio": {
-              "auc": 0.478992,
+              "auc": 0.344444,
               "coverage": 1.0,
-              "impute_median": 0.11762128799999999,
+              "impute_median": 0.114079162,
               "kept": false
             },
             "mirror_axis_err": {
               "auc": 1.0,
-              "coverage": 0.208333,
-              "impute_median": 46534.959936487,
+              "coverage": 0.173913,
+              "impute_median": 57540.288964383,
               "kept": false
             },
             "node_spacing_cv": {
-              "auc": 0.537815,
+              "auc": 0.6,
               "coverage": 1.0,
-              "impute_median": 0.139829605,
+              "impute_median": 0.124755095,
               "kept": false
             },
             "symmetry_axis_err_px": {
               "auc": 1.0,
-              "coverage": 0.208333,
-              "impute_median": 46534.959936487,
+              "coverage": 0.173913,
+              "impute_median": 57540.288964383,
               "kept": false
             },
             "visual_centroid_px": {
-              "auc": 0.571429,
+              "auc": 0.655556,
               "coverage": 1.0,
-              "impute_median": 26.601636554000002,
+              "impute_median": 24.919001861,
               "kept": false
             },
             "visual_centroid_ratio": {
-              "auc": 0.529412,
+              "auc": 0.555556,
               "coverage": 1.0,
-              "impute_median": 0.03462739,
+              "impute_median": 0.032782712,
               "kept": false
             },
             "voronoi_area_cv": {
-              "auc": 0.596639,
+              "auc": 0.766667,
               "coverage": 1.0,
-              "impute_median": 0.3650418515,
+              "impute_median": 0.369536686,
               "kept": false
             }
           },
@@ -1175,14 +1259,16 @@
           "kept_features": [
             "bend_soft_margin",
             "bend_total_curvature",
-            "crossing_count"
+            "crossing_count",
+            "hub_centroid_ratio",
+            "hub_centroid_px"
           ],
-          "n_negative": 17,
-          "n_positive": 7,
-          "negative_scores_max": 70.9,
-          "positive_scores_min": 54.0,
-          "score_auc": 0.97479,
-          "separation_margin": -16.9
+          "n_negative": 18,
+          "n_positive": 5,
+          "negative_scores_max": 49.7,
+          "positive_scores_min": 42.1,
+          "score_auc": 0.955556,
+          "separation_margin": -7.6
         }
       }
     },
@@ -1190,234 +1276,234 @@
       "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
       "loso": {
         "caliber": "normalized",
-        "hub_mean": null,
-        "hub_min": null,
+        "hub_mean": 67.4,
+        "hub_min": 57.4,
         "per_anchor": [
           {
             "held_out": "brand-flywheel",
             "path": "brand-flywheel-manual-layout.json",
-            "score": 82.7,
-            "shape": "ring"
+            "score": 57.4,
+            "shape": "hub"
           },
           {
             "held_out": "classic-cld-growth-and-burden",
-            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
-            "score": null,
+            "path": "classic-cld-manual-layout.json",
+            "score": 80.5,
             "shape": "hub"
           },
           {
             "held_out": "fan-d12",
-            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
-            "score": null,
+            "path": "fan-d12-manual-layout.json",
+            "score": 62.2,
             "shape": "hub"
           },
           {
             "held_out": "fan-d17",
-            "note": "subset below MIN_SHAPE_POSITIVE for LOSO refit",
-            "score": null,
+            "path": "fan-d17-manual-layout.json",
+            "score": 79.2,
             "shape": "hub"
           },
           {
             "held_out": "random-n10-i00",
             "path": "random-n10-i00-manual-layout.json",
-            "score": 87.9,
+            "score": 65.0,
             "shape": "ring"
           },
           {
             "held_out": "random-n10-i05",
             "path": "random-n10-i05-manual-layout.json",
-            "score": 89.2,
-            "shape": "ring"
+            "score": 57.5,
+            "shape": "hub"
           },
           {
             "held_out": "random-n10-i05",
             "path": "i05.json",
-            "score": 87.4,
+            "score": 85.8,
             "shape": "ring"
           },
           {
             "held_out": "random-n10-i11",
             "path": "i11-a.json",
-            "score": 84.7,
+            "score": 81.4,
             "shape": "ring"
           },
           {
             "held_out": "random-n10-i11",
             "path": "i11-b.json",
-            "score": 86.4,
+            "score": 84.4,
             "shape": "ring"
           },
           {
             "held_out": "epidemic-feedback",
             "path": "epidemic-feedback-manual-layout.json",
-            "score": 50.8,
+            "score": 15.2,
             "shape": "ring"
           }
         ],
-        "ring_mean": 81.3,
-        "ring_min": 50.8
+        "ring_mean": 66.4,
+        "ring_min": 15.2
       },
       "negative_scores_by_sample": {
         "classic/单环/arms-race": [
-          8.7
-        ],
-        "classic/多环耦合/bullwhip": [
-          32.0
-        ],
-        "classic/多环耦合/burnout-attrition": [
-          7.8
-        ],
-        "classic/多环耦合/debt-spiral": [
-          2.7
-        ],
-        "classic/多环耦合/eroding-goals": [
-          11.8
-        ],
-        "classic/多环耦合/fixes-that-fail": [
-          14.9
-        ],
-        "classic/多环耦合/learning-flywheel": [
-          14.6
-        ],
-        "classic/多环耦合/limits-to-growth": [
-          33.2
-        ],
-        "classic/多环耦合/renewable-resource": [
-          25.3
-        ],
-        "classic/多环耦合/tragedy-of-the-commons": [
-          22.2
-        ],
-        "classic/多环耦合/urban-migration": [
-          36.1
-        ],
-        "classic/多环耦合/wage-price-spiral": [
-          12.7
-        ],
-        "classic/嵌套环/brand-flywheel": [
-          65.1
-        ],
-        "classic/嵌套环/classic-cld-growth-and-burden": [
-          61.0
-        ],
-        "classic/嵌套环/fishing-collapse": [
-          12.6
-        ],
-        "classic/嵌套环/induced-demand": [
-          4.1
-        ],
-        "classic/嵌套环/population-logistic": [
-          22.8
-        ],
-        "classic/嵌套环/shifting-the-burden": [
-          32.5
-        ],
-        "classic/嵌套环/soil-erosion": [
-          4.8
-        ],
-        "classic/嵌套环/success-to-the-successful": [
-          23.6
-        ],
-        "random-n10/random-n10-i00": [
-          12.3
-        ],
-        "random-n10/random-n10-i01": [
-          3.8
-        ],
-        "random-n10/random-n10-i02": [
-          72.0
-        ],
-        "random-n10/random-n10-i03": [
-          14.3
-        ],
-        "random-n10/random-n10-i04": [
-          33.8
-        ],
-        "random-n10/random-n10-i05": [
-          21.5
-        ],
-        "random-n10/random-n10-i06": [
-          18.4
-        ],
-        "random-n10/random-n10-i07": [
-          26.2
-        ],
-        "random-n10/random-n10-i08": [
-          59.9
-        ],
-        "random-n10/random-n10-i09": [
-          4.9
-        ],
-        "random-n10/random-n10-i10": [
-          3.2
-        ],
-        "random-n10/random-n10-i11": [
-          14.0
-        ],
-        "random-n10/random-n10-i12": [
-          2.0
-        ],
-        "random-n10/random-n10-i13": [
-          33.0
-        ],
-        "random-n10/random-n10-i14": [
-          38.9
-        ],
-        "random-n10/random-n10-i15": [
-          7.3
-        ],
-        "random-n10/random-n10-i16": [
-          3.8
-        ],
-        "random-n10/random-n10-i17": [
-          8.6
-        ],
-        "random-n10/random-n10-i18": [
           13.8
         ],
+        "classic/多环耦合/bullwhip": [
+          14.1
+        ],
+        "classic/多环耦合/burnout-attrition": [
+          13.2
+        ],
+        "classic/多环耦合/debt-spiral": [
+          19.6
+        ],
+        "classic/多环耦合/eroding-goals": [
+          10.1
+        ],
+        "classic/多环耦合/fixes-that-fail": [
+          38.8
+        ],
+        "classic/多环耦合/learning-flywheel": [
+          45.8
+        ],
+        "classic/多环耦合/limits-to-growth": [
+          11.4
+        ],
+        "classic/多环耦合/renewable-resource": [
+          5.1
+        ],
+        "classic/多环耦合/tragedy-of-the-commons": [
+          4.1
+        ],
+        "classic/多环耦合/urban-migration": [
+          28.7
+        ],
+        "classic/多环耦合/wage-price-spiral": [
+          10.1
+        ],
+        "classic/嵌套环/brand-flywheel": [
+          50.0
+        ],
+        "classic/嵌套环/classic-cld-growth-and-burden": [
+          31.5
+        ],
+        "classic/嵌套环/fishing-collapse": [
+          70.8
+        ],
+        "classic/嵌套环/induced-demand": [
+          54.1
+        ],
+        "classic/嵌套环/population-logistic": [
+          0.3
+        ],
+        "classic/嵌套环/shifting-the-burden": [
+          50.9
+        ],
+        "classic/嵌套环/soil-erosion": [
+          76.4
+        ],
+        "classic/嵌套环/success-to-the-successful": [
+          17.5
+        ],
+        "random-n10/random-n10-i00": [
+          27.2
+        ],
+        "random-n10/random-n10-i01": [
+          8.6
+        ],
+        "random-n10/random-n10-i02": [
+          46.0
+        ],
+        "random-n10/random-n10-i03": [
+          35.3
+        ],
+        "random-n10/random-n10-i04": [
+          0.4
+        ],
+        "random-n10/random-n10-i05": [
+          28.3
+        ],
+        "random-n10/random-n10-i06": [
+          33.9
+        ],
+        "random-n10/random-n10-i07": [
+          25.1
+        ],
+        "random-n10/random-n10-i08": [
+          40.4
+        ],
+        "random-n10/random-n10-i09": [
+          1.3
+        ],
+        "random-n10/random-n10-i10": [
+          9.3
+        ],
+        "random-n10/random-n10-i11": [
+          27.9
+        ],
+        "random-n10/random-n10-i12": [
+          4.4
+        ],
+        "random-n10/random-n10-i13": [
+          20.8
+        ],
+        "random-n10/random-n10-i14": [
+          46.9
+        ],
+        "random-n10/random-n10-i15": [
+          19.3
+        ],
+        "random-n10/random-n10-i16": [
+          7.7
+        ],
+        "random-n10/random-n10-i17": [
+          60.0
+        ],
+        "random-n10/random-n10-i18": [
+          68.2
+        ],
         "random-n10/random-n10-i19": [
-          4.0
+          5.3
         ]
       },
       "positive_scores": {
         "brand-flywheel:brand-flywheel-manual-layout.json": {
-          "score": 83.1,
-          "shape": "ring"
+          "score": 78.6,
+          "shape": "hub"
         },
         "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
-          "score": 68.8,
+          "score": 83.4,
           "shape": "hub"
         },
         "epidemic-feedback:epidemic-feedback-manual-layout.json": {
-          "score": 56.5,
+          "score": 45.4,
           "shape": "ring"
         },
         "fan-d12:fan-d12-manual-layout.json": {
-          "score": 97.6,
+          "score": 67.4,
           "shape": "hub"
         },
         "fan-d17:fan-d17-manual-layout.json": {
-          "score": 99.9,
+          "score": 79.6,
           "shape": "hub"
         },
         "random-n10-i00:random-n10-i00-manual-layout.json": {
-          "score": 88.0,
+          "score": 92.9,
           "shape": "ring"
         },
         "random-n10-i05:i05.json": {
-          "score": 87.5,
+          "score": 93.9,
           "shape": "ring"
         },
         "random-n10-i05:random-n10-i05-manual-layout.json": {
-          "score": 89.3,
-          "shape": "ring"
+          "score": 78.6,
+          "shape": "hub"
         },
         "random-n10-i11:i11-a.json": {
-          "score": 84.9,
+          "score": 93.1,
           "shape": "ring"
         },
         "random-n10-i11:i11-b.json": {
-          "score": 86.5,
+          "score": 92.9,
           "shape": "ring"
         }
       },
@@ -1426,7 +1512,7 @@
           "graph": "brand-flywheel",
           "kind": "positive",
           "path": "brand-flywheel-manual-layout.json",
-          "shape": "ring"
+          "shape": "hub"
         },
         {
           "graph": "classic-cld-growth-and-burden",
@@ -1456,7 +1542,7 @@
           "graph": "random-n10-i05",
           "kind": "positive",
           "path": "random-n10-i05-manual-layout.json",
-          "shape": "ring"
+          "shape": "hub"
         },
         {
           "graph": "random-n10-i05",
@@ -1540,7 +1626,7 @@
           "graph": "induced-demand",
           "kind": "negative",
           "path": "induced-demand.json",
-          "shape": "hub"
+          "shape": "ring"
         },
         {
           "graph": "learning-flywheel",
@@ -1729,13 +1815,13 @@
           "excluded_features": [],
           "feature_report": {
             "alignment_max_coverage": {
-              "auc": 0.7525,
+              "auc": 0.81125,
               "coverage": 1.0,
-              "impute_median": 0.91302521,
-              "kept": false
+              "impute_median": 0.9150717705,
+              "kept": true
             },
             "angular_resolution_min": {
-              "auc": 0.6025,
+              "auc": 0.59,
               "coverage": 1.0,
               "impute_median": 4.1267595155,
               "kept": false
@@ -1747,25 +1833,25 @@
               "kept": false
             },
             "automorphism_residual": {
-              "auc": 0.583333,
+              "auc": 0.520833,
               "coverage": 0.28,
               "impute_median": 4.629256599294169,
               "kept": false
             },
             "avg_edge_length": {
-              "auc": 0.27,
+              "auc": 0.2725,
               "coverage": 1.0,
               "impute_median": 0.24532653286055217,
               "kept": false
             },
             "bend_soft_margin": {
-              "auc": 0.1975,
+              "auc": 0.27,
               "coverage": 1.0,
-              "impute_median": 0.0037119296546380123,
-              "kept": true
+              "impute_median": 0.004458407164903668,
+              "kept": false
             },
             "bend_total_curvature": {
-              "auc": 0.12375,
+              "auc": 0.10875,
               "coverage": 1.0,
               "impute_median": 169.5757508025,
               "kept": true
@@ -1782,45 +1868,45 @@
               "impute_median": 0.0,
               "kept": false
             },
-            "degree_centroid_spearman": {
-              "auc": 0.353846,
+            "degree_canvas_spearman": {
+              "auc": 0.384615,
               "coverage": 0.98,
-              "impute_median": -0.201007563,
+              "impute_median": -0.207019668,
               "kept": false
             },
             "edge_length_cv": {
-              "auc": 0.33,
+              "auc": 0.365,
               "coverage": 1.0,
               "impute_median": 0.35422770049999996,
               "kept": false
             },
             "hub_centroid_px": {
-              "auc": 0.34,
+              "auc": 0.32,
               "coverage": 1.0,
-              "impute_median": 0.1407371042993682,
+              "impute_median": 0.13650804820297502,
               "kept": false
             },
             "hub_centroid_ratio": {
-              "auc": 0.34,
+              "auc": 0.32,
               "coverage": 1.0,
-              "impute_median": 0.140737104,
+              "impute_median": 0.136508048,
               "kept": false
             },
             "hub_degree": {
-              "auc": 0.64875,
+              "auc": 0.71375,
               "coverage": 1.0,
               "impute_median": 5.0,
               "kept": false
             },
             "hub_neighbor_centrality_ratio": {
-              "auc": 0.3675,
+              "auc": 0.395,
               "coverage": 1.0,
-              "impute_median": 0.8159899605000001,
+              "impute_median": 0.8374121545,
               "kept": false
             },
             "loop_compactness_mean": {
-              "auc": 0.375,
-              "coverage": 0.28,
+              "auc": 0.583333,
+              "coverage": 0.26,
               "impute_median": 0.539012084,
               "kept": false
             },
@@ -1831,9 +1917,9 @@
               "kept": false
             },
             "loop_edge_length_cv": {
-              "auc": 0.470588,
-              "coverage": 0.38,
-              "impute_median": 0.256490259,
+              "auc": 0.235294,
+              "coverage": 0.36,
+              "impute_median": 0.249696841,
               "kept": false
             },
             "loop_foreign_nodes": {
@@ -1855,7 +1941,7 @@
               "kept": false
             },
             "max_min_edge_ratio": {
-              "auc": 0.395,
+              "auc": 0.41,
               "coverage": 1.0,
               "impute_median": 3.0,
               "kept": false
@@ -1879,9 +1965,9 @@
               "kept": false
             },
             "mirror_axis_err": {
-              "auc": 0.875,
+              "auc": 0.854167,
               "coverage": 0.28,
-              "impute_median": 39.954239769778816,
+              "impute_median": 38.03557128835416,
               "kept": false
             },
             "node_spacing_cv": {
@@ -1891,9 +1977,9 @@
               "kept": false
             },
             "symmetry_axis_err_px": {
-              "auc": 0.875,
+              "auc": 0.854167,
               "coverage": 0.28,
-              "impute_median": 39.954239769778816,
+              "impute_median": 38.03557128835416,
               "kept": false
             },
             "visual_centroid_px": {
@@ -1917,114 +2003,114 @@
           },
           "fitted": true,
           "kept_features": [
-            "bend_soft_margin",
+            "alignment_max_coverage",
             "bend_total_curvature"
           ],
           "n_negative": 40,
           "n_positive": 10,
-          "negative_scores_max": 70.2,
-          "positive_scores_min": 34.5,
-          "score_auc": 0.9625,
-          "separation_margin": -35.7
+          "negative_scores_max": 83.2,
+          "positive_scores_min": 36.1,
+          "score_auc": 0.955,
+          "separation_margin": -47.1
         },
         "hub": {
           "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
           "excluded_features": [],
           "feature_report": {
             "alignment_max_coverage": {
-              "auc": 0.797101,
+              "auc": 0.854545,
               "coverage": 1.0,
-              "impute_median": 0.8376623375000001,
-              "kept": false
+              "impute_median": 0.857142857,
+              "kept": true
             },
             "angular_resolution_min": {
-              "auc": 0.586957,
+              "auc": 0.536364,
               "coverage": 1.0,
               "impute_median": 0.0,
               "kept": false
             },
             "aspect_deviation": {
-              "auc": 0.884058,
+              "auc": 0.836364,
               "coverage": 1.0,
-              "impute_median": 0.1888392855,
+              "impute_median": 0.196428571,
               "kept": true
             },
             "automorphism_residual": {
-              "auc": 0.285714,
-              "coverage": 0.346154,
-              "impute_median": 4.423164783537631,
+              "auc": 0.333333,
+              "coverage": 0.37037,
+              "impute_median": 6.4065713230328845,
               "kept": false
             },
             "avg_edge_length": {
-              "auc": 0.057971,
+              "auc": 0.327273,
               "coverage": 1.0,
-              "impute_median": 0.24532653286055217,
-              "kept": true
+              "impute_median": 0.24560717588020448,
+              "kept": false
             },
             "bend_soft_margin": {
-              "auc": 0.304348,
+              "auc": 0.4,
               "coverage": 1.0,
-              "impute_median": 0.007661658322244474,
+              "impute_median": 0.007263617605165373,
               "kept": false
             },
             "bend_total_curvature": {
-              "auc": 0.166667,
+              "auc": 0.090909,
               "coverage": 1.0,
-              "impute_median": 94.9237921135,
+              "impute_median": 68.431404265,
               "kept": true
             },
             "canvas_fill_rate": {
-              "auc": 0.15942,
+              "auc": 0.5,
               "coverage": 1.0,
-              "impute_median": 0.105146147,
-              "kept": true
+              "impute_median": 0.107632094,
+              "kept": false
             },
             "crossing_count": {
-              "auc": 0.434783,
+              "auc": 0.431818,
               "coverage": 1.0,
               "impute_median": 0.0,
               "kept": false
             },
-            "degree_centroid_spearman": {
-              "auc": 0.304348,
+            "degree_canvas_spearman": {
+              "auc": 0.418182,
               "coverage": 1.0,
-              "impute_median": 0.015430335,
+              "impute_median": 0.065653216,
               "kept": false
             },
             "edge_length_cv": {
-              "auc": 0.144928,
+              "auc": 0.318182,
               "coverage": 1.0,
-              "impute_median": 0.291676614,
-              "kept": true
+              "impute_median": 0.311349965,
+              "kept": false
             },
             "hub_centroid_px": {
-              "auc": 0.101449,
+              "auc": 0.427273,
               "coverage": 1.0,
-              "impute_median": 0.12125933141853701,
-              "kept": true
+              "impute_median": 0.12887700789834328,
+              "kept": false
             },
             "hub_centroid_ratio": {
-              "auc": 0.101449,
+              "auc": 0.427273,
               "coverage": 1.0,
-              "impute_median": 0.12125933149999998,
-              "kept": true
+              "impute_median": 0.128877008,
+              "kept": false
             },
             "hub_degree": {
-              "auc": 0.978261,
+              "auc": 0.75,
               "coverage": 1.0,
-              "impute_median": 4.5,
-              "kept": true
+              "impute_median": 4.0,
+              "kept": false
             },
             "hub_neighbor_centrality_ratio": {
-              "auc": 0.188406,
+              "auc": 0.390909,
               "coverage": 1.0,
-              "impute_median": 0.9799433694999999,
-              "kept": true
+              "impute_median": 1.024677012,
+              "kept": false
             },
             "loop_compactness_mean": {
-              "auc": 0.2,
-              "coverage": 0.423077,
-              "impute_median": 0.523959306,
+              "auc": null,
+              "coverage": 0.333333,
+              "impute_median": 0.539012084,
               "kept": false
             },
             "loop_edge_crossings": {
@@ -2034,13 +2120,13 @@
               "kept": false
             },
             "loop_edge_length_cv": {
-              "auc": 0.666667,
-              "coverage": 0.615385,
+              "auc": null,
+              "coverage": 0.518519,
               "impute_median": 0.284251521,
               "kept": false
             },
             "loop_foreign_nodes": {
-              "auc": 0.434783,
+              "auc": 0.431818,
               "coverage": 1.0,
               "impute_median": 0.0,
               "kept": false
@@ -2058,78 +2144,78 @@
               "kept": false
             },
             "max_min_edge_ratio": {
-              "auc": 0.231884,
+              "auc": 0.390909,
               "coverage": 1.0,
-              "impute_median": 2.0756609455,
+              "impute_median": 2.092195863,
               "kept": false
             },
             "min_crossing_angle": {
               "auc": null,
-              "coverage": 0.115385,
+              "coverage": 0.111111,
               "impute_median": 63.186697724,
               "kept": false
             },
             "min_spacing_px": {
-              "auc": 0.144928,
+              "auc": 0.318182,
               "coverage": 1.0,
-              "impute_median": 0.14592504711294657,
-              "kept": true
+              "impute_median": 0.1433649430185084,
+              "kept": false
             },
             "min_spacing_ratio": {
-              "auc": 0.144928,
+              "auc": 0.318182,
               "coverage": 1.0,
-              "impute_median": 0.145925047,
-              "kept": true
+              "impute_median": 0.143364943,
+              "kept": false
             },
             "mirror_axis_err": {
-              "auc": 0.785714,
-              "coverage": 0.346154,
-              "impute_median": 17.24631109355104,
+              "auc": 0.761905,
+              "coverage": 0.37037,
+              "impute_median": 26.15124352132956,
               "kept": false
             },
             "node_spacing_cv": {
-              "auc": 0.594203,
+              "auc": 0.490909,
               "coverage": 1.0,
-              "impute_median": 0.20407571549999998,
+              "impute_median": 0.188104217,
               "kept": false
             },
             "symmetry_axis_err_px": {
-              "auc": 0.785714,
-              "coverage": 0.346154,
-              "impute_median": 17.24631109355104,
+              "auc": 0.761905,
+              "coverage": 0.37037,
+              "impute_median": 26.15124352132956,
               "kept": false
             },
             "visual_centroid_px": {
-              "auc": 0.666667,
+              "auc": 0.609091,
               "coverage": 1.0,
-              "impute_median": 0.027536957338166954,
+              "impute_median": 0.027466033157343136,
               "kept": false
             },
             "visual_centroid_ratio": {
-              "auc": 0.666667,
+              "auc": 0.609091,
               "coverage": 1.0,
-              "impute_median": 0.0275369575,
+              "impute_median": 0.027466033,
               "kept": false
             },
             "voronoi_area_cv": {
-              "auc": 0.811594,
+              "auc": 0.636364,
               "coverage": 1.0,
-              "impute_median": 0.29347337900000003,
-              "kept": true
+              "impute_median": 0.296281809,
+              "kept": false
             }
           },
           "fitted": true,
           "kept_features": [
-            "avg_edge_length",
-            "hub_centroid_px",
-            "hub_degree"
+            "alignment_max_coverage",
+            "aspect_deviation",
+            "bend_total_curvature"
           ],
-          "n_negative": 23,
-          "n_positive": 3,
-          "negative_scores_max": 61.0,
-          "positive_scores_min": 68.8,
-          "score_auc": 1.0,
-          "separation_margin": 7.8
+          "n_negative": 22,
+          "n_positive": 5,
+          "negative_scores_max": 76.4,
+          "positive_scores_min": 67.4,
+          "score_auc": 0.972727,
+          "separation_margin": -9.0
         },
         "ring": {
           "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
@@ -2138,99 +2224,99 @@
           ],
           "feature_report": {
             "alignment_max_coverage": {
-              "auc": 0.693277,
+              "auc": 0.755556,
               "coverage": 1.0,
-              "impute_median": 0.937969925,
+              "impute_median": 0.928571429,
               "kept": false
             },
             "angular_resolution_min": {
-              "auc": 0.605042,
+              "auc": 0.644444,
               "coverage": 1.0,
-              "impute_median": 5.0370643180000005,
+              "impute_median": 4.879699728,
               "kept": false
             },
             "aspect_deviation": {
-              "auc": 0.638655,
+              "auc": 0.711111,
               "coverage": 1.0,
-              "impute_median": 0.2237557055,
+              "impute_median": 0.246835443,
               "kept": false
             },
             "automorphism_residual": {
               "auc": 1.0,
-              "coverage": 0.208333,
-              "impute_median": 4.8353484150507064,
+              "coverage": 0.173913,
+              "impute_median": 4.181280929282618,
               "kept": false
             },
             "avg_edge_length": {
-              "auc": 0.394958,
+              "auc": 0.211111,
               "coverage": 1.0,
-              "impute_median": 0.24984313820781373,
+              "impute_median": 0.24422855244359534,
               "kept": false
             },
             "bend_soft_margin": {
-              "auc": 0.151261,
+              "auc": 0.111111,
               "coverage": 1.0,
-              "impute_median": 0.002634875102927838,
+              "impute_median": 0.00270465311546357,
               "kept": true
             },
             "bend_total_curvature": {
-              "auc": 0.058824,
+              "auc": 0.077778,
               "coverage": 1.0,
-              "impute_median": 335.62927296600003,
+              "impute_median": 391.785430105,
               "kept": true
             },
             "canvas_fill_rate": {
-              "auc": 0.571429,
+              "auc": 0.422222,
               "coverage": 1.0,
-              "impute_median": 0.10962528099999999,
+              "impute_median": 0.107632094,
               "kept": false
             },
             "crossing_count": {
-              "auc": 0.088235,
+              "auc": 0.111111,
               "coverage": 1.0,
               "impute_median": 1.0,
               "kept": true
             },
-            "degree_centroid_spearman": {
-              "auc": 0.4375,
-              "coverage": 0.958333,
-              "impute_median": -0.25425669,
+            "degree_canvas_spearman": {
+              "auc": 0.294118,
+              "coverage": 0.956522,
+              "impute_median": -0.332052091,
               "kept": false
             },
             "edge_length_cv": {
-              "auc": 0.294118,
+              "auc": 0.344444,
               "coverage": 1.0,
-              "impute_median": 0.3764055135,
+              "impute_median": 0.372776857,
               "kept": false
             },
             "hub_centroid_px": {
-              "auc": 0.420168,
+              "auc": 0.177778,
               "coverage": 1.0,
-              "impute_median": 0.17238966207745016,
-              "kept": false
+              "impute_median": 0.15261046212241014,
+              "kept": true
             },
             "hub_centroid_ratio": {
-              "auc": 0.420168,
+              "auc": 0.177778,
               "coverage": 1.0,
-              "impute_median": 0.172389662,
-              "kept": false
+              "impute_median": 0.152610462,
+              "kept": true
             },
             "hub_degree": {
-              "auc": 0.445378,
+              "auc": 0.677778,
               "coverage": 1.0,
               "impute_median": 5.0,
               "kept": false
             },
             "hub_neighbor_centrality_ratio": {
-              "auc": 0.504202,
+              "auc": 0.411111,
               "coverage": 1.0,
-              "impute_median": 0.6569500545,
+              "impute_median": 0.661892525,
               "kept": false
             },
             "loop_compactness_mean": {
-              "auc": 0.0,
-              "coverage": 0.125,
-              "impute_median": 0.785398163,
+              "auc": 0.333333,
+              "coverage": 0.173913,
+              "impute_median": 0.6758450235,
               "kept": false
             },
             "loop_edge_crossings": {
@@ -2240,9 +2326,9 @@
               "kept": false
             },
             "loop_edge_length_cv": {
-              "auc": 0.5,
-              "coverage": 0.125,
-              "impute_median": 0.141881407,
+              "auc": 0.333333,
+              "coverage": 0.173913,
+              "impute_median": 0.19239241499999998,
               "kept": false
             },
             "loop_foreign_nodes": {
@@ -2264,63 +2350,63 @@
               "kept": false
             },
             "max_min_edge_ratio": {
-              "auc": 0.310924,
+              "auc": 0.344444,
               "coverage": 1.0,
-              "impute_median": 3.2798699344999998,
+              "impute_median": 3.259739869,
               "kept": false
             },
             "min_crossing_angle": {
               "auc": null,
-              "coverage": 0.583333,
+              "coverage": 0.608696,
               "impute_median": 68.6336709085,
               "kept": false
             },
             "min_spacing_px": {
-              "auc": 0.478992,
+              "auc": 0.344444,
               "coverage": 1.0,
-              "impute_median": 0.11762128789621419,
+              "impute_median": 0.1140791618990617,
               "kept": false
             },
             "min_spacing_ratio": {
-              "auc": 0.478992,
+              "auc": 0.344444,
               "coverage": 1.0,
-              "impute_median": 0.11762128799999999,
+              "impute_median": 0.114079162,
               "kept": false
             },
             "mirror_axis_err": {
               "auc": 1.0,
-              "coverage": 0.208333,
-              "impute_median": 48.76191765521537,
+              "coverage": 0.173913,
+              "impute_median": 50.510487892046854,
               "kept": false
             },
             "node_spacing_cv": {
-              "auc": 0.537815,
+              "auc": 0.6,
               "coverage": 1.0,
-              "impute_median": 0.139829605,
+              "impute_median": 0.124755095,
               "kept": false
             },
             "symmetry_axis_err_px": {
               "auc": 1.0,
-              "coverage": 0.208333,
-              "impute_median": 48.76191765521537,
+              "coverage": 0.173913,
+              "impute_median": 50.510487892046854,
               "kept": false
             },
             "visual_centroid_px": {
-              "auc": 0.529412,
+              "auc": 0.555556,
               "coverage": 1.0,
-              "impute_median": 0.03462739024757828,
+              "impute_median": 0.0327827121459267,
               "kept": false
             },
             "visual_centroid_ratio": {
-              "auc": 0.529412,
+              "auc": 0.555556,
               "coverage": 1.0,
-              "impute_median": 0.03462739,
+              "impute_median": 0.032782712,
               "kept": false
             },
             "voronoi_area_cv": {
-              "auc": 0.596639,
+              "auc": 0.766667,
               "coverage": 1.0,
-              "impute_median": 0.3650418515,
+              "impute_median": 0.369536686,
               "kept": false
             }
           },
@@ -2328,110 +2414,116 @@
           "kept_features": [
             "bend_soft_margin",
             "bend_total_curvature",
-            "crossing_count"
+            "crossing_count",
+            "hub_centroid_ratio",
+            "hub_centroid_px"
           ],
-          "n_negative": 17,
-          "n_positive": 7,
-          "negative_scores_max": 72.0,
-          "positive_scores_min": 56.5,
-          "score_auc": 0.97479,
-          "separation_margin": -15.5
+          "n_negative": 18,
+          "n_positive": 5,
+          "negative_scores_max": 54.1,
+          "positive_scores_min": 45.4,
+          "score_auc": 0.955556,
+          "separation_margin": -8.7
         }
       }
     }
   },
-  "family_separation_absolute": {
+  "family_separation_normalized": {
     "classic/单环": {
       "n_negative": 1,
       "n_positive": 0,
-      "negative_max": 10.5,
-      "negative_mean": 10.5,
+      "negative_max": 13.8,
+      "negative_mean": 13.8,
       "positive_min": null,
       "separated_min_pos_gt_max_neg": false
     },
     "classic/多环耦合": {
       "n_negative": 11,
       "n_positive": 0,
-      "negative_max": 47.2,
-      "negative_mean": 17.8,
+      "negative_max": 45.8,
+      "negative_mean": 18.3,
       "positive_min": null,
       "separated_min_pos_gt_max_neg": false
     },
     "classic/嵌套环": {
       "n_negative": 8,
       "n_positive": 0,
-      "negative_max": 67.8,
-      "negative_mean": 31.1,
+      "negative_max": 76.4,
+      "negative_mean": 43.9,
       "positive_min": null,
       "separated_min_pos_gt_max_neg": false
     },
     "hub": {
       "n_negative": 0,
-      "n_positive": 3,
+      "n_positive": 5,
       "negative_max": null,
       "negative_mean": null,
-      "positive_min": 72.3,
+      "positive_min": 67.4,
       "separated_min_pos_gt_max_neg": false
     },
     "random-n10": {
       "n_negative": 20,
       "n_positive": 0,
-      "negative_max": 70.9,
-      "negative_mean": 19.8,
+      "negative_max": 68.2,
+      "negative_mean": 25.8,
       "positive_min": null,
       "separated_min_pos_gt_max_neg": false
     },
     "ring": {
       "n_negative": 0,
-      "n_positive": 7,
+      "n_positive": 5,
       "negative_max": null,
       "negative_mean": null,
-      "positive_min": 54.0,
+      "positive_min": 45.4,
       "separated_min_pos_gt_max_neg": false
     }
   },
   "human_lower_bound": {
     "absolute": {
-      "global": 32.5,
-      "hub": 72.3,
-      "ring": 54.0
+      "global": 36.1,
+      "hub": 67.4,
+      "ring": 42.1
     },
     "normalized": {
-      "global": 34.5,
-      "hub": 68.8,
-      "ring": 56.5
+      "global": 36.1,
+      "hub": 67.4,
+      "ring": 45.4
     }
   },
   "human_lower_bound_note": "recomputed at every calibration; MUST be re-derived as anchors grow (not a constant)",
   "i05_retest_pair": {
     "absolute": {
-      "delta": 0.0,
-      "i05_2026_11_16": 88.2,
-      "i05_2026_11_20": 88.2,
-      "shape_11_16": "ring",
+      "delta": 15.2,
+      "i05_2026_11_16": 78.6,
+      "i05_2026_11_20": 93.8,
+      "shape_11_16": "hub",
       "shape_11_20": "ring"
     },
     "normalized": {
-      "delta": 1.8,
-      "i05_2026_11_16": 89.3,
-      "i05_2026_11_20": 87.5,
-      "shape_11_16": "ring",
+      "delta": 15.3,
+      "i05_2026_11_16": 78.6,
+      "i05_2026_11_20": 93.9,
+      "shape_11_16": "hub",
       "shape_11_20": "ring"
     }
   },
   "new_feature_sign_check": {
     "brand-flywheel": {
       "expected_shape": "ring",
-      "hub_neighbor_ratio": 1.017682332,
-      "measured_rho": -0.097590007,
+      "hub_neighbor_ratio": 1.110607795,
+      "measured_on": "brand-flywheel-manual-layout.json",
+      "measured_rho": 0.15430335,
+      "note": "reference measured on an out-of-repo copy; not reproducible in-repo (independent review) — this table documents the discrepancy, routing uses the in-repo measurement",
       "reference_rho": -0.14,
-      "routed_shape": "ring",
-      "sign_matches_reference": true
+      "routed_shape": "hub",
+      "sign_matches_reference": false
     },
     "classic-cld-growth-and-burden": {
       "expected_shape": "hub",
       "hub_neighbor_ratio": 0.48294243,
+      "measured_on": "classic-cld-manual-layout.json",
       "measured_rho": -0.536349916,
+      "note": "reference measured on an out-of-repo copy; not reproducible in-repo (independent review) — this table documents the discrepancy, routing uses the in-repo measurement",
       "reference_rho": 0.4,
       "routed_shape": "hub",
       "sign_matches_reference": false
@@ -2439,36 +2531,53 @@
     "epidemic-feedback": {
       "expected_shape": "ring",
       "hub_neighbor_ratio": 2.581955417,
+      "measured_on": "epidemic-feedback-manual-layout.json",
       "measured_rho": -0.107700688,
+      "note": "reference measured on an out-of-repo copy; not reproducible in-repo (independent review) — this table documents the discrepancy, routing uses the in-repo measurement",
       "reference_rho": -0.24,
       "routed_shape": "ring",
       "sign_matches_reference": true
     },
     "random-n10-i00": {
       "expected_shape": "hub",
-      "hub_neighbor_ratio": 0.471876446,
-      "measured_rho": -0.532632835,
+      "hub_neighbor_ratio": 0.257751013,
+      "measured_on": "random-n10-i00-manual-layout.json",
+      "measured_rho": -0.56445967,
+      "note": "reference measured on an out-of-repo copy; not reproducible in-repo (independent review) — this table documents the discrepancy, routing uses the in-repo measurement",
       "reference_rho": 0.59,
       "routed_shape": "ring",
       "sign_matches_reference": false
     },
     "random-n10-i05": {
       "expected_shape": "ring",
-      "hub_neighbor_ratio": 0.120705275,
-      "measured_rho": -0.671545463,
+      "hub_neighbor_ratio": 1.401306241,
+      "measured_on": "random-n10-i05-manual-layout.json",
+      "measured_rho": 0.190128171,
+      "note": "reference measured on an out-of-repo copy; not reproducible in-repo (independent review) — this table documents the discrepancy, routing uses the in-repo measurement",
       "reference_rho": -0.26,
-      "routed_shape": "ring",
-      "sign_matches_reference": true
+      "routed_shape": "hub",
+      "sign_matches_reference": false
     }
   },
   "schema": "stdraw.aesthetic_calibration/v2",
   "shape_routing": {
-    "hub_intensity_threshold": 0.75,
+    "hub_intensity_threshold": 0.81,
+    "hub_intensity_threshold_derivation": {
+      "derived_threshold": 0.81,
+      "empty_band": [
+        0.7,
+        0.923
+      ],
+      "measured_high_band_min": 0.923,
+      "measured_low_band_max": 0.7,
+      "method": "midpoint of the measured empty hub-intensity band over the threshold-eligible (unlabeled/nested-cycle) population",
+      "rederive_rule": "re-measure whenever the corpus grows; band closure must be reported, not tuned around"
+    },
     "rho_threshold": 0.0,
     "ring_excluded_features": [
       "alignment_max_coverage"
     ],
     "ring_exclusion_rationale": "operator 令：行/列对齐在环族天然低（brand-flywheel 33%），权重必须为 0",
-    "rule": "① 族标签：单环→ring，多环耦合/链/星→hub；② 嵌套环与无标签图：先 hub 强度（hub_degree/n ≥ 0.75 → hub），再 degree_centroid_spearman（canvas 中心口径，≤0→ring，>0→hub）；③ ρ 退化→全局公式回退。已知局限：i00 仓内 fixture 实测 ρ=-0.53、hub 强度 0.5，按本路由入 ring，与 jacky 参考值（+0.59，测自本卡禁读的 WorkBuddy 侧副本）冲突——逐样本记录在 routing_log 待复核"
+    "rule": "① 族标签：单环→ring，多环耦合/链/星→hub；② 嵌套环与无标签图：先 hub 强度（hub_degree/n ≥ 0.81 → hub；推导式=阈值适用人群中实测空档 [0.70, 0.923] 的中点），再 degree_canvas_spearman（canvas 中心口径，≤0→ring，>0→hub）；③ ρ 退化→全局公式回退。锚点边集在测特征前已按图源补全；jacky 参考值测自仓外副本，仓内数据不可复现（270 组合搜索 0 命中）——路由只依仓内实测值，逐样本记录在 routing_log 待复核"
   }
 }

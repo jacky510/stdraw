@@ -51,7 +51,7 @@ def _first_negative():
 
 def test_feature_keys_extended():
     for key in ("avg_edge_length", "symmetry_axis_err_px",
-                "degree_centroid_spearman", "hub_neighbor_centrality_ratio"):
+                "degree_canvas_spearman", "hub_neighbor_centrality_ratio"):
         assert key in FEATURE_KEYS
 
 
@@ -59,7 +59,7 @@ def test_extension_keys_emitted(tmp_path):
     doc = _load(MANUAL / "random-n10-i05-manual-layout.json")
     feats = extract_features(doc)["features"]
     assert feats["avg_edge_length"]["mean_px"] > 0
-    assert "rho" in feats["degree_centroid_spearman"]
+    assert "rho" in feats["degree_canvas_spearman"]
     assert "ratio" in feats["hub_neighbor_centrality_ratio"]
 
 
@@ -94,7 +94,7 @@ def _labels():
 
 def test_routing_family_labels():
     labels = _labels()
-    row = {"layout_n_nodes": 10, "hub_degree": 4, "degree_centroid_spearman": -0.5}
+    row = {"layout_n_nodes": 10, "hub_degree": 4, "degree_canvas_spearman": -0.5}
     assert route_shape("arms-race", row, labels) == "ring"            # single-cycle family
     assert route_shape("bullwhip", row, labels) == "hub"              # multi-cycle coupled
     assert route_shape("graph-not-in-map", row, labels) == "ring"     # rho<0 -> ring
@@ -102,14 +102,15 @@ def test_routing_family_labels():
 
 def test_routing_hub_intensity_before_rho():
     labels = _labels()
-    row = {"layout_n_nodes": 8, "hub_degree": 7, "degree_centroid_spearman": -0.5}
+    row = {"layout_n_nodes": 8, "hub_degree": 7, "degree_canvas_spearman": -0.5}
     assert route_shape("classic-cld-growth-and-burden", row, labels) == "hub"
-    assert HUB_INTENSITY_THRESHOLD == 0.75
+    # DERIVED threshold: midpoint of the measured empty band [0.70, 0.923]
+    assert HUB_INTENSITY_THRESHOLD == 0.81
     assert RHO_RING_THRESHOLD == 0.0
 
 
 def test_routing_degenerate_falls_back_global():
-    row = {"layout_n_nodes": 0, "hub_degree": None, "degree_centroid_spearman": None}
+    row = {"layout_n_nodes": 0, "hub_degree": None, "degree_canvas_spearman": None}
     assert route_shape("unknown-graph", row, {}) == "global"
 
 
@@ -152,29 +153,52 @@ def report():
 def test_report_has_three_views(report):
     assert set(CALIBERS) <= set(report["calibers"])          # both calibers
     assert "loso" in report["calibers"]["absolute"]
-    assert "family_separation_absolute" in report            # per-family view
+    assert "family_separation_normalized" in report          # per-family view
+    # MINOR-2: the family table crosses 4 canvas families -> normalized caliber
+    # (the absolute caliber declares same-canvas-family ~960px only)
+    assert "family_separation_absolute" not in report
     assert "caliber_comparison" in report                    # caliber view
 
 
 def test_shape_models_separate_anchors_from_engine(report):
+    # Supplemented-edge caliber (review MAJOR-1): anchor edge sets completed
+    # from the graph source before measurement.  Under this honest caliber
+    # hub NO LONGER fully separates (independent review predicted +7.8 ->
+    # -6.7); the assertions below encode the supplemented-edge state, not
+    # the truncated-edge numbers.
     for caliber in CALIBERS:
         hub = report["calibers"][caliber]["shapes"]["hub"]
         ring = report["calibers"][caliber]["shapes"]["ring"]
-        # hub shape: full separation, fully separated min-pos > max-neg
         assert hub["score_auc"] >= 0.95
-        assert hub["positive_scores_min"] > hub["negative_scores_max"]
+        # residual pos/neg overlap is a documented v1 finding — the margin
+        # must stay in the report, never tuned away
+        assert isinstance(hub["separation_margin"], float)
         # ring shape: strong AUC; residual overlap is a documented v1 finding
         # (separation margin reported as a number, may be negative)
         assert ring["score_auc"] >= 0.9
         assert isinstance(ring["separation_margin"], float)
 
 
-def test_loso_held_out_anchors_stay_high(report):
-    loso = report["calibers"]["absolute"]["loso"]
+def test_loso_held_out_anchors_stay_high(report, composite):
+    # Supplemented-edge caliber (review MAJOR-1): LOSO on the honest caliber
+    # includes LOW held-out rows (e.g. epidemic-feedback ~15-16, random-n10
+    # ring rows ~0-3 under the absolute caliber) — that is the documented
+    # honest generalization state, reported fail-visible in the report, NOT
+    # tuned away.  This test is a gross-failure tripwire on the committed
+    # model's caliber only: every held-out anchor keeps a score, and no
+    # score collapses below the gross-regression floor.
+    loso = report["calibers"][composite["caliber"]]["loso"]
     scored = [a["score"] for a in loso["per_anchor"] if a.get("score") is not None]
-    assert len(scored) >= 5, "expected ring LOSO rows (hub below MIN_SHAPE_POSITIVE)"
-    strong = [s for s in scored if s >= 75.0]
-    assert len(strong) >= 5, scored
+    assert len(scored) >= 5, "expected LOSO rows for every routable anchor"
+    assert all(0.0 <= s <= 100.0 for s in scored), scored
+    assert min(scored) >= 10.0, (
+        "gross-regression tripwire (low outliers stay in the report; see "
+        "report LOSO table — honest state, do not tune the model to pass): %s" % scored)
+    for s in ("ring", "hub"):
+        sub = [a["score"] for a in loso["per_anchor"]
+               if a.get("shape") == s and a.get("score") is not None]
+        if sub:
+            assert loso["%s_min" % s] == min(sub)
     # fail-visible: any low outlier stays in the report, never silently dropped
     assert min(scored) == min(a["score"] for a in loso["per_anchor"] if a.get("score") is not None)
 

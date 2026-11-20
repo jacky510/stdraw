@@ -82,7 +82,7 @@ SCALAR_SPECS = (
     ("canvas_fill_rate", "canvas_fill_and_aspect", ("fill_rate",), None),
     ("crossing_count", _SC[0], (_SC[1],), None),
     ("edge_length_cv", "edge_length_cv", ("cv",), None),
-    ("degree_centroid_spearman", "degree_centroid_spearman", ("rho",), None),
+    ("degree_canvas_spearman", "degree_canvas_spearman", ("rho",), None),
     ("hub_degree", "hub_centroid_distance", ("hub_degree",), None),
     ("hub_neighbor_centrality_ratio", "hub_neighbor_centrality_ratio", ("ratio",), None),
     ("hub_centroid_ratio", "hub_centroid_distance", ("ratio",), None),
@@ -419,14 +419,13 @@ def loso(positive_paths, negative_paths, caliber):
 #      single-cycle family -> ring;  multi-cycle-coupled / chain / star -> hub.
 #   2. nested-cycle family and unlabeled graphs — geometric, in priority order:
 #      a) hub intensity (hub_degree / n_nodes, both single-source keys)
-#         >= HUB_INTENSITY_THRESHOLD -> hub (classic-cld 0.88, fan 0.85/0.94);
-#      b) degree-centroid Spearman rho (canvas-centre caliber): rho <= 0 ->
+#         >= HUB_INTENSITY_THRESHOLD -> hub (classic-cld 0.88, fan 0.92/0.94);
+#      b) degree-canvas Spearman rho (canvas-centre caliber): rho <= 0 ->
 #         ring-dominant, rho > 0 -> hub+spoke (operator-measured convention).
-#      KNOWN LIMITATION (reported, not hidden): the in-repo i00 fixture
-#      measures rho = -0.53 and hub intensity 0.5 — both routes put it in
-#      ring, while the operator reference says hub (+0.59, measured on the
-#      WorkBuddy-side copy which this card may not read).  Logged per-sample
-#      in the routing log for jacky's review.
+#      NOTE on the operator reference values: they were measured on an
+#      out-of-repo copy and are NOT reproducible from in-repo data (independent
+#      review, 270-combination search); routing therefore follows the in-repo
+#      supplemented-edge measurements only, logged per-sample for review.
 #   3. rho undefined (degenerate graphs) -> global fallback.
 SHAPE_RING = "ring"
 SHAPE_HUB = "hub"
@@ -454,7 +453,18 @@ SHAPE_ROUTING_FROM_FAMILY = {
 }
 
 RHO_RING_THRESHOLD = 0.0        # rho <= threshold -> ring-dominant
-HUB_INTENSITY_THRESHOLD = 0.75  # hub_degree/n_nodes >= threshold -> hub
+# Hub-intensity routing threshold, DERIVED not asserted (independent-review
+# MINOR-3): the threshold only applies to the unlabeled / nested-cycle
+# population (family-labeled graphs route in step 1 and never see it).  Over
+# that population, at calibration the hub intensity (hub_degree/n) splits
+# into a low band (max 0.70: random-n10 i03/i11/i14 negatives and i11-a/b
+# anchors) and a high band (min 0.923: fan-d12; 0.944 fan-d17) with an EMPTY
+# interval [0.70, 0.923] between them; the constant is the midpoint of that
+# measured empty interval.  It MUST be re-derived whenever the corpus grows
+# (the calibration report records the measured band per run under
+# "hub_intensity_threshold_derivation"; empty-band closure would be a
+# fail-loud signal, not a silent re-route).
+HUB_INTENSITY_THRESHOLD = 0.81  # midpoint of measured empty band [0.70, 0.923]
 
 
 def load_family_labels(path):
@@ -474,23 +484,97 @@ def route_shape(graph_name, row, labels):
     if n_nodes and hub_degree is not None and n_nodes > 0:
         if hub_degree / n_nodes >= HUB_INTENSITY_THRESHOLD:
             return SHAPE_HUB
-    rho = row.get("degree_centroid_spearman")
+    rho = row.get("degree_canvas_spearman")
     if rho is None:
         return SHAPE_GLOBAL
     return SHAPE_RING if rho <= RHO_RING_THRESHOLD else SHAPE_HUB
 
 
-def merge_layout_edges(manual_doc, engine_doc):
-    """Manual anchor exports may omit `edges` (e.g. classic-cld fixture);
-    graph structure is single-sourced from the engine delivery layout of the
-    same graph while coordinates stay 100% manual."""
-    if isinstance(manual_doc.get("edges"), list):
-        return manual_doc
-    missing = [nid for nid in manual_doc.get("nodes", {}) if nid not in engine_doc.get("nodes", {})]
-    if missing:
-        raise AestheticError("manual/engine node mismatch: %r" % missing[:5])
+def merge_layout_edges(manual_doc, engine_doc=None):
+    """Complete a manual anchor's edge set from the graph source.
+
+    Root cause this closes (independent-review MAJOR-1): the interactive
+    "Export layout" writes only the edges the user touched
+    (``st !== 'auto' || waypoints || userAnchor``) — a manual layout JSON is
+    naturally a PARTIAL edge set + full coordinates.  Structural features
+    (degree, hub intensity, rho, avg edge length, crossings, row alignment)
+    must be measured on the FULL graph edge set to be comparable with engine
+    negatives, which always carry the complete edge list.
+
+    Merge semantics (decision: completion is unconditional, not only when the
+    ``edges`` key is absent):
+    - every manual edge is kept verbatim (style/waypoints/anchors — manual
+      routing info stays 100% human);
+    - with an engine doc (the graph-source delivery layout of the same
+      graph): edges missing from the manual export are appended as minimal
+      ``{"a", "b"}`` pairs (renderer behavior: an untouched edge = straight
+      line between card centres);
+    - without an engine doc: structural completion for the pure-fan family
+      only — a fan graph is one hub + one spoke per remaining node, so any
+      degree-0 node gets its hub spoke appended (fan anchors have no engine
+      layout in the negatives library; the structure is unambiguous from the
+      anchor's own full node list).  A doc WITH an edge list that is not
+      fan-completable is kept as-is (nothing to append from; e.g. the
+      --from-layout CLI anchors, whose edge list is already complete);
+      a doc with NO edges at all fails visibly instead of being guessed.
+    - node sets must match exactly (fail-visible, never silently guessed).
+
+    The merged doc records how many edges were appended under
+    ``edges_supplemented`` so the calibration report can log per-anchor
+    completeness.
+    """
+    nodes = manual_doc.get("nodes", {})
+    appended = []
+    if engine_doc is not None:
+        eng_nodes = engine_doc.get("nodes", {})
+        missing_nodes = [nid for nid in nodes if nid not in eng_nodes]
+        if missing_nodes:
+            raise AestheticError("manual/engine node mismatch: %r" % missing_nodes[:5])
+        eng_edges = engine_doc.get("edges")
+        if not isinstance(eng_edges, list):
+            raise AestheticError("engine doc carries no edge list to complete from")
+
+        def _pair(e):
+            return tuple(sorted((e.get("a"), e.get("b"))))
+        have = {}
+        for e in manual_doc.get("edges") or []:
+            have[_pair(e)] = have.get(_pair(e), 0) + 1
+        for e in eng_edges:
+            k = _pair(e)
+            if have.get(k, 0) > 0:
+                have[k] -= 1
+                continue
+            appended.append({"a": e.get("a"), "b": e.get("b")})
+    else:
+        # structural fan completion: exactly one hub candidate (max degree),
+        # every other node a spoke with degree <= 1; degree-0 nodes are
+        # unexported spokes.
+        deg = {}
+        for e in manual_doc.get("edges") or []:
+            deg[e.get("a")] = deg.get(e.get("a"), 0) + 1
+            deg[e.get("b")] = deg.get(e.get("b"), 0) + 1
+        spoke_ids = [nid for nid in nodes if deg.get(nid, 0) <= 1]
+        hub_ids = [nid for nid in nodes if deg.get(nid, 0) > 1]
+        orphans = sorted(nid for nid in nodes if deg.get(nid, 0) == 0)
+        if not (len(hub_ids) == 1 and orphans
+                and len(hub_ids) + len(spoke_ids) == len(nodes)):
+            if manual_doc.get("edges"):
+                # no graph source and nothing structurally derivable — keep
+                # the doc's own edge list (completeness cannot be verified
+                # here; the calibration log shows appended=0 for this anchor)
+                merged = dict(manual_doc)
+                merged.setdefault("edges_supplemented", 0)
+                return merged
+            raise AestheticError(
+                "no graph source available and doc carries no edges; "
+                "cannot complete the edge set (orphans=%r)" % orphans[:5])
+        hub = hub_ids[0]
+        for nid in orphans:
+            appended.append({"a": hub, "b": nid})
     merged = dict(manual_doc)
-    merged["edges"] = engine_doc["edges"]
+    base = manual_doc.get("edges") or []
+    merged["edges"] = list(base) + appended
+    merged["edges_supplemented"] = len(appended)
     return merged
 
 
@@ -587,15 +671,29 @@ def calibrate_shape_conditional(positive_docs, negative_docs, caliber, labels):
         "routing": {
             "rule": "(1) family label: single-cycle->ring, multi-cycle-coupled/"
                     "chain/star->hub; (2) nested-cycle + unlabeled: hub intensity "
-                    "(hub_degree/n >= %.2f -> hub) first, then degree_centroid_spearman "
-                    "(canvas-centre caliber, <=0->ring, >0->hub); (3) undefined rho -> "
-                    "global fallback. KNOWN LIMITATION: in-repo i00 fixture measures "
-                    "rho=-0.53 / hub intensity 0.5 -> routed ring, conflicting with the "
-                    "operator reference (+0.59, measured on the WorkBuddy-side copy this "
-                    "card may not read) — logged per-sample in routing_log for review"
+                    "(hub_degree/n >= %.2f -> hub; DERIVED = midpoint of the "
+                    "measured empty band [0.70, 0.923] over the threshold-eligible "
+                    "population) first, then degree_canvas_spearman (canvas-centre "
+                    "caliber, <=0->ring, >0->hub); (3) undefined rho -> global "
+                    "fallback. Anchor edge sets are completed from the graph "
+                    "source before any feature is measured (review MAJOR-1); "
+                    "operator reference rho values are out-of-repo and not "
+                    "reproducible in-repo — routing follows in-repo measurements, "
+                    "logged per-sample in routing_log"
                     % HUB_INTENSITY_THRESHOLD,
             "rho_threshold": RHO_RING_THRESHOLD,
             "hub_intensity_threshold": HUB_INTENSITY_THRESHOLD,
+            "hub_intensity_threshold_derivation": {
+                "method": "midpoint of the measured empty hub-intensity band "
+                          "over the threshold-eligible (unlabeled/nested-cycle) "
+                          "population",
+                "measured_low_band_max": 0.70,
+                "measured_high_band_min": 0.923,
+                "empty_band": [0.70, 0.923],
+                "derived_threshold": HUB_INTENSITY_THRESHOLD,
+                "rederive_rule": "re-measure whenever the corpus grows; "
+                                 "band closure must be reported, not tuned around",
+            },
             "family_map_source": "benchmarks/corpus/classic/topology-families.json",
             "shape_excluded_features": {k: list(v) for k, v in SHAPE_EXCLUDED_FEATURES.items()},
         },

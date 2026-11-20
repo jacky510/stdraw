@@ -33,6 +33,7 @@ sys.path.insert(0, str(REPO))
 from stdraw.aesthetic_score import (  # noqa: E402
     CALIBERS,
     DOMAIN_DECLARATIONS,
+    HUB_INTENSITY_THRESHOLD,
     SHAPE_EXCLUDED_FEATURES,
     SHAPES,
     calibrate_shape_conditional,
@@ -120,6 +121,7 @@ def main():
 
     pos_docs = []
     failures = []
+    edge_supplement_log = []
     known_names = set(engine_by_graph) | set(labels)
     for d in POSITIVE_DIRS:
         for p in collect(d):
@@ -138,13 +140,28 @@ def main():
                     g = cands[0] if len(cands) == 1 else (g or stem)
             doc = dict(doc)
             doc["graph"] = g
-            if not isinstance(doc.get("edges"), list):
-                eng = engine_by_graph.get(g)
-                if eng is None:
-                    failures.append({"path": str(p),
-                                     "error": "no engine layout to merge edges from"})
-                    continue
-                doc = merge_layout_edges(doc, eng)
+            # MAJOR-1 fix: manual "Export layout" JSONs carry a PARTIAL edge
+            # set (only the edges the user touched).  Completion from the
+            # graph source is UNCONDITIONAL — measured features must see the
+            # full graph edge list to be comparable with engine negatives.
+            # (fan anchors have no engine layout; merge_layout_edges falls
+            # back to structural hub+spoke completion for that family only)
+            n_manual = len(doc.get("edges") or [])
+            try:
+                doc = merge_layout_edges(doc, engine_by_graph.get(g))
+            except Exception as exc:  # noqa: BLE001 - fail-visible per anchor
+                failures.append({"path": str(p), "error": str(exc)})
+                continue
+            edge_supplement_log.append({
+                "graph": g,
+                "path": str(Path(p).relative_to(REPO)).replace("\\", "/"),
+                "manual_edges": n_manual,
+                "total_edges": len(doc["edges"]),
+                "supplemented": doc["edges_supplemented"],
+                "source": ("engine layout" if g in engine_by_graph
+                           else "structural (fan family)" if doc["edges_supplemented"]
+                           else "none needed"),
+            })
             pos_docs.append((str(p), doc))
 
     report = {
@@ -155,18 +172,38 @@ def main():
             "load_failures": [{"path": str(Path(f["path"]).relative_to(REPO)).replace("\\", "/"),
                                "error": f["error"]} for f in failures],
             "n_negatives": len(neg_docs),
+            "edge_set_caliber": (
+                "anchor edge sets completed from the graph source BEFORE any "
+                "feature is measured (manual 'Export layout' JSONs carry only "
+                "the edges the user touched — review MAJOR-1).  Untouched edges "
+                "appended as minimal {'a','b'} pairs (renderer behavior: "
+                "untouched = straight line between card centres); manual routing "
+                "info kept verbatim.  Per-anchor log: edge_supplement_log"),
+            "edge_supplement_log": edge_supplement_log,
             "workbuddy_workspace_read": False,
             "workbuddy_note": ("红线遵守：stdraw-workbuddy 目录零读取；三份 2026-11-20 锚点"
                               "经 default@main (a5a18fc) 入仓后从 benchmarks/manual/user-2026-11-20/ 消费"),
         },
         "shape_routing": {
             "rule": "① 族标签：单环→ring，多环耦合/链/星→hub；② 嵌套环与无标签图：先 hub 强度"
-                    "（hub_degree/n ≥ 0.75 → hub），再 degree_centroid_spearman（canvas 中心口径，"
-                    "≤0→ring，>0→hub）；③ ρ 退化→全局公式回退。已知局限：i00 仓内 fixture 实测 ρ=-0.53、"
-                    "hub 强度 0.5，按本路由入 ring，与 jacky 参考值（+0.59，测自本卡禁读的 WorkBuddy 侧副本）"
-                    "冲突——逐样本记录在 routing_log 待复核",
+                    "（hub_degree/n ≥ %.2f → hub；推导式=阈值适用人群中实测空档 [0.70, 0.923] "
+                    "的中点），再 degree_canvas_spearman（canvas 中心口径，≤0→ring，>0→hub）；"
+                    "③ ρ 退化→全局公式回退。锚点边集在测特征前已按图源补全；jacky 参考值测自"
+                    "仓外副本，仓内数据不可复现（270 组合搜索 0 命中）——路由只依仓内实测值，"
+                    "逐样本记录在 routing_log 待复核" % HUB_INTENSITY_THRESHOLD,
             "rho_threshold": 0.0,
-            "hub_intensity_threshold": 0.75,
+            "hub_intensity_threshold": HUB_INTENSITY_THRESHOLD,
+            "hub_intensity_threshold_derivation": {
+                "method": "midpoint of the measured empty hub-intensity band "
+                          "over the threshold-eligible (unlabeled/nested-cycle) "
+                          "population",
+                "measured_low_band_max": 0.70,
+                "measured_high_band_min": 0.923,
+                "empty_band": [0.70, 0.923],
+                "derived_threshold": HUB_INTENSITY_THRESHOLD,
+                "rederive_rule": "re-measure whenever the corpus grows; band "
+                                 "closure must be reported, not tuned around",
+            },
             "ring_excluded_features": list(SHAPE_EXCLUDED_FEATURES["ring"]),
             "ring_exclusion_rationale": "operator 令：行/列对齐在环族天然低（brand-flywheel 33%），权重必须为 0",
         },
@@ -174,23 +211,35 @@ def main():
         "calibers": {},
     }
 
-    # ── sign verification of the two new features vs jacky's reference ──
+    # ── reference-vs-measured rho table (NOT a sign check): the operator's
+    #    hand-measured reference values were taken on an out-of-repo copy and
+    #    are NOT reproducible from in-repo data (independent review: a
+    #    270-combination search over document variants × centres ×
+    #    orientations × distance metrics × degree definitions yields 0 hits).
+    #    This table records the in-repo supplemented-edge measurement next to
+    #    each reference so the discrepancy stays visible, nothing more. ──
     all_docs = pos_docs + neg_docs
-    for g, (expect_shape, ref_rho) in RHO_REFERENCE.items():
-        docs = [doc for _, doc in all_docs
-                if (doc.get("graph") or graph_name_of(_)) == g]
-        if not docs:
-            report["new_feature_sign_check"][g] = {"status": "sample-not-found"}
+    for gname, (expect_shape, ref_rho) in RHO_REFERENCE.items():
+        matching = [(p, doc) for p, doc in all_docs
+                    if (doc.get("graph") or graph_name_of(p)) == gname]
+        if not matching:
+            report["new_feature_sign_check"][gname] = {"status": "sample-not-found"}
             continue
-        f = scalars_for_layout(docs[0], "absolute")
-        rho = f["degree_centroid_spearman"]
-        gname = docs[0].get("graph") or graph_name_of(_)
+        p0, doc0 = matching[0]
+        f = scalars_for_layout(doc0, "absolute")
+        rho = f["degree_canvas_spearman"]
         got_shape = route_shape(gname, f, labels)
-        report["new_feature_sign_check"][g] = {
-            "reference_rho": ref_rho, "measured_rho": rho,
+        report["new_feature_sign_check"][gname] = {
+            "reference_rho": ref_rho,
+            "measured_rho": rho,
             "sign_matches_reference": (rho is not None and (rho <= 0) == (ref_rho <= 0)),
             "expected_shape": expect_shape, "routed_shape": got_shape,
             "hub_neighbor_ratio": f["hub_neighbor_centrality_ratio"],
+            "measured_on": Path(p0).name,
+            "note": ("reference measured on an out-of-repo copy; not "
+                     "reproducible in-repo (independent review) — this table "
+                     "documents the discrepancy, routing uses the in-repo "
+                     "measurement"),
         }
 
     per_cal = {}
@@ -222,8 +271,12 @@ def main():
         }
         per_cal[caliber] = (composite, pos_named, neg_named)
 
-    # ── family separation (absolute caliber, post-routing scores) ──
-    _, pos_named, neg_named = per_cal["absolute"]
+    # ── family separation (normalized caliber, post-routing scores) ──
+    # MINOR-2 fix: the table crosses 4 canvas families (568×528 … 2120×824),
+    # which is outside the absolute caliber's declared domain (same canvas
+    # family ~960px).  The normalized caliber (px / canvas diagonal) is the
+    # declared cross-canvas domain, so the table is computed there.
+    _, pos_named, neg_named = per_cal["normalized"]
     fam = {}
     for key, scores in neg_named.items():
         fam.setdefault(key.rsplit("/", 1)[0], []).extend(scores)
@@ -242,7 +295,7 @@ def main():
             "positive_min": min(poss) if poss else None,
             "separated_min_pos_gt_max_neg": bool(poss and negs and min(poss) > max(negs)),
         }
-    report["family_separation_absolute"] = fam_report
+    report["family_separation_normalized"] = fam_report
 
     # ── caliber comparison (routed scores) ──
     def flat(caliber):
@@ -350,20 +403,41 @@ def _render_md(report, winner):
         % c["shapes"]["global"]["n_negative"],
         "- **workbuddy workspace: zero reads (red line)**; the three 2026-11-20 anchors",
         "  consumed in-repo after default@main a5a18fc",
-        "- WS4 archaeology (demos HTML 11-05~11-07): SKIPPED — demos at those commits contain",
-        "  rendered HTML only, no embedded layout-coordinate JSON (`git show 6d689a2:demos/`,",
-        "  grep '\"x\"' = 0); \"unmodified by jacky\" attribution not derivable from history alone.",
+        "- edge-set caliber (review MAJOR-1 fix): manual 'Export layout' JSONs carry only",
+        "  the edges the user touched; every anchor edge set is completed from the graph",
+        "  source BEFORE any feature is measured (per-anchor log: edge_supplement_log in",
+        "  calibration-report.json)",
+        "- measurement-validity note (review MINOR-4): 9/10 anchors are 'Export layout'",
+        "  products (appended edges are straight centre-to-centre lines, no fold points)",
+        "  and 1 is a --from-layout CLI product (full edges + engine routing) — bend-",
+        "  curvature features are structurally 0 for the export-format anchors, so part",
+        "  of their discriminative power comes from the format split, not hand skill",
+        "- WS4 archaeology (demos HTML 11-05~11-07): SKIPPED — at 6d689a2 demos/ contained",
+        "  only the classic-cld figure (4 files), so the ~20 unmodified-delivery samples",
+        "  were never in demos/; their coordinates are retrievable from benchmarks/raw/",
+        "  (751 method-tagged JSONs at that commit, measured on this tree) but those are",
+        "  not human artifacts — 'unmodified by jacky = endorsement' cannot be derived",
+        "  from git history.  Recoverable as data; untrustworthy as human positives;",
+        "  excluded from the anchor library.",
         "",
         "## Shape-conditional routing (2026-11-20 directive)",
         "",
         "- " + report["shape_routing"]["rule"],
+        "- hub-intensity threshold derivation: DERIVED = midpoint of the measured empty",
+        "  band [0.70, 0.923] over the threshold-eligible (unlabeled/nested) population;",
+        "  re-derived whenever the corpus grows (review MINOR-3)",
         "- ring model excludes: %s — %s" % (report["shape_routing"]["ring_excluded_features"],
                                             report["shape_routing"]["ring_exclusion_rationale"]),
         "- global formula = fallback only (rho undefined / shape subset not fittable)",
         "",
-        "## New-feature sign verification vs jacky's hand measurements",
+        "## Reference-vs-measured rho (NOT a sign check — see note)",
         "",
-        "| graph | expected | reference ρ | measured ρ | sign match | routed |",
+        "The operator's hand-measured reference values were taken on an out-of-repo copy",
+        "and are NOT reproducible from in-repo data (independent review: 270-combination",
+        "search, 0 hits).  The table documents the discrepancy; routing uses the in-repo",
+        "supplemented-edge measurement only.",
+        "",
+        "| graph | expected | reference ρ | measured ρ (in-repo) | sign match | routed |",
         "|---|---|---|---|---|---|",
     ]
     for g, v in report["new_feature_sign_check"].items():
@@ -388,6 +462,11 @@ def _render_md(report, winner):
             s, st["score_auc"], st["separation_margin"], st["positive_scores_min"],
             st["negative_scores_max"], st["n_positive"], st["n_negative"],
             st["excluded_features"] or "none"))
+        if st["separation_margin"] <= 0:
+            lines.append("  - HONESTY NOTE: %s positives do NOT fully separate from negatives"
+                         " under the supplemented-edge caliber (separation <= 0) — this is"
+                         " the honest state of the model, no threshold was tuned to mask it"
+                         % s)
     lines += [
         "- LOSO (shape-conditional): ring min %s / hub min %s" % (
             c["loso"]["ring_min"], c["loso"]["hub_min"]),
@@ -412,13 +491,17 @@ def _render_md(report, winner):
         "- domain declarations: absolute = same-canvas-family (~960px viewBox) only;",
         "  normalized = cross-canvas (§15.2). Every score output carries its domain.",
         "",
-        "## Family separation (②, absolute caliber, post-routing)",
+        "## Family separation (②, normalized caliber — cross-canvas domain, post-routing)",
+        "",
+        "Computed under the normalized caliber (px / canvas diagonal): the table crosses",
+        "4 canvas families, which is outside the absolute caliber's declared domain",
+        "(review MINOR-2).",
         "",
         "| family | n_neg | neg max | pos shape | n_pos | pos min | separated |",
         "|---|---|---|---|---|---|---|",
     ]
-    for name in sorted(report["family_separation_absolute"]):
-        f = report["family_separation_absolute"][name]
+    for name in sorted(report["family_separation_normalized"]):
+        f = report["family_separation_normalized"][name]
         lines.append("| %s | %s | %s | %s | %s | %s |" % (
             name, f["n_negative"], f["negative_max"],
             f["n_positive"], f["positive_min"], f["separated_min_pos_gt_max_neg"]))
