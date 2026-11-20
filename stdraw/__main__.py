@@ -82,9 +82,12 @@ def main(argv=None):
     ap.add_argument("input2", nargs="?",
                     help="layout-diff second argument: manual layout layout.json")
     ap.add_argument("--outdir", default="stdraw-out")
-    ap.add_argument("--recipe", default="auto", choices=["auto", "ortho"],
+    ap.add_argument("--recipe", default="auto",
+                    choices=["auto", "ortho", "candidate-v1"],
                     help="layout recipe: auto = auto-v2 (default, straight/arc lines + new hard gates); "
-                         "ortho = ortho-v1 (orthogonal vertical-line constructive, behavior frozen, pin-safe)")
+                         "ortho = ortho-v1 (orthogonal vertical-line constructive, behavior frozen, pin-safe); "
+                         "candidate-v1 = candidate pool (M1: structure analyzer + template sources + orchestrator "
+                         "+ three-tier selection, not-worse-than-auto guard)")
     ap.add_argument("--linestyle", default="straight", choices=["straight", "arc"],
                     help="auto recipe line style (default straight; arc = all-arc preference)")
     ap.add_argument("--skip-3d", action="store_true", help="run the 2D layer only")
@@ -248,6 +251,8 @@ def main(argv=None):
             except ValueError as e:
                 print(f"manual layout unusable: {e}", file=sys.stderr)
                 sys.exit(2)
+        elif a.recipe == "candidate-v1":
+            v4 = recipes_run("candidate-v1", g, cfg, a.linestyle)
         else:
             v4 = recipes_run("auto-v2", g, cfg, a.linestyle)
         labels = {n.id: n.label for n in g.nodes}

@@ -38,6 +38,10 @@ RECIPE_VERSIONS = {
     "auto-v2": "2 (2026-11-05: hard gates + straight/arc routing; "
                "2026-11-05 WS3: visibility-graph Dijkstra detour + arc fillet "
                "smoothing + crossing dual-caliber + R/B markers)",
+    "candidate-v1": "1 (M1 candidate pool: structure analyzer + template "
+                    "sources + orchestrator + three-tier selection + "
+                    "routing-in-the-loop, not-worse-than-v0.8.2 guard; "
+                    "opt-in, auto-v2 untouched)",
 }
 
 
@@ -59,10 +63,29 @@ def auto_v2(graph, config=None, linestyle: str = "straight",
     return v4
 
 
+def candidate_v1(graph, config=None, linestyle: str = "straight",
+                 suppress_delivery_warning: bool = False) -> dict:
+    """Candidate-pool pipeline (M1 minimal loop, plan section 7 M1-A/B):
+    graph structure analyzer + template candidate sources + Optimization
+    Orchestrator + three-tier selection + routing-in-the-loop, delivered
+    through the incumbent pipeline with a not-worse-than-v0.8.2 guard.
+    Opt-in recipe; the default auto-v2 path is untouched (negative
+    protection)."""
+    from .candidate_pipeline import layout as _candidate_layout
+    from .layout_auto import AutoConfig
+    cfg = config or AutoConfig()
+    v4 = _candidate_layout(graph, cfg, linestyle)
+    if suppress_delivery_warning:
+        v4.pop("delivery_warning", None)
+    return v4
+
+
 def run(recipe: str, graph, config=None, linestyle: str = "straight",
         suppress_delivery_warning: bool = False) -> dict:
     if recipe == "ortho-v1":
         return ortho_v1(graph, config, suppress_delivery_warning)
     if recipe == "auto-v2":
         return auto_v2(graph, config, linestyle, suppress_delivery_warning)
+    if recipe == "candidate-v1":
+        return candidate_v1(graph, config, linestyle, suppress_delivery_warning)
     raise ValueError(f"unknown recipe {recipe!r}; available {sorted(RECIPE_VERSIONS)}")
