@@ -190,7 +190,7 @@ def main():
     L.append("### §10.6 Historical-caliber annotations applied to this report")
     L.append("")
     L.append("Per the re-measure card: the pre-pattern-chain stdraw-auto numbers in")
-    L.append("§1/§3/§4/§7 are retained verbatim and annotated **WS4/WS5 历史口径**;")
+    L.append("§1/§3/§4/§7 are retained verbatim and annotated **WS4/WS5 historical caliber**;")
     L.append("this §10 is the current-engine caliber and supersedes them for all")
     L.append("future comparisons (including the Phase 0 ε-Pareto normalization ranges).")
     L.append("")

@@ -148,7 +148,7 @@ Full inventory with provenance pointers: `benchmarks/manual-truths.md`
 ### §10.6 Historical-caliber annotations applied to this report
 
 Per the re-measure card: the pre-pattern-chain stdraw-auto numbers in
-§1/§3/§4/§7 are retained verbatim and annotated **WS4/WS5 历史口径**;
+§1/§3/§4/§7 are retained verbatim and annotated **WS4/WS5 historical caliber**;
 this §10 is the current-engine caliber and supersedes them for all
 future comparisons (including the Phase 0 ε-Pareto normalization ranges).
 
