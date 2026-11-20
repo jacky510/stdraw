@@ -1,0 +1,470 @@
+{
+ "viewBox": [
+  0,
+  0,
+  416,
+  400
+ ],
+ "nodes": {
+  "workload": {
+   "x": 192,
+   "y": 252,
+   "w": 96
+  },
+  "overtime": {
+   "x": 192,
+   "y": 332,
+   "w": 96
+  },
+  "burnout": {
+   "x": 192,
+   "y": 92,
+   "w": 96
+  },
+  "productivity": {
+   "x": 324,
+   "y": 172,
+   "w": 96
+  },
+  "attrition": {
+   "x": 192,
+   "y": 172,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "workload",
+   "b": "overtime",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      192.0,
+      271.0
+     ],
+     [
+      192.0,
+      313.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     192.0,
+     271.0
+    ],
+    "b": [
+     192.0,
+     313.0
+    ]
+   },
+   "arrow": [
+    192.0,
+    313.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "overtime",
+   "b": "burnout",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      147.0,
+      332.0
+     ],
+     [
+      140.2,
+      322.0
+     ],
+     [
+      134.0,
+      312.0
+     ],
+     [
+      128.4,
+      302.0
+     ],
+     [
+      123.4,
+      292.0
+     ],
+     [
+      119.0,
+      282.0
+     ],
+     [
+      115.1,
+      272.0
+     ],
+     [
+      111.9,
+      262.0
+     ],
+     [
+      109.2,
+      252.0
+     ],
+     [
+      107.2,
+      242.0
+     ],
+     [
+      105.7,
+      232.0
+     ],
+     [
+      104.8,
+      222.0
+     ],
+     [
+      104.5,
+      212.0
+     ],
+     [
+      104.8,
+      202.0
+     ],
+     [
+      105.7,
+      192.0
+     ],
+     [
+      107.2,
+      182.0
+     ],
+     [
+      109.2,
+      172.0
+     ],
+     [
+      111.9,
+      162.0
+     ],
+     [
+      115.1,
+      152.0
+     ],
+     [
+      119.0,
+      142.0
+     ],
+     [
+      123.4,
+      132.0
+     ],
+     [
+      128.4,
+      122.0
+     ],
+     [
+      134.0,
+      112.0
+     ],
+     [
+      140.2,
+      102.0
+     ],
+     [
+      147.0,
+      92.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     62.0,
+     212.0
+    ]
+   },
+   "anchors": {
+    "a": [
+     147.0,
+     332.0
+    ],
+    "b": [
+     147.0,
+     92.0
+    ]
+   },
+   "arrow": [
+    147.0,
+    92.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "burnout",
+   "b": "productivity",
+   "polarity": "-",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      237.0,
+      111.0
+     ],
+     [
+      279.0,
+      153.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     237.0,
+     111.0
+    ],
+    "b": [
+     279.0,
+     153.0
+    ]
+   },
+   "arrow": [
+    279.0,
+    153.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "productivity",
+   "b": "workload",
+   "polarity": "-",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      279.0,
+      191.0
+     ],
+     [
+      237.0,
+      233.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     279.0,
+     191.0
+    ],
+    "b": [
+     237.0,
+     233.0
+    ]
+   },
+   "arrow": [
+    237.0,
+    233.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "burnout",
+   "b": "attrition",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      192.0,
+      111.0
+     ],
+     [
+      192.0,
+      153.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     192.0,
+     111.0
+    ],
+    "b": [
+     192.0,
+     153.0
+    ]
+   },
+   "arrow": [
+    192.0,
+    153.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "attrition",
+   "b": "workload",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      192.0,
+      191.0
+     ],
+     [
+      192.0,
+      233.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     192.0,
+     191.0
+    ],
+    "b": [
+     192.0,
+     233.0
+    ]
+   },
+   "arrow": [
+    192.0,
+    233.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 4,
+  "rowY": [
+   92,
+   172,
+   252,
+   332
+  ],
+  "pitch": 80,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "column-construct",
+  "mode_decision_trace": {
+   "engine": "column-construct",
+   "placement": "column-chain",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=5, edges m=6 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "3 simple loops enumerated (need exactly 2)",
+     "trial_gate": null
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": false,
+     "reason": "core n=5 (need 6..12)",
+     "trial_gate": null
+    },
+    {
+     "tier": 3,
+     "rule": "column-chain",
+     "triggered": true,
+     "reason": "main ring k=4 < n=5 (small main ring -> strong chain reading)",
+     "trial_gate": "pass"
+    },
+    {
+     "tier": 2,
+     "rule": "comb-bilateral",
+     "triggered": false,
+     "reason": "detected, but not adopted: the comb source column is not strictly longer than the best column spine (salience rule — the column reading wins)",
+     "trial_gate": null
+    },
+    {
+     "tier": 4,
+     "rule": "ring-cycle",
+     "triggered": false,
+     "reason": "detected, but a higher-tier plan was adopted — trial not run",
+     "trial_gate": null
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "column-chain: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "column-chain",
+  "column": {
+   "spine": [
+    "burnout",
+    "attrition",
+    "workload",
+    "overtime"
+   ],
+   "pitch": 80,
+   "axis_x": 192,
+   "declared_loop": "B1",
+   "closing": [
+    "overtime",
+    "burnout"
+   ],
+   "closing_side": "left",
+   "side_columns": {
+    "1": [
+     "productivity"
+    ]
+   },
+   "residuals": [
+    "productivity"
+   ]
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

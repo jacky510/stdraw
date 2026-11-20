@@ -1,0 +1,596 @@
+{
+ "viewBox": [
+  0,
+  0,
+  800,
+  400
+ ],
+ "nodes": {
+  "rate": {
+   "x": 288,
+   "y": 252,
+   "w": 96
+  },
+  "adopters": {
+   "x": 288,
+   "y": 92,
+   "w": 96
+  },
+  "word": {
+   "x": 288,
+   "y": 332,
+   "w": 96
+  },
+  "potential": {
+   "x": 426,
+   "y": 172,
+   "w": 108
+  },
+  "crowding": {
+   "x": 288,
+   "y": 172,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "adopters",
+   "b": "word",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      243.0,
+      111.0
+     ],
+     [
+      228.2,
+      119.4
+     ],
+     [
+      214.7,
+      127.8
+     ],
+     [
+      202.7,
+      136.2
+     ],
+     [
+      192.1,
+      144.7
+     ],
+     [
+      182.9,
+      153.1
+     ],
+     [
+      175.2,
+      161.5
+     ],
+     [
+      168.8,
+      169.9
+     ],
+     [
+      163.9,
+      178.3
+     ],
+     [
+      160.3,
+      186.8
+     ],
+     [
+      158.2,
+      195.2
+     ],
+     [
+      157.5,
+      203.6
+     ],
+     [
+      158.3,
+      212.0
+     ],
+     [
+      160.4,
+      220.4
+     ],
+     [
+      164.0,
+      228.8
+     ],
+     [
+      168.9,
+      237.2
+     ],
+     [
+      175.3,
+      245.7
+     ],
+     [
+      183.1,
+      254.1
+     ],
+     [
+      192.3,
+      262.5
+     ],
+     [
+      203.0,
+      270.9
+     ],
+     [
+      215.0,
+      279.3
+     ],
+     [
+      228.5,
+      287.8
+     ],
+     [
+      243.4,
+      296.2
+     ],
+     [
+      259.7,
+      304.6
+     ],
+     [
+      277.4,
+      313.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     56.30000000000001,
+     212.0
+    ]
+   },
+   "anchors": {
+    "a": [
+     243.0,
+     111.0
+    ],
+    "b": [
+     277.38,
+     313.0
+    ]
+   },
+   "arrow": [
+    277.4,
+    313.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "word",
+   "b": "rate",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      288.0,
+      313.0
+     ],
+     [
+      288.0,
+      271.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     288.0,
+     313.0
+    ],
+    "b": [
+     288.0,
+     271.0
+    ]
+   },
+   "arrow": [
+    288.0,
+    271.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "rate",
+   "b": "adopters",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      333.0,
+      252.0
+     ],
+     [
+      366.6,
+      245.3
+     ],
+     [
+      397.3,
+      238.7
+     ],
+     [
+      425.1,
+      232.0
+     ],
+     [
+      449.9,
+      225.3
+     ],
+     [
+      471.9,
+      218.7
+     ],
+     [
+      490.9,
+      212.0
+     ],
+     [
+      507.0,
+      205.3
+     ],
+     [
+      520.1,
+      198.7
+     ],
+     [
+      530.3,
+      192.0
+     ],
+     [
+      537.7,
+      185.3
+     ],
+     [
+      542.0,
+      178.7
+     ],
+     [
+      543.5,
+      172.0
+     ],
+     [
+      542.0,
+      165.3
+     ],
+     [
+      537.7,
+      158.7
+     ],
+     [
+      530.3,
+      152.0
+     ],
+     [
+      520.1,
+      145.3
+     ],
+     [
+      507.0,
+      138.7
+     ],
+     [
+      490.9,
+      132.0
+     ],
+     [
+      471.9,
+      125.3
+     ],
+     [
+      449.9,
+      118.7
+     ],
+     [
+      425.1,
+      112.0
+     ],
+     [
+      397.3,
+      105.3
+     ],
+     [
+      366.6,
+      98.7
+     ],
+     [
+      333.0,
+      92.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     754.0,
+     172.0
+    ]
+   },
+   "anchors": {
+    "a": [
+     333.0,
+     252.0
+    ],
+    "b": [
+     333.0,
+     92.0
+    ]
+   },
+   "arrow": [
+    333.0,
+    92.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "potential",
+   "b": "rate",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      375.0,
+      191.0
+     ],
+     [
+      333.0,
+      233.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     375.0,
+     191.0
+    ],
+    "b": [
+     333.0,
+     233.0
+    ]
+   },
+   "arrow": [
+    333.0,
+    233.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "adopters",
+   "b": "potential",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      333.0,
+      111.0
+     ],
+     [
+      375.0,
+      153.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     333.0,
+     111.0
+    ],
+    "b": [
+     375.0,
+     153.0
+    ]
+   },
+   "arrow": [
+    375.0,
+    153.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "adopters",
+   "b": "crowding",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      288.0,
+      111.0
+     ],
+     [
+      288.0,
+      153.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     288.0,
+     111.0
+    ],
+    "b": [
+     288.0,
+     153.0
+    ]
+   },
+   "arrow": [
+    288.0,
+    153.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "crowding",
+   "b": "rate",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      288.0,
+      191.0
+     ],
+     [
+      288.0,
+      233.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     288.0,
+     191.0
+    ],
+    "b": [
+     288.0,
+     233.0
+    ]
+   },
+   "arrow": [
+    288.0,
+    233.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 4,
+  "rowY": [
+   92,
+   172,
+   252,
+   332
+  ],
+  "pitch": 80,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "column-construct",
+  "mode_decision_trace": {
+   "engine": "column-construct",
+   "placement": "column-chain",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=5, edges m=7 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "6 simple loops enumerated (need exactly 2)",
+     "trial_gate": null
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": false,
+     "reason": "core n=5 (need 6..12)",
+     "trial_gate": null
+    },
+    {
+     "tier": 3,
+     "rule": "column-chain",
+     "triggered": true,
+     "reason": "main ring k=4 < n=5 (small main ring -> strong chain reading)",
+     "trial_gate": "pass"
+    },
+    {
+     "tier": 4,
+     "rule": "ring-cycle",
+     "triggered": false,
+     "reason": "detected, but a higher-tier plan was adopted — trial not run",
+     "trial_gate": null
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "column-chain: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "column-chain",
+  "column": {
+   "spine": [
+    "adopters",
+    "crowding",
+    "rate",
+    "word"
+   ],
+   "pitch": 80,
+   "axis_x": 288,
+   "declared_loop": null,
+   "closing": [
+    "word",
+    "adopters"
+   ],
+   "closing_side": "left",
+   "side_columns": {
+    "1": [
+     "potential"
+    ]
+   },
+   "residuals": [
+    "potential"
+   ]
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

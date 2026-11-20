@@ -1,0 +1,592 @@
+{
+ "viewBox": [
+  0,
+  0,
+  496,
+  408
+ ],
+ "nodes": {
+  "congestion": {
+   "x": 246,
+   "y": 70,
+   "w": 96
+  },
+  "driving_cost": {
+   "x": 388,
+   "y": 174,
+   "w": 124
+  },
+  "car_trips": {
+   "x": 334,
+   "y": 342,
+   "w": 108
+  },
+  "expansion": {
+   "x": 158,
+   "y": 342,
+   "w": 96
+  },
+  "road_capacity": {
+   "x": 104,
+   "y": 174,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "congestion",
+   "b": "driving_cost",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      256.6,
+      89.0
+     ],
+     [
+      329.0,
+      155.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     256.62,
+     89.0
+    ],
+    "b": [
+     329.0,
+     155.0
+    ]
+   },
+   "arrow": [
+    329.0,
+    155.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "driving_cost",
+   "b": "car_trips",
+   "polarity": "-",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      374.1,
+      193.0
+     ],
+     [
+      346.0,
+      323.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     374.076,
+     193.0
+    ],
+    "b": [
+     346.036,
+     323.0
+    ]
+   },
+   "arrow": [
+    346.0,
+    323.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "car_trips",
+   "b": "congestion",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      322.0,
+      323.0
+     ],
+     [
+      320.0,
+      316.7
+     ],
+     [
+      317.8,
+      310.2
+     ],
+     [
+      315.6,
+      303.3
+     ],
+     [
+      313.3,
+      296.2
+     ],
+     [
+      310.9,
+      288.7
+     ],
+     [
+      308.4,
+      280.9
+     ],
+     [
+      305.8,
+      272.8
+     ],
+     [
+      303.1,
+      264.4
+     ],
+     [
+      300.2,
+      255.8
+     ],
+     [
+      297.3,
+      246.8
+     ],
+     [
+      294.3,
+      237.5
+     ],
+     [
+      291.2,
+      227.9
+     ],
+     [
+      288.0,
+      218.0
+     ],
+     [
+      284.7,
+      207.8
+     ],
+     [
+      281.3,
+      197.3
+     ],
+     [
+      277.7,
+      186.4
+     ],
+     [
+      274.1,
+      175.3
+     ],
+     [
+      270.4,
+      163.9
+     ],
+     [
+      266.6,
+      152.2
+     ],
+     [
+      262.7,
+      140.2
+     ],
+     [
+      258.7,
+      127.8
+     ],
+     [
+      254.5,
+      115.2
+     ],
+     [
+      250.3,
+      102.2
+     ],
+     [
+      246.0,
+      89.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     298.4,
+     249.8
+    ]
+   },
+   "anchors": {
+    "a": [
+     321.964,
+     323.0
+    ],
+    "b": [
+     246.0,
+     89.0
+    ]
+   },
+   "arrow": [
+    246.0,
+    89.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "congestion",
+   "b": "car_trips",
+   "polarity": "-",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      235.4,
+      89.0
+     ],
+     [
+      234.2,
+      95.3
+     ],
+     [
+      233.3,
+      101.8
+     ],
+     [
+      232.7,
+      108.7
+     ],
+     [
+      232.4,
+      115.8
+     ],
+     [
+      232.3,
+      123.3
+     ],
+     [
+      232.6,
+      131.1
+     ],
+     [
+      233.0,
+      139.2
+     ],
+     [
+      233.8,
+      147.6
+     ],
+     [
+      234.8,
+      156.2
+     ],
+     [
+      236.1,
+      165.2
+     ],
+     [
+      237.7,
+      174.5
+     ],
+     [
+      239.6,
+      184.1
+     ],
+     [
+      241.7,
+      194.0
+     ],
+     [
+      244.1,
+      204.2
+     ],
+     [
+      246.7,
+      214.7
+     ],
+     [
+      249.7,
+      225.6
+     ],
+     [
+      252.9,
+      236.7
+     ],
+     [
+      256.4,
+      248.1
+     ],
+     [
+      260.1,
+      259.8
+     ],
+     [
+      264.2,
+      271.8
+     ],
+     [
+      268.5,
+      284.2
+     ],
+     [
+      273.0,
+      296.8
+     ],
+     [
+      277.9,
+      309.8
+     ],
+     [
+      283.0,
+      323.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     219.9,
+     162.2
+    ]
+   },
+   "anchors": {
+    "a": [
+     235.38,
+     89.0
+    ],
+    "b": [
+     283.0,
+     323.0
+    ]
+   },
+   "arrow": [
+    283.0,
+    323.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "car_trips",
+   "b": "expansion",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      283.0,
+      342.0
+     ],
+     [
+      203.0,
+      342.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     283.0,
+     342.0
+    ],
+    "b": [
+     203.0,
+     342.0
+    ]
+   },
+   "arrow": [
+    203.0,
+    342.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "expansion",
+   "b": "road_capacity",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      147.4,
+      323.0
+     ],
+     [
+      114.6,
+      193.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     147.38,
+     323.0
+    ],
+    "b": [
+     114.62,
+     193.0
+    ]
+   },
+   "arrow": [
+    114.6,
+    193.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "road_capacity",
+   "b": "congestion",
+   "polarity": "-",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      149.0,
+      155.0
+     ],
+     [
+      201.0,
+      89.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     149.0,
+     155.0
+    ],
+    "b": [
+     201.0,
+     89.0
+    ]
+   },
+   "arrow": [
+    201.0,
+    89.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 3,
+  "rowY": [
+   78,
+   182,
+   350
+  ],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "ring-construct",
+  "mode_decision_trace": {
+   "engine": "ring-construct",
+   "placement": "ring-cycle",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=5, edges m=7 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "3 simple loops enumerated (need exactly 2)",
+     "trial_gate": null
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": false,
+     "reason": "core n=5 (need 6..12)",
+     "trial_gate": null
+    },
+    {
+     "tier": 3,
+     "rule": "column-chain",
+     "triggered": false,
+     "reason": "longest simple loop k=5 (need 3..4)",
+     "trial_gate": null
+    },
+    {
+     "tier": 4,
+     "rule": "ring-cycle",
+     "triggered": true,
+     "reason": "loop-dominated (trigger=cover), main ring k=5, chord crossings=0",
+     "trial_gate": "pass"
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "ring-cycle: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "ring-cycle",
+  "ring": {
+   "nodes": [
+    "congestion",
+    "driving_cost",
+    "car_trips",
+    "expansion",
+    "road_capacity"
+   ],
+   "radius": 150,
+   "center": [
+    150,
+    212
+   ],
+   "declared_loop": "R3",
+   "polarity": "R",
+   "trigger": "cover",
+   "chord_crossings": 0,
+   "residuals": {}
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}
