@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "shifting-the-burden", "n": 5, "m": 8, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 110.0, "spacing_cv": 0.0, "row_align_rate": 0.8, "runtime_s": 1.133, "bbox": [360, 308], "bbox_area": 110880, "status": "ok", "exactness": null}

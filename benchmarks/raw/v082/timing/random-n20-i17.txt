@@ -1,0 +1,2 @@
+[stdraw] stage timing (STDRAW_TIMING=1), total 13104 ms:
+  planarized_l1    13104.1 ms  100.0%

@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "eroding-goals", "n": 5, "m": 6, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 124.0, "spacing_cv": 0.0, "row_align_rate": 0.8, "runtime_s": 0.694, "bbox": [402, 336], "bbox_area": 135072, "status": "ok", "exactness": null}

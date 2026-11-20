@@ -1,0 +1,1062 @@
+{
+ "per_graph": {
+  "arms-race": {
+   "total_ms": 2285,
+   "stages_ms": {
+    "card_metrics": 87.7,
+    "mode_detection_trials": 52.1,
+    "route_final": 59.0,
+    "manual_injection": 0.0,
+    "repair:coincide": 5.2,
+    "repair:midband": 0.2,
+    "repair:fan_spread": 0.3,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 5.2,
+    "anchor_snap.snap": 2.0,
+    "anchor_snap.gate_eval_post": 7.1,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 2066.2
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.0,
+    "row_align_rate": 0.5,
+    "runtime_s": 2.285,
+    "status": "ok"
+   }
+  },
+  "brand-flywheel": {
+   "total_ms": 990,
+   "stages_ms": {
+    "card_metrics": 21.6,
+    "mode_detection_trials": 219.5,
+    "route_final": 202.7,
+    "manual_injection": 0.0,
+    "repair:coincide": 14.2,
+    "repair:midband": 1.3,
+    "repair:fan_spread": 0.7,
+    "repair:arrival_flip_pre": 0.4,
+    "anchor_snap.gate_eval_pre": 17.1,
+    "anchor_snap.snap": 17.1,
+    "anchor_snap.gate_eval_post": 13.9,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.9,
+    "delivery": 480.0
+   },
+   "stages_sum_over_total_pct": 99.94,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.0,
+    "row_align_rate": 0.667,
+    "runtime_s": 0.99,
+    "status": "ok"
+   }
+  },
+  "bullwhip": {
+   "total_ms": 692,
+   "stages_ms": {
+    "card_metrics": 20.1,
+    "mode_detection_trials": 109.0,
+    "route_final": 94.2,
+    "manual_injection": 0.0,
+    "repair:coincide": 6.5,
+    "repair:midband": 0.2,
+    "repair:fan_spread": 0.0,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 6.7,
+    "anchor_snap.snap": 6.7,
+    "anchor_snap.gate_eval_post": 7.3,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 440.8
+   },
+   "stages_sum_over_total_pct": 99.93,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.23,
+    "row_align_rate": 0.4,
+    "runtime_s": 0.692,
+    "status": "ok"
+   }
+  },
+  "burnout-attrition": {
+   "total_ms": 667,
+   "stages_ms": {
+    "card_metrics": 18.4,
+    "mode_detection_trials": 94.3,
+    "route_final": 80.8,
+    "manual_injection": 0.0,
+    "repair:coincide": 3.0,
+    "repair:midband": 0.3,
+    "repair:fan_spread": 0.2,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 3.6,
+    "anchor_snap.snap": 2.9,
+    "anchor_snap.gate_eval_post": 2.7,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 460.4
+   },
+   "stages_sum_over_total_pct": 99.94,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.23,
+    "row_align_rate": 0.4,
+    "runtime_s": 0.667,
+    "status": "ok"
+   }
+  },
+  "classic-cld-growth-and-burden": {
+   "total_ms": 1932,
+   "stages_ms": {
+    "card_metrics": 18.6,
+    "mode_detection_trials": 523.7,
+    "route_final": 508.5,
+    "manual_injection": 0.0,
+    "repair:coincide": 61.9,
+    "repair:midband": 52.4,
+    "repair:fan_spread": 3.1,
+    "repair:mutual_straight": 2.2,
+    "repair:arrival_flip_pre": 0.8,
+    "anchor_snap.gate_eval_pre": 67.1,
+    "anchor_snap.snap": 20.8,
+    "anchor_snap.gate_eval_post": 61.6,
+    "repair:lens_joint_reassign": 181.7,
+    "repair:arrival_flip_post": 1.0,
+    "delivery": 428.5
+   },
+   "stages_sum_over_total_pct": 99.99,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.128,
+    "row_align_rate": 0.625,
+    "runtime_s": 1.932,
+    "status": "ok"
+   }
+  },
+  "debt-spiral": {
+   "total_ms": 672,
+   "stages_ms": {
+    "card_metrics": 19.1,
+    "mode_detection_trials": 93.0,
+    "route_final": 81.8,
+    "manual_injection": 0.0,
+    "repair:coincide": 9.1,
+    "repair:midband": 0.4,
+    "repair:fan_spread": 0.5,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 10.2,
+    "anchor_snap.snap": 3.8,
+    "anchor_snap.gate_eval_post": 10.0,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 443.8
+   },
+   "stages_sum_over_total_pct": 99.96,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.0,
+    "row_align_rate": 0.8,
+    "runtime_s": 0.672,
+    "status": "ok"
+   }
+  },
+  "eroding-goals": {
+   "total_ms": 694,
+   "stages_ms": {
+    "card_metrics": 18.1,
+    "mode_detection_trials": 91.4,
+    "route_final": 79.8,
+    "manual_injection": 0.0,
+    "repair:coincide": 13.2,
+    "repair:midband": 0.0,
+    "repair:fan_spread": 0.0,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 13.2,
+    "anchor_snap.snap": 3.5,
+    "anchor_snap.gate_eval_post": 13.5,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 461.4
+   },
+   "stages_sum_over_total_pct": 100.01,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.0,
+    "row_align_rate": 0.8,
+    "runtime_s": 0.694,
+    "status": "ok"
+   }
+  },
+  "fishing-collapse": {
+   "total_ms": 1227,
+   "stages_ms": {
+    "card_metrics": 19.7,
+    "mode_detection_trials": 323.8,
+    "route_final": 314.4,
+    "manual_injection": 0.0,
+    "repair:coincide": 20.4,
+    "repair:midband": 1.4,
+    "repair:fan_spread": 1.0,
+    "repair:arrival_flip_pre": 0.4,
+    "anchor_snap.gate_eval_pre": 24.3,
+    "anchor_snap.snap": 27.0,
+    "anchor_snap.gate_eval_post": 22.5,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 1.1,
+    "delivery": 471.0
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.264,
+    "row_align_rate": 0.667,
+    "runtime_s": 1.227,
+    "status": "ok"
+   }
+  },
+  "fixes-that-fail": {
+   "total_ms": 560,
+   "stages_ms": {
+    "card_metrics": 20.8,
+    "mode_detection_trials": 41.9,
+    "route_final": 50.5,
+    "manual_injection": 0.0,
+    "repair:coincide": 2.7,
+    "repair:midband": 0.0,
+    "repair:fan_spread": 0.0,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 3.4,
+    "anchor_snap.snap": 13.3,
+    "anchor_snap.gate_eval_post": 3.4,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 424.1
+   },
+   "stages_sum_over_total_pct": 100.02,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.266,
+    "row_align_rate": 0.5,
+    "runtime_s": 0.56,
+    "status": "ok"
+   }
+  },
+  "induced-demand": {
+   "total_ms": 1094,
+   "stages_ms": {
+    "card_metrics": 20.4,
+    "mode_detection_trials": 204.6,
+    "route_final": 215.4,
+    "manual_injection": 0.0,
+    "repair:coincide": 13.3,
+    "repair:midband": 1.1,
+    "repair:fan_spread": 0.1,
+    "repair:arrival_flip_pre": 1.5,
+    "anchor_snap.gate_eval_pre": 13.4,
+    "anchor_snap.snap": 37.6,
+    "anchor_snap.gate_eval_post": 15.5,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 23.2,
+    "delivery": 547.5
+   },
+   "stages_sum_over_total_pct": 99.96,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.0,
+    "row_align_rate": 0.8,
+    "runtime_s": 1.094,
+    "status": "ok"
+   }
+  },
+  "learning-flywheel": {
+   "total_ms": 633,
+   "stages_ms": {
+    "card_metrics": 26.5,
+    "mode_detection_trials": 48.2,
+    "route_final": 57.7,
+    "manual_injection": 0.0,
+    "repair:coincide": 3.4,
+    "repair:midband": 0.0,
+    "repair:fan_spread": 0.0,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 3.6,
+    "anchor_snap.snap": 13.9,
+    "anchor_snap.gate_eval_post": 3.5,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 476.1
+   },
+   "stages_sum_over_total_pct": 99.98,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.308,
+    "row_align_rate": 0.5,
+    "runtime_s": 0.633,
+    "status": "ok"
+   }
+  },
+  "limits-to-growth": {
+   "total_ms": 726,
+   "stages_ms": {
+    "card_metrics": 17.0,
+    "mode_detection_trials": 119.1,
+    "route_final": 102.3,
+    "manual_injection": 0.0,
+    "repair:coincide": 10.1,
+    "repair:midband": 0.5,
+    "repair:fan_spread": 0.3,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 12.1,
+    "anchor_snap.snap": 11.3,
+    "anchor_snap.gate_eval_post": 10.8,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 442.0
+   },
+   "stages_sum_over_total_pct": 99.93,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.253,
+    "row_align_rate": 0.4,
+    "runtime_s": 0.726,
+    "status": "ok"
+   }
+  },
+  "population-logistic": {
+   "total_ms": 881,
+   "stages_ms": {
+    "card_metrics": 17.0,
+    "mode_detection_trials": 181.0,
+    "route_final": 184.9,
+    "manual_injection": 0.0,
+    "repair:coincide": 9.8,
+    "repair:midband": 1.0,
+    "repair:fan_spread": 1.0,
+    "repair:arrival_flip_pre": 0.7,
+    "anchor_snap.gate_eval_pre": 9.4,
+    "anchor_snap.snap": 28.4,
+    "anchor_snap.gate_eval_post": 10.1,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 7.9,
+    "delivery": 429.4
+   },
+   "stages_sum_over_total_pct": 99.95,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.242,
+    "row_align_rate": 0.5,
+    "runtime_s": 0.881,
+    "status": "ok"
+   }
+  },
+  "random-n10-i00": {
+   "total_ms": 30254,
+   "stages_ms": {
+    "card_metrics": 19.3,
+    "mode_detection_trials": 492.5,
+    "layering": 0.0,
+    "placement_cp_sat": 660.0,
+    "polish_gated_reorder": 26543.5,
+    "route_final": 2197.9,
+    "manual_injection": 0.0,
+    "repair:coincide": 51.4,
+    "repair:midband": 4.9,
+    "repair:fan_spread": 1.4,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 62.1,
+    "anchor_snap.snap": 145.8,
+    "anchor_snap.gate_eval_post": 66.6,
+    "repair:lens_joint_reassign": 0.1,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 8.3
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 2,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.101,
+    "row_align_rate": 0.8,
+    "runtime_s": 30.256,
+    "status": "ok"
+   }
+  },
+  "random-n10-i01": {
+   "total_ms": 52927,
+   "stages_ms": {
+    "card_metrics": 41.0,
+    "mode_detection_trials": 1227.9,
+    "layering": 0.0,
+    "placement_cp_sat": 1668.7,
+    "polish_gated_reorder": 35723.2,
+    "route_final": 8964.8,
+    "manual_injection": 0.0,
+    "repair:coincide": 435.2,
+    "repair:midband": 6.4,
+    "repair:fan_spread": 6.5,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 106.4,
+    "anchor_snap.snap": 4649.7,
+    "anchor_snap.gate_eval_post": 90.1,
+    "delivery": 6.8
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 2,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.021,
+    "row_align_rate": 1.0,
+    "runtime_s": 52.93,
+    "status": "ok"
+   }
+  },
+  "random-n10-i02": {
+   "total_ms": 1901,
+   "stages_ms": {
+    "card_metrics": 26.2,
+    "mode_detection_trials": 456.4,
+    "route_final": 417.8,
+    "manual_injection": 0.0,
+    "repair:coincide": 93.1,
+    "repair:midband": 2.9,
+    "repair:fan_spread": 3.0,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 102.0,
+    "anchor_snap.snap": 28.6,
+    "anchor_snap.gate_eval_post": 104.7,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 666.6
+   },
+   "stages_sum_over_total_pct": 100.02,
+   "metrics": {
+    "crossings": 1,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.054,
+    "row_align_rate": 0.8,
+    "runtime_s": 1.902,
+    "status": "ok"
+   }
+  },
+  "random-n10-i03": {
+   "total_ms": 3785,
+   "stages_ms": {
+    "card_metrics": 29.8,
+    "mode_detection_trials": 928.5,
+    "route_final": 448.6,
+    "manual_injection": 0.0,
+    "repair:coincide": 205.3,
+    "repair:midband": 5.1,
+    "repair:fan_spread": 4.0,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 224.0,
+    "anchor_snap.snap": 681.5,
+    "anchor_snap.gate_eval_post": 421.9,
+    "delivery": 836.5
+   },
+   "stages_sum_over_total_pct": 100.01,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.22,
+    "row_align_rate": 0.6,
+    "runtime_s": 3.787,
+    "status": "ok"
+   }
+  },
+  "random-n10-i04": {
+   "total_ms": 45026,
+   "stages_ms": {
+    "card_metrics": 24.3,
+    "mode_detection_trials": 524.5,
+    "layering": 0.0,
+    "placement_cp_sat": 850.2,
+    "polish_gated_reorder": 38862.5,
+    "route_final": 3467.3,
+    "manual_injection": 0.0,
+    "repair:coincide": 576.8,
+    "repair:midband": 8.7,
+    "repair:fan_spread": 4.8,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 181.9,
+    "anchor_snap.snap": 232.1,
+    "anchor_snap.gate_eval_post": 281.9,
+    "repair:lens_joint_reassign": 0.1,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 10.7
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 2,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.163,
+    "row_align_rate": 0.8,
+    "runtime_s": 45.027,
+    "status": "ok"
+   }
+  },
+  "random-n10-i05": {
+   "total_ms": 39258,
+   "stages_ms": {
+    "card_metrics": 22.4,
+    "mode_detection_trials": 488.8,
+    "layering": 0.0,
+    "placement_cp_sat": 641.6,
+    "polish_gated_reorder": 33657.9,
+    "route_final": 3294.1,
+    "manual_injection": 0.0,
+    "repair:coincide": 411.5,
+    "repair:midband": 4.7,
+    "repair:fan_spread": 5.5,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 94.5,
+    "anchor_snap.snap": 530.1,
+    "anchor_snap.gate_eval_post": 100.0,
+    "repair:lens_joint_reassign": 0.1,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 6.6
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 1,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.125,
+    "row_align_rate": 0.9,
+    "runtime_s": 39.259,
+    "status": "ok"
+   }
+  },
+  "random-n10-i06": {
+   "total_ms": 28253,
+   "stages_ms": {
+    "card_metrics": 21.7,
+    "mode_detection_trials": 558.4,
+    "layering": 0.0,
+    "placement_cp_sat": 547.9,
+    "polish_gated_reorder": 16203.0,
+    "route_final": 6496.8,
+    "manual_injection": 0.0,
+    "repair:coincide": 192.2,
+    "repair:midband": 6.1,
+    "repair:fan_spread": 3.6,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 188.4,
+    "anchor_snap.snap": 3853.6,
+    "anchor_snap.gate_eval_post": 175.5,
+    "delivery": 5.4
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 1,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.253,
+    "row_align_rate": 0.7,
+    "runtime_s": 28.254,
+    "status": "ok"
+   }
+  },
+  "random-n10-i07": {
+   "total_ms": 20688,
+   "stages_ms": {
+    "card_metrics": 18.8,
+    "mode_detection_trials": 16.4,
+    "layering": 0.0,
+    "placement_cp_sat": 447.0,
+    "polish_gated_reorder": 15975.3,
+    "route_final": 3314.6,
+    "manual_injection": 0.0,
+    "repair:coincide": 568.3,
+    "repair:midband": 8.2,
+    "repair:fan_spread": 4.9,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 99.6,
+    "anchor_snap.snap": 129.1,
+    "anchor_snap.gate_eval_post": 97.0,
+    "repair:lens_joint_reassign": 0.1,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 8.2
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 1,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.157,
+    "row_align_rate": 0.8,
+    "runtime_s": 20.688,
+    "status": "ok"
+   }
+  },
+  "random-n10-i09": {
+   "total_ms": 4409,
+   "stages_ms": {
+    "planarized_l1": 4409.5
+   },
+   "stages_sum_over_total_pct": 100.01,
+   "metrics": {
+    "crossings": 1,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.595,
+    "row_align_rate": 0.2,
+    "runtime_s": 4.41,
+    "status": "ok"
+   }
+  },
+  "random-n10-i10": {
+   "total_ms": 1745,
+   "stages_ms": {
+    "planarized_l1": 1744.9
+   },
+   "stages_sum_over_total_pct": 99.99,
+   "metrics": {
+    "crossings": 1,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.451,
+    "row_align_rate": 0.8,
+    "runtime_s": 1.745,
+    "status": "ok"
+   }
+  },
+  "random-n10-i12": {
+   "total_ms": 47825,
+   "stages_ms": {
+    "card_metrics": 18.8,
+    "mode_detection_trials": 467.0,
+    "layering": 0.1,
+    "placement_cp_sat": 678.7,
+    "polish_gated_reorder": 37745.5,
+    "route_final": 5761.9,
+    "manual_injection": 0.0,
+    "repair:coincide": 161.0,
+    "repair:midband": 7.5,
+    "repair:fan_spread": 8.5,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 197.1,
+    "anchor_snap.snap": 2549.4,
+    "anchor_snap.gate_eval_post": 224.4,
+    "delivery": 5.6
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 3,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.155,
+    "row_align_rate": 0.9,
+    "runtime_s": 47.828,
+    "status": "ok"
+   }
+  },
+  "random-n10-i14": {
+   "total_ms": 40645,
+   "stages_ms": {
+    "card_metrics": 19.0,
+    "mode_detection_trials": 598.2,
+    "layering": 0.0,
+    "placement_cp_sat": 596.4,
+    "polish_gated_reorder": 37072.0,
+    "route_final": 2167.5,
+    "manual_injection": 0.0,
+    "repair:coincide": 52.7,
+    "repair:midband": 3.7,
+    "repair:fan_spread": 3.3,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 45.1,
+    "anchor_snap.snap": 44.7,
+    "anchor_snap.gate_eval_post": 39.9,
+    "repair:lens_joint_reassign": 0.1,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 2.2
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 2,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.101,
+    "row_align_rate": 0.7,
+    "runtime_s": 40.645,
+    "status": "ok"
+   }
+  },
+  "random-n10-i16": {
+   "total_ms": 1360,
+   "stages_ms": {
+    "planarized_l1": 1359.8
+   },
+   "stages_sum_over_total_pct": 99.99,
+   "metrics": {
+    "crossings": 1,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.608,
+    "row_align_rate": 0.7,
+    "runtime_s": 1.36,
+    "status": "ok"
+   }
+  },
+  "random-n10-i17": {
+   "total_ms": 272866,
+   "stages_ms": {
+    "card_metrics": 19.7,
+    "mode_detection_trials": 497.1,
+    "route_final": 270309.4,
+    "manual_injection": 0.0,
+    "repair:coincide": 331.3,
+    "repair:midband": 12.4,
+    "repair:fan_spread": 13.3,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 346.8,
+    "anchor_snap.snap": 236.4,
+    "anchor_snap.gate_eval_post": 318.6,
+    "repair:lens_joint_reassign": 0.1,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 781.0
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 2,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.005,
+    "row_align_rate": 0.8,
+    "runtime_s": 272.868,
+    "status": "ok"
+   }
+  },
+  "random-n10-i19": {
+   "total_ms": 5165,
+   "stages_ms": {
+    "planarized_l1": 5164.7
+   },
+   "stages_sum_over_total_pct": 99.99,
+   "metrics": {
+    "crossings": 1,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.354,
+    "row_align_rate": 0.4,
+    "runtime_s": 5.165,
+    "status": "ok"
+   }
+  },
+  "random-n20-i11": {
+   "total_ms": 15469,
+   "stages_ms": {
+    "planarized_l1": 15469.3
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 2,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.599,
+    "row_align_rate": 0.4,
+    "runtime_s": 15.469,
+    "status": "ok"
+   }
+  },
+  "random-n20-i17": {
+   "total_ms": 13104,
+   "stages_ms": {
+    "planarized_l1": 13104.1
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 2,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 1.036,
+    "row_align_rate": 0.2,
+    "runtime_s": 13.104,
+    "status": "ok"
+   }
+  },
+  "renewable-resource": {
+   "total_ms": 910,
+   "stages_ms": {
+    "card_metrics": 18.7,
+    "mode_detection_trials": 195.5,
+    "route_final": 197.8,
+    "manual_injection": 0.0,
+    "repair:coincide": 8.1,
+    "repair:midband": 1.1,
+    "repair:fan_spread": 0.6,
+    "repair:arrival_flip_pre": 0.7,
+    "anchor_snap.gate_eval_pre": 9.6,
+    "anchor_snap.snap": 9.3,
+    "anchor_snap.gate_eval_post": 9.2,
+    "repair:lens_joint_reassign": 1.1,
+    "repair:arrival_flip_post": 0.8,
+    "delivery": 457.9
+   },
+   "stages_sum_over_total_pct": 100.04,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.0,
+    "row_align_rate": 0.4,
+    "runtime_s": 0.911,
+    "status": "ok"
+   }
+  },
+  "shifting-the-burden": {
+   "total_ms": 1133,
+   "stages_ms": {
+    "card_metrics": 18.2,
+    "mode_detection_trials": 300.8,
+    "route_final": 284.9,
+    "manual_injection": 0.0,
+    "repair:coincide": 18.8,
+    "repair:midband": 0.0,
+    "repair:fan_spread": 0.0,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 17.9,
+    "anchor_snap.snap": 12.3,
+    "anchor_snap.gate_eval_post": 20.0,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 459.9
+   },
+   "stages_sum_over_total_pct": 99.98,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.0,
+    "row_align_rate": 0.8,
+    "runtime_s": 1.133,
+    "status": "ok"
+   }
+  },
+  "soil-erosion": {
+   "total_ms": 2407,
+   "stages_ms": {
+    "card_metrics": 21.6,
+    "mode_detection_trials": 248.0,
+    "route_final": 231.8,
+    "manual_injection": 0.0,
+    "repair:coincide": 14.7,
+    "repair:midband": 0.9,
+    "repair:fan_spread": 0.3,
+    "repair:arrival_flip_pre": 1.1,
+    "anchor_snap.gate_eval_pre": 18.4,
+    "anchor_snap.snap": 7.1,
+    "anchor_snap.gate_eval_post": 18.3,
+    "repair:lens_joint_reassign": 1407.7,
+    "repair:arrival_flip_post": 1.3,
+    "delivery": 436.1
+   },
+   "stages_sum_over_total_pct": 100.01,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.272,
+    "row_align_rate": 0.667,
+    "runtime_s": 2.408,
+    "status": "ok"
+   }
+  },
+  "success-to-the-successful": {
+   "total_ms": 108893,
+   "stages_ms": {
+    "card_metrics": 19.1,
+    "mode_detection_trials": 358.6,
+    "ring_reposition": 104211.1,
+    "route_final": 865.9,
+    "manual_injection": 0.0,
+    "repair:coincide": 459.0,
+    "repair:midband": 7.2,
+    "repair:fan_spread": 4.0,
+    "repair:arrival_flip_pre": 1.4,
+    "anchor_snap.gate_eval_pre": 167.8,
+    "anchor_snap.snap": 105.0,
+    "anchor_snap.gate_eval_post": 176.4,
+    "repair:lens_joint_reassign": 1390.1,
+    "repair:arrival_flip_post": 6.4,
+    "delivery": 1121.5
+   },
+   "stages_sum_over_total_pct": 100.0,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.25,
+    "row_align_rate": 0.0,
+    "runtime_s": 108.894,
+    "status": "ok"
+   }
+  },
+  "tragedy-of-the-commons": {
+   "total_ms": 1096,
+   "stages_ms": {
+    "card_metrics": 94.1,
+    "mode_detection_trials": 127.1,
+    "route_final": 97.5,
+    "manual_injection": 0.0,
+    "repair:coincide": 12.6,
+    "repair:midband": 0.3,
+    "repair:fan_spread": 0.0,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 11.3,
+    "anchor_snap.snap": 7.3,
+    "anchor_snap.gate_eval_post": 8.7,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 737.5
+   },
+   "stages_sum_over_total_pct": 100.04,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.326,
+    "row_align_rate": 0.4,
+    "runtime_s": 1.097,
+    "status": "ok"
+   }
+  },
+  "urban-migration": {
+   "total_ms": 884,
+   "stages_ms": {
+    "card_metrics": 28.5,
+    "mode_detection_trials": 118.2,
+    "route_final": 106.2,
+    "manual_injection": 0.0,
+    "repair:coincide": 10.4,
+    "repair:midband": 0.6,
+    "repair:fan_spread": 0.5,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 14.7,
+    "anchor_snap.snap": 7.8,
+    "anchor_snap.gate_eval_post": 9.6,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 587.2
+   },
+   "stages_sum_over_total_pct": 99.97,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.275,
+    "row_align_rate": 0.5,
+    "runtime_s": 0.884,
+    "status": "ok"
+   }
+  },
+  "wage-price-spiral": {
+   "total_ms": 729,
+   "stages_ms": {
+    "card_metrics": 20.9,
+    "mode_detection_trials": 92.7,
+    "route_final": 80.6,
+    "manual_injection": 0.0,
+    "repair:coincide": 11.5,
+    "repair:midband": 0.0,
+    "repair:fan_spread": 0.0,
+    "repair:arrival_flip_pre": 0.0,
+    "anchor_snap.gate_eval_pre": 11.4,
+    "anchor_snap.snap": 3.8,
+    "anchor_snap.gate_eval_post": 12.2,
+    "repair:lens_joint_reassign": 0.0,
+    "repair:arrival_flip_post": 0.0,
+    "delivery": 496.0
+   },
+   "stages_sum_over_total_pct": 100.01,
+   "metrics": {
+    "crossings": 0,
+    "box_press": 0,
+    "clear_violations": 0,
+    "spacing_cv": 0.0,
+    "row_align_rate": 0.8,
+    "runtime_s": 0.73,
+    "status": "ok"
+   }
+  }
+ },
+ "aggregate_pct": {
+  "card_metrics": 0.11,
+  "mode_detection_trials": 1.3,
+  "route_final": 41.22,
+  "manual_injection": 0.0,
+  "repair:coincide": 0.5,
+  "repair:midband": 0.02,
+  "repair:fan_spread": 0.01,
+  "repair:arrival_flip_pre": 0.0,
+  "anchor_snap.gate_eval_pre": 0.28,
+  "anchor_snap.snap": 1.78,
+  "anchor_snap.gate_eval_post": 0.31,
+  "repair:lens_joint_reassign": 0.4,
+  "repair:arrival_flip_post": 0.01,
+  "delivery": 1.88,
+  "repair:mutual_straight": 0.0,
+  "layering": 0.0,
+  "placement_cp_sat": 0.81,
+  "polish_gated_reorder": 32.08,
+  "planarized_l1": 5.47,
+  "ring_reposition": 13.83
+ },
+ "grand_total_ms": 753785.0,
+ "aggregate_ms": {
+  "card_metrics": 807.1,
+  "mode_detection_trials": 9798.2,
+  "route_final": 310737.4,
+  "manual_injection": 0.0,
+  "repair:coincide": 3786.7,
+  "repair:midband": 139.5,
+  "repair:fan_spread": 71.4,
+  "repair:arrival_flip_pre": 7.0,
+  "anchor_snap.gate_eval_pre": 2088.3,
+  "anchor_snap.snap": 13421.9,
+  "anchor_snap.gate_eval_post": 2356.9,
+  "repair:lens_joint_reassign": 2981.2,
+  "repair:arrival_flip_post": 42.6,
+  "delivery": 14205.2,
+  "repair:mutual_straight": 2.2,
+  "layering": 0.1,
+  "placement_cp_sat": 6090.5,
+  "polish_gated_reorder": 241782.9,
+  "planarized_l1": 41252.3,
+  "ring_reposition": 104211.1
+ }
+}

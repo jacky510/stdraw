@@ -1,0 +1,17 @@
+[stdraw] anchor_snap DEFERRED (dense, E/N=1.60): 2 endpoint(s) unanchored -- pre-snap routes kept
+[stdraw] stage timing (STDRAW_TIMING=1), total 52927 ms:
+  card_metrics                     41.0 ms    0.1%
+  mode_detection_trials          1227.9 ms    2.3%
+  layering                          0.0 ms    0.0%
+  placement_cp_sat               1668.7 ms    3.2%
+  polish_gated_reorder          35723.2 ms   67.5%
+  route_final                    8964.8 ms   16.9%
+  manual_injection                  0.0 ms    0.0%
+  repair:coincide                 435.2 ms    0.8%
+  repair:midband                    6.4 ms    0.0%
+  repair:fan_spread                 6.5 ms    0.0%
+  repair:arrival_flip_pre           0.0 ms    0.0%
+  anchor_snap.gate_eval_pre       106.4 ms    0.2%
+  anchor_snap.snap               4649.7 ms    8.8%
+  anchor_snap.gate_eval_post       90.1 ms    0.2%
+  delivery                          6.8 ms    0.0%

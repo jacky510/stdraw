@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "success-to-the-successful", "n": 6, "m": 10, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 23.5, "spacing_cv": 0.25, "row_align_rate": 0.0, "runtime_s": 108.894, "bbox": [450, 404], "bbox_area": 181800, "status": "ok", "exactness": null}

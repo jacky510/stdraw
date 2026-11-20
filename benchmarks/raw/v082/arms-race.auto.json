@@ -1,0 +1,1 @@
+{"tool": "stdraw-auto", "graph": "arms-race", "n": 4, "m": 4, "crossings": 0, "box_press": 0, "clear_violations": 0, "min_edge_box_clear_px": 147.0, "spacing_cv": 0.0, "row_align_rate": 0.5, "runtime_s": 2.285, "bbox": [424, 344], "bbox_area": 145856, "status": "ok", "exactness": null}
