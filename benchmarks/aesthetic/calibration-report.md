@@ -29,10 +29,13 @@ Final adjudication = Pareto + preference ranker (Phase 3). Certificate grading
 
 ## Shape-conditional routing (2026-11-20 directive)
 
-- ① 族标签：单环→ring，多环耦合/链/星→hub；② 嵌套环与无标签图：先 hub 强度（hub_degree/n ≥ 0.81 → hub；推导式=阈值适用人群中实测空档 [0.70, 0.923] 的中点），再 degree_canvas_spearman（canvas 中心口径，≤0→ring，>0→hub）；③ ρ 退化→全局公式回退。锚点边集在测特征前已按图源补全；jacky 参考值测自仓外副本，仓内数据不可复现（270 组合搜索 0 命中）——路由只依仓内实测值，逐样本记录在 routing_log 待复核
+- ① 族标签：单环→ring，多环耦合/链/星→hub；② 嵌套环与无标签图：先 hub 强度（hub_degree/n ≥ 0.75 → hub；推导式=阈值适用人群中实测空档 [0.70, 0.80] 的中点；实测强度 induced-demand 0.80 / classic-cld 0.875 落在空档上沿，另一空档 [0.80, 0.875] 中点 0.8375 经对照实测（AUC/LOSO 全维劣于 0.75）弃选），再 degree_canvas_spearman（canvas 中心口径，≤0→ring，>0→hub）；③ ρ 退化→全局公式回退。锚点边集在测特征前已按图源补全；jacky 参考值测自仓外副本，仓内数据不可复现（270 组合搜索 0 命中）——路由只依仓内实测值，逐样本记录在 routing_log 待复核
 - hub-intensity threshold derivation: DERIVED = midpoint of the measured empty
-  band [0.70, 0.923] over the threshold-eligible (unlabeled/nested) population;
-  re-derived whenever the corpus grows (review MINOR-3)
+  gap [0.70, 0.80] over the threshold-eligible (unlabeled/nested) population
+  (measured intensities: induced-demand 0.80, classic-cld 0.875 sit right above
+  the gap; the other gap [0.80, 0.875] midpoint 0.8375 was measured worse on
+  AUC/LOSO in the counterfactual refit and rejected); re-derived whenever the
+  corpus grows (review MINOR-3, re-measured on a real run after review MAJOR-3)
 - ring model excludes: ['alignment_max_coverage'] — operator 令：行/列对齐在环族天然低（brand-flywheel 33%），权重必须为 0
 - global formula = fallback only (rho undefined / shape subset not fittable)
 
@@ -53,14 +56,14 @@ supplemented-edge measurement only.
 
 ## Headline (winning caliber: normalized — cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2))
 
-- ring: AUC=0.955556, separation=-8.7 (pos min 45.4 / neg max 54.1), n=5/18, excluded=['alignment_max_coverage']
+- ring: AUC=0.976471, separation=-6.9 (pos min 49.9 / neg max 56.8), n=5/17, excluded=['alignment_max_coverage']
   - HONESTY NOTE: ring positives do NOT fully separate from negatives under the supplemented-edge caliber (separation <= 0) — this is the honest state of the model, no threshold was tuned to mask it
-- hub: AUC=0.972727, separation=-9.0 (pos min 67.4 / neg max 76.4), n=5/22, excluded=none
+- hub: AUC=0.973913, separation=-9.2 (pos min 67.8 / neg max 77.0), n=5/23, excluded=none
   - HONESTY NOTE: hub positives do NOT fully separate from negatives under the supplemented-edge caliber (separation <= 0) — this is the honest state of the model, no threshold was tuned to mask it
 - global: AUC=0.955, separation=-47.1 (pos min 36.1 / neg max 83.2), n=10/40, excluded=none
   - HONESTY NOTE: global positives do NOT fully separate from negatives under the supplemented-edge caliber (separation <= 0) — this is the honest state of the model, no threshold was tuned to mask it
-- LOSO (shape-conditional): ring min 15.2 / hub min 57.4
-- human lower bound (recomputed per shape): {'ring': 45.4, 'hub': 67.4, 'global': 36.1}
+- LOSO (shape-conditional): ring min 17.3 / hub min 57.9
+- human lower bound (recomputed per shape): {'ring': 49.9, 'hub': 67.8, 'global': 36.1}
 - fit sample counts recorded per shape in the model; weights/bounds MUST be re-derived
   whenever the anchor library grows — nothing here is a hardcoded constant.
 
@@ -68,11 +71,11 @@ supplemented-edge measurement only.
 
 | metric | absolute px | normalized |
 |---|---|---|
-| worst-shape AUC | 0.955556 | 0.955556 |
-| worst-shape LOSO min | 0.3 | 15.2 |
+| worst-shape AUC | 0.964706 | 0.973913 |
+| worst-shape LOSO min | 1.3 | 17.3 |
 
-- Spearman across calibers: negatives 0.9968, positives 0.9786
-- cross-class ordering disagreements: 0 / 400 pairs; ranking-reversal observed: False
+- Spearman across calibers: negatives 0.9957, positives 0.9878
+- cross-class ordering disagreements: 2 / 400 pairs; ranking-reversal observed: True
 - domain declarations: absolute = same-canvas-family (~960px viewBox) only;
   normalized = cross-canvas (§15.2). Every score output carries its domain.
 
@@ -84,29 +87,29 @@ Computed under the normalized caliber (px / canvas diagonal): the table crosses
 
 | family | n_neg | neg max | pos shape | n_pos | pos min | separated |
 |---|---|---|---|---|---|---|
-| classic/单环 | 1 | 13.8 | 0 | None | False |
-| classic/多环耦合 | 11 | 45.8 | 0 | None | False |
-| classic/嵌套环 | 8 | 76.4 | 0 | None | False |
-| hub | 0 | None | 5 | 67.4 | False |
-| random-n10 | 20 | 68.2 | 0 | None | False |
-| ring | 0 | None | 5 | 45.4 | False |
+| classic/单环 | 1 | 23.1 | 0 | None | False |
+| classic/多环耦合 | 11 | 46.4 | 0 | None | False |
+| classic/嵌套环 | 8 | 77.0 | 0 | None | False |
+| hub | 0 | None | 5 | 67.8 | False |
+| random-n10 | 20 | 68.7 | 0 | None | False |
+| ring | 0 | None | 5 | 49.9 | False |
 
 ## LOSO per anchor (normalized)
 
 | held-out | shape | score |
 |---|---|---|
-| brand-flywheel | hub | 57.4 |
-| classic-cld-growth-and-burden | hub | 80.5 |
-| fan-d12 | hub | 62.2 |
-| fan-d17 | hub | 79.2 |
-| random-n10-i00 | ring | 65.0 |
-| random-n10-i05 | hub | 57.5 |
-| random-n10-i05 | ring | 85.8 |
-| random-n10-i11 | ring | 81.4 |
-| random-n10-i11 | ring | 84.4 |
-| epidemic-feedback | ring | 15.2 |
+| brand-flywheel | hub | 57.9 |
+| classic-cld-growth-and-burden | hub | 81.5 |
+| fan-d12 | hub | 62.4 |
+| fan-d17 | hub | 79.8 |
+| random-n10-i00 | ring | 63.4 |
+| random-n10-i05 | hub | 58.0 |
+| random-n10-i05 | ring | 87.2 |
+| random-n10-i11 | ring | 84.7 |
+| random-n10-i11 | ring | 86.3 |
+| epidemic-feedback | ring | 17.3 |
 
 ## i05 retest pair stability (11-16 fixture vs 11-20 redrag)
 
-- absolute: 11-16=78.6 (hub) vs 11-20=93.8 (ring), |Δ|=15.2
-- normalized: 11-16=78.6 (hub) vs 11-20=93.9 (ring), |Δ|=15.3
+- absolute: 11-16=79.2 (hub) vs 11-20=94.0 (ring), |Δ|=14.8
+- normalized: 11-16=79.2 (hub) vs 11-20=94.0 (ring), |Δ|=14.8

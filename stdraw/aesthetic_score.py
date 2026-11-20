@@ -419,7 +419,8 @@ def loso(positive_paths, negative_paths, caliber):
 #      single-cycle family -> ring;  multi-cycle-coupled / chain / star -> hub.
 #   2. nested-cycle family and unlabeled graphs — geometric, in priority order:
 #      a) hub intensity (hub_degree / n_nodes, both single-source keys)
-#         >= HUB_INTENSITY_THRESHOLD -> hub (classic-cld 0.88, fan 0.92/0.94);
+#         >= HUB_INTENSITY_THRESHOLD -> hub (measured, supplemented-edge
+#         caliber: classic-cld 0.875, fan-d12 0.923 / fan-d17 0.944);
 #      b) degree-canvas Spearman rho (canvas-centre caliber): rho <= 0 ->
 #         ring-dominant, rho > 0 -> hub+spoke (operator-measured convention).
 #      NOTE on the operator reference values: they were measured on an
@@ -454,17 +455,29 @@ SHAPE_ROUTING_FROM_FAMILY = {
 
 RHO_RING_THRESHOLD = 0.0        # rho <= threshold -> ring-dominant
 # Hub-intensity routing threshold, DERIVED not asserted (independent-review
-# MINOR-3): the threshold only applies to the unlabeled / nested-cycle
+# MINOR-3; re-derived on a real run after review MAJOR-3 found the prior 0.81
+# derivation rested on a crashed probe — the distribution had never actually
+# been measured).  The threshold only applies to the unlabeled / nested-cycle
 # population (family-labeled graphs route in step 1 and never see it).  Over
-# that population, at calibration the hub intensity (hub_degree/n) splits
-# into a low band (max 0.70: random-n10 i03/i11/i14 negatives and i11-a/b
-# anchors) and a high band (min 0.923: fan-d12; 0.944 fan-d17) with an EMPTY
-# interval [0.70, 0.923] between them; the constant is the midpoint of that
-# measured empty interval.  It MUST be re-derived whenever the corpus grows
-# (the calibration report records the measured band per run under
-# "hub_intensity_threshold_derivation"; empty-band closure would be a
-# fail-loud signal, not a silent re-route).
-HUB_INTENSITY_THRESHOLD = 0.81  # midpoint of measured empty band [0.70, 0.923]
+# that population, full corpus at calibration (supplemented-edge caliber,
+# measured distribution logged in the card evidence intensity_distribution.txt),
+# the hub intensity (hub_degree/n) measures:
+#   low band max 0.70 (random-n10 i03/i11/i14 negatives; i11-a/b anchors);
+#   induced-demand 0.80; classic-cld-growth-and-burden 0.875;
+#   high band min 0.923 (fan-d12; fan-d17 0.944).
+# The REAL empty gaps are therefore [0.70, 0.80] (midpoint 0.75) and
+# [0.80, 0.875] (midpoint 0.8375).  0.75 is chosen: the counterfactual refit
+# over both candidates (card evidence threshold_counterfactual.json) measures
+# it strictly better on every routing-affected metric — normalized ring AUC
+# 0.9765 vs 0.9556, ring LOSO min 17.3 vs 15.2, hub LOSO min 57.9 vs 57.4 —
+# while 0.8375 (routing identical to the superseded 0.81) reclassifies
+# induced-demand (0.80) hub->ring.  The choice reclassifies induced-demand
+# relative to the 0.81 snapshot (ring n_negative 18 -> 17); disclosed, not
+# tuned around.  It MUST be re-derived whenever the corpus grows (the
+# calibration report records the measured distribution per run under
+# "hub_intensity_threshold_derivation"; gap closure would be a fail-loud
+# signal, not a silent re-route).
+HUB_INTENSITY_THRESHOLD = 0.75  # midpoint of the measured empty gap [0.70, 0.80]
 
 
 def load_family_labels(path):
@@ -672,7 +685,7 @@ def calibrate_shape_conditional(positive_docs, negative_docs, caliber, labels):
             "rule": "(1) family label: single-cycle->ring, multi-cycle-coupled/"
                     "chain/star->hub; (2) nested-cycle + unlabeled: hub intensity "
                     "(hub_degree/n >= %.2f -> hub; DERIVED = midpoint of the "
-                    "measured empty band [0.70, 0.923] over the threshold-eligible "
+                    "measured empty gap [0.70, 0.80] over the threshold-eligible "
                     "population) first, then degree_canvas_spearman (canvas-centre "
                     "caliber, <=0->ring, >0->hub); (3) undefined rho -> global "
                     "fallback. Anchor edge sets are completed from the graph "
@@ -684,15 +697,31 @@ def calibrate_shape_conditional(positive_docs, negative_docs, caliber, labels):
             "rho_threshold": RHO_RING_THRESHOLD,
             "hub_intensity_threshold": HUB_INTENSITY_THRESHOLD,
             "hub_intensity_threshold_derivation": {
-                "method": "midpoint of the measured empty hub-intensity band "
+                "method": "midpoint of the measured empty hub-intensity gap "
                           "over the threshold-eligible (unlabeled/nested-cycle) "
-                          "population",
-                "measured_low_band_max": 0.70,
-                "measured_high_band_min": 0.923,
-                "empty_band": [0.70, 0.923],
+                          "population (full corpus, supplemented-edge caliber; "
+                          "measured distribution logged per run)",
+                "measured_values_around_gap": {
+                    "low_band_max": 0.70,
+                    "induced_demand": 0.80,
+                    "classic_cld_growth_and_burden": 0.875,
+                    "high_band_min": 0.923,
+                },
+                "empty_gaps": [[0.70, 0.80], [0.80, 0.875]],
+                "gap_midpoints": {"0.75": "chosen", "0.8375": "rejected"},
+                "candidate_comparison": "counterfactual refit over both gap "
+                          "midpoints: 0.75 strictly better on every "
+                          "routing-affected metric (normalized ring AUC 0.9765 "
+                          "vs 0.9556; ring LOSO min 17.3 vs 15.2; hub LOSO min "
+                          "57.9 vs 57.4); 0.8375 routing identical to the "
+                          "superseded 0.81 and reclassifies induced-demand "
+                          "hub->ring",
                 "derived_threshold": HUB_INTENSITY_THRESHOLD,
+                "reclassify_disclosure": "vs the superseded 0.81 snapshot this "
+                          "choice routes induced-demand (measured intensity "
+                          "0.80) back to hub (ring n_negative 18 -> 17)",
                 "rederive_rule": "re-measure whenever the corpus grows; "
-                                 "band closure must be reported, not tuned around",
+                                 "gap closure must be reported, not tuned around",
             },
             "family_map_source": "benchmarks/corpus/classic/topology-families.json",
             "shape_excluded_features": {k: list(v) for k, v in SHAPE_EXCLUDED_FEATURES.items()},

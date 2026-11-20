@@ -62,14 +62,14 @@
       }
     },
     "hub": {
-      "bias": -0.913753835,
+      "bias": -0.952431886,
       "caliber": "normalized",
       "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
       "fit_sample_counts": {
-        "negative": 22,
+        "negative": 23,
         "positive": 5
       },
-      "human_lower_bound": 67.4,
+      "human_lower_bound": 67.8,
       "hyper": {
         "class_balanced": true,
         "irls_iters": 50,
@@ -77,8 +77,8 @@
       },
       "impute_median": {
         "alignment_max_coverage": 0.857142857,
-        "aspect_deviation": 0.196428571,
-        "bend_total_curvature": 68.431404265
+        "aspect_deviation": 0.19680583499999998,
+        "bend_total_curvature": 63.2196191185
       },
       "names": [
         "alignment_max_coverage",
@@ -87,41 +87,41 @@
       ],
       "schema": "stdraw.aesthetic_model/v1",
       "standardize_mean": [
-        0.817209104,
-        0.393019023,
-        155.555903286
+        0.810579455,
+        0.387798181,
+        151.366597793
       ],
       "standardize_std": [
-        0.181175935,
-        0.534940161,
-        200.460563281
+        0.181215669,
+        0.526000841,
+        198.048318663
       ],
       "weights": {
-        "alignment_max_coverage": 1.191118077,
-        "aspect_deviation": 0.183170895,
-        "bend_total_curvature": -1.385754574
+        "alignment_max_coverage": 1.239429297,
+        "aspect_deviation": 0.189932293,
+        "bend_total_curvature": -1.386562306
       }
     },
     "ring": {
-      "bias": -0.698727217,
+      "bias": -0.664737616,
       "caliber": "normalized",
       "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
       "fit_sample_counts": {
-        "negative": 18,
+        "negative": 17,
         "positive": 5
       },
-      "human_lower_bound": 45.4,
+      "human_lower_bound": 49.9,
       "hyper": {
         "class_balanced": true,
         "irls_iters": 50,
         "l2": 1.0
       },
       "impute_median": {
-        "bend_soft_margin": 0.00270465311546357,
-        "bend_total_curvature": 391.785430105,
+        "bend_soft_margin": 0.002634875102927838,
+        "bend_total_curvature": 407.08289343900003,
         "crossing_count": 1.0,
-        "hub_centroid_px": 0.15261046212241014,
-        "hub_centroid_ratio": 0.152610462
+        "hub_centroid_px": 0.14819488923308394,
+        "hub_centroid_ratio": 0.148194889
       },
       "names": [
         "bend_soft_margin",
@@ -132,44 +132,60 @@
       ],
       "schema": "stdraw.aesthetic_model/v1",
       "standardize_mean": [
-        0.013110097,
-        324.364927871,
-        1.869565217,
-        0.162617559,
-        0.162617559
+        0.011800274,
+        337.369908707,
+        1.954545455,
+        0.159790684,
+        0.159790684
       ],
       "standardize_std": [
-        0.039561269,
-        266.213310687,
-        2.490055837,
-        0.083245657,
-        0.083245657
+        0.039959668,
+        264.954505157,
+        2.513188354,
+        0.084029959,
+        0.084029959
       ],
       "weights": {
-        "bend_soft_margin": -0.58685659,
-        "bend_total_curvature": -1.031272372,
-        "crossing_count": -0.986240968,
-        "hub_centroid_px": -0.373120253,
-        "hub_centroid_ratio": -0.373120251
+        "bend_soft_margin": -0.507934715,
+        "bend_total_curvature": -1.113915369,
+        "crossing_count": -1.002811928,
+        "hub_centroid_px": -0.332413898,
+        "hub_centroid_ratio": -0.332413896
       }
     }
   },
   "routing": {
     "family_map_source": "benchmarks/corpus/classic/topology-families.json",
-    "hub_intensity_threshold": 0.81,
+    "hub_intensity_threshold": 0.75,
     "hub_intensity_threshold_derivation": {
-      "derived_threshold": 0.81,
-      "empty_band": [
-        0.7,
-        0.923
+      "candidate_comparison": "counterfactual refit over both gap midpoints: 0.75 strictly better on every routing-affected metric (normalized ring AUC 0.9765 vs 0.9556; ring LOSO min 17.3 vs 15.2; hub LOSO min 57.9 vs 57.4); 0.8375 routing identical to the superseded 0.81 and reclassifies induced-demand hub->ring",
+      "derived_threshold": 0.75,
+      "empty_gaps": [
+        [
+          0.7,
+          0.8
+        ],
+        [
+          0.8,
+          0.875
+        ]
       ],
-      "measured_high_band_min": 0.923,
-      "measured_low_band_max": 0.7,
-      "method": "midpoint of the measured empty hub-intensity band over the threshold-eligible (unlabeled/nested-cycle) population",
-      "rederive_rule": "re-measure whenever the corpus grows; band closure must be reported, not tuned around"
+      "gap_midpoints": {
+        "0.75": "chosen",
+        "0.8375": "rejected"
+      },
+      "measured_values_around_gap": {
+        "classic_cld_growth_and_burden": 0.875,
+        "high_band_min": 0.923,
+        "induced_demand": 0.8,
+        "low_band_max": 0.7
+      },
+      "method": "midpoint of the measured empty hub-intensity gap over the threshold-eligible (unlabeled/nested-cycle) population (full corpus, supplemented-edge caliber; measured distribution logged per run)",
+      "reclassify_disclosure": "vs the superseded 0.81 snapshot this choice routes induced-demand (measured intensity 0.80) back to hub (ring n_negative 18 -> 17)",
+      "rederive_rule": "re-measure whenever the corpus grows; gap closure must be reported, not tuned around"
     },
     "rho_threshold": 0.0,
-    "rule": "(1) family label: single-cycle->ring, multi-cycle-coupled/chain/star->hub; (2) nested-cycle + unlabeled: hub intensity (hub_degree/n >= 0.81 -> hub; DERIVED = midpoint of the measured empty band [0.70, 0.923] over the threshold-eligible population) first, then degree_canvas_spearman (canvas-centre caliber, <=0->ring, >0->hub); (3) undefined rho -> global fallback. Anchor edge sets are completed from the graph source before any feature is measured (review MAJOR-1); operator reference rho values are out-of-repo and not reproducible in-repo — routing follows in-repo measurements, logged per-sample in routing_log",
+    "rule": "(1) family label: single-cycle->ring, multi-cycle-coupled/chain/star->hub; (2) nested-cycle + unlabeled: hub intensity (hub_degree/n >= 0.75 -> hub; DERIVED = midpoint of the measured empty gap [0.70, 0.80] over the threshold-eligible population) first, then degree_canvas_spearman (canvas-centre caliber, <=0->ring, >0->hub); (3) undefined rho -> global fallback. Anchor edge sets are completed from the graph source before any feature is measured (review MAJOR-1); operator reference rho values are out-of-repo and not reproducible in-repo — routing follows in-repo measurements, logged per-sample in routing_log",
     "shape_excluded_features": {
       "global": [],
       "hub": [],

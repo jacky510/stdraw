@@ -104,9 +104,22 @@ def test_routing_hub_intensity_before_rho():
     labels = _labels()
     row = {"layout_n_nodes": 8, "hub_degree": 7, "degree_canvas_spearman": -0.5}
     assert route_shape("classic-cld-growth-and-burden", row, labels) == "hub"
-    # DERIVED threshold: midpoint of the measured empty band [0.70, 0.923]
-    assert HUB_INTENSITY_THRESHOLD == 0.81
+    # DERIVED threshold (review MAJOR-3: re-measured on a real run): midpoint
+    # of the measured empty gap [0.70, 0.80] in the threshold-eligible
+    # population — induced-demand (0.80) and classic-cld (0.875) sit above it,
+    # so the superseded "empty band [0.70, 0.923]" claim is gone.
+    assert HUB_INTENSITY_THRESHOLD == 0.75
     assert RHO_RING_THRESHOLD == 0.0
+
+
+def test_routing_induced_demand_real_measurement():
+    # Real-corpus behavior (supplemented-edge caliber): induced-demand measures
+    # hub_degree/n = 0.80 with rho = -0.289 — the threshold routes it HUB
+    # before rho could route it ring.  This pins the honest reclassification
+    # consequence of the 0.75 choice (vs the superseded 0.81 snapshot).
+    labels = _labels()
+    row = {"layout_n_nodes": 5, "hub_degree": 4, "degree_canvas_spearman": -0.289}
+    assert route_shape("induced-demand", row, labels) == "hub"
 
 
 def test_routing_degenerate_falls_back_global():
