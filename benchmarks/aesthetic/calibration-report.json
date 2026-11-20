@@ -355,303 +355,403 @@
       "routing_log": [
         {
           "graph": "brand-flywheel",
+          "hub_intensity": 0.6666666666666666,
           "kind": "positive",
           "path": "brand-flywheel-manual-layout.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "classic-cld-growth-and-burden",
+          "hub_intensity": 0.875,
           "kind": "positive",
           "path": "classic-cld-manual-layout.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "fan-d12",
+          "hub_intensity": 0.9230769230769231,
           "kind": "positive",
           "path": "fan-d12-manual-layout.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "fan-d17",
+          "hub_intensity": 0.9444444444444444,
           "kind": "positive",
           "path": "fan-d17-manual-layout.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i00",
+          "hub_intensity": 0.6,
           "kind": "positive",
           "path": "random-n10-i00-manual-layout.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
           "kind": "positive",
           "path": "random-n10-i05-manual-layout.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
           "kind": "positive",
           "path": "i05.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
           "kind": "positive",
           "path": "i11-a.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
           "kind": "positive",
           "path": "i11-b.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "epidemic-feedback",
+          "hub_intensity": 0.5,
           "kind": "positive",
           "path": "epidemic-feedback-manual-layout.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "arms-race",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "arms-race.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": false
         },
         {
           "graph": "brand-flywheel",
+          "hub_intensity": 0.6666666666666666,
           "kind": "negative",
           "path": "brand-flywheel.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "bullwhip",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "bullwhip.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "burnout-attrition",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "burnout-attrition.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "classic-cld-growth-and-burden",
+          "hub_intensity": 0.875,
           "kind": "negative",
           "path": "classic-cld-growth-and-burden.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "debt-spiral",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "debt-spiral.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "eroding-goals",
+          "hub_intensity": 0.8,
           "kind": "negative",
           "path": "eroding-goals.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "fishing-collapse",
+          "hub_intensity": 1.0,
           "kind": "negative",
           "path": "fishing-collapse.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "fixes-that-fail",
+          "hub_intensity": 0.75,
           "kind": "negative",
           "path": "fixes-that-fail.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "induced-demand",
+          "hub_intensity": 0.8,
           "kind": "negative",
           "path": "induced-demand.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "learning-flywheel",
+          "hub_intensity": 0.75,
           "kind": "negative",
           "path": "learning-flywheel.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "limits-to-growth",
+          "hub_intensity": 0.8,
           "kind": "negative",
           "path": "limits-to-growth.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "population-logistic",
+          "hub_intensity": 1.25,
           "kind": "negative",
           "path": "population-logistic.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i00",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i00.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i01",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i01.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i02",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i02.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i03",
+          "hub_intensity": 0.7,
           "kind": "negative",
           "path": "random-n10-i03.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i04",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i04.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
           "kind": "negative",
           "path": "random-n10-i05.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i06",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i06.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i07",
+          "hub_intensity": 0.4,
           "kind": "negative",
           "path": "random-n10-i07.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i08",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i08.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i09",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i09.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i10",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i10.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
           "kind": "negative",
           "path": "random-n10-i11.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i12",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i12.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i13",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i13.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i14",
+          "hub_intensity": 0.7,
           "kind": "negative",
           "path": "random-n10-i14.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i15",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i15.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i16",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i16.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i17",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i17.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i18",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i18.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i19",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i19.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "renewable-resource",
+          "hub_intensity": 0.8,
           "kind": "negative",
           "path": "renewable-resource.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "shifting-the-burden",
+          "hub_intensity": 1.2,
           "kind": "negative",
           "path": "shifting-the-burden.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "soil-erosion",
+          "hub_intensity": 0.6666666666666666,
           "kind": "negative",
           "path": "soil-erosion.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "success-to-the-successful",
+          "hub_intensity": 0.6666666666666666,
           "kind": "negative",
           "path": "success-to-the-successful.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "tragedy-of-the-commons",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "tragedy-of-the-commons.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "urban-migration",
+          "hub_intensity": 0.6666666666666666,
           "kind": "negative",
           "path": "urban-migration.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "wage-price-spiral",
+          "hub_intensity": 0.8,
           "kind": "negative",
           "path": "wage-price-spiral.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         }
       ],
       "shapes": {
@@ -1510,303 +1610,403 @@
       "routing_log": [
         {
           "graph": "brand-flywheel",
+          "hub_intensity": 0.6666666666666666,
           "kind": "positive",
           "path": "brand-flywheel-manual-layout.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "classic-cld-growth-and-burden",
+          "hub_intensity": 0.875,
           "kind": "positive",
           "path": "classic-cld-manual-layout.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "fan-d12",
+          "hub_intensity": 0.9230769230769231,
           "kind": "positive",
           "path": "fan-d12-manual-layout.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "fan-d17",
+          "hub_intensity": 0.9444444444444444,
           "kind": "positive",
           "path": "fan-d17-manual-layout.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i00",
+          "hub_intensity": 0.6,
           "kind": "positive",
           "path": "random-n10-i00-manual-layout.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
           "kind": "positive",
           "path": "random-n10-i05-manual-layout.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
           "kind": "positive",
           "path": "i05.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
           "kind": "positive",
           "path": "i11-a.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
           "kind": "positive",
           "path": "i11-b.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "epidemic-feedback",
+          "hub_intensity": 0.5,
           "kind": "positive",
           "path": "epidemic-feedback-manual-layout.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "arms-race",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "arms-race.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": false
         },
         {
           "graph": "brand-flywheel",
+          "hub_intensity": 0.6666666666666666,
           "kind": "negative",
           "path": "brand-flywheel.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "bullwhip",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "bullwhip.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "burnout-attrition",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "burnout-attrition.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "classic-cld-growth-and-burden",
+          "hub_intensity": 0.875,
           "kind": "negative",
           "path": "classic-cld-growth-and-burden.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "debt-spiral",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "debt-spiral.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "eroding-goals",
+          "hub_intensity": 0.8,
           "kind": "negative",
           "path": "eroding-goals.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "fishing-collapse",
+          "hub_intensity": 1.0,
           "kind": "negative",
           "path": "fishing-collapse.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "fixes-that-fail",
+          "hub_intensity": 0.75,
           "kind": "negative",
           "path": "fixes-that-fail.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "induced-demand",
+          "hub_intensity": 0.8,
           "kind": "negative",
           "path": "induced-demand.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "learning-flywheel",
+          "hub_intensity": 0.75,
           "kind": "negative",
           "path": "learning-flywheel.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "limits-to-growth",
+          "hub_intensity": 0.8,
           "kind": "negative",
           "path": "limits-to-growth.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "population-logistic",
+          "hub_intensity": 1.25,
           "kind": "negative",
           "path": "population-logistic.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i00",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i00.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i01",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i01.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i02",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i02.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i03",
+          "hub_intensity": 0.7,
           "kind": "negative",
           "path": "random-n10-i03.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i04",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i04.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
           "kind": "negative",
           "path": "random-n10-i05.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i06",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i06.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i07",
+          "hub_intensity": 0.4,
           "kind": "negative",
           "path": "random-n10-i07.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i08",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i08.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i09",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i09.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i10",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i10.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
           "kind": "negative",
           "path": "random-n10-i11.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i12",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i12.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i13",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i13.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i14",
+          "hub_intensity": 0.7,
           "kind": "negative",
           "path": "random-n10-i14.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i15",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i15.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i16",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i16.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i17",
+          "hub_intensity": 0.5,
           "kind": "negative",
           "path": "random-n10-i17.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i18",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i18.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "random-n10-i19",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "random-n10-i19.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "renewable-resource",
+          "hub_intensity": 0.8,
           "kind": "negative",
           "path": "renewable-resource.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "shifting-the-burden",
+          "hub_intensity": 1.2,
           "kind": "negative",
           "path": "shifting-the-burden.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "soil-erosion",
+          "hub_intensity": 0.6666666666666666,
           "kind": "negative",
           "path": "soil-erosion.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": true
         },
         {
           "graph": "success-to-the-successful",
+          "hub_intensity": 0.6666666666666666,
           "kind": "negative",
           "path": "success-to-the-successful.json",
-          "shape": "ring"
+          "shape": "ring",
+          "threshold_eligible": true
         },
         {
           "graph": "tragedy-of-the-commons",
+          "hub_intensity": 0.6,
           "kind": "negative",
           "path": "tragedy-of-the-commons.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "urban-migration",
+          "hub_intensity": 0.6666666666666666,
           "kind": "negative",
           "path": "urban-migration.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         },
         {
           "graph": "wage-price-spiral",
+          "hub_intensity": 0.8,
           "kind": "negative",
           "path": "wage-price-spiral.json",
-          "shape": "hub"
+          "shape": "hub",
+          "threshold_eligible": false
         }
       ],
       "shapes": {
@@ -2563,7 +2763,72 @@
   "shape_routing": {
     "hub_intensity_threshold": 0.75,
     "hub_intensity_threshold_derivation": {
-      "candidate_comparison": "counterfactual refit over both gap midpoints: 0.75 strictly better on every routing-affected metric (normalized ring AUC 0.9765 vs 0.9556; ring LOSO min 17.3 vs 15.2; hub LOSO min 57.9 vs 57.4); 0.8375 routing identical to the superseded 0.81 and reclassifies induced-demand hub->ring",
+      "candidate_comparison": {
+        "normalized": {
+          "global": {
+            "note": "global fallback does not depend on the threshold",
+            "score_auc": [
+              0.955,
+              0.955
+            ],
+            "separation_margin": [
+              -47.1,
+              -47.1
+            ]
+          },
+          "hub": {
+            "loso_min": [
+              57.9,
+              57.4
+            ],
+            "negative_scores_max": [
+              77.0,
+              76.4
+            ],
+            "positive_scores_min": [
+              67.8,
+              67.4
+            ],
+            "score_auc": [
+              0.973913,
+              0.972727
+            ],
+            "separation_margin": [
+              -9.2,
+              -9.0
+            ]
+          },
+          "ring": {
+            "loso_min": [
+              17.3,
+              15.2
+            ],
+            "negative_scores_max": [
+              56.8,
+              54.1
+            ],
+            "positive_scores_min": [
+              49.9,
+              45.4
+            ],
+            "score_auc": [
+              0.976471,
+              0.955556
+            ],
+            "separation_margin": [
+              -6.9,
+              -8.7
+            ]
+          }
+        },
+        "routing_note": "0.8375 routing identical to the superseded 0.81 per-sample; 0.75 reclassifies induced-demand (0.80) hub->ring",
+        "source": "counterfactual refit over both gap midpoints (threshold-only difference; card evidence threshold_counterfactual.json — same numbers)",
+        "values_are": [
+          "0.75 (chosen)",
+          "0.8375 (rejected)"
+        ],
+        "verdict": "0.75 better on the headline dims (norm ring AUC/sep/pos_min/LOSO, norm hub AUC/pos_min/LOSO); 0.8375 better on three (hub separation_margin -9.0 vs -9.2, hub negative_scores_max 76.4 vs 77.0, ring negative_scores_max 54.1 vs 56.8; absolute ring neg-max 49.7 vs 50.3) — 0.75 is NOT strictly better on every metric; the choice rests on the headline AUC/LOSO advantage"
+      },
       "derived_threshold": 0.75,
       "empty_gaps": [
         [
@@ -2579,21 +2844,41 @@
         "0.75": "chosen",
         "0.8375": "rejected"
       },
+      "measured_distribution_this_run": {
+        "normalized": {
+          "eligible_count": 38,
+          "gap_checked": "(0.70, 0.80) open at this run",
+          "sorted_unique": [
+            0.4,
+            0.5,
+            0.6,
+            0.666667,
+            0.7,
+            0.8,
+            0.875,
+            0.923077,
+            0.944444,
+            1.0,
+            1.2,
+            1.25
+          ]
+        }
+      },
       "measured_values_around_gap": {
         "classic_cld_growth_and_burden": 0.875,
         "high_band_min": 0.923,
         "induced_demand": 0.8,
         "low_band_max": 0.7
       },
-      "method": "midpoint of the measured empty hub-intensity gap over the threshold-eligible (unlabeled/nested-cycle) population (full corpus, supplemented-edge caliber; measured distribution logged per run)",
+      "method": "midpoint of the measured empty hub-intensity gap over the threshold-eligible (unlabeled/nested-cycle) population (full corpus, supplemented-edge caliber). HAND-DERIVED, not auto-recomputed: every calibration run logs the per-sample intensity (routing_log \"hub_intensity\"; the calibration report carries measured_distribution_this_run) and check_hub_intensity_gap() RAISES if a threshold-eligible value lands strictly inside the (0.70, 0.80) gap — fail-loud, never a silent re-route on a stale derivation",
       "reclassify_disclosure": "vs the superseded 0.81 snapshot this choice routes induced-demand (measured intensity 0.80) back to hub (ring n_negative 18 -> 17)",
-      "rederive_rule": "re-measure whenever the corpus grows; gap closure must be reported, not tuned around"
+      "rederive_rule": "re-measure whenever the corpus grows; gap closure raises via check_hub_intensity_gap() (fail-loud), never tuned around"
     },
     "rho_threshold": 0.0,
     "ring_excluded_features": [
       "alignment_max_coverage"
     ],
     "ring_exclusion_rationale": "operator 令：行/列对齐在环族天然低（brand-flywheel 33%），权重必须为 0",
-    "rule": "① 族标签：单环→ring，多环耦合/链/星→hub；② 嵌套环与无标签图：先 hub 强度（hub_degree/n ≥ 0.75 → hub；推导式=阈值适用人群中实测空档 [0.70, 0.80] 的中点；实测强度 induced-demand 0.80 / classic-cld 0.875 落在空档上沿，另一空档 [0.80, 0.875] 中点 0.8375 经对照实测（AUC/LOSO 全维劣于 0.75）弃选），再 degree_canvas_spearman（canvas 中心口径，≤0→ring，>0→hub）；③ ρ 退化→全局公式回退。锚点边集在测特征前已按图源补全；jacky 参考值测自仓外副本，仓内数据不可复现（270 组合搜索 0 命中）——路由只依仓内实测值，逐样本记录在 routing_log 待复核"
+    "rule": "① 族标签：单环→ring，多环耦合/链/星→hub；② 嵌套环与无标签图：先 hub 强度（hub_degree/n ≥ 0.75 → hub；推导式=阈值适用人群中实测空档 [0.70, 0.80] 的中点；实测强度 induced-demand 0.80 / classic-cld 0.875 落在空档上沿，另一空档 [0.80, 0.875] 中点 0.8375 弃选：headline AUC/LOSO 劣于 0.75，但 0.75 在 hub sep、hub/ring neg_max 三项略让步——全维对照见 candidate_comparison，不许选择性省列），再 degree_canvas_spearman（canvas 中心口径，≤0→ring，>0→hub）；③ ρ 退化→全局公式回退。锚点边集在测特征前已按图源补全；jacky 参考值测自仓外副本，仓内数据不可复现（270 组合搜索 0 命中）——路由只依仓内实测值，逐样本记录在 routing_log 待复核"
   }
 }

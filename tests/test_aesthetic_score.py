@@ -21,8 +21,10 @@ from stdraw.aesthetic_score import (  # noqa: E402
     HUB_INTENSITY_THRESHOLD,
     RHO_RING_THRESHOLD,
     SCALAR_SPECS,
+    check_hub_intensity_gap,
     extract_scalars,
     calibrate,
+    hub_intensity_of,
     route_shape,
     scalars_for_layout,
     score_layout,
@@ -285,3 +287,46 @@ def test_certificate_never_reads_score():
     for mod in ("gates.py", "recipes.py", "delivery.py", "check.py"):
         src = (REPO / "stdraw" / mod).read_text(encoding="utf-8")
         assert "aesthetic" not in src.lower(), mod
+
+
+# ── fail-loud threshold derivation guard (review MAJOR-2) ──
+
+def test_gap_guard_raises_on_gap_closure():
+    # A threshold-eligible sample measuring strictly inside the (0.70, 0.80)
+    # empty gap means the hand-derived 0.75 is stale -> calibration must
+    # abort, never silently keep routing by 0.75.
+    log = [{"threshold_eligible": True, "hub_intensity": 0.74, "shape": "ring"}]
+    with pytest.raises(AestheticError):
+        check_hub_intensity_gap(log)
+
+
+def test_gap_guard_boundaries_and_ineligible_pass():
+    # Boundary values (0.70 / 0.80 themselves) do NOT close the gap; family-
+    # labeled samples never see the threshold and are exempt even at 0.74.
+    log = [{"threshold_eligible": True, "hub_intensity": 0.70, "shape": "ring"},
+           {"threshold_eligible": True, "hub_intensity": 0.80, "shape": "hub"},
+           {"threshold_eligible": False, "hub_intensity": 0.74, "shape": "hub"},
+           {"threshold_eligible": True, "hub_intensity": None, "shape": "global"}]
+    assert check_hub_intensity_gap(log) == []
+    assert hub_intensity_of({"layout_n_nodes": 5, "hub_degree": 4}) == 0.8
+    assert hub_intensity_of({"layout_n_nodes": 0, "hub_degree": None}) is None
+
+
+def test_products_carry_intensity_log_and_full_comparison():
+    # The committed products must reflect the real mechanism: per-sample
+    # intensities in routing_log, a per-run measured distribution, and a
+    # full-dimension candidate comparison (incl. the sep dims 0.75 concedes).
+    model = _load(MODEL)
+    report = _load(REPORT)
+    der_m = model["routing"]["hub_intensity_threshold_derivation"]
+    der_r = report["shape_routing"]["hub_intensity_threshold_derivation"]
+    log = report["calibers"]["normalized"]["routing_log"]
+    assert log and all("hub_intensity" in e and "threshold_eligible" in e
+                       for e in log)
+    assert "measured_distribution_this_run" in der_r
+    for der in (der_m, der_r):
+        comp = der["candidate_comparison"]
+        assert isinstance(comp, dict)  # structured, not a prose claim
+        assert "separation_margin" in comp["normalized"]["hub"]
+        assert "separation_margin" in comp["normalized"]["ring"]
+        assert "NOT strictly better" in comp["verdict"]  # honest concession pin

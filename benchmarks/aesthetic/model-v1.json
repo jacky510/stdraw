@@ -158,7 +158,72 @@
     "family_map_source": "benchmarks/corpus/classic/topology-families.json",
     "hub_intensity_threshold": 0.75,
     "hub_intensity_threshold_derivation": {
-      "candidate_comparison": "counterfactual refit over both gap midpoints: 0.75 strictly better on every routing-affected metric (normalized ring AUC 0.9765 vs 0.9556; ring LOSO min 17.3 vs 15.2; hub LOSO min 57.9 vs 57.4); 0.8375 routing identical to the superseded 0.81 and reclassifies induced-demand hub->ring",
+      "candidate_comparison": {
+        "normalized": {
+          "global": {
+            "note": "global fallback does not depend on the threshold",
+            "score_auc": [
+              0.955,
+              0.955
+            ],
+            "separation_margin": [
+              -47.1,
+              -47.1
+            ]
+          },
+          "hub": {
+            "loso_min": [
+              57.9,
+              57.4
+            ],
+            "negative_scores_max": [
+              77.0,
+              76.4
+            ],
+            "positive_scores_min": [
+              67.8,
+              67.4
+            ],
+            "score_auc": [
+              0.973913,
+              0.972727
+            ],
+            "separation_margin": [
+              -9.2,
+              -9.0
+            ]
+          },
+          "ring": {
+            "loso_min": [
+              17.3,
+              15.2
+            ],
+            "negative_scores_max": [
+              56.8,
+              54.1
+            ],
+            "positive_scores_min": [
+              49.9,
+              45.4
+            ],
+            "score_auc": [
+              0.976471,
+              0.955556
+            ],
+            "separation_margin": [
+              -6.9,
+              -8.7
+            ]
+          }
+        },
+        "routing_note": "0.8375 routing identical to the superseded 0.81 per-sample; 0.75 reclassifies induced-demand (0.80) hub->ring",
+        "source": "counterfactual refit over both gap midpoints (threshold-only difference; card evidence threshold_counterfactual.json — same numbers)",
+        "values_are": [
+          "0.75 (chosen)",
+          "0.8375 (rejected)"
+        ],
+        "verdict": "0.75 better on the headline dims (norm ring AUC/sep/pos_min/LOSO, norm hub AUC/pos_min/LOSO); 0.8375 better on three (hub separation_margin -9.0 vs -9.2, hub negative_scores_max 76.4 vs 77.0, ring negative_scores_max 54.1 vs 56.8; absolute ring neg-max 49.7 vs 50.3) — 0.75 is NOT strictly better on every metric; the choice rests on the headline AUC/LOSO advantage"
+      },
       "derived_threshold": 0.75,
       "empty_gaps": [
         [
@@ -180,9 +245,9 @@
         "induced_demand": 0.8,
         "low_band_max": 0.7
       },
-      "method": "midpoint of the measured empty hub-intensity gap over the threshold-eligible (unlabeled/nested-cycle) population (full corpus, supplemented-edge caliber; measured distribution logged per run)",
+      "method": "midpoint of the measured empty hub-intensity gap over the threshold-eligible (unlabeled/nested-cycle) population (full corpus, supplemented-edge caliber). HAND-DERIVED, not auto-recomputed: every calibration run logs the per-sample intensity (routing_log \"hub_intensity\"; the calibration report carries measured_distribution_this_run) and check_hub_intensity_gap() RAISES if a threshold-eligible value lands strictly inside the (0.70, 0.80) gap — fail-loud, never a silent re-route on a stale derivation",
       "reclassify_disclosure": "vs the superseded 0.81 snapshot this choice routes induced-demand (measured intensity 0.80) back to hub (ring n_negative 18 -> 17)",
-      "rederive_rule": "re-measure whenever the corpus grows; gap closure must be reported, not tuned around"
+      "rederive_rule": "re-measure whenever the corpus grows; gap closure raises via check_hub_intensity_gap() (fail-loud), never tuned around"
     },
     "rho_threshold": 0.0,
     "rule": "(1) family label: single-cycle->ring, multi-cycle-coupled/chain/star->hub; (2) nested-cycle + unlabeled: hub intensity (hub_degree/n >= 0.75 -> hub; DERIVED = midpoint of the measured empty gap [0.70, 0.80] over the threshold-eligible population) first, then degree_canvas_spearman (canvas-centre caliber, <=0->ring, >0->hub); (3) undefined rho -> global fallback. Anchor edge sets are completed from the graph source before any feature is measured (review MAJOR-1); operator reference rho values are out-of-repo and not reproducible in-repo — routing follows in-repo measurements, logged per-sample in routing_log",

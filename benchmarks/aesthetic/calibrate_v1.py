@@ -38,6 +38,7 @@ from stdraw.aesthetic_score import (  # noqa: E402
     SHAPES,
     calibrate_shape_conditional,
     graph_name_of,
+    hub_intensity_threshold_derivation,
     load_family_labels,
     loso_shape_conditional,
     merge_layout_edges,
@@ -188,40 +189,16 @@ def main():
             "rule": "① 族标签：单环→ring，多环耦合/链/星→hub；② 嵌套环与无标签图：先 hub 强度"
                     "（hub_degree/n ≥ %.2f → hub；推导式=阈值适用人群中实测空档 [0.70, 0.80] "
                     "的中点；实测强度 induced-demand 0.80 / classic-cld 0.875 落在空档上沿，"
-                    "另一空档 [0.80, 0.875] 中点 0.8375 经对照实测（AUC/LOSO 全维劣于 0.75）弃选），"
+                    "另一空档 [0.80, 0.875] 中点 0.8375 弃选：headline AUC/LOSO 劣于 0.75，"
+                    "但 0.75 在 hub sep、hub/ring neg_max 三项略让步——全维对照见 "
+                    "candidate_comparison，不许选择性省列），"
                     "再 degree_canvas_spearman（canvas 中心口径，≤0→ring，>0→hub）；"
                     "③ ρ 退化→全局公式回退。锚点边集在测特征前已按图源补全；jacky 参考值测自"
                     "仓外副本，仓内数据不可复现（270 组合搜索 0 命中）——路由只依仓内实测值，"
                     "逐样本记录在 routing_log 待复核" % HUB_INTENSITY_THRESHOLD,
             "rho_threshold": 0.0,
             "hub_intensity_threshold": HUB_INTENSITY_THRESHOLD,
-            "hub_intensity_threshold_derivation": {
-                "method": "midpoint of the measured empty hub-intensity gap "
-                          "over the threshold-eligible (unlabeled/nested-cycle) "
-                          "population (full corpus, supplemented-edge caliber; "
-                          "measured distribution logged per run)",
-                "measured_values_around_gap": {
-                    "low_band_max": 0.70,
-                    "induced_demand": 0.80,
-                    "classic_cld_growth_and_burden": 0.875,
-                    "high_band_min": 0.923,
-                },
-                "empty_gaps": [[0.70, 0.80], [0.80, 0.875]],
-                "gap_midpoints": {"0.75": "chosen", "0.8375": "rejected"},
-                "candidate_comparison": "counterfactual refit over both gap "
-                          "midpoints: 0.75 strictly better on every "
-                          "routing-affected metric (normalized ring AUC 0.9765 "
-                          "vs 0.9556; ring LOSO min 17.3 vs 15.2; hub LOSO min "
-                          "57.9 vs 57.4); 0.8375 routing identical to the "
-                          "superseded 0.81 and reclassifies induced-demand "
-                          "hub->ring",
-                "derived_threshold": HUB_INTENSITY_THRESHOLD,
-                "reclassify_disclosure": "vs the superseded 0.81 snapshot this "
-                          "choice routes induced-demand (measured intensity "
-                          "0.80) back to hub (ring n_negative 18 -> 17)",
-                "rederive_rule": "re-measure whenever the corpus grows; gap "
-                                 "closure must be reported, not tuned around",
-            },
+            "hub_intensity_threshold_derivation": hub_intensity_threshold_derivation(),
             "ring_excluded_features": list(SHAPE_EXCLUDED_FEATURES["ring"]),
             "ring_exclusion_rationale": "operator 令：行/列对齐在环族天然低（brand-flywheel 33%），权重必须为 0",
         },
@@ -264,6 +241,24 @@ def main():
     for caliber in CALIBERS:
         composite, stats = calibrate_shape_conditional(pos_docs, neg_docs, caliber, labels)
         l = loso_shape_conditional(pos_docs, neg_docs, caliber, labels)
+        # Per-run intensity distribution of the threshold-eligible population
+        # (review MAJOR-2: this is what "logged per run" actually means now —
+        # check_hub_intensity_gap() already ran inside
+        # calibrate_shape_conditional and raised on gap closure).
+        elig = sorted({round(e["hub_intensity"], 6)
+                       for e in stats["routing_log"]
+                       if e.get("threshold_eligible")
+                       and e.get("hub_intensity") is not None})
+        report["shape_routing"]["hub_intensity_threshold_derivation"][
+            "measured_distribution_this_run"] = {
+                caliber: {
+                    "eligible_count": len([e for e in stats["routing_log"]
+                                           if e.get("threshold_eligible")
+                                           and e.get("hub_intensity") is not None]),
+                    "sorted_unique": elig,
+                    "gap_checked": "(0.70, 0.80) open at this run",
+                }
+            }
         pos_named = {}
         for p, doc in pos_docs:
             g = doc.get("graph") or graph_name_of(p)
@@ -444,9 +439,15 @@ def _render_md(report, winner):
         "- hub-intensity threshold derivation: DERIVED = midpoint of the measured empty",
         "  gap [0.70, 0.80] over the threshold-eligible (unlabeled/nested) population",
         "  (measured intensities: induced-demand 0.80, classic-cld 0.875 sit right above",
-        "  the gap; the other gap [0.80, 0.875] midpoint 0.8375 was measured worse on",
-        "  AUC/LOSO in the counterfactual refit and rejected); re-derived whenever the",
-        "  corpus grows (review MINOR-3, re-measured on a real run after review MAJOR-3)",
+        "  the gap); the other gap [0.80, 0.875] midpoint 0.8375 was rejected: headline",
+        "  AUC/LOSO favored 0.75, though 0.75 concedes three dims (hub separation, hub/ring",
+        "  neg-max) — full per-dimension table incl. sep columns: candidate_comparison in",
+        "  calibration-report.json; re-derived whenever the corpus grows (review MINOR-3,",
+        "  re-measured on a real run after review MAJOR-3)",
+        "- fail-loud guard (review MAJOR-2): 0.75 is hand-derived, so every calibration run",
+        "  logs per-sample intensities (routing_log hub_intensity; derivation block carries",
+        "  measured_distribution_this_run) and RAISES if a threshold-eligible value lands",
+        "  strictly inside the (0.70, 0.80) gap — no silent re-route on a stale derivation",
         "- ring model excludes: %s — %s" % (report["shape_routing"]["ring_excluded_features"],
                                             report["shape_routing"]["ring_exclusion_rationale"]),
         "- global formula = fallback only (rho undefined / shape subset not fittable)",

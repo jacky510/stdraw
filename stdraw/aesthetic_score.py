@@ -466,18 +466,145 @@ RHO_RING_THRESHOLD = 0.0        # rho <= threshold -> ring-dominant
 #   induced-demand 0.80; classic-cld-growth-and-burden 0.875;
 #   high band min 0.923 (fan-d12; fan-d17 0.944).
 # The REAL empty gaps are therefore [0.70, 0.80] (midpoint 0.75) and
-# [0.80, 0.875] (midpoint 0.8375).  0.75 is chosen: the counterfactual refit
-# over both candidates (card evidence threshold_counterfactual.json) measures
-# it strictly better on every routing-affected metric — normalized ring AUC
-# 0.9765 vs 0.9556, ring LOSO min 17.3 vs 15.2, hub LOSO min 57.9 vs 57.4 —
-# while 0.8375 (routing identical to the superseded 0.81) reclassifies
-# induced-demand (0.80) hub->ring.  The choice reclassifies induced-demand
-# relative to the 0.81 snapshot (ring n_negative 18 -> 17); disclosed, not
-# tuned around.  It MUST be re-derived whenever the corpus grows (the
-# calibration report records the measured distribution per run under
-# "hub_intensity_threshold_derivation"; gap closure would be a fail-loud
-# signal, not a silent re-route).
+# [0.80, 0.875] (midpoint 0.8375).  0.75 is chosen over 0.8375: the
+# counterfactual refit over both candidates (card evidence
+# threshold_counterfactual.json) measures 0.75 better on the headline
+# metrics — normalized ring AUC 0.9765 vs 0.9556, ring LOSO min 17.3 vs
+# 15.2, hub LOSO min 57.9 vs 57.4 — while CONCEDING three: hub separation
+# margin -9.2 vs -9.0, hub negative-scores-max 77.0 vs 76.4, ring
+# negative-scores-max 56.8 vs 54.1 (absolute ring neg-max 50.3 vs 49.7).
+# NOT strictly better on every metric; the full per-dimension comparison is
+# in calibration-report.json "candidate_comparison".  0.8375 (routing
+# identical to the superseded 0.81) reclassifies induced-demand (0.80)
+# hub->ring.  The choice reclassifies induced-demand relative to the 0.81
+# snapshot (ring n_negative 18 -> 17); disclosed, not tuned around.  It
+# MUST be re-derived whenever the corpus grows: 0.75 is a hand-derived
+# value, so every calibration run logs the measured intensity per sample
+# (routing_log "hub_intensity", surfaced under
+# "hub_intensity_threshold_derivation.measured_distribution_this_run") and
+# calibrate_shape_conditional calls check_hub_intensity_gap(), which RAISES
+# if a threshold-eligible value lands inside the (0.70, 0.80) gap — a
+# fail-loud abort, not a silent re-route on a stale derivation.
 HUB_INTENSITY_THRESHOLD = 0.75  # midpoint of the measured empty gap [0.70, 0.80]
+
+# The measured empty gap the hand-derived threshold rests on (fail-loud
+# guard below watches exactly this interval).
+HUB_INTENSITY_MEASURED_GAP = (0.70, 0.80)
+
+
+def hub_intensity_of(row):
+    """Measured hub intensity (hub_degree/n), or None when not measurable."""
+    n_nodes = row.get("layout_n_nodes")
+    hub_degree = row.get("hub_degree")
+    if n_nodes and hub_degree is not None and n_nodes > 0:
+        return hub_degree / n_nodes
+    return None
+
+
+def check_hub_intensity_gap(routing_log):
+    """Fail-loud guard on the MANUAL threshold derivation (review MAJOR-2).
+
+    0.75 is a hand-derived value: the midpoint of the measured empty gap
+    (0.70, 0.80) at calibration time.  Nothing re-derives it automatically,
+    so if the corpus grows and a threshold-eligible sample now measures
+    strictly inside that gap, the derivation is stale — silently keeping
+    0.75 would route by a value the data no longer supports.  Runs on every
+    calibration pass (calibrate_shape_conditional) and raises instead.
+    Boundary values (0.70 / 0.80 themselves) do not close the gap; family-
+    labeled samples never see the threshold and are exempt.
+    """
+    low, high = HUB_INTENSITY_MEASURED_GAP
+    hits = sorted({round(e["hub_intensity"], 6)
+                   for e in routing_log
+                   if e.get("threshold_eligible")
+                   and e.get("hub_intensity") is not None
+                   and low < e["hub_intensity"] < high})
+    if hits:
+        raise AestheticError(
+            "hub-intensity gap (%.2f, %.2f) behind HUB_INTENSITY_THRESHOLD="
+            "%.2f has CLOSED: threshold-eligible sample(s) now measure %s "
+            "inside it.  The manual threshold derivation is stale — "
+            "re-derive the threshold from the current corpus before "
+            "trusting any routing; refusing to continue silently."
+            % (low, high, HUB_INTENSITY_THRESHOLD, hits))
+    return hits
+
+
+def hub_intensity_threshold_derivation():
+    """Shared narrative/metadata block for the composite model and the
+    calibration report (single source, so the two artifacts cannot drift).
+
+    Review MAJOR-1: the candidate comparison carries EVERY routing-affected
+    dimension including the separation margins 0.75 concedes — never again a
+    selective column set behind a "strictly better" claim (which was false:
+    0.8375 wins hub sep / hub neg-max / ring neg-max).
+    """
+    return {
+        "method": "midpoint of the measured empty hub-intensity gap "
+                  "over the threshold-eligible (unlabeled/nested-cycle) "
+                  "population (full corpus, supplemented-edge caliber). "
+                  "HAND-DERIVED, not auto-recomputed: every calibration "
+                  "run logs the per-sample intensity (routing_log "
+                  "\"hub_intensity\"; the calibration report carries "
+                  "measured_distribution_this_run) and "
+                  "check_hub_intensity_gap() RAISES if a "
+                  "threshold-eligible value lands strictly inside the "
+                  "(0.70, 0.80) gap — fail-loud, never a silent "
+                  "re-route on a stale derivation",
+        "measured_values_around_gap": {
+            "low_band_max": 0.70,
+            "induced_demand": 0.80,
+            "classic_cld_growth_and_burden": 0.875,
+            "high_band_min": 0.923,
+        },
+        "empty_gaps": [[0.70, 0.80], [0.80, 0.875]],
+        "gap_midpoints": {"0.75": "chosen", "0.8375": "rejected"},
+        "candidate_comparison": {
+            "values_are": ["0.75 (chosen)", "0.8375 (rejected)"],
+            "source": "counterfactual refit over both gap midpoints "
+                      "(threshold-only difference; card evidence "
+                      "threshold_counterfactual.json — same numbers)",
+            "normalized": {
+                "ring": {
+                    "score_auc": [0.976471, 0.955556],
+                    "separation_margin": [-6.9, -8.7],
+                    "positive_scores_min": [49.9, 45.4],
+                    "negative_scores_max": [56.8, 54.1],
+                    "loso_min": [17.3, 15.2],
+                },
+                "hub": {
+                    "score_auc": [0.973913, 0.972727],
+                    "separation_margin": [-9.2, -9.0],
+                    "positive_scores_min": [67.8, 67.4],
+                    "negative_scores_max": [77.0, 76.4],
+                    "loso_min": [57.9, 57.4],
+                },
+                "global": {
+                    "score_auc": [0.955, 0.955],
+                    "separation_margin": [-47.1, -47.1],
+                    "note": "global fallback does not depend on the threshold",
+                },
+            },
+            "verdict": "0.75 better on the headline dims (norm ring "
+                       "AUC/sep/pos_min/LOSO, norm hub AUC/pos_min/LOSO); "
+                       "0.8375 better on three (hub separation_margin "
+                       "-9.0 vs -9.2, hub negative_scores_max 76.4 vs "
+                       "77.0, ring negative_scores_max 54.1 vs 56.8; "
+                       "absolute ring neg-max 49.7 vs 50.3) — 0.75 is "
+                       "NOT strictly better on every metric; the choice "
+                       "rests on the headline AUC/LOSO advantage",
+            "routing_note": "0.8375 routing identical to the superseded "
+                            "0.81 per-sample; 0.75 reclassifies "
+                            "induced-demand (0.80) hub->ring",
+        },
+        "derived_threshold": HUB_INTENSITY_THRESHOLD,
+        "reclassify_disclosure": "vs the superseded 0.81 snapshot this "
+                  "choice routes induced-demand (measured intensity "
+                  "0.80) back to hub (ring n_negative 18 -> 17)",
+        "rederive_rule": "re-measure whenever the corpus grows; gap "
+                         "closure raises via check_hub_intensity_gap() "
+                         "(fail-loud), never tuned around",
+    }
 
 
 def load_family_labels(path):
@@ -492,10 +619,9 @@ def route_shape(graph_name, row, labels):
     fam = labels.get(graph_name)
     if fam in SHAPE_ROUTING_FROM_FAMILY:
         return SHAPE_ROUTING_FROM_FAMILY[fam]
-    n_nodes = row.get("layout_n_nodes")
-    hub_degree = row.get("hub_degree")
-    if n_nodes and hub_degree is not None and n_nodes > 0:
-        if hub_degree / n_nodes >= HUB_INTENSITY_THRESHOLD:
+    intensity = hub_intensity_of(row)
+    if intensity is not None:
+        if intensity >= HUB_INTENSITY_THRESHOLD:
             return SHAPE_HUB
     rho = row.get("degree_canvas_spearman")
     if rho is None:
@@ -606,11 +732,21 @@ def calibrate_shape_conditional(positive_docs, negative_docs, caliber, labels):
     for p, gname, r in pos_rows:
         s = route_shape(gname, r, labels)
         buckets[s][0].append(r)
-        routing_log.append({"graph": gname, "path": Path(p).name, "kind": "positive", "shape": s})
+        routing_log.append({"graph": gname, "path": Path(p).name, "kind": "positive",
+                            "shape": s, "hub_intensity": hub_intensity_of(r),
+                            "threshold_eligible":
+                                labels.get(gname) not in SHAPE_ROUTING_FROM_FAMILY})
     for p, gname, r in neg_rows:
         s = route_shape(gname, r, labels)
         buckets[s][1].append(r)
-        routing_log.append({"graph": gname, "path": Path(p).name, "kind": "negative", "shape": s})
+        routing_log.append({"graph": gname, "path": Path(p).name, "kind": "negative",
+                            "shape": s, "hub_intensity": hub_intensity_of(r),
+                            "threshold_eligible":
+                                labels.get(gname) not in SHAPE_ROUTING_FROM_FAMILY})
+    # Fail-loud (review MAJOR-2): the 0.75 threshold is hand-derived from the
+    # measured empty gap (0.70, 0.80); a corpus update that closes the gap
+    # must abort here, never silently re-route on a stale derivation.
+    check_hub_intensity_gap(routing_log)
 
     models = {}
     stats = {}
@@ -696,33 +832,7 @@ def calibrate_shape_conditional(positive_docs, negative_docs, caliber, labels):
                     % HUB_INTENSITY_THRESHOLD,
             "rho_threshold": RHO_RING_THRESHOLD,
             "hub_intensity_threshold": HUB_INTENSITY_THRESHOLD,
-            "hub_intensity_threshold_derivation": {
-                "method": "midpoint of the measured empty hub-intensity gap "
-                          "over the threshold-eligible (unlabeled/nested-cycle) "
-                          "population (full corpus, supplemented-edge caliber; "
-                          "measured distribution logged per run)",
-                "measured_values_around_gap": {
-                    "low_band_max": 0.70,
-                    "induced_demand": 0.80,
-                    "classic_cld_growth_and_burden": 0.875,
-                    "high_band_min": 0.923,
-                },
-                "empty_gaps": [[0.70, 0.80], [0.80, 0.875]],
-                "gap_midpoints": {"0.75": "chosen", "0.8375": "rejected"},
-                "candidate_comparison": "counterfactual refit over both gap "
-                          "midpoints: 0.75 strictly better on every "
-                          "routing-affected metric (normalized ring AUC 0.9765 "
-                          "vs 0.9556; ring LOSO min 17.3 vs 15.2; hub LOSO min "
-                          "57.9 vs 57.4); 0.8375 routing identical to the "
-                          "superseded 0.81 and reclassifies induced-demand "
-                          "hub->ring",
-                "derived_threshold": HUB_INTENSITY_THRESHOLD,
-                "reclassify_disclosure": "vs the superseded 0.81 snapshot this "
-                          "choice routes induced-demand (measured intensity "
-                          "0.80) back to hub (ring n_negative 18 -> 17)",
-                "rederive_rule": "re-measure whenever the corpus grows; "
-                                 "gap closure must be reported, not tuned around",
-            },
+            "hub_intensity_threshold_derivation": hub_intensity_threshold_derivation(),
             "family_map_source": "benchmarks/corpus/classic/topology-families.json",
             "shape_excluded_features": {k: list(v) for k, v in SHAPE_EXCLUDED_FEATURES.items()},
         },

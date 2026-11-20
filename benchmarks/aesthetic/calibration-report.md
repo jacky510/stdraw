@@ -29,13 +29,19 @@ Final adjudication = Pareto + preference ranker (Phase 3). Certificate grading
 
 ## Shape-conditional routing (2026-11-20 directive)
 
-- ① 族标签：单环→ring，多环耦合/链/星→hub；② 嵌套环与无标签图：先 hub 强度（hub_degree/n ≥ 0.75 → hub；推导式=阈值适用人群中实测空档 [0.70, 0.80] 的中点；实测强度 induced-demand 0.80 / classic-cld 0.875 落在空档上沿，另一空档 [0.80, 0.875] 中点 0.8375 经对照实测（AUC/LOSO 全维劣于 0.75）弃选），再 degree_canvas_spearman（canvas 中心口径，≤0→ring，>0→hub）；③ ρ 退化→全局公式回退。锚点边集在测特征前已按图源补全；jacky 参考值测自仓外副本，仓内数据不可复现（270 组合搜索 0 命中）——路由只依仓内实测值，逐样本记录在 routing_log 待复核
+- ① 族标签：单环→ring，多环耦合/链/星→hub；② 嵌套环与无标签图：先 hub 强度（hub_degree/n ≥ 0.75 → hub；推导式=阈值适用人群中实测空档 [0.70, 0.80] 的中点；实测强度 induced-demand 0.80 / classic-cld 0.875 落在空档上沿，另一空档 [0.80, 0.875] 中点 0.8375 弃选：headline AUC/LOSO 劣于 0.75，但 0.75 在 hub sep、hub/ring neg_max 三项略让步——全维对照见 candidate_comparison，不许选择性省列），再 degree_canvas_spearman（canvas 中心口径，≤0→ring，>0→hub）；③ ρ 退化→全局公式回退。锚点边集在测特征前已按图源补全；jacky 参考值测自仓外副本，仓内数据不可复现（270 组合搜索 0 命中）——路由只依仓内实测值，逐样本记录在 routing_log 待复核
 - hub-intensity threshold derivation: DERIVED = midpoint of the measured empty
   gap [0.70, 0.80] over the threshold-eligible (unlabeled/nested) population
   (measured intensities: induced-demand 0.80, classic-cld 0.875 sit right above
-  the gap; the other gap [0.80, 0.875] midpoint 0.8375 was measured worse on
-  AUC/LOSO in the counterfactual refit and rejected); re-derived whenever the
-  corpus grows (review MINOR-3, re-measured on a real run after review MAJOR-3)
+  the gap); the other gap [0.80, 0.875] midpoint 0.8375 was rejected: headline
+  AUC/LOSO favored 0.75, though 0.75 concedes three dims (hub separation, hub/ring
+  neg-max) — full per-dimension table incl. sep columns: candidate_comparison in
+  calibration-report.json; re-derived whenever the corpus grows (review MINOR-3,
+  re-measured on a real run after review MAJOR-3)
+- fail-loud guard (review MAJOR-2): 0.75 is hand-derived, so every calibration run
+  logs per-sample intensities (routing_log hub_intensity; derivation block carries
+  measured_distribution_this_run) and RAISES if a threshold-eligible value lands
+  strictly inside the (0.70, 0.80) gap — no silent re-route on a stale derivation
 - ring model excludes: ['alignment_max_coverage'] — operator 令：行/列对齐在环族天然低（brand-flywheel 33%），权重必须为 0
 - global formula = fallback only (rho undefined / shape subset not fittable)
 
