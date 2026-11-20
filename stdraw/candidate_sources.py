@@ -37,6 +37,8 @@ from dataclasses import dataclass, field
 from typing import Callable, List, Optional
 
 from .candidate_contract import LayoutCandidate
+from .candidate_planar import (PlanarProbeUnavailable, core_is_planar,
+                               planarized_candidates)
 
 # Structural-mode node cap for the candidate pool: the engine's declared
 # capability ceiling (n<=20). Individual detectors keep their own
@@ -208,9 +210,17 @@ TEMPLATE_SOURCES = [
     ("radial", _run_radial),
 ]
 
+# M1-B: the planarization source joins the pool (plan section 7 M1-B
+# "平面化候选"). It is NOT a template: it runs its own construction core
+# (candidate_planar.run_planarized) and may emit several variant candidates.
+# Order: after the templates, before the layered incumbent (preregistered).
+EXTRA_SOURCES = ["planarized"]
+
 # Preregistered source order: templates first (plan section 7 priority order
-# mirrored), the layered incumbent last as the budget-reserved fallback.
-SOURCE_ORDER = [name for name, _ in TEMPLATE_SOURCES] + ["layered-v082"]
+# mirrored), then the planarization source, the layered incumbent last as
+# the budget-reserved fallback.
+SOURCE_ORDER = ([name for name, _ in TEMPLATE_SOURCES] + EXTRA_SOURCES
+                + ["layered-v082"])
 
 
 def template_enabled(source: str, ctx: SourceContext) -> bool:
@@ -219,7 +229,11 @@ def template_enabled(source: str, ctx: SourceContext) -> bool:
     quality). ring-cycle is additionally gated on the loop model: a
     failed/degraded loop analysis honestly disarms the loop-reading source
     (failure path of plan section 7 M1 acceptance: loop-detection failure
-    has a defined destination)."""
+    has a defined destination). planarized fires ONLY on a non-planar core
+    (its deletion enumeration is meaningless otherwise) under the same
+    node cap; a failed loop model cannot name the protected primary loop,
+    so the source stays armed but the protected set is empty (recorded in
+    its metadata)."""
     if source == "layered-v082":
         return True
     if ctx.analysis.n_nodes > TEMPLATE_NODE_CAP:
@@ -228,18 +242,29 @@ def template_enabled(source: str, ctx: SourceContext) -> bool:
         if ctx.analysis.loop_model.status not in ("ok", "no-cycles"):
             return False
         return ctx.analysis.loop_count >= 1
+    if source == "planarized":
+        return not core_is_planar(ctx.edges)
     return True
 
 
 def generate_from_source(source: str, ctx: SourceContext,
                          seq: int = 0) -> List[LayoutCandidate]:
-    """Run one source; return its candidates (usually exactly one). Raises
+    """Run one source; return its candidates (one for templates, several
+    for the planarization source's dual variants). Raises
     SourceUnavailable (topological non-trigger) or SourceConstructionError
     (construction failure) — the orchestrator records both and continues."""
     nodes = sorted(ctx.graph.node_ids())
     if source == "layered-v082":
         pos, y, meta, cost = _run_layered_incumbent(ctx)
         return [_candidate(source, seq, pos, y, nodes, meta, cost)]
+    if source == "planarized":
+        try:
+            return planarized_candidates(ctx, seq=seq)
+        except PlanarProbeUnavailable as e:
+            raise SourceUnavailable(str(e)) from e
+        except Exception as e:
+            raise SourceConstructionError(
+                f"{type(e).__name__}: {e}") from e
     fn = dict(TEMPLATE_SOURCES)[source]
     try:
         pos, y, meta = fn(ctx)

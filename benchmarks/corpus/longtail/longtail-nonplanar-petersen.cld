@@ -1,0 +1,30 @@
+# longtail acceptance corpus (M1-B) | topology family: nonplanar | n=10
+graph "longtail-nonplanar-petersen"
+
+var o0 "o0"
+var o1 "o1"
+var o2 "o2"
+var o3 "o3"
+var o4 "o4"
+var i0 "i0"
+var i1 "i1"
+var i2 "i2"
+var i3 "i3"
+var i4 "i4"
+o0 -> + o1
+o1 -> + o2
+o2 -> + o3
+o3 -> + o4
+o4 -> + o0
+i0 -> + i2
+i1 -> + i3
+i2 -> + i4
+i3 -> + i0
+i4 -> + i1
+o0 -> + i0
+o1 -> + i1
+o2 -> + i2
+o3 -> + i3
+o4 -> + i4
+
+# empty line terminates the graph; no loop declarations: the audit layer verifies against the independent enumeration

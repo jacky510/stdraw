@@ -563,18 +563,24 @@ class TestPipeline(unittest.TestCase):
         reason = v4["meta"]["candidate_pool"]["delivery"]["reason"]
         self.assertEqual(reason, "no candidate survived the Stage-1 hard filter")
 
-    def test_planarized_l1_takes_precedence(self):
+    def test_planarized_l1_scope_pool_runs_with_l1_floor(self):
+        """M1-B: the L1 short-circuit is retired — the candidate pool now
+        runs inside the L1 planarization scope, with the L1 witness drawing
+        as the delivery floor (the not-worse guard's incumbent side)."""
         import stdraw.candidate_pipeline as cp_mod
-        g = _graph()
-        payload = {"viewBox": [0, 0, 10, 10], "nodes": {}, "edges": [],
-                   "bars": {}, "meta": {"planarization": {"mode": "L1"}}}
-        with mock.patch.object(cp_mod, "planarized_entry",
-                               return_value=("L1", payload)), \
-             mock.patch.object(cp_mod, "_auto_layout",
-                               return_value=payload):
-            v4 = cp_mod.layout(g, AutoConfig(), "straight")
+        nodes = [f"v{i}" for i in range(5)]
+        edges = [(nodes[i], nodes[j]) for i in range(5)
+                 for j in range(i + 1, 5)]
+        g = Graph(name="k5", nodes=[Node(id=v, label=v) for v in nodes],
+                  edges=[Edge(a=a, b=b, polarity="+") for a, b in edges])
+        v4 = cp_mod.layout(g, AutoConfig(), "straight")
         cp = v4["meta"]["candidate_pool"]
-        self.assertEqual(cp["delivery"]["mode"], "planarized-l1-incumbent")
+        self.assertEqual(cp["delivery"]["incumbent_planarization_mode"],
+                         "L1")
+        self.assertIn(cp["delivery"]["mode"],
+                      ("candidate", "incumbent-fallback"))
+        self.assertNotIn("planarized-l1-incumbent",
+                         cp["delivery"]["mode"])
 
     def test_manual_passthrough_keeps_user_intent(self):
         g = _graph()

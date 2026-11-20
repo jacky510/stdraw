@@ -1,0 +1,20 @@
+# longtail acceptance corpus (M1-B) | topology family: nonplanar | n=5
+graph "longtail-nonplanar-k5"
+
+var k1 "k1"
+var k2 "k2"
+var k3 "k3"
+var k4 "k4"
+var k5 "k5"
+k1 -> + k2
+k1 -> + k3
+k1 -> + k4
+k1 -> + k5
+k2 -> + k3
+k2 -> + k4
+k2 -> + k5
+k3 -> + k4
+k3 -> + k5
+k4 -> + k5
+
+# empty line terminates the graph; no loop declarations: the audit layer verifies against the independent enumeration
