@@ -605,6 +605,30 @@ Honest notes on the DNF counts (wall-budget timeouts, §2 protocol):
   exceeds 350s on this machine. This is a real wall-clock regression
   signal on the layered-path tail, registered for the next optimization
   target (§10.3 already localizes the wall: routing/polish, not CP-SAT).
+- **Correction / deeper attribution (2026-11-20, follow-up attribution
+  branch `p0/n10-dnf-attribution`, full report
+  `docs/p0-n10-dnf-attribution.md`)**: the sentence above mis-locates the
+  wall. The 5 DNF graphs never reach the gated-reorder path — their stage
+  tables carry no `polish_gated_reorder` segment at all. Per-graph re-runs
+  with an extended budget (1200s) + `STDRAW_TIMING=1` show all five run
+  the **ring-construct mode chain** with unresolved chord crossings, and
+  97.8–99.3% of the wall sits in the ring-reposition neighborhood scan
+  (`_ring_reposition`, introduced 6f9d2b6 2026-11-13 — i.e. *after* the
+  WS4/WS5 sweep): each demotion candidate × 11 rotations runs a full
+  delivery-chain probe; a failed scan burns 1 + 9×11 = 100 probes
+  (measured on i08 in-process: 100 calls / 378.4 s, 87% of the wall;
+  `place_ring` itself is 0.3 s per 100 calls). On failed scans the scan
+  cost is unmarked (the `ring_reposition` mark only fires on adoption) and
+  lands in the `route_final` bucket, so the §10.3 `route_final` share
+  over-states routing on ring-path graphs. Same-graph reruns on the
+  historical engine state (63f5962, the tree that produced the §4 sweep —
+  no mode chain, no STDRAW_TIMING there) all finish ok in 48.7–85.7 s.
+  Verdict: **caliber change (new mode chain), not a complexity regression
+  of an existing path**; the unbounded scan is a fixable hotspot (bounded
+  probe / early-stop proposals in `docs/p0-n10-dnf-attribution.md` §7).
+  Budget-edge context: i08 completes in 291–293 s on a quieter machine,
+  inside the §10.3 ±2× variance band — DNF vs ok on these graphs is a
+  wall-budget edge phenomenon.
 - n20: 2/20 ok at the 100s budget — consistent with the §4 runtime-caliber
   note (current-engine n20 median 97.1s, per-graph max ~144s, i.e. the
   wall median sits at the budget line; any wall-budgeted sweep yields a
