@@ -211,9 +211,10 @@ TEMPLATE_SOURCES = [
 ]
 
 # M1-B: the planarization source joins the pool (plan section 7 M1-B
-# "平面化候选"). It is NOT a template: it runs its own construction core
-# (candidate_planar.run_planarized) and may emit several variant candidates.
-# Order: after the templates, before the layered incumbent (preregistered).
+# "planarization candidate"). It is NOT a template: it runs its own
+# construction core (candidate_planar.run_planarized) and may emit several
+# variant candidates. Order: after the templates, before the layered
+# incumbent (preregistered).
 EXTRA_SOURCES = ["planarized"]
 
 # Preregistered source order: templates first (plan section 7 priority order
