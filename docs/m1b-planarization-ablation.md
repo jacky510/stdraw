@@ -106,3 +106,17 @@ python -m pytest tests/ -q && python tests/ci_checks.py
 - variant B 在实测 3 图上均与 A 同构造（可视性表示间距大，直线插回零
   交叉）——B 键的判别力目前只在单元层验证（主环权重 2/1 分档），
   真实分化样本留待 M2 语料扩充。
+
+## 7. 验证状态（实测）
+
+- 全量 pytest（分支 @ 语言门修复提交）：**341 passed, 1 skipped**
+  （3236.7 s；1 skip 为既有跳过项；与兄弟卡的并发 pytest 隔离 TMPDIR
+  后并行跑，无固定名互踩）。
+- ci_checks 全量（2445.3 s）：除语言政策门外**全绿**（ortho 冻结字节
+  回归 / auto 硬门 / 随机密集 / 崩溃回归 / 平面化 L1 goldens / exact /
+  manual loop / ring / H2 19 图 / 新鲜度 / D0 / 内漏门全部 OK）。
+- 语言政策门：本分支原有 1 处新增违例（candidate_sources.py 中文注释）
+  已修复为英文；**剩余 37 处命中全部为已提交 main 的既有违例**
+  （36 处 benchmarks/REPORT.md + 1 处 benchmarks/tools/gen_v082_report_
+  section.py，来自上游 REPORT 重测卡的合入；双树违例集 diff 为空集新增）。
+  上游修复建议另立卡处理（REPORT.md 为已发布数字面，本卡不代改）。
