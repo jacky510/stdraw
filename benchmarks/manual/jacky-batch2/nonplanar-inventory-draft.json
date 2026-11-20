@@ -1,0 +1,50 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "nonplanar-inventory",
+ "viewBox": [
+  0,
+  0,
+  2368,
+  1056
+ ],
+ "nodes": {
+  "appr": {
+   "x": 52,
+   "y": 26
+  },
+  "cap": {
+   "x": 892,
+   "y": 866
+  },
+  "cons": {
+   "x": 2292,
+   "y": 26
+  },
+  "cpi": {
+   "x": 1452,
+   "y": 586
+  },
+  "exp": {
+   "x": 1034,
+   "y": 448
+  },
+  "heat": {
+   "x": 1592,
+   "y": 726
+  },
+  "inv": {
+   "x": 1034,
+   "y": 1008
+  },
+  "replen": {
+   "x": 474,
+   "y": 168
+  },
+  "stk": {
+   "x": 1174,
+   "y": 726
+  }
+ },
+ "note": "engine auto-v2 draft (batch2 prep); schema identical to demo-2d Export layout"
+}

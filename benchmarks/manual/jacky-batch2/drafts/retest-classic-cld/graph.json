@@ -1,0 +1,240 @@
+{
+ "name": "增长极限×转嫁负担",
+ "nodes": [
+  {
+   "id": "rate",
+   "label": "采纳率",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "adopters",
+   "label": "采纳者",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "word",
+   "label": "口碑效应",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "potential",
+   "label": "潜在采纳者",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "crowding",
+   "label": "拥挤效应",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "quickfix",
+   "label": "症状解·限流扩容",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "fundamental",
+   "label": "根本解·产品打磨",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "sideeffect",
+   "label": "副作用·资源被占用",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  }
+ ],
+ "edges": [
+  {
+   "a": "rate",
+   "b": "adopters",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "B1",
+    "B2"
+   ]
+  },
+  {
+   "a": "adopters",
+   "b": "word",
+   "polarity": "+",
+   "loops": [
+    "R1"
+   ]
+  },
+  {
+   "a": "word",
+   "b": "rate",
+   "polarity": "+",
+   "loops": [
+    "R1"
+   ]
+  },
+  {
+   "a": "potential",
+   "b": "rate",
+   "polarity": "+",
+   "loops": [
+    "B1"
+   ]
+  },
+  {
+   "a": "adopters",
+   "b": "potential",
+   "polarity": "-",
+   "loops": [
+    "B1"
+   ]
+  },
+  {
+   "a": "adopters",
+   "b": "crowding",
+   "polarity": "+",
+   "loops": [
+    "B2"
+   ]
+  },
+  {
+   "a": "crowding",
+   "b": "rate",
+   "polarity": "-",
+   "loops": [
+    "B2"
+   ]
+  },
+  {
+   "a": "crowding",
+   "b": "quickfix",
+   "polarity": "+",
+   "loops": [
+    "B3",
+    "R2"
+   ]
+  },
+  {
+   "a": "quickfix",
+   "b": "crowding",
+   "polarity": "-",
+   "loops": [
+    "B3"
+   ]
+  },
+  {
+   "a": "crowding",
+   "b": "fundamental",
+   "polarity": "+",
+   "loops": [
+    "B4"
+   ]
+  },
+  {
+   "a": "fundamental",
+   "b": "crowding",
+   "polarity": "-",
+   "loops": [
+    "B4"
+   ]
+  },
+  {
+   "a": "quickfix",
+   "b": "sideeffect",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "sideeffect",
+   "b": "crowding",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  }
+ ],
+ "loops": [
+  {
+   "id": "R1",
+   "label": "采纳扩散",
+   "nodes": [
+    "rate",
+    "adopters",
+    "word"
+   ],
+   "kind": "R"
+  },
+  {
+   "id": "B1",
+   "label": "市场饱和",
+   "nodes": [
+    "rate",
+    "adopters",
+    "potential"
+   ],
+   "kind": "B"
+  },
+  {
+   "id": "B2",
+   "label": "拥挤制约",
+   "nodes": [
+    "rate",
+    "adopters",
+    "crowding"
+   ],
+   "kind": "B"
+  },
+  {
+   "id": "B3",
+   "label": "症状缓解",
+   "nodes": [
+    "crowding",
+    "quickfix"
+   ],
+   "kind": "B"
+  },
+  {
+   "id": "B4",
+   "label": "根本治理",
+   "nodes": [
+    "crowding",
+    "fundamental"
+   ],
+   "kind": "B"
+  },
+  {
+   "id": "R2",
+   "label": "饮鸩止渴",
+   "nodes": [
+    "quickfix",
+    "sideeffect",
+    "crowding"
+   ],
+   "kind": "R"
+  }
+ ],
+ "groups": [
+  {
+   "id": "growth",
+   "label": "增长引擎"
+  },
+  {
+   "id": "burden",
+   "label": "转嫁负担"
+  }
+ ]
+}

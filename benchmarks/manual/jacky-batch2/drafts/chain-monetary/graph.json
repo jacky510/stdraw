@@ -1,0 +1,94 @@
+{
+ "name": "货币政策传导链",
+ "nodes": [
+  {
+   "id": "ms",
+   "label": "货币供给",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "ir",
+   "label": "市场利率",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "inv",
+   "label": "企业投资",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "gdp",
+   "label": "总产出",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "inc",
+   "label": "居民收入",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "cons",
+   "label": "消费需求",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "cpi",
+   "label": "物价水平",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  }
+ ],
+ "edges": [
+  {
+   "a": "ms",
+   "b": "ir",
+   "polarity": "-",
+   "loops": []
+  },
+  {
+   "a": "ir",
+   "b": "inv",
+   "polarity": "-",
+   "loops": []
+  },
+  {
+   "a": "inv",
+   "b": "gdp",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "gdp",
+   "b": "inc",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "inc",
+   "b": "cons",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "cons",
+   "b": "cpi",
+   "polarity": "+",
+   "loops": []
+  }
+ ],
+ "loops": [],
+ "groups": []
+}

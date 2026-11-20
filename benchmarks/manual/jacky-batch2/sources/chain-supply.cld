@@ -1,0 +1,16 @@
+# 审美采样批次2 · 链族 B：供应链价格传导链（纯链，无环）
+# 6 节点 / 5 边，成本沿链条传导
+graph "供应链价格传导链"
+
+var raw "原材料价格"
+var cost "生产成本"
+var exw "出厂价格"
+var retail "零售价格"
+var sales "终端销量"
+var inv2 "渠道库存"
+
+raw -> + cost
+cost -> + exw
+exw -> + retail
+retail -> - sales
+sales -> + inv2

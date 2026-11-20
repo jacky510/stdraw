@@ -1,0 +1,50 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "nonplanar-credit",
+ "viewBox": [
+  0,
+  0,
+  488,
+  560
+ ],
+ "nodes": {
+  "ms": {
+   "x": 240,
+   "y": 92
+  },
+  "ir": {
+   "x": 192,
+   "y": 252
+  },
+  "credit": {
+   "x": 336,
+   "y": 172
+  },
+  "val": {
+   "x": 360,
+   "y": 332
+  },
+  "inv": {
+   "x": 288,
+   "y": 492
+  },
+  "trans": {
+   "x": 120,
+   "y": 172
+  },
+  "fund": {
+   "x": 216,
+   "y": 332
+  },
+  "lever": {
+   "x": 360,
+   "y": 252
+  },
+  "wealth": {
+   "x": 336,
+   "y": 412
+  }
+ },
+ "note": "engine auto-v2 draft (batch2 prep); schema identical to demo-2d Export layout"
+}

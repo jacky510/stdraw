@@ -1,0 +1,161 @@
+{
+ "name": "工资价格螺旋",
+ "nodes": [
+  {
+   "id": "wage",
+   "label": "工资水平",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "cost",
+   "label": "生产成本",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "cpi",
+   "label": "物价水平",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "living",
+   "label": "生活成本",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "buying",
+   "label": "购买力",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "sales",
+   "label": "消费品销量",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "profit",
+   "label": "企业利润",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "raise",
+   "label": "加薪能力",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  }
+ ],
+ "edges": [
+  {
+   "a": "wage",
+   "b": "cost",
+   "polarity": "+",
+   "loops": [
+    "R1"
+   ]
+  },
+  {
+   "a": "cost",
+   "b": "cpi",
+   "polarity": "+",
+   "loops": [
+    "R1"
+   ]
+  },
+  {
+   "a": "cpi",
+   "b": "living",
+   "polarity": "+",
+   "loops": [
+    "R1"
+   ]
+  },
+  {
+   "a": "living",
+   "b": "wage",
+   "polarity": "+",
+   "loops": [
+    "R1"
+   ]
+  },
+  {
+   "a": "wage",
+   "b": "buying",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "buying",
+   "b": "sales",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "sales",
+   "b": "profit",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "profit",
+   "b": "raise",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "raise",
+   "b": "wage",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  }
+ ],
+ "loops": [
+  {
+   "id": "R1",
+   "label": "价格成本螺旋",
+   "nodes": [
+    "wage",
+    "cost",
+    "cpi",
+    "living"
+   ],
+   "kind": "R"
+  },
+  {
+   "id": "R2",
+   "label": "购买力螺旋",
+   "nodes": [
+    "wage",
+    "buying",
+    "sales",
+    "profit",
+    "raise"
+   ],
+   "kind": "R"
+  }
+ ],
+ "groups": []
+}

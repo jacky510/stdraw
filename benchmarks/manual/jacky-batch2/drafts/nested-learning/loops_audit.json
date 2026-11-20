@@ -1,0 +1,91 @@
+{
+ "loops": [
+  {
+   "id": "R1",
+   "label": "个人成长环",
+   "declared_kind": "R",
+   "nodes": [
+    "lrn",
+    "skill",
+    "perf",
+    "motive"
+   ],
+   "closed": true,
+   "walk": [
+    "lrn",
+    "skill",
+    "perf",
+    "motive",
+    "lrn"
+   ],
+   "neg_edges": 0,
+   "parity_kind": "R",
+   "kind_consistent": true
+  },
+  {
+   "id": "R2",
+   "label": "组织学习环",
+   "declared_kind": "R",
+   "nodes": [
+    "lrn",
+    "skill",
+    "perf",
+    "share",
+    "orgcap",
+    "result",
+    "budget"
+   ],
+   "closed": true,
+   "walk": [
+    "lrn",
+    "skill",
+    "perf",
+    "share",
+    "orgcap",
+    "result",
+    "budget",
+    "lrn"
+   ],
+   "neg_edges": 0,
+   "parity_kind": "R",
+   "kind_consistent": true
+  }
+ ],
+ "problems": [],
+ "extra_cycles": [
+  {
+   "nodes": [
+    "budget",
+    "lrn",
+    "orgcap",
+    "perf",
+    "result",
+    "share",
+    "skill"
+   ],
+   "kind": "R",
+   "neg_edges": 0,
+   "matches_declared": "R2"
+  },
+  {
+   "nodes": [
+    "lrn",
+    "motive",
+    "perf",
+    "skill"
+   ],
+   "kind": "R",
+   "neg_edges": 0,
+   "matches_declared": "R1"
+  }
+ ],
+ "summary": {
+  "declared": 2,
+  "closed": 2,
+  "kind_consistent": 2,
+  "enumerated": 2,
+  "undeclared": 0,
+  "problems": 0
+ },
+ "pass": true
+}

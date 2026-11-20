@@ -1,0 +1,165 @@
+{
+ "name": "学习组织双环",
+ "nodes": [
+  {
+   "id": "lrn",
+   "label": "学习投入",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "skill",
+   "label": "个人技能",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "perf",
+   "label": "工作绩效",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "motive",
+   "label": "学习动力",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "share",
+   "label": "知识共享",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "orgcap",
+   "label": "组织能力",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "result",
+   "label": "业务成果",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "budget",
+   "label": "培训预算",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  }
+ ],
+ "edges": [
+  {
+   "a": "lrn",
+   "b": "skill",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "R2"
+   ]
+  },
+  {
+   "a": "skill",
+   "b": "perf",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "R2"
+   ]
+  },
+  {
+   "a": "perf",
+   "b": "motive",
+   "polarity": "+",
+   "loops": [
+    "R1"
+   ]
+  },
+  {
+   "a": "motive",
+   "b": "lrn",
+   "polarity": "+",
+   "loops": [
+    "R1"
+   ]
+  },
+  {
+   "a": "perf",
+   "b": "share",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "share",
+   "b": "orgcap",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "orgcap",
+   "b": "result",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "result",
+   "b": "budget",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "budget",
+   "b": "lrn",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  }
+ ],
+ "loops": [
+  {
+   "id": "R1",
+   "label": "个人成长环",
+   "nodes": [
+    "lrn",
+    "skill",
+    "perf",
+    "motive"
+   ],
+   "kind": "R"
+  },
+  {
+   "id": "R2",
+   "label": "组织学习环",
+   "nodes": [
+    "lrn",
+    "skill",
+    "perf",
+    "share",
+    "orgcap",
+    "result",
+    "budget"
+   ],
+   "kind": "R"
+  }
+ ],
+ "groups": []
+}

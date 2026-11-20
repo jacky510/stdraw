@@ -1,0 +1,17 @@
+graph "货币政策传导链"
+
+var ms "货币供给"
+var ir "市场利率"
+var inv "企业投资"
+var gdp "总产出"
+var inc "居民收入"
+var cons "消费需求"
+var cpi "物价水平"
+
+ms -> - ir
+ir -> - inv
+inv -> + gdp
+gdp -> + inc
+inc -> + cons
+cons -> + cpi
+

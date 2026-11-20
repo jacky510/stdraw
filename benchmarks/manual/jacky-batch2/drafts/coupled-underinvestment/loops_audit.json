@@ -1,0 +1,130 @@
+{
+ "loops": [
+  {
+   "id": "R1",
+   "label": "增长环",
+   "declared_kind": "R",
+   "nodes": [
+    "demand",
+    "revenue",
+    "profit",
+    "invest",
+    "capacity",
+    "delivery",
+    "satisfy"
+   ],
+   "closed": true,
+   "walk": [
+    "demand",
+    "revenue",
+    "profit",
+    "invest",
+    "capacity",
+    "delivery",
+    "satisfy",
+    "demand"
+   ],
+   "neg_edges": 0,
+   "parity_kind": "R",
+   "kind_consistent": true
+  },
+  {
+   "id": "B1",
+   "label": "投资不足环",
+   "declared_kind": "B",
+   "nodes": [
+    "demand",
+    "pressure",
+    "invest",
+    "capacity",
+    "delivery",
+    "satisfy"
+   ],
+   "closed": true,
+   "walk": [
+    "demand",
+    "pressure",
+    "invest",
+    "capacity",
+    "delivery",
+    "satisfy",
+    "demand"
+   ],
+   "neg_edges": 1,
+   "parity_kind": "B",
+   "kind_consistent": true
+  },
+  {
+   "id": "R2",
+   "label": "竞争力环",
+   "declared_kind": "R",
+   "nodes": [
+    "revenue",
+    "profit",
+    "rnd",
+    "compete"
+   ],
+   "closed": true,
+   "walk": [
+    "revenue",
+    "profit",
+    "rnd",
+    "compete",
+    "revenue"
+   ],
+   "neg_edges": 0,
+   "parity_kind": "R",
+   "kind_consistent": true
+  }
+ ],
+ "problems": [],
+ "extra_cycles": [
+  {
+   "nodes": [
+    "capacity",
+    "delivery",
+    "demand",
+    "invest",
+    "pressure",
+    "satisfy"
+   ],
+   "kind": "B",
+   "neg_edges": 1,
+   "matches_declared": "B1"
+  },
+  {
+   "nodes": [
+    "capacity",
+    "delivery",
+    "demand",
+    "invest",
+    "profit",
+    "revenue",
+    "satisfy"
+   ],
+   "kind": "R",
+   "neg_edges": 0,
+   "matches_declared": "R1"
+  },
+  {
+   "nodes": [
+    "compete",
+    "profit",
+    "revenue",
+    "rnd"
+   ],
+   "kind": "R",
+   "neg_edges": 0,
+   "matches_declared": "R2"
+  }
+ ],
+ "summary": {
+  "declared": 3,
+  "closed": 3,
+  "kind_consistent": 3,
+  "enumerated": 3,
+  "undeclared": 0,
+  "problems": 0
+ },
+ "pass": true
+}

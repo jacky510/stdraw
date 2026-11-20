@@ -1,0 +1,25 @@
+# 审美采样批次2 · 嵌套环族 B：产能投资（双环共享前段路径）
+# 8 节点 / 11 边：内环（利润再投资）嵌在外环（增长扩张）前段上
+graph "产能投资双环"
+
+var rev "销售收入"
+var profit "经营利润"
+var invest "产能投资"
+var capacity "生产产能"
+var delivery "交付速度"
+var coverage "市场覆盖"
+var customers "客户基数"
+var bargaining "议价规模"
+
+rev -> + profit @loops R1,R2
+profit -> + invest @loops R1,R2
+invest -> + capacity @loops R1,R2
+capacity -> + rev @loops R1
+capacity -> + delivery @loops R2
+delivery -> + coverage @loops R2
+coverage -> + customers @loops R2
+customers -> + bargaining @loops R2
+bargaining -> + rev @loops R2
+
+loop R1 "利润再投资环" "R" [rev, profit, invest, capacity]
+loop R2 "增长扩张环" "R" [rev, profit, invest, capacity, delivery, coverage, customers, bargaining]

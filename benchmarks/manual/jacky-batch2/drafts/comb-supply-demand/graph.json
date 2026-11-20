@@ -1,0 +1,119 @@
+{
+ "name": "供需双侧梳",
+ "nodes": [
+  {
+   "id": "cons",
+   "label": "消费需求",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "inv",
+   "label": "投资需求",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "exp",
+   "label": "出口需求",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "hub1",
+   "label": "总需求压力",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "hub2",
+   "label": "生产负荷",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "income",
+   "label": "收入预期",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "funding",
+   "label": "融资成本",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "fx",
+   "label": "汇率水平",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  }
+ ],
+ "edges": [
+  {
+   "a": "cons",
+   "b": "hub1",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "cons",
+   "b": "hub2",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "inv",
+   "b": "hub1",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "inv",
+   "b": "hub2",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "exp",
+   "b": "hub1",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "exp",
+   "b": "hub2",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "income",
+   "b": "cons",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "funding",
+   "b": "inv",
+   "polarity": "-",
+   "loops": []
+  },
+  {
+   "a": "fx",
+   "b": "exp",
+   "polarity": "+",
+   "loops": []
+  }
+ ],
+ "loops": [],
+ "groups": []
+}

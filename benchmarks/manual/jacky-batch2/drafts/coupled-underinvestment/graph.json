@@ -1,0 +1,220 @@
+{
+ "name": "增长与投资不足",
+ "nodes": [
+  {
+   "id": "demand",
+   "label": "市场需求",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "revenue",
+   "label": "营业收入",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "profit",
+   "label": "经营利润",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "invest",
+   "label": "产能投资",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "capacity",
+   "label": "生产产能",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "delivery",
+   "label": "交付水平",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "satisfy",
+   "label": "客户满意度",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "pressure",
+   "label": "绩效压力",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "rnd",
+   "label": "研发投入",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "compete",
+   "label": "产品竞争力",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  }
+ ],
+ "edges": [
+  {
+   "a": "demand",
+   "b": "revenue",
+   "polarity": "+",
+   "loops": [
+    "R1"
+   ]
+  },
+  {
+   "a": "revenue",
+   "b": "profit",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "R2"
+   ]
+  },
+  {
+   "a": "profit",
+   "b": "invest",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "B1"
+   ]
+  },
+  {
+   "a": "profit",
+   "b": "rnd",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "rnd",
+   "b": "compete",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "compete",
+   "b": "revenue",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "invest",
+   "b": "capacity",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "B1"
+   ]
+  },
+  {
+   "a": "capacity",
+   "b": "delivery",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "B1"
+   ]
+  },
+  {
+   "a": "delivery",
+   "b": "satisfy",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "B1"
+   ]
+  },
+  {
+   "a": "satisfy",
+   "b": "demand",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "B1"
+   ]
+  },
+  {
+   "a": "demand",
+   "b": "pressure",
+   "polarity": "+",
+   "loops": [
+    "B1"
+   ]
+  },
+  {
+   "a": "pressure",
+   "b": "invest",
+   "polarity": "-",
+   "loops": [
+    "B1"
+   ]
+  }
+ ],
+ "loops": [
+  {
+   "id": "R1",
+   "label": "增长环",
+   "nodes": [
+    "demand",
+    "revenue",
+    "profit",
+    "invest",
+    "capacity",
+    "delivery",
+    "satisfy"
+   ],
+   "kind": "R"
+  },
+  {
+   "id": "B1",
+   "label": "投资不足环",
+   "nodes": [
+    "demand",
+    "pressure",
+    "invest",
+    "capacity",
+    "delivery",
+    "satisfy"
+   ],
+   "kind": "B"
+  },
+  {
+   "id": "R2",
+   "label": "竞争力环",
+   "nodes": [
+    "revenue",
+    "profit",
+    "rnd",
+    "compete"
+   ],
+   "kind": "R"
+  }
+ ],
+ "groups": []
+}

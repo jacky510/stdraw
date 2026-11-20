@@ -1,0 +1,145 @@
+[
+ {
+  "name": "chain-monetary",
+  "grade": "best",
+  "placement": "layered",
+  "crossings": 0,
+  "viewBox": [
+   0,
+   0,
+   192,
+   640
+  ],
+  "gates_failed": [],
+  "gates_total": 12
+ },
+ {
+  "name": "chain-supply",
+  "grade": "best",
+  "placement": "layered",
+  "crossings": 0,
+  "viewBox": [
+   0,
+   0,
+   224,
+   560
+  ],
+  "gates_failed": [],
+  "gates_total": 12
+ },
+ {
+  "name": "nested-learning",
+  "grade": "best",
+  "placement": "ring-cycle",
+  "crossings": 0,
+  "viewBox": [
+   0,
+   0,
+   568,
+   504
+  ],
+  "gates_failed": [],
+  "gates_total": 11
+ },
+ {
+  "name": "nested-capacity",
+  "grade": "best",
+  "placement": "ring-cycle",
+  "crossings": 0,
+  "viewBox": [
+   0,
+   0,
+   600,
+   544
+  ],
+  "gates_failed": [],
+  "gates_total": 11
+ },
+ {
+  "name": "nonplanar-inventory",
+  "grade": "crossed-certified",
+  "placement": "layered",
+  "crossings": 1,
+  "viewBox": [
+   0,
+   0,
+   2368,
+   1056
+  ],
+  "gates_failed": [],
+  "gates_total": 14
+ },
+ {
+  "name": "nonplanar-credit",
+  "grade": "uncertified",
+  "placement": "layered",
+  "crossings": 1,
+  "viewBox": [
+   0,
+   0,
+   488,
+   560
+  ],
+  "gates_failed": [
+   "visual_crossings_zero",
+   "topology_form_fallback"
+  ],
+  "gates_total": 14
+ },
+ {
+  "name": "bowtie-wage-price",
+  "grade": "best",
+  "placement": "ring-cycle",
+  "crossings": 0,
+  "viewBox": [
+   0,
+   0,
+   720,
+   624
+  ],
+  "gates_failed": [],
+  "gates_total": 11
+ },
+ {
+  "name": "comb-supply-demand",
+  "grade": "best",
+  "placement": "comb-bilateral",
+  "crossings": 0,
+  "viewBox": [
+   0,
+   0,
+   656,
+   560
+  ],
+  "gates_failed": [],
+  "gates_total": 13
+ },
+ {
+  "name": "coupled-underinvestment",
+  "grade": "best",
+  "placement": "ring-cycle",
+  "crossings": 0,
+  "viewBox": [
+   0,
+   0,
+   672,
+   600
+  ],
+  "gates_failed": [],
+  "gates_total": 11
+ },
+ {
+  "name": "retest-classic-cld",
+  "grade": "best",
+  "placement": "spine-wing",
+  "crossings": 0,
+  "viewBox": [
+   0,
+   0,
+   800,
+   464
+  ],
+  "gates_failed": [],
+  "gates_total": 13
+ }
+]

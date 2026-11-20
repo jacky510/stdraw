@@ -1,0 +1,46 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "comb-supply-demand",
+ "viewBox": [
+  0,
+  0,
+  656,
+  560
+ ],
+ "nodes": {
+  "cons": {
+   "x": 332,
+   "y": 172
+  },
+  "inv": {
+   "x": 332,
+   "y": 332
+  },
+  "exp": {
+   "x": 332,
+   "y": 492
+  },
+  "hub1": {
+   "x": 104,
+   "y": 292
+  },
+  "hub2": {
+   "x": 560,
+   "y": 292
+  },
+  "income": {
+   "x": 332,
+   "y": 92
+  },
+  "funding": {
+   "x": 332,
+   "y": 252
+  },
+  "fx": {
+   "x": 332,
+   "y": 412
+  }
+ },
+ "note": "engine auto-v2 draft (batch2 prep); schema identical to demo-2d Export layout"
+}

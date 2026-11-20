@@ -1,0 +1,25 @@
+# 审美采样批次2 · 领结族：工资-价格螺旋（双环共一点）
+# 8 节点 / 9 边：R1 价格环与 R2 购买力环仅共享「工资水平」一个节点
+graph "工资价格螺旋"
+
+var wage "工资水平"
+var cost "生产成本"
+var cpi "物价水平"
+var living "生活成本"
+var buying "购买力"
+var sales "消费品销量"
+var profit "企业利润"
+var raise "加薪能力"
+
+wage -> + cost @loops R1
+cost -> + cpi @loops R1
+cpi -> + living @loops R1
+living -> + wage @loops R1
+wage -> + buying @loops R2
+buying -> + sales @loops R2
+sales -> + profit @loops R2
+profit -> + raise @loops R2
+raise -> + wage @loops R2
+
+loop R1 "价格成本螺旋" "R" [wage, cost, cpi, living]
+loop R2 "购买力螺旋" "R" [wage, buying, sales, profit, raise]

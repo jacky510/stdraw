@@ -1,0 +1,499 @@
+{
+ "viewBox": [
+  0,
+  0,
+  720,
+  624
+ ],
+ "nodes": {
+  "wage": {
+   "x": 366,
+   "y": 70,
+   "w": 96
+  },
+  "cost": {
+   "x": 366,
+   "y": 226,
+   "w": 96
+  },
+  "cpi": {
+   "x": 480,
+   "y": 340,
+   "w": 96
+  },
+  "living": {
+   "x": 252,
+   "y": 340,
+   "w": 96
+  },
+  "buying": {
+   "x": 622,
+   "y": 256,
+   "w": 96
+  },
+  "sales": {
+   "x": 524,
+   "y": 558,
+   "w": 108
+  },
+  "profit": {
+   "x": 208,
+   "y": 558,
+   "w": 96
+  },
+  "raise": {
+   "x": 110,
+   "y": 256,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "wage",
+   "b": "cost",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      366.0,
+      89.0
+     ],
+     [
+      366.0,
+      207.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     366.0,
+     89.0
+    ],
+    "b": [
+     366.0,
+     207.0
+    ]
+   },
+   "arrow": [
+    366.0,
+    207.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "cost",
+   "b": "cpi",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      376.6,
+      245.0
+     ],
+     [
+      469.4,
+      321.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     376.62,
+     245.0
+    ],
+    "b": [
+     469.38,
+     321.0
+    ]
+   },
+   "arrow": [
+    469.4,
+    321.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "cpi",
+   "b": "living",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      435.0,
+      340.0
+     ],
+     [
+      297.0,
+      340.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     435.0,
+     340.0
+    ],
+    "b": [
+     297.0,
+     340.0
+    ]
+   },
+   "arrow": [
+    297.0,
+    340.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "living",
+   "b": "wage",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      241.4,
+      321.0
+     ],
+     [
+      355.4,
+      89.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     241.38,
+     321.0
+    ],
+    "b": [
+     355.38,
+     89.0
+    ]
+   },
+   "arrow": [
+    355.4,
+    89.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "wage",
+   "b": "buying",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      376.6,
+      89.0
+     ],
+     [
+      611.4,
+      237.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     376.62,
+     89.0
+    ],
+    "b": [
+     611.38,
+     237.0
+    ]
+   },
+   "arrow": [
+    611.4,
+    237.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "buying",
+   "b": "sales",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      611.4,
+      275.0
+     ],
+     [
+      536.0,
+      539.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     611.38,
+     275.0
+    ],
+    "b": [
+     536.0360000000001,
+     539.0
+    ]
+   },
+   "arrow": [
+    536.0,
+    539.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "sales",
+   "b": "profit",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      473.0,
+      558.0
+     ],
+     [
+      253.0,
+      558.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     473.0,
+     558.0
+    ],
+    "b": [
+     253.0,
+     558.0
+    ]
+   },
+   "arrow": [
+    253.0,
+    558.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "profit",
+   "b": "raise",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      197.4,
+      539.0
+     ],
+     [
+      120.6,
+      275.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     197.38,
+     539.0
+    ],
+    "b": [
+     120.62,
+     275.0
+    ]
+   },
+   "arrow": [
+    120.6,
+    275.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "raise",
+   "b": "wage",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      120.6,
+      237.0
+     ],
+     [
+      321.0,
+      89.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     120.62,
+     237.0
+    ],
+    "b": [
+     321.0,
+     89.0
+    ]
+   },
+   "arrow": [
+    321.0,
+    89.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 5,
+  "rowY": [
+   78,
+   234,
+   264,
+   348,
+   566
+  ],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "ring-construct",
+  "mode_decision_trace": {
+   "engine": "ring-construct",
+   "placement": "ring-cycle",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=8, edges m=9 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "exactly 2 simple loops sharing exactly 1 node (shared=wage), rings cover all 8 core nodes — trial gate: hard-gate proxy failed (crossings<=2 / press=0 / clearance>=16 / smooth anchors / mutual separation / card gap)",
+     "trial_gate": "fail"
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": false,
+     "reason": "no hub-pair candidate: no directed edge whose endpoints share 3..4 common neighbors",
+     "trial_gate": null
+    },
+    {
+     "tier": 3,
+     "rule": "column-chain",
+     "triggered": false,
+     "reason": "not evaluated: ring detection would take the ratio branch (pure-cycle/ratio graphs go to ring-cycle)",
+     "trial_gate": null
+    },
+    {
+     "tier": 4,
+     "rule": "ring-cycle",
+     "triggered": true,
+     "reason": "loop-dominated (trigger=ratio), main ring k=5, chord crossings=0",
+     "trial_gate": "pass"
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "ring-cycle: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "ring-cycle",
+  "ring": {
+   "nodes": [
+    "wage",
+    "buying",
+    "sales",
+    "profit",
+    "raise"
+   ],
+   "radius": 270,
+   "center": [
+    270,
+    332
+   ],
+   "declared_loop": "R2",
+   "polarity": "R",
+   "trigger": "ratio",
+   "chord_crossings": 0,
+   "residuals": {
+    "cost": [
+     "inner",
+     0.42
+    ],
+    "cpi": [
+     "inner",
+     0.42
+    ],
+    "living": [
+     "inner",
+     0.42
+    ]
+   }
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

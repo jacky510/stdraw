@@ -1,0 +1,481 @@
+{
+ "viewBox": [
+  0,
+  0,
+  656,
+  560
+ ],
+ "nodes": {
+  "cons": {
+   "x": 332,
+   "y": 172,
+   "w": 96
+  },
+  "inv": {
+   "x": 332,
+   "y": 332,
+   "w": 96
+  },
+  "exp": {
+   "x": 332,
+   "y": 492,
+   "w": 96
+  },
+  "hub1": {
+   "x": 104,
+   "y": 292,
+   "w": 108
+  },
+  "hub2": {
+   "x": 560,
+   "y": 292,
+   "w": 96
+  },
+  "income": {
+   "x": 332,
+   "y": 92,
+   "w": 96
+  },
+  "funding": {
+   "x": 332,
+   "y": 252,
+   "w": 96
+  },
+  "fx": {
+   "x": 332,
+   "y": 412,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "cons",
+   "b": "hub1",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      287.0,
+      191.0
+     ],
+     [
+      155.0,
+      273.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     287.0,
+     191.0
+    ],
+    "b": [
+     155.0,
+     273.0
+    ]
+   },
+   "arrow": [
+    155.0,
+    273.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "cons",
+   "b": "hub2",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      377.0,
+      191.0
+     ],
+     [
+      515.0,
+      273.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     377.0,
+     191.0
+    ],
+    "b": [
+     515.0,
+     273.0
+    ]
+   },
+   "arrow": [
+    515.0,
+    273.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "inv",
+   "b": "hub1",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      287.0,
+      327.5
+     ],
+     [
+      155.0,
+      296.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     287.0,
+     327.516
+    ],
+    "b": [
+     155.0,
+     296.484
+    ]
+   },
+   "arrow": [
+    155.0,
+    296.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "inv",
+   "b": "hub2",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      377.0,
+      327.5
+     ],
+     [
+      515.0,
+      296.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     377.0,
+     327.516
+    ],
+    "b": [
+     515.0,
+     296.484
+    ]
+   },
+   "arrow": [
+    515.0,
+    296.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "exp",
+   "b": "hub1",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      287.0,
+      473.0
+     ],
+     [
+      116.0,
+      311.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     287.0,
+     473.0
+    ],
+    "b": [
+     116.036,
+     311.0
+    ]
+   },
+   "arrow": [
+    116.0,
+    311.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "exp",
+   "b": "hub2",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      377.0,
+      473.0
+     ],
+     [
+      549.4,
+      311.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     377.0,
+     473.0
+    ],
+    "b": [
+     549.38,
+     311.0
+    ]
+   },
+   "arrow": [
+    549.4,
+    311.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "income",
+   "b": "cons",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      332.0,
+      111.0
+     ],
+     [
+      332.0,
+      153.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     332.0,
+     111.0
+    ],
+    "b": [
+     332.0,
+     153.0
+    ]
+   },
+   "arrow": [
+    332.0,
+    153.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "funding",
+   "b": "inv",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      332.0,
+      271.0
+     ],
+     [
+      332.0,
+      313.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     332.0,
+     271.0
+    ],
+    "b": [
+     332.0,
+     313.0
+    ]
+   },
+   "arrow": [
+    332.0,
+    313.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "fx",
+   "b": "exp",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      332.0,
+      431.0
+     ],
+     [
+      332.0,
+      473.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     332.0,
+     431.0
+    ],
+    "b": [
+     332.0,
+     473.0
+    ]
+   },
+   "arrow": [
+    332.0,
+    473.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 7,
+  "rowY": [
+   92,
+   172,
+   252,
+   292,
+   332,
+   412,
+   492
+  ],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "comb-construct",
+  "mode_decision_trace": {
+   "engine": "comb-construct",
+   "placement": "comb-bilateral",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=8, edges m=9 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "3 simple loops enumerated (need exactly 2)",
+     "trial_gate": null
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": false,
+     "reason": "no hub-pair candidate: no directed edge whose endpoints share 3..4 common neighbors",
+     "trial_gate": null
+    },
+    {
+     "tier": 3,
+     "rule": "column-chain",
+     "triggered": true,
+     "reason": "main ring k=4 < n=8 (small main ring -> strong chain reading)",
+     "trial_gate": "pass"
+    },
+    {
+     "tier": 2,
+     "rule": "comb-bilateral",
+     "triggered": true,
+     "reason": "bilateral hubs hub1/hub2 with identical source-only neighborhood |S|=3",
+     "trial_gate": "pass"
+    },
+    {
+     "tier": 4,
+     "rule": "ring-cycle",
+     "triggered": false,
+     "reason": "not loop-dominated: main-ring coverage < n-2 and non-bridge edge ratio 0.67 < 0.9",
+     "trial_gate": null
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "comb-bilateral: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "comb-bilateral",
+  "comb": {
+   "column": [
+    "income",
+    "cons",
+    "funding",
+    "inv",
+    "fx",
+    "exp"
+   ],
+   "hubs": [
+    "hub1",
+    "hub2"
+   ],
+   "sources": [
+    "cons",
+    "inv",
+    "exp"
+   ],
+   "axis_x": 332,
+   "hub_dx": 228,
+   "hub_y": 292,
+   "m": 3
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

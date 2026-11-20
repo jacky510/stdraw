@@ -1,0 +1,91 @@
+{
+ "checks": [
+  {
+   "check": "1. crossings <= 2 (polyline/arc sampled intersection; on hard-gate conflict keep gates, release crossings)",
+   "pass": true,
+   "detail": "13 edges, conflicts 0"
+  },
+  {
+   "check": "2. box press = 0 (any angle, incl. 1px margin)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "3. edge-box clearance >= 16px",
+   "pass": true,
+   "detail": "minimum 20.0px (adopters->potential vs word)"
+  },
+  {
+   "check": "4. anchor smoothness (border anchors, tangent angle >= 20 deg)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "5. cards pairwise non-overlapping (per-node width)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "6a. uniform row pitch (parking-lane nodes excluded)",
+   "pass": true,
+   "detail": "pitch=80"
+  },
+  {
+   "check": "6b. all coordinates on the 2px grid (even)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "7. all content inside the viewBox",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "8. 1280x800 rendering scale >= 0.85",
+   "pass": true,
+   "detail": "viewBox 800x464 -> s=1.466; title 12.5x1.47~=18.3px"
+  },
+  {
+   "check": "9. spine-wing placement regularity (spine on-axis + midline adherence + mirror <=2px)",
+   "pass": true,
+   "detail": "maximum deviation 0.00px"
+  },
+  {
+   "check": "10. auto-v2 metadata complete",
+   "pass": true,
+   "detail": "recipe=auto-v2 line_style=straight engine=spine-construct"
+  },
+  {
+   "check": "11. dual crossing accounting consistent (routing theory vs delivered-geometry recheck)",
+   "pass": true,
+   "detail": "router=0 geometric=0"
+  },
+  {
+   "check": "12. mutual-pair two-line minimum distance >= 4px (lens double arcs, merging forbidden)",
+   "pass": true,
+   "detail": "crowding<->quickfix:15.5px; crowding<->fundamental:16.5px"
+  },
+  {
+   "check": "13. path_d rendering geometry consistent with verification geometry + arc G1 tangent continuity",
+   "pass": true,
+   "detail": "no vg path_d routes in this graph (trivially passes)"
+  }
+ ],
+ "fail": 0,
+ "summary": {
+  "viewBox": [
+   800,
+   464
+  ],
+  "aspect": 1.724,
+  "nodes": 8,
+  "edges": 13,
+  "rows": 5,
+  "pitch": 80,
+  "scale_1280x800": 1.466,
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "spine-construct",
+  "fail": 0
+ }
+}

@@ -1,0 +1,312 @@
+{
+ "viewBox": [
+  0,
+  0,
+  224,
+  560
+ ],
+ "nodes": {
+  "raw": {
+   "x": 120,
+   "y": 92,
+   "w": 108
+  },
+  "cost": {
+   "x": 120,
+   "y": 172,
+   "w": 96
+  },
+  "exw": {
+   "x": 120,
+   "y": 252,
+   "w": 96
+  },
+  "retail": {
+   "x": 120,
+   "y": 332,
+   "w": 96
+  },
+  "sales": {
+   "x": 120,
+   "y": 412,
+   "w": 96
+  },
+  "inv2": {
+   "x": 120,
+   "y": 492,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "raw",
+   "b": "cost",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      120.0,
+      111.0
+     ],
+     [
+      120.0,
+      153.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     120.0,
+     111.0
+    ],
+    "b": [
+     120.0,
+     153.0
+    ]
+   },
+   "arrow": [
+    120.0,
+    153.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "cost",
+   "b": "exw",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      120.0,
+      191.0
+     ],
+     [
+      120.0,
+      233.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     120.0,
+     191.0
+    ],
+    "b": [
+     120.0,
+     233.0
+    ]
+   },
+   "arrow": [
+    120.0,
+    233.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "exw",
+   "b": "retail",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      120.0,
+      271.0
+     ],
+     [
+      120.0,
+      313.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     120.0,
+     271.0
+    ],
+    "b": [
+     120.0,
+     313.0
+    ]
+   },
+   "arrow": [
+    120.0,
+    313.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "retail",
+   "b": "sales",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      120.0,
+      351.0
+     ],
+     [
+      120.0,
+      393.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     120.0,
+     351.0
+    ],
+    "b": [
+     120.0,
+     393.0
+    ]
+   },
+   "arrow": [
+    120.0,
+    393.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "sales",
+   "b": "inv2",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      120.0,
+      431.0
+     ],
+     [
+      120.0,
+      473.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     120.0,
+     431.0
+    ],
+    "b": [
+     120.0,
+     473.0
+    ]
+   },
+   "arrow": [
+    120.0,
+    473.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 6,
+  "rowY": [
+   92,
+   172,
+   252,
+   332,
+   412,
+   492
+  ],
+  "pitch": 80,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "cp-sat",
+  "mode_decision_trace": {
+   "engine": "cp-sat",
+   "placement": "layered",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=6, edges m=5 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "0 simple loops enumerated (need exactly 2)",
+     "trial_gate": null
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": false,
+     "reason": "no hub-pair candidate: no directed edge whose endpoints share 3..4 common neighbors",
+     "trial_gate": null
+    },
+    {
+     "tier": 3,
+     "rule": "column-chain",
+     "triggered": false,
+     "reason": "no simple loop (declared or enumerated) — nothing to close the main chain",
+     "trial_gate": null
+    },
+    {
+     "tier": 4,
+     "rule": "ring-cycle",
+     "triggered": false,
+     "reason": "no simple loop (declared or enumerated) — not loop-dominated",
+     "trial_gate": null
+    },
+    {
+     "tier": 5,
+     "rule": "layered (existing path)",
+     "triggered": true,
+     "reason": "fallback: no structural mode triggered — layered layering + placement (byte-stable default)",
+     "trial_gate": null
+    }
+   ],
+   "fallback": {
+    "used": true,
+    "reason": "no structural mode triggered — layered path"
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "layered: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": {
+   "version": "v1",
+   "edges_total": 5,
+   "violations": [],
+   "overflow_to_adjacent_side": 0,
+   "lens_pairs": 0
+  },
+  "solver_available": true,
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

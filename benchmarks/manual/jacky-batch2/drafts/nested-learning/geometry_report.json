@@ -1,0 +1,91 @@
+{
+ "checks": [
+  {
+   "check": "1. crossings <= 2 (polyline/arc sampled intersection; on hard-gate conflict keep gates, release crossings)",
+   "pass": true,
+   "detail": "9 edges, conflicts 0"
+  },
+  {
+   "check": "2. box press = 0 (any angle, incl. 1px margin)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "3. edge-box clearance >= 16px",
+   "pass": true,
+   "detail": "minimum 40.9px (perf->motive vs skill)"
+  },
+  {
+   "check": "4. anchor smoothness (border anchors, tangent angle >= 20 deg)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "5. cards pairwise non-overlapping (per-node width)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "6a. uniform row pitch (parking-lane nodes excluded) (ring: N/A)",
+   "pass": true,
+   "detail": "pitch=None"
+  },
+  {
+   "check": "6b. all coordinates on the 2px grid (even)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "7. all content inside the viewBox",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "8. 1280x800 rendering scale >= 0.85",
+   "pass": true,
+   "detail": "viewBox 568x504 -> s=1.349; title 12.5x1.35~=16.9px"
+  },
+  {
+   "check": "9. ring placement regularity (on-ring equal spacing CV + template fit)",
+   "pass": true,
+   "detail": "on-ring equal spacing CV=0.0058, regular-polygon deviation D=0.0077 (gate CV<=0.50, D<=0.70; manual band 2026-11-16)"
+  },
+  {
+   "check": "10. auto-v2 metadata complete",
+   "pass": true,
+   "detail": "recipe=auto-v2 line_style=straight engine=ring-construct"
+  },
+  {
+   "check": "11. dual crossing accounting consistent (routing theory vs delivered-geometry recheck)",
+   "pass": true,
+   "detail": "router=0 geometric=0"
+  },
+  {
+   "check": "12. mutual-pair two-line minimum distance >= 4px (lens double arcs, merging forbidden)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "check": "13. path_d rendering geometry consistent with verification geometry + arc G1 tangent continuity",
+   "pass": true,
+   "detail": "no vg path_d routes in this graph (trivially passes)"
+  }
+ ],
+ "fail": 0,
+ "summary": {
+  "viewBox": [
+   568,
+   504
+  ],
+  "aspect": 1.127,
+  "nodes": 8,
+  "edges": 9,
+  "rows": 5,
+  "pitch": null,
+  "scale_1280x800": 1.349,
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "ring-construct",
+  "fail": 0
+ }
+}

@@ -1,0 +1,15 @@
+graph "供应链价格传导链"
+
+var raw "原材料价格"
+var cost "生产成本"
+var exw "出厂价格"
+var retail "零售价格"
+var sales "终端销量"
+var inv2 "渠道库存"
+
+raw -> + cost
+cost -> + exw
+exw -> + retail
+retail -> - sales
+sales -> + inv2
+
