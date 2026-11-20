@@ -1,0 +1,173 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "random-n10-i11",
+ "viewBox": [
+  0,
+  0,
+  960,
+  1368
+ ],
+ "nodes": {
+  "N00": {
+   "x": 399,
+   "y": 590
+  },
+  "N01": {
+   "x": 692,
+   "y": 812
+  },
+  "N02": {
+   "x": 256,
+   "y": 700
+  },
+  "N03": {
+   "x": 122,
+   "y": 810
+  },
+  "N04": {
+   "x": 399,
+   "y": 811
+  },
+  "N05": {
+   "x": 200,
+   "y": 434
+  },
+  "N06": {
+   "x": 401,
+   "y": 953
+  },
+  "N07": {
+   "x": 488,
+   "y": 730
+  },
+  "N08": {
+   "x": 692,
+   "y": 591
+  },
+  "N09": {
+   "x": 401,
+   "y": 436
+  }
+ },
+ "edges": [
+  {
+   "a": "N00",
+   "b": "N01",
+   "style": "straight",
+   "anchors": {
+    "src": "e-g2"
+   }
+  },
+  {
+   "a": "N00",
+   "b": "N02",
+   "style": "straight",
+   "anchors": {
+    "src": "sw",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "N00",
+   "b": "N04",
+   "style": "straight",
+   "anchors": {
+    "src": "s",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "N00",
+   "b": "N05",
+   "style": "straight",
+   "anchors": {
+    "src": "nw",
+    "dst": "s"
+   }
+  },
+  {
+   "a": "N00",
+   "b": "N07",
+   "style": "auto",
+   "anchors": {
+    "src": "s-g1",
+    "dst": "n-g1"
+   }
+  },
+  {
+   "a": "N00",
+   "b": "N08",
+   "style": "auto",
+   "anchors": {
+    "src": "e"
+   }
+  },
+  {
+   "a": "N00",
+   "b": "N09",
+   "style": "straight",
+   "anchors": {
+    "src": "n",
+    "dst": "s"
+   }
+  },
+  {
+   "a": "N01",
+   "b": "N04",
+   "style": "straight"
+  },
+  {
+   "a": "N01",
+   "b": "N07",
+   "style": "straight",
+   "anchors": {
+    "src": "nw",
+    "dst": "se"
+   }
+  },
+  {
+   "a": "N02",
+   "b": "N03",
+   "style": "auto",
+   "anchors": {
+    "src": "sw",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "N02",
+   "b": "N04",
+   "style": "auto",
+   "anchors": {
+    "src": "s-g1",
+    "dst": "nw"
+   }
+  },
+  {
+   "a": "N04",
+   "b": "N06",
+   "style": "auto",
+   "anchors": {
+    "src": "s"
+   }
+  },
+  {
+   "a": "N04",
+   "b": "N07",
+   "style": "free",
+   "anchors": {
+    "src": "ne",
+    "dst": "s-g2"
+   }
+  },
+  {
+   "a": "N05",
+   "b": "N09",
+   "style": "straight",
+   "anchors": {
+    "src": "e"
+   }
+  }
+ ]
+}
