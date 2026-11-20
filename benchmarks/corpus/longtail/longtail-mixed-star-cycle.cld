@@ -1,0 +1,17 @@
+# longtail acceptance corpus (M1-B) | topology family: mixed | n=6
+graph "longtail-mixed-star-cycle"
+
+var hub "hub"
+var s1 "s1"
+var s2 "s2"
+var s3 "s3"
+var s4 "s4"
+var s5 "s5"
+hub -> + s1
+hub -> + s2
+hub -> + s3
+hub -> + s4
+hub -> + s5
+s1 -> + s2
+
+# empty line terminates the graph; no loop declarations: the audit layer verifies against the independent enumeration

@@ -1,0 +1,16 @@
+# longtail acceptance corpus (M1-B) | topology family: chain | n=6
+graph "longtail-chain-06"
+
+var c01 "c01"
+var c02 "c02"
+var c03 "c03"
+var c04 "c04"
+var c05 "c05"
+var c06 "c06"
+c01 -> + c02
+c02 -> + c03
+c03 -> + c04
+c04 -> + c05
+c05 -> + c06
+
+# empty line terminates the graph; no loop declarations: the audit layer verifies against the independent enumeration

@@ -53,7 +53,6 @@ from .candidate_selection import (ROUTING_OP_BUDGET_CANDIDATES,
                                   rank_candidates, route_and_evaluate)
 from .candidate_sources import SourceContext
 from .layout_auto import layout as _auto_layout
-from .planarized_layout import planarized_entry
 from .structure_analyzer import analyze_graph
 
 # ---- not-worse guard: DELIVERED-certificate caliber ----
@@ -177,19 +176,13 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
     if manual is not None:
         return _auto_layout(graph, cfg, linestyle, manual=manual)
 
-    # ---- planarization ladder guard (same precedence as the incumbent) ----
-    pl_mode, pl_payload = planarized_entry(graph, cfg, linestyle)
-    if pl_mode == "L1":
-        v4 = _auto_layout(graph, cfg, linestyle)
-        provenance = {
-            "delivery": {
-                "mode": "planarized-l1-incumbent",
-                "note": "planarized L1 witness drawing: incumbent output kept "
-                        "(candidate pool out of scope for the L1 ladder in M1)",
-            },
-        }
-        _annotate(v4, provenance, graph, edges)
-        return v4
+    # ---- M1-B: the candidate pool now runs INSIDE the L1 planarization
+    # scope. The L1 ladder keeps its delivery-floor precedence exactly as
+    # before -- the incumbent (delivered whenever no candidate passes the
+    # not-worse guard) IS the L1 witness drawing produced by the auto path,
+    # so the planarization source can only REPLACE the L1 delivery with a
+    # candidate whose delivered certificate metrics are not worse. The
+    # incumbent's planarization mode travels in the delivery provenance.
 
     widths, heights, card_h = _card_metrics(graph, cfg)
     dense_hub, dense_deg_max = _dense_hub(graph, adj)
@@ -206,6 +199,8 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
     incumbent_v4 = ctx.ops.get("incumbent_v4")
     if incumbent_v4 is None:
         incumbent_v4 = _auto_layout(graph, cfg, linestyle)
+    incumbent_pl_mode = ((incumbent_v4.get("meta") or {})
+                         .get("planarization") or {}).get("mode")
 
     provenance = {
         "analysis": analysis.to_dict(),
@@ -332,6 +327,12 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
             "attempts": delivery_log,
         }
         v4 = incumbent_v4
+    # L1-scope annotation: written ONLY when the incumbent actually came
+    # through the planarization ladder (L1 graphs). Planar-graph provenance
+    # stays byte-identical to M1-A (negative protection).
+    if incumbent_pl_mode is not None:
+        provenance["delivery"]["incumbent_planarization_mode"] = \
+            incumbent_pl_mode
     _annotate(v4, provenance, graph, edges)
     return v4
 

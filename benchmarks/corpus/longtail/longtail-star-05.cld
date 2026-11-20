@@ -1,0 +1,14 @@
+# longtail acceptance corpus (M1-B) | topology family: star | n=5
+graph "longtail-star-05"
+
+var hub "hub"
+var leaf01 "leaf01"
+var leaf02 "leaf02"
+var leaf03 "leaf03"
+var leaf04 "leaf04"
+hub -> + leaf01
+hub -> + leaf02
+hub -> + leaf03
+hub -> + leaf04
+
+# empty line terminates the graph; no loop declarations: the audit layer verifies against the independent enumeration
