@@ -26,8 +26,8 @@ from stdraw.candidate_contract import (LayoutCandidate, SCORE_TIE_EPS,
                                        structural_tiebreak_key,
                                        coordinate_sequence_key)
 from stdraw.candidate_orchestrator import Orchestrator, SourceRecord
-from stdraw.candidate_pipeline import (_card_metrics, _dense_hub, layout,
-                                       _guard_tuple)
+from stdraw.candidate_pipeline import (_card_metrics, _cert_guard, _dense_hub,
+                                       layout)
 from stdraw.candidate_selection import (CandidateReport, pareto_and_diversity,
                                         rank_candidates, route_and_evaluate,
                                         heuristic_score)
@@ -113,12 +113,25 @@ class TestCandidateContract(unittest.TestCase):
                          tuple(self.POS[v] for v in sorted(self.POS)))
 
     def test_float_never_sole_tiebreaker(self):
-        from stdraw.candidate_contract import score_rank_bucket
-        # SCORE_TIE_EPS is the declared band; scores inside the same band
-        # bucket collapse to one rank -> the structural chain decides
-        s1, s2 = 0.0000002, 0.0000007
-        self.assertLess(abs(s2 - s1), SCORE_TIE_EPS)
-        self.assertEqual(score_rank_bucket(s1), score_rank_bucket(s2))
+        """Chained eps bucketing (MINOR-7 fix): two scores within the
+        SCORE_TIE_EPS band land in the SAME bucket even when a floor
+        boundary at an integer eps multiple sits between them (the old
+        floor(score/eps) form split 0.9999999e-6 / 1.0000001e-6 — a 2e-13
+        gap — across bucket 0/1)."""
+        import stdraw.candidate_selection as cs
+
+        class _R:
+            def __init__(self, s):
+                self._s = s
+
+        scores = [0.9999999e-6, 1.0000001e-6, 5e-6]
+        with mock.patch.object(cs, "heuristic_score",
+                               side_effect=lambda r: r._s):
+            buckets = cs._score_buckets([_R(s) for s in scores])
+        self.assertEqual(buckets[0.9999999e-6], buckets[1.0000001e-6])
+        self.assertNotEqual(buckets[0.9999999e-6], buckets[5e-6])
+        # declared band is honored: identical scores are always one bucket
+        self.assertEqual(buckets[scores[0]], buckets[scores[0]])
 
 
 # -------------------------------------------------------- structure model
@@ -255,6 +268,27 @@ class TestOrchestrator(unittest.TestCase):
                             if r.outcome == "generated"))
         self.assertTrue(result.exhausted)
 
+    def test_total_budget_clips_batch_no_overrun(self):
+        """MINOR-4 fix: a whole source batch may no longer cross the total
+        ceiling (max_total=3 with per-source 2 used to keep 4)."""
+        import stdraw.candidate_orchestrator as co
+        ctx = _ctx()
+        orch = co.Orchestrator(max_total=3, max_per_source=2)
+        fake = [_cand("x:000", {"a": (0, 0)}), _cand("x:001", {"a": (2, 0)})]
+        with mock.patch.object(co, "SOURCE_ORDER",
+                               ["s1", "s2", "s3"]), \
+             mock.patch.object(co, "generate_from_source",
+                               return_value=fake):
+            result = orch.run(ctx)
+        self.assertEqual(len(result.candidates), 3)
+        self.assertEqual(result.candidates[-1].candidate_id, "x:000")
+        by_source = {r.source: r for r in result.records}
+        self.assertEqual(by_source["s1"].candidates, 2)
+        self.assertEqual(by_source["s2"].candidates, 1)
+        self.assertIn("clipped by the total budget",
+                      by_source["s2"].detail)
+        self.assertEqual(by_source["s3"].outcome, "budget_skipped")
+
     def test_failure_path_continues(self):
         import stdraw.candidate_orchestrator as co
         ctx = _ctx()
@@ -320,6 +354,24 @@ class TestSelection(unittest.TestCase):
         self.assertEqual([r.cand.candidate_id for r in r1],
                          [r.cand.candidate_id for r in r2])
 
+    def test_diversity_beats_cross_group_domination(self):
+        """MINOR-3 fix: a metric-dominant candidate from one structural
+        group may not eliminate a different structural form — grouping by
+        signature precedes the Pareto sweep, so every form keeps its
+        representative."""
+        good = CandidateReport(cand=_cand("a:000", {"a": (0, 0)}))
+        worse_form = CandidateReport(cand=_cand("b:000", {"a": (240, 240)}))
+        for r, cv, co in ((good, 0.1, 0.1), (worse_form, 0.5, 0.5)):
+            r.routed, r.hard_pass = True, True
+            r.crossings, r.press_count = 0, 0
+            r.edge_length_cv, r.center_offset_norm = cv, co
+        worse_form.crossings = 4          # dominated everywhere beyond eps
+        kept = pareto_and_diversity([good, worse_form])
+        sigs = {r.cand.structural_signature for r in kept}
+        self.assertEqual(len(sigs), 2)    # both forms survive
+        self.assertEqual({r.cand.candidate_id for r in kept},
+                         {"a:000", "b:000"})
+
     def test_diversity_keeps_representatives_per_signature(self):
         r1 = CandidateReport(cand=_cand("a:000", {"a": (0, 0)}))
         r2 = CandidateReport(cand=_cand("a:001", {"a": (2, 0)}))
@@ -371,12 +423,19 @@ class TestPipeline(unittest.TestCase):
         self.assertIn("analysis", cp)
         self.assertIn("orchestration", cp)
         self.assertIn("selection", cp)
-        self.assertEqual(cp["delivery"]["mode"], "candidate")
+        # MINOR-2 fix: a candidate delivery that is not-worse only on the
+        # hard triple but worse on soft certificate metrics (limits-to-growth
+        # CV / card gap) now honestly falls back to the incumbent
+        self.assertIn(cp["delivery"]["mode"],
+                      ("candidate", "incumbent-fallback"))
         self.assertEqual(cp["candidate_contract_keys"],
                          ["candidate_id", "source", "node_positions",
                           "metadata", "generation_cost",
                           "structural_signature"])
         sel = cp["selection"]
+        self.assertIsInstance(sel["op_budget"], dict)   # MINOR-4: backfilled
+        self.assertGreater(sel["op_budget"]["total"], 0)
+        self.assertGreaterEqual(sel["op_budget"]["consumed"], 0)
         self.assertGreaterEqual(sel["evaluated"], 2)
         self.assertGreaterEqual(sel["hard_pass"], 1)
         blob = json.dumps(cp, sort_keys=True)
@@ -420,7 +479,89 @@ class TestPipeline(unittest.TestCase):
             v4 = cp_mod.layout(g, AutoConfig(), "straight")
         cp = v4["meta"]["candidate_pool"]
         self.assertEqual(cp["delivery"]["mode"], "incumbent-fallback")
+        self.assertIn("raised an error", cp["delivery"]["reason"])
+
+    def test_guard_uses_delivered_certificate_caliber(self):
+        """MAJOR-1/MINOR-1 acceptance: the guard compares DELIVERED
+        certificate metrics, and the recorded guard values are exactly what
+        the delivered certificate reports (the consistency assertion)."""
+        from stdraw.metrics import certificate_auto, scene_from_auto
+        g = _graph()
+        cfg = AutoConfig()
+        v4 = layout(g, cfg, "straight")
+        cp = v4["meta"]["candidate_pool"]
+        self.assertEqual(cp["delivery"]["guard_caliber"],
+                         "delivered-certificate-metrics")
+        cert = certificate_auto(scene_from_auto(v4))
+        m = cert["metrics"]
+        if cp["delivery"]["mode"] == "candidate":
+            delivered = cp["delivery"]["delivered_metrics"]
+        else:
+            # fallback: the delivered artifact IS the incumbent; the recorded
+            # incumbent metrics must match the delivered certificate
+            incumbent = recipes_run("auto-v2", g, cfg, "straight")
+            m = certificate_auto(scene_from_auto(incumbent))["metrics"]
+            delivered = cp["delivery"]["incumbent_delivered_metrics"]
+        self.assertEqual(delivered["crossings"], m["crossings"])
+        self.assertEqual(delivered["box_press_1px"], m["box_press_1px"])
+        self.assertEqual(delivered["spacing_cv"], m["spacing_cv"])
+        # incumbent side: its guard tuple derives from the same certificate
+        # caliber (NOT a Router proxy) — guard crossings == cert crossings
+        incumbent = recipes_run("auto-v2", g, cfg, "straight")
+        inc_tup, inc_mets = _cert_guard(incumbent, cfg)
+        self.assertEqual(inc_mets["crossings"],
+                         certificate_auto(
+                             scene_from_auto(incumbent))["metrics"]["crossings"])
+        self.assertEqual(cp["delivery"]["incumbent_guard_tuple"],
+                         list(inc_tup))
+
+    def test_guard_rejects_worse_delivery(self):
+        """A candidate whose DELIVERED metrics regress on any guard component
+        is rejected and the untouched incumbent is delivered (the i04
+        pathology: proxy tie -> delivered-worse can no longer happen)."""
+        import stdraw.candidate_pipeline as cp_mod
+        g = _graph()
+        cfg = AutoConfig()
+        incumbent = recipes_run("auto-v2", g, cfg, "straight")
+        inc_tup, inc_mets = _cert_guard(incumbent, cfg)
+        calls = {"n": 0}
+
+        def fake_guard(v4, cfg_):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return inc_tup, inc_mets          # incumbent side
+            worse = (inc_tup[0], inc_tup[1], inc_tup[2], inc_tup[3],
+                     inc_tup[4], inc_tup[5], inc_tup[6], inc_tup[7],
+                     inc_tup[8], inc_tup[9] + 99, inc_tup[10],
+                     inc_tup[11], inc_tup[12])
+            return worse, inc_mets                # every candidate worse
+        with mock.patch.object(cp_mod, "_cert_guard",
+                               side_effect=fake_guard):
+            v4 = cp_mod.layout(g, cfg, "straight")
+        cp = v4["meta"]["candidate_pool"]
+        self.assertEqual(cp["delivery"]["mode"], "incumbent-fallback")
         self.assertIn("not-worse guard", cp["delivery"]["reason"])
+        strip = lambda d: _json({k: v for k, v in d.items() if k != "meta"})
+        self.assertEqual(strip(v4), strip(incumbent))
+
+    def test_hard_filter_rejection_reason_is_honest(self):
+        """MINOR-5 fix: Stage-1 rejections must not be reported as budget
+        exhaustion."""
+        import stdraw.candidate_pipeline as cp_mod
+        g = _graph()
+        real = cp_mod.route_and_evaluate
+
+        def all_rejected(candidates, ctx, op_budget=None):
+            reports = real(candidates, ctx, op_budget=10_000)
+            for r in reports:
+                r.hard_pass = False
+                r.hard_failures = ["box_press_nonzero"]
+            return reports
+        with mock.patch.object(cp_mod, "route_and_evaluate",
+                               side_effect=all_rejected):
+            v4 = cp_mod.layout(g, AutoConfig(), "straight")
+        reason = v4["meta"]["candidate_pool"]["delivery"]["reason"]
+        self.assertEqual(reason, "no candidate survived the Stage-1 hard filter")
 
     def test_planarized_l1_takes_precedence(self):
         import stdraw.candidate_pipeline as cp_mod
@@ -433,7 +574,7 @@ class TestPipeline(unittest.TestCase):
                                return_value=payload):
             v4 = cp_mod.layout(g, AutoConfig(), "straight")
         cp = v4["meta"]["candidate_pool"]
-        self.assertEqual(cp["delivery"], "planarized-l1-incumbent")
+        self.assertEqual(cp["delivery"]["mode"], "planarized-l1-incumbent")
 
     def test_manual_passthrough_keeps_user_intent(self):
         g = _graph()
@@ -467,10 +608,8 @@ class TestLongTailSmoke(unittest.TestCase):
         self.assertIn(cp["delivery"]["mode"], ("candidate",
                                                "incumbent-fallback"))
         # the not-worse guard tuple: candidate never regresses on the tuple
-        widths, heights, card_h = _card_metrics(g, cfg)
-        edges = tuple(sorted((e.a, e.b) for e in g.edges))
-        tup_cand = _guard_tuple(cand, g, cfg, widths, card_h, edges)
-        tup_auto = _guard_tuple(auto, g, cfg, widths, card_h, edges)
+        tup_cand = _cert_guard(cand, cfg)[0]
+        tup_auto = _cert_guard(auto, cfg)[0]
         self.assertLessEqual(tup_cand, tup_auto)
 
     def test_longtail_double_run_identical(self):

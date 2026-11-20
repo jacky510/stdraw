@@ -94,8 +94,9 @@ def structural_tiebreak_key(cand: LayoutCandidate):
 
 
 def score_rank_bucket(score: float) -> int:
-    """Quantize a heuristic score into SCORE_TIE_EPS buckets (floor, never
-    round): two scores in the same bucket are an exact tie and the
-    structural tie-break chain decides. This is what keeps floats from
-    acting as the sole tie-breaker at sub-epsilon resolution."""
+    """LEGACY single-score quantizer — superseded by the chained eps
+    bucketing in candidate_selection._score_buckets (a hard floor at integer
+    multiples of eps let sub-eps gaps straddle a boundary; the chain form
+    decides bucket membership by the eps band itself). Kept only for the
+    contract-level eps band demo; NOT used by selection anymore."""
     return math.floor(score / SCORE_TIE_EPS)
