@@ -7,12 +7,19 @@ checkouts (M1-A baseline tree vs M1-B tree) and reports, per graph:
   - pool composition (source records; the planarized source's outcome);
   - delivery mode + delivered certificate metrics + guard tuple;
   - layout bytes sha256 of both trees (negative byte protection: identical
-    bytes on every graph that does not trigger the new source).
+    bytes on every graph that does not trigger the new source);
+  - DROP-SOURCE CONTROL (marginal contribution): for every source that
+    actually generated on a graph, the candidate-v1 run is repeated with
+    that source removed from SOURCE_ORDER at runtime; the delivered mode
+    and node-coordinate digest with vs without the source give a measured
+    per-source marginal contribution (attribution evidence -- a gain may
+    only be credited to a source whose removal changes the delivery).
 
 Usage:
   python benchmarks/tools/ablate_m1b.py \
       --m1a-root <main checkout> --m1b-root <branch checkout> \
-      --outdir <evidence dir> [--python <interpreter>]
+      --outdir <evidence dir> [--python <interpreter>] \
+      [--drop-scope {triggers,all}]
 
 Zero-drift check across trees + a positive-gain table on the non-planar
 members. Deterministic library runs only (no wall-clock in results).
@@ -25,8 +32,15 @@ import subprocess
 import sys
 
 RUNNER = """
-import hashlib, io, json, sys, contextlib
+import hashlib, io, json, os, sys, contextlib
 sys.path.insert(0, r'{root}')
+_drop = os.environ.get('STDRAW_DROP_SOURCE', '')
+if _drop:
+    import stdraw.candidate_orchestrator as _orch
+    import stdraw.candidate_sources as _src
+    _kept = [s for s in _src.SOURCE_ORDER if s != _drop]
+    _src.SOURCE_ORDER = _kept
+    _orch.SOURCE_ORDER = _kept
 from stdraw.dsl import parse
 from stdraw.layout_auto import AutoConfig
 from stdraw.recipes import run as recipes_run
@@ -55,6 +69,7 @@ except Exception as e:
 payload = {{
     'delivery_mode': delivery.get('mode'),
     'reason': delivery.get('reason'),
+    'delivered_ids': delivery.get('ranked_ids'),
     'incumbent_planarization_mode':
         delivery.get('incumbent_planarization_mode'),
     'incumbent_guard_tuple': delivery.get('incumbent_guard_tuple'),
@@ -73,9 +88,10 @@ print('RESULT_JSON:' + json.dumps(payload, ensure_ascii=False))
 """
 
 
-def run_tree(python, root, cld, timeout=600):
+def run_tree(python, root, cld, timeout=600, drop_source=""):
     code = RUNNER.format(root=root)
-    env = {**os.environ, "PYTHONUNBUFFERED": "1"}
+    env = {**os.environ, "PYTHONUNBUFFERED": "1",
+           "STDRAW_DROP_SOURCE": drop_source}
     r = subprocess.run([python, "-c", code, cld], capture_output=True,
                        text=True, timeout=timeout, cwd=root, env=env)
     line = next((l for l in r.stdout.splitlines()
@@ -96,6 +112,11 @@ def main():
                     help="defaults to <m1b-root>/benchmarks/corpus/longtail")
     ap.add_argument("--negatives", default="classic-cld,limits,hdd",
                     help="comma keys of the negative fixture graphs")
+    ap.add_argument("--drop-scope", choices=("triggers", "all"),
+                    default="triggers",
+                    help="which graphs get the per-source drop-source "
+                         "control reruns (triggers = graphs where the "
+                         "planarized source generated; all = every graph)")
     args = ap.parse_args()
 
     corpus = args.corpus_dir or os.path.join(
@@ -126,6 +147,7 @@ def main():
         coords_same = (not a.get("error") and not b.get("error")
                        and a["cand_nodes_sha256"] == b["cand_nodes_sha256"])
         rows.append({"graph": name, "negative_fixture": is_negative,
+                     "cld_path": cld,
                      "m1a": a, "m1b": b, "auto_bytes_identical": auto_same,
                      "cand_coords_identical": coords_same})
         print(f"[{name}] auto_identical={auto_same} "
@@ -134,7 +156,49 @@ def main():
               f"m1b_mode={b.get('delivery_mode')} "
               f"m1b_planarized={b.get('source_outcomes', {}).get('planarized')}")
 
+    # ---- drop-source control: measured per-source marginal contribution ----
+    # For every source that actually generated, rerun candidate-v1 on the
+    # M1-B tree with that source removed from SOURCE_ORDER at runtime and
+    # record whether the delivery changes (mode and/or delivered node
+    # coordinates). A gain may only be credited to a source whose removal
+    # changes the delivery -- this column is the attribution evidence.
+    drop_rows = []
+    for r in rows:
+        gen = sorted(s for s, outcome
+                     in (r["m1b"].get("source_outcomes") or {}).items()
+                     if outcome == "generated")
+        if not gen:
+            continue
+        if args.drop_scope == "triggers" \
+                and r["m1b"].get("source_outcomes", {}).get("planarized") \
+                != "generated":
+            continue
+        for src in gen:
+            d = run_tree(args.python, args.m1b_root, r["cld_path"],
+                         drop_source=src)
+            changed = (not d.get("error") and not r["m1b"].get("error")
+                       and (d.get("delivery_mode")
+                            != r["m1b"].get("delivery_mode")
+                            or d.get("cand_nodes_sha256")
+                            != r["m1b"].get("cand_nodes_sha256")))
+            drop_rows.append({
+                "graph": r["graph"], "dropped_source": src,
+                "delivery_mode_with": r["m1b"].get("delivery_mode"),
+                "delivered_ids_with": r["m1b"].get("delivered_ids"),
+                "delivery_mode_without": d.get("delivery_mode"),
+                "delivered_ids_without": d.get("delivered_ids"),
+                "reason_without": d.get("reason"),
+                "nodes_sha256_with": r["m1b"].get("cand_nodes_sha256"),
+                "nodes_sha256_without": d.get("cand_nodes_sha256"),
+                "delivery_changed": changed,
+                "error": d.get("error"),
+            })
+            print(f"[drop] {r['graph']} -{src}: "
+                  f"{r['m1b'].get('delivery_mode')} -> "
+                  f"{d.get('delivery_mode')} changed={changed}")
+
     out = {"rows": rows, "m1a_root": args.m1a_root, "m1b_root": args.m1b_root,
+           "drop_scope": args.drop_scope, "drop_rows": drop_rows,
            "protection_caliber":
                "auto-v2 recipe bytes identical + candidate-v1 delivered "
                "node coordinates identical on no-trigger graphs "
@@ -172,6 +236,17 @@ def main():
               f"mode {r['m1a'].get('delivery_mode')} -> "
               f"{r['m1b'].get('delivery_mode')} | planarized_cands="
               f"{r['m1b'].get('planarized_record', {}).get('candidates')}")
+    print("\n== per-source marginal contribution (drop-source control) ==")
+    by_source = {}
+    for d in drop_rows:
+        by_source.setdefault(d["dropped_source"], []).append(d)
+    for src in sorted(by_source):
+        entries = by_source[src]
+        winning = [d["graph"] for d in entries if d["delivery_changed"]]
+        print(f"  {src}: {len(entries)} graph(s) controlled, "
+              f"delivery changes on {len(winning)}: {winning or 'none'} "
+              f"-> measured marginal contribution "
+              f"{'>0' if winning else '=0'}")
     return 0
 
 

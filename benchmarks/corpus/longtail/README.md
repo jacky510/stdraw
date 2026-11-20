@@ -15,7 +15,7 @@
 | longtail-nonplanar-k5.cld | nonplanar | 5 | 10 | K₅（cr=1，删 ≤1 边可平面化） |
 | longtail-nonplanar-k33.cld | nonplanar | 6 | 9 | K₃,₃（cr=1，删 ≤1 边可平面化） |
 | longtail-nonplanar-petersen.cld | nonplanar | 10 | 15 | Petersen 图（cr=2） |
-| longtail-mixed-chain-cycle.cld | mixed | 4 | 4 | 链闭合单环（链+环） |
+| longtail-mixed-chain-cycle.cld | mixed | 6 | 6 | 4-环 + 挂链（真链+环混合；初版为纯 C4，返修正构） |
 | longtail-mixed-star-cycle.cld | mixed | 6 | 6 | 星 + 叶间一弦（星+环） |
 | longtail-mixed-chain-star.cld | mixed | 7 | 6 | 星挂链（无环树） |
 

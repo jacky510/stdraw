@@ -1,13 +1,20 @@
-# longtail acceptance corpus (M1-B) | topology family: mixed | n=4
+# longtail acceptance corpus (M1-B) | topology family: mixed | n=6
 graph "longtail-mixed-chain-cycle"
 
 var m1 "m1"
 var m2 "m2"
 var m3 "m3"
 var m4 "m4"
+var m5 "m5"
+var m6 "m6"
 m1 -> + m2
 m2 -> + m3
 m3 -> + m4
 m4 -> + m1
+m4 -> + m5
+m5 -> + m6
 
 # empty line terminates the graph; no loop declarations: the audit layer verifies against the independent enumeration
+# construction: 4-cycle (m1-m2-m3-m4-m1) + hanging chain (m4-m5-m6) -- a real
+# chain+cycle mixed topology (v1 shipped a bare C4; fixed in the M1-B rework
+# so the family label matches the construction)

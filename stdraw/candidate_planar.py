@@ -39,9 +39,13 @@ near-planar graphs. Construction pipeline (exactly the card's chain):
 Zero scoring power: the source never reads downstream quality metrics
 (crossing counts here are a CONSTRUCTION parameter for the re-insertion
 variants prescribed by the plan, computed before any candidate exists in
-the pipeline). All completed variant constructions are emitted; the
-per-source generation quota of the orchestrator applies unchanged as the
-preregistered structural cap.
+the pipeline). Emission caliber: each deletion set enumerates up to
+PLANAR_MAX_ST_PER_SET face constructions at the CONSTRUCTION layer; per the
+plan's dual-variant rule the best A (plus the best B when it picks a
+DIFFERENT construction) is emitted into the unified pipeline -- the A/B
+selection is a prescribed construction definition, not a downstream-quality
+filter; the per-source generation quota of the orchestrator applies
+unchanged as the preregistered structural cap.
 
 Determinism: every iteration is over sorted structures; positions are
 integers; no timestamps, no absolute paths. The embedding probe inserts
@@ -211,7 +215,23 @@ def run_planarized(ctx):
             name="planarized-probe",
             nodes=[Node(id=v, label=v) for v in nodes],
             edges=[Edge(a=a, b=b, polarity="+") for a, b in kept])
-        pl = PlanarLayout(sub, LayoutConfig())
+        # Construction caliber = evaluation caliber: the visibility layout's
+        # card metrics must match what the pipeline's stage-1 gate measures
+        # (ctx.card_h from the auto text metrics; row/column clearance from
+        # cfg.min_gap). The planar module's own defaults (card_h=42,
+        # pitch=56, gap 8) describe the ortho face only -- reusing them here
+        # produced candidates structurally eliminated by the card-gap gate
+        # (measured min_card_gap=12 < 16 on every trigger graph). This only
+        # parameterizes the CONSTRUCTION: planar.py defaults (the ortho-v1
+        # frozen path) are untouched.
+        min_gap = getattr(ctx.cfg, "min_gap", 16)
+        lc = LayoutConfig(
+            card_h=ctx.card_h,
+            pitch=ctx.card_h + min_gap,   # inter-row gap = min_gap exactly
+            card_gap=min_gap,
+            gap_col=min_gap,
+        )
+        pl = PlanarLayout(sub, lc)
         try:
             rot, dummy = pl.augment(pl.build_rotation())
         except Exception as e:                 # honest construction failure

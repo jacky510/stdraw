@@ -227,6 +227,70 @@ class TestPlanarizedSource(unittest.TestCase):
                     f"banned import in candidate_planar: {mod}")
 
 
+# ------------------------------------------------------- construction caliber
+# (rework: the construction's LayoutConfig must match the evaluation caliber
+#  -- ctx.card_h + cfg.min_gap -- so candidates are never STRUCTURALLY
+#  eliminated by the stage-1 card-gap gate; the pre-fix reuse of the ortho
+#  face defaults produced min_card_gap=12 < 16 on every trigger graph)
+
+class TestConstructionCaliber(unittest.TestCase):
+    LONGTAIL = ("longtail-nonplanar-k5.cld", "longtail-nonplanar-k33.cld",
+                "longtail-nonplanar-petersen.cld")
+
+    def _corpus_ctx(self, fname):
+        with open(os.path.join(LONGTAIL_DIR, fname), encoding="utf-8") as f:
+            g = parse(f.read())
+        from stdraw.candidate_pipeline import _card_metrics, _dense_hub
+        cfg = AutoConfig()
+        e = tuple(sorted((x.a, x.b) for x in g.edges))
+        widths, heights, card_h = _card_metrics(g, cfg)
+        adj = g.adj_undirected()
+        hub, _ = _dense_hub(g, adj)
+        return SourceContext(graph=g, cfg=cfg, widths=widths,
+                             card_h=card_h, edges=e, adj=adj,
+                             dense_hub=hub, analysis=analyze_graph(g))
+
+    def test_emitted_candidates_pass_card_gap_gate(self):
+        # rect-gap caliber identical to the stage-1 gate: no emitted
+        # planarized candidate may be structurally eliminated
+        for fname in self.LONGTAIL:
+            ctx = self._corpus_ctx(fname)
+            min_gap = ctx.cfg.min_gap
+            for c in planarized_candidates(ctx):
+                pos = c.node_positions
+                nodes = sorted(pos)
+                gap = None
+                for i in range(len(nodes)):
+                    for j in range(i + 1, len(nodes)):
+                        a, b = nodes[i], nodes[j]
+                        gx = (abs(pos[a][0] - pos[b][0])
+                              - (ctx.widths[a] + ctx.widths[b]) / 2)
+                        gy = abs(pos[a][1] - pos[b][1]) - ctx.card_h
+                        g = max(gx, gy)
+                        gap = g if gap is None else min(gap, g)
+                self.assertGreaterEqual(
+                    gap, min_gap - 2,
+                    f"{fname} {c.candidate_id}: min_card_gap={gap}")
+
+    def test_dual_variant_split_covered_in_corpus(self):
+        # MINOR-4 disposition: at least one acceptance-corpus graph emits a
+        # variant B that picks a DIFFERENT construction than its set's A
+        # (positions distinct) -- A/B discriminative power is covered
+        # in-corpus, not only out-of-corpus.
+        ctx = self._corpus_ctx("longtail-nonplanar-petersen.cld")
+        cands = planarized_candidates(ctx)
+        by_set = {}
+        for c in cands:
+            by_set.setdefault(c.metadata["deletion_set_index"],
+                              []).append(c)
+        splits = [lst for lst in by_set.values() if len(lst) == 2
+                  and {c.metadata["variant"] for c in lst} == {"A", "B"}
+                  and len({json.dumps(c.node_positions, sort_keys=True)
+                           for c in lst}) == 2]
+        self.assertTrue(splits, "no in-corpus A/B split with distinct "
+                                "constructions")
+
+
 # ------------------------------------------------------- pipeline (L1 scope)
 
 class TestPipelineL1Scope(unittest.TestCase):
