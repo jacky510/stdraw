@@ -1,0 +1,81 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "comb-supply-demand",
+ "viewBox": [
+  0,
+  0,
+  656,
+  560
+ ],
+ "nodes": {
+  "cons": {
+   "x": 332,
+   "y": 172
+  },
+  "inv": {
+   "x": 332,
+   "y": 326
+  },
+  "exp": {
+   "x": 333,
+   "y": 424
+  },
+  "hub1": {
+   "x": 102,
+   "y": 325
+  },
+  "hub2": {
+   "x": 557,
+   "y": 326
+  },
+  "income": {
+   "x": 332,
+   "y": 92
+  },
+  "funding": {
+   "x": 332,
+   "y": 252
+  },
+  "fx": {
+   "x": 332,
+   "y": 511
+  }
+ },
+ "edges": [
+  {
+   "a": "cons",
+   "b": "hub1",
+   "style": "auto",
+   "anchors": {
+    "src": "w",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "cons",
+   "b": "hub2",
+   "style": "auto",
+   "anchors": {
+    "src": "e",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "exp",
+   "b": "hub1",
+   "style": "auto",
+   "anchors": {
+    "dst": "s"
+   }
+  },
+  {
+   "a": "exp",
+   "b": "hub2",
+   "style": "auto",
+   "anchors": {
+    "dst": "s"
+   }
+  }
+ ]
+}

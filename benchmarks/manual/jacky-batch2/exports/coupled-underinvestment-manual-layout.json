@@ -1,0 +1,108 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "coupled-underinvestment",
+ "viewBox": [
+  0,
+  0,
+  672,
+  600
+ ],
+ "nodes": {
+  "demand": {
+   "x": 566,
+   "y": 247
+  },
+  "revenue": {
+   "x": 527,
+   "y": 360
+  },
+  "profit": {
+   "x": 143,
+   "y": 366
+  },
+  "invest": {
+   "x": 106,
+   "y": 243
+  },
+  "capacity": {
+   "x": 184,
+   "y": 123
+  },
+  "delivery": {
+   "x": 343,
+   "y": 56
+  },
+  "satisfy": {
+   "x": 504,
+   "y": 118
+  },
+  "pressure": {
+   "x": 338,
+   "y": 242
+  },
+  "rnd": {
+   "x": 278,
+   "y": 469
+  },
+  "compete": {
+   "x": 432,
+   "y": 464
+  }
+ },
+ "edges": [
+  {
+   "a": "demand",
+   "b": "revenue",
+   "style": "auto",
+   "anchors": {
+    "src": "s"
+   }
+  },
+  {
+   "a": "profit",
+   "b": "rnd",
+   "style": "auto",
+   "anchors": {
+    "src": "s-g1",
+    "dst": "nw"
+   }
+  },
+  {
+   "a": "compete",
+   "b": "revenue",
+   "style": "auto",
+   "anchors": {
+    "src": "ne",
+    "dst": "s"
+   }
+  },
+  {
+   "a": "capacity",
+   "b": "delivery",
+   "style": "auto",
+   "anchors": {
+    "src": "ne",
+    "dst": "w-g1"
+   }
+  },
+  {
+   "a": "delivery",
+   "b": "satisfy",
+   "style": "auto",
+   "anchors": {
+    "src": "e",
+    "dst": "nw"
+   }
+  },
+  {
+   "a": "satisfy",
+   "b": "demand",
+   "style": "auto",
+   "anchors": {
+    "src": "s",
+    "dst": "n"
+   }
+  }
+ ]
+}

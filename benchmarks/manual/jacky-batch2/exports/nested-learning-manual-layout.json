@@ -1,0 +1,83 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "nested-learning",
+ "viewBox": [
+  0,
+  0,
+  568,
+  504
+ ],
+ "nodes": {
+  "lrn": {
+   "x": 443,
+   "y": 329
+  },
+  "skill": {
+   "x": 291,
+   "y": 407
+  },
+  "perf": {
+   "x": 137,
+   "y": 336
+  },
+  "motive": {
+   "x": 287,
+   "y": 266
+  },
+  "share": {
+   "x": 89,
+   "y": 214
+  },
+  "orgcap": {
+   "x": 194,
+   "y": 89
+  },
+  "result": {
+   "x": 373,
+   "y": 88
+  },
+  "budget": {
+   "x": 468,
+   "y": 210
+  }
+ },
+ "edges": [
+  {
+   "a": "lrn",
+   "b": "skill",
+   "style": "auto",
+   "anchors": {
+    "src": "s-g2",
+    "dst": "e"
+   }
+  },
+  {
+   "a": "skill",
+   "b": "perf",
+   "style": "auto",
+   "anchors": {
+    "src": "w",
+    "dst": "s"
+   }
+  },
+  {
+   "a": "perf",
+   "b": "motive",
+   "style": "straight",
+   "anchors": {
+    "src": "ne",
+    "dst": "w"
+   }
+  },
+  {
+   "a": "motive",
+   "b": "lrn",
+   "style": "auto",
+   "anchors": {
+    "src": "e",
+    "dst": "nw"
+   }
+  }
+ ]
+}

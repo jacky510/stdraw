@@ -1,0 +1,63 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "nested-capacity",
+ "viewBox": [
+  0,
+  0,
+  600,
+  544
+ ],
+ "nodes": {
+  "rev": {
+   "x": 475,
+   "y": 340
+  },
+  "profit": {
+   "x": 401,
+   "y": 437
+  },
+  "invest": {
+   "x": 217,
+   "y": 439
+  },
+  "capacity": {
+   "x": 129,
+   "y": 342
+  },
+  "delivery": {
+   "x": 121,
+   "y": 206
+  },
+  "coverage": {
+   "x": 205,
+   "y": 110
+  },
+  "customers": {
+   "x": 398,
+   "y": 108
+  },
+  "bargaining": {
+   "x": 472,
+   "y": 206
+  }
+ },
+ "edges": [
+  {
+   "a": "coverage",
+   "b": "customers",
+   "style": "auto",
+   "anchors": {
+    "dst": "w"
+   }
+  },
+  {
+   "a": "bargaining",
+   "b": "rev",
+   "style": "auto",
+   "anchors": {
+    "src": "s"
+   }
+  }
+ ]
+}

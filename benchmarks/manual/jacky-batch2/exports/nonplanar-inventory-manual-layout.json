@@ -1,0 +1,165 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "nonplanar-inventory",
+ "viewBox": [
+  0,
+  0,
+  2368,
+  1056
+ ],
+ "nodes": {
+  "appr": {
+   "x": 465,
+   "y": 391
+  },
+  "cap": {
+   "x": 464,
+   "y": 515
+  },
+  "cons": {
+   "x": 697,
+   "y": 265
+  },
+  "cpi": {
+   "x": 697,
+   "y": 507
+  },
+  "exp": {
+   "x": 690,
+   "y": 755
+  },
+  "heat": {
+   "x": 697,
+   "y": 383
+  },
+  "inv": {
+   "x": 697,
+   "y": 631
+  },
+  "replen": {
+   "x": 907,
+   "y": 391
+  },
+  "stk": {
+   "x": 904,
+   "y": 513
+  }
+ },
+ "edges": [
+  {
+   "a": "cons",
+   "b": "heat",
+   "style": "auto",
+   "anchors": {
+    "src": "s",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "heat",
+   "b": "cpi",
+   "style": "auto",
+   "anchors": {
+    "src": "s"
+   }
+  },
+  {
+   "a": "cons",
+   "b": "appr",
+   "style": "auto",
+   "anchors": {
+    "src": "w-g1",
+    "dst": "sw"
+   }
+  },
+  {
+   "a": "appr",
+   "b": "cap",
+   "style": "auto",
+   "anchors": {
+    "src": "s"
+   }
+  },
+  {
+   "a": "cons",
+   "b": "replen",
+   "style": "auto",
+   "anchors": {
+    "src": "e-g2"
+   }
+  },
+  {
+   "a": "replen",
+   "b": "stk",
+   "style": "auto",
+   "anchors": {
+    "dst": "n"
+   }
+  },
+  {
+   "a": "inv",
+   "b": "cpi",
+   "style": "free",
+   "anchors": {
+    "src": "n",
+    "dst": "s"
+   }
+  },
+  {
+   "a": "inv",
+   "b": "stk",
+   "style": "auto",
+   "anchors": {
+    "src": "e-g2",
+    "dst": "sw"
+   }
+  },
+  {
+   "a": "inv",
+   "b": "cap",
+   "style": "auto",
+   "anchors": {
+    "src": "w",
+    "dst": "e-g2"
+   }
+  },
+  {
+   "a": "exp",
+   "b": "cpi",
+   "style": "auto",
+   "waypoints": [
+    [
+     794,
+     686
+    ],
+    [
+     794,
+     566
+    ]
+   ],
+   "anchors": {
+    "src": "n",
+    "dst": "e"
+   }
+  },
+  {
+   "a": "exp",
+   "b": "cap",
+   "style": "arc",
+   "anchors": {
+    "src": "w-g2",
+    "dst": "s"
+   }
+  },
+  {
+   "a": "exp",
+   "b": "stk",
+   "style": "arc",
+   "anchors": {
+    "src": "e",
+    "dst": "s"
+   }
+  }
+ ]
+}

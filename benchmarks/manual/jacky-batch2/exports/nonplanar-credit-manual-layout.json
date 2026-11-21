@@ -1,0 +1,126 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "nonplanar-credit",
+ "viewBox": [
+  0,
+  0,
+  488,
+  560
+ ],
+ "nodes": {
+  "ms": {
+   "x": 50,
+   "y": 72
+  },
+  "ir": {
+   "x": 127,
+   "y": 342
+  },
+  "credit": {
+   "x": 438,
+   "y": 343
+  },
+  "val": {
+   "x": 195,
+   "y": 178
+  },
+  "inv": {
+   "x": 308,
+   "y": 492
+  },
+  "trans": {
+   "x": 56,
+   "y": 491
+  },
+  "fund": {
+   "x": 222,
+   "y": 416
+  },
+  "lever": {
+   "x": 350,
+   "y": 174
+  },
+  "wealth": {
+   "x": 305,
+   "y": 272
+  }
+ },
+ "edges": [
+  {
+   "a": "ms",
+   "b": "ir",
+   "style": "straight",
+   "anchors": {
+    "src": "s-g1",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "ms",
+   "b": "credit",
+   "style": "auto",
+   "waypoints": [
+    [
+     431,
+     76
+    ]
+   ],
+   "anchors": {
+    "src": "e-g2",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "ms",
+   "b": "val",
+   "style": "auto",
+   "anchors": {
+    "src": "se"
+   }
+  },
+  {
+   "a": "ms",
+   "b": "trans",
+   "style": "straight"
+  },
+  {
+   "a": "trans",
+   "b": "inv",
+   "style": "straight",
+   "anchors": {
+    "dst": "w"
+   }
+  },
+  {
+   "a": "credit",
+   "b": "lever",
+   "style": "auto",
+   "anchors": {
+    "dst": "s"
+   }
+  },
+  {
+   "a": "lever",
+   "b": "val",
+   "style": "auto",
+   "anchors": {
+    "dst": "e-g1"
+   }
+  },
+  {
+   "a": "credit",
+   "b": "inv",
+   "style": "arc",
+   "anchors": {
+    "src": "s",
+    "dst": "e"
+   }
+  },
+  {
+   "a": "credit",
+   "b": "ir",
+   "style": "straight"
+  }
+ ]
+}

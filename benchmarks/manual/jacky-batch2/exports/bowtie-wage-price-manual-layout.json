@@ -1,0 +1,118 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "bowtie-wage-price",
+ "viewBox": [
+  0,
+  0,
+  720,
+  624
+ ],
+ "nodes": {
+  "wage": {
+   "x": 374,
+   "y": 270
+  },
+  "cost": {
+   "x": 529,
+   "y": 161
+  },
+  "cpi": {
+   "x": 387,
+   "y": 65
+  },
+  "living": {
+   "x": 235,
+   "y": 160
+  },
+  "buying": {
+   "x": 545,
+   "y": 378
+  },
+  "sales": {
+   "x": 464,
+   "y": 520
+  },
+  "profit": {
+   "x": 303,
+   "y": 523
+  },
+  "raise": {
+   "x": 226,
+   "y": 387
+  }
+ },
+ "edges": [
+  {
+   "a": "wage",
+   "b": "cost",
+   "style": "auto",
+   "anchors": {
+    "src": "ne"
+   }
+  },
+  {
+   "a": "cost",
+   "b": "cpi",
+   "style": "auto",
+   "anchors": {
+    "src": "n",
+    "dst": "e"
+   }
+  },
+  {
+   "a": "cpi",
+   "b": "living",
+   "style": "auto",
+   "anchors": {
+    "src": "w",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "living",
+   "b": "wage",
+   "style": "auto",
+   "anchors": {
+    "src": "s",
+    "dst": "nw"
+   }
+  },
+  {
+   "a": "wage",
+   "b": "buying",
+   "style": "auto",
+   "anchors": {
+    "src": "se",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "buying",
+   "b": "sales",
+   "style": "auto",
+   "anchors": {
+    "src": "s",
+    "dst": "n"
+   }
+  },
+  {
+   "a": "profit",
+   "b": "raise",
+   "style": "auto",
+   "anchors": {
+    "src": "n",
+    "dst": "s"
+   }
+  },
+  {
+   "a": "raise",
+   "b": "wage",
+   "style": "auto",
+   "anchors": {
+    "src": "n",
+    "dst": "sw"
+   }
+  }
+ ]
+}
