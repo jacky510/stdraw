@@ -506,7 +506,9 @@ def main():
                 eng = source_docs[g]
                 src = "graph source (batch-2 .cld)"
             try:
-                doc = merge_layout_edges(doc, eng)
+                # committed v2 caliber pinned: legacy minimal merge (see
+                # merge_layout_edges backfill_loop_meta — v3-beta opts in).
+                doc = merge_layout_edges(doc, eng, backfill_loop_meta=False)
             except Exception as exc:  # noqa: BLE001 - fail-visible per anchor
                 failures.append({"path": str(p), "error": str(exc)})
                 continue

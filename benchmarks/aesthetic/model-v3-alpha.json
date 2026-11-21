@@ -1,0 +1,234 @@
+{
+  "fit_corpus": {
+    "negatives": 40,
+    "negatives_tiers": {
+      "count_note": "random-n10-i03 proxy grade = best, but under the engine DELIVERED POLYLINE geometry it has 3 endpoint-shared crossings (docs/diagnosis-hub-collapse.md §5); under engine visual-crossing semantics the engine_high_quality tier would be 14, not 15. Membership here follows the approved proxy caliber; the doubt is annotated, not silently dropped.",
+      "n_negatives": 40,
+      "near_human_true": 2,
+      "tier_engine_high_quality_engine_polyline_semantics": 14,
+      "tier_engine_high_quality_proxy_caliber": 15,
+      "tier_standard": 25
+    },
+    "positives": 18
+  },
+  "kind": "aesthetic-model-v3-alpha",
+  "lasso": {
+    "cv_auc_mean": 0.9625,
+    "kept_features": [
+      "alignment_max_coverage",
+      "alignment_max_coverage_tight",
+      "anchor_orient_dev_mean",
+      "avg_edge_length",
+      "bend_total_curvature",
+      "hub_degree",
+      "mirror_axis_err",
+      "nonloop_straight_rate",
+      "symmetry_axis_err_px"
+    ],
+    "pool_size": 60,
+    "rule": "max mean CV-AUC over grid; tie-break nnz asc then lambda desc; nnz capped at n_pos=18",
+    "selected_lambda": 2.9423539687817364
+  },
+  "models": {
+    "global": {
+      "bias": -1.056083147,
+      "caliber": "normalized",
+      "fit_sample_counts": {
+        "negative": 40,
+        "positive": 18
+      },
+      "hyper": {
+        "class_balanced": true,
+        "irls_iters": 50,
+        "l2": 1.0
+      },
+      "impute_median": {
+        "alignment_max_coverage": 0.928571429,
+        "alignment_max_coverage_tight": 0.613408521,
+        "anchor_orient_dev_mean": 0.092971579,
+        "avg_edge_length": 0.241520511,
+        "bend_total_curvature": 84.626576819,
+        "hub_degree": 5.0,
+        "mirror_axis_err": 16.23113879,
+        "nonloop_straight_rate": 0.928571429,
+        "symmetry_axis_err_px": 16.23113879
+      },
+      "names": [
+        "alignment_max_coverage",
+        "alignment_max_coverage_tight",
+        "anchor_orient_dev_mean",
+        "avg_edge_length",
+        "bend_total_curvature",
+        "hub_degree",
+        "mirror_axis_err",
+        "nonloop_straight_rate",
+        "symmetry_axis_err_px"
+      ],
+      "schema": "stdraw.aesthetic_model_v3/v1alpha",
+      "standardize_mean": [
+        0.88374375,
+        0.641189058,
+        0.100125664,
+        0.237686323,
+        201.041426375,
+        5.068965517,
+        20.057333243,
+        0.904915846,
+        20.057333243
+      ],
+      "standardize_std": [
+        0.151452529,
+        0.256969432,
+        0.055784827,
+        0.062621889,
+        243.678035604,
+        2.2883669,
+        17.318617367,
+        0.097580027,
+        17.318617367
+      ],
+      "weights": {
+        "alignment_max_coverage": 1.170065836,
+        "alignment_max_coverage_tight": 1.093515138,
+        "anchor_orient_dev_mean": 1.08641198,
+        "avg_edge_length": -0.621859145,
+        "bend_total_curvature": -0.441674753,
+        "hub_degree": 0.124785035,
+        "mirror_axis_err": 0.44880761,
+        "nonloop_straight_rate": 1.034135669,
+        "symmetry_axis_err_px": 0.44880761
+      }
+    },
+    "hub": {
+      "bias": -0.900983085,
+      "caliber": "normalized",
+      "fit_sample_counts": {
+        "negative": 23,
+        "positive": 9
+      },
+      "human_lower_bound": 84.5,
+      "hyper": {
+        "class_balanced": true,
+        "irls_iters": 50,
+        "l2": 1.0
+      },
+      "impute_median": {
+        "alignment_max_coverage": 0.898326898,
+        "alignment_max_coverage_tight": 0.588235294,
+        "anchor_orient_dev_mean": 0.102228813,
+        "avg_edge_length": 0.245326533,
+        "bend_total_curvature": 46.675698481,
+        "hub_degree": 4.0,
+        "mirror_axis_err": 26.151243521,
+        "nonloop_straight_rate": 1.0,
+        "symmetry_axis_err_px": 26.151243521
+      },
+      "names": [
+        "alignment_max_coverage",
+        "alignment_max_coverage_tight",
+        "anchor_orient_dev_mean",
+        "avg_edge_length",
+        "bend_total_curvature",
+        "hub_degree",
+        "mirror_axis_err",
+        "nonloop_straight_rate",
+        "symmetry_axis_err_px"
+      ],
+      "schema": "stdraw.aesthetic_model_v3/v1alpha",
+      "standardize_mean": [
+        0.834257023,
+        0.635744353,
+        0.108733131,
+        0.2478854,
+        132.445773069,
+        5.1875,
+        27.669042838,
+        0.966517857,
+        27.669042838
+      ],
+      "standardize_std": [
+        0.180716959,
+        0.224801904,
+        0.047217355,
+        0.064403295,
+        191.90160947,
+        2.833256739,
+        17.501388918,
+        0.076644128,
+        17.501388918
+      ],
+      "weights": {
+        "alignment_max_coverage": 0.698750438,
+        "alignment_max_coverage_tight": 1.185983957,
+        "anchor_orient_dev_mean": 1.134252653,
+        "avg_edge_length": -0.488021618,
+        "bend_total_curvature": -0.513762202,
+        "hub_degree": 0.402521702,
+        "mirror_axis_err": 0.321958527,
+        "nonloop_straight_rate": 0.187455218,
+        "symmetry_axis_err_px": 0.321958527
+      }
+    },
+    "ring": {
+      "bias": -0.633061501,
+      "caliber": "normalized",
+      "fit_sample_counts": {
+        "negative": 17,
+        "positive": 9
+      },
+      "human_lower_bound": 56.9,
+      "hyper": {
+        "class_balanced": true,
+        "irls_iters": 50,
+        "l2": 1.0
+      },
+      "impute_median": {
+        "anchor_orient_dev_mean": 0.0838531,
+        "avg_edge_length": 0.219871817,
+        "bend_total_curvature": 260.267676291,
+        "hub_degree": 5.0,
+        "mirror_axis_err": 0.076167581,
+        "nonloop_straight_rate": 0.875,
+        "symmetry_axis_err_px": 0.076167581
+      },
+      "names": [
+        "anchor_orient_dev_mean",
+        "avg_edge_length",
+        "bend_total_curvature",
+        "hub_degree",
+        "mirror_axis_err",
+        "nonloop_straight_rate",
+        "symmetry_axis_err_px"
+      ],
+      "schema": "stdraw.aesthetic_model_v3/v1alpha",
+      "standardize_mean": [
+        0.090243954,
+        0.225133613,
+        285.466845829,
+        4.923076923,
+        6.372629255,
+        0.866185897,
+        6.372629255
+      ],
+      "standardize_std": [
+        0.063290054,
+        0.05794309,
+        272.428626541,
+        1.327898192,
+        17.758458624,
+        0.112958036,
+        17.758458624
+      ],
+      "weights": {
+        "anchor_orient_dev_mean": 0.659289555,
+        "avg_edge_length": -1.249492096,
+        "bend_total_curvature": -0.709379912,
+        "hub_degree": -0.256089946,
+        "mirror_axis_err": 0.465886214,
+        "nonloop_straight_rate": 0.8770048,
+        "symmetry_axis_err_px": 0.465886214
+      }
+    }
+  },
+  "schema": "stdraw.aesthetic_model_v3/v1alpha"
+}

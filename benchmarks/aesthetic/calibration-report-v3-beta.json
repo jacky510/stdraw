@@ -1,0 +1,2829 @@
+{
+  "artifacts": {
+    "committed_model_verified_read_only": "1351a120bb2f85ec",
+    "committed_report_verified_read_only": "0865b4cf9cbb89c2"
+  },
+  "generation": "scorer v3-beta: independent-review rework (branch-only preview; committed v3-alpha model and artifacts untouched)",
+  "major_1_dose_same_criterion": {
+    "arm": "committed-caliber D6 dose (legacy merge; reproduces calibration-report-v3-alpha per-anchor scores 18/18)",
+    "dose_definition": "L1 +-3px id-hash jitter on every node; L2 swap the two lowest sorted ids; L3 reflect the first half of sorted ids about the canvas centre (breaks mirror symmetry); L4 sub-grid offset (+7,+5) on odd nodes (breaks row/column alignment). Cumulative.",
+    "n_anchors": 18,
+    "n_anchors_scored": 15,
+    "per_anchor": {
+      "bowtie-wage-price:bowtie-wage-price-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 94.4,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 88.6
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 94.4,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 88.6
+          },
+          {
+            "crossings": 3,
+            "delta_vs_prev": -3.5,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 97.9,
+            "v2_delta_vs_prev": 31.6,
+            "v2_routed_shape": "ring",
+            "v2_score": 57.0
+          },
+          {
+            "box_press_true": 2,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 2,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          1,
+          1
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          1,
+          0
+        ],
+        "v2_all_steps_flat": false
+      },
+      "brand-flywheel:brand-flywheel-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 98.9,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 98.9,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": -0.9,
+            "grade": "second",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 99.8,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": -0.2,
+            "grade": "uncertified",
+            "level": "L3_break_mirror",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L4_off_align",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          4,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          2,
+          2,
+          0
+        ],
+        "v2_all_steps_flat": true
+      },
+      "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "monotone-decreasing",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 96.3,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 96.3,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 9,
+            "delta_vs_prev": 2.3,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 94.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          2,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          1,
+          1
+        ],
+        "v2_all_steps_flat": true
+      },
+      "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "monotone-decreasing",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 96.0,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 96.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 9,
+            "delta_vs_prev": 3.1,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 92.9,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "box_press_true": 7,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 7,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          2,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          1,
+          1
+        ],
+        "v2_all_steps_flat": true
+      },
+      "comb-supply-demand:comb-supply-demand-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "uncertified",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 99.5,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 99.5,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 6,
+            "delta_vs_prev": -0.5,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L3_break_mirror",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L4_off_align",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          4,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          3,
+          0
+        ],
+        "v2_all_steps_flat": true
+      },
+      "coupled-underinvestment:coupled-underinvestment-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 85.0,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": -0.4,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 85.4,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 8,
+            "delta_vs_prev": -14.5,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 99.9,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          2,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          2,
+          0,
+          0
+        ],
+        "v2_all_steps_flat": true
+      },
+      "epidemic-feedback:epidemic-feedback-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "monotone-decreasing",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 56.9,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 56.5
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.4,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 56.5,
+            "v2_delta_vs_prev": 0.3,
+            "v2_routed_shape": "ring",
+            "v2_score": 56.2
+          },
+          {
+            "crossings": 3,
+            "delta_vs_prev": 48.4,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 8.1,
+            "v2_delta_vs_prev": 29.7,
+            "v2_routed_shape": "hub",
+            "v2_score": 26.5
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          2
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          0,
+          2
+        ],
+        "v2_all_steps_flat": false
+      },
+      "fan-d12:fan-d12-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": null,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "gate-blocked-at-origin",
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L0_original",
+            "min_card_gap": 12.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L1_jitter",
+            "min_card_gap": 8.0
+          },
+          {
+            "box_press_true": 3,
+            "gate_rejected": true,
+            "level": "L2_swap2",
+            "min_card_gap": 8.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          0,
+          0
+        ],
+        "v2_all_steps_flat": false
+      },
+      "fan-d17:fan-d17-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": null,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "gate-blocked-at-origin",
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L0_original",
+            "min_card_gap": 6.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L1_jitter",
+            "min_card_gap": 2.0
+          },
+          {
+            "box_press_true": 8,
+            "gate_rejected": true,
+            "level": "L2_swap2",
+            "min_card_gap": 2.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          0,
+          0
+        ],
+        "v2_all_steps_flat": false
+      },
+      "nested-capacity:nested-capacity-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": false,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 67.5,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 84.1
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": -1.9,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 69.4,
+            "v2_delta_vs_prev": -0.1,
+            "v2_routed_shape": "ring",
+            "v2_score": 84.2
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": -30.3,
+            "grade": "second",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 99.7,
+            "v2_delta_vs_prev": 50.8,
+            "v2_routed_shape": "ring",
+            "v2_score": 33.4
+          },
+          {
+            "box_press_true": 6,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 6,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          1,
+          0,
+          1
+        ],
+        "steps_increase_flat_decrease_v3": [
+          2,
+          0,
+          0
+        ],
+        "v2_all_steps_flat": false
+      },
+      "nested-learning:nested-learning-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 92.9,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 83.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.1,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 92.8,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 83.3
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": -6.7,
+            "grade": "second",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 99.5,
+            "v2_delta_vs_prev": 2.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          1,
+          1
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          0,
+          1
+        ],
+        "v2_all_steps_flat": false
+      },
+      "nonplanar-credit:nonplanar-credit-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": false,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 2,
+            "delta_vs_prev": null,
+            "grade": "second",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 98.6,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": -0.1,
+            "grade": "second",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 98.7,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": 5.2,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 93.5,
+            "v2_delta_vs_prev": 68.5,
+            "v2_routed_shape": "ring",
+            "v2_score": 12.8
+          },
+          {
+            "crossings": 10,
+            "delta_vs_prev": 22.4,
+            "grade": "uncertified",
+            "level": "L3_break_mirror",
+            "routed_shape": "ring",
+            "score": 71.1,
+            "v2_delta_vs_prev": 10.2,
+            "v2_routed_shape": "ring",
+            "v2_score": 2.6
+          },
+          {
+            "crossings": 10,
+            "delta_vs_prev": 1.0,
+            "grade": "uncertified",
+            "level": "L4_off_align",
+            "routed_shape": "ring",
+            "score": 70.1,
+            "v2_delta_vs_prev": -0.2,
+            "v2_routed_shape": "ring",
+            "v2_score": 2.8
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          1,
+          1,
+          2
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          0,
+          3
+        ],
+        "v2_all_steps_flat": false
+      },
+      "nonplanar-inventory:nonplanar-inventory-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 1,
+            "delta_vs_prev": null,
+            "grade": "second",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 97.8,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 97.8
+          },
+          {
+            "crossings": 1,
+            "delta_vs_prev": 0.0,
+            "grade": "second",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 97.8,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 97.8
+          },
+          {
+            "crossings": 3,
+            "delta_vs_prev": -1.9,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 99.7,
+            "v2_delta_vs_prev": 2.5,
+            "v2_routed_shape": "ring",
+            "v2_score": 95.3
+          },
+          {
+            "crossings": 8,
+            "delta_vs_prev": 0.5,
+            "grade": "uncertified",
+            "level": "L3_break_mirror",
+            "routed_shape": "ring",
+            "score": 99.2,
+            "v2_delta_vs_prev": 83.2,
+            "v2_routed_shape": "ring",
+            "v2_score": 12.1
+          },
+          {
+            "crossings": 8,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L4_off_align",
+            "routed_shape": "ring",
+            "score": 99.2,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 12.1
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          2,
+          2
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          2,
+          1
+        ],
+        "v2_all_steps_flat": false
+      },
+      "random-n10-i00:random-n10-i00-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": false,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "monotone-decreasing",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 98.3,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 64.7
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 98.3,
+            "v2_delta_vs_prev": -0.3,
+            "v2_routed_shape": "ring",
+            "v2_score": 65.0
+          },
+          {
+            "crossings": 9,
+            "delta_vs_prev": 5.2,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 93.1,
+            "v2_delta_vs_prev": 60.5,
+            "v2_routed_shape": "ring",
+            "v2_score": 4.5
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          1,
+          0,
+          1
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          1,
+          1
+        ],
+        "v2_all_steps_flat": false
+      },
+      "random-n10-i05:i05.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 75.8,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 85.8
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.7,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 75.1,
+            "v2_delta_vs_prev": 0.4,
+            "v2_routed_shape": "ring",
+            "v2_score": 85.4
+          },
+          {
+            "crossings": 10,
+            "delta_vs_prev": -6.9,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 82.0,
+            "v2_delta_vs_prev": 73.5,
+            "v2_routed_shape": "ring",
+            "v2_score": 11.9
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          2
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          0,
+          1
+        ],
+        "v2_all_steps_flat": false
+      },
+      "random-n10-i05:random-n10-i05-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": null,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "gate-blocked-at-origin",
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L0_original",
+            "min_card_gap": 13.2
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L1_jitter",
+            "min_card_gap": 13.4
+          },
+          {
+            "box_press_true": 7,
+            "gate_rejected": true,
+            "level": "L2_swap2",
+            "min_card_gap": 13.4
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 2.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 2.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          0,
+          0
+        ],
+        "v2_all_steps_flat": false
+      },
+      "random-n10-i11:i11-a.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 99.5,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 96.9
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 99.5,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 96.9
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": -0.3,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 99.8,
+            "v2_delta_vs_prev": 17.9,
+            "v2_routed_shape": "ring",
+            "v2_score": 79.0
+          },
+          {
+            "box_press_true": 3,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 15.0
+          },
+          {
+            "box_press_true": 3,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 8.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          1,
+          1
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          1,
+          0
+        ],
+        "v2_all_steps_flat": false
+      },
+      "random-n10-i11:i11-b.json": {
+        "monotone_nonincreasing_v2_same_pairs": false,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 99.8,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 95.8
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.1,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 99.7,
+            "v2_delta_vs_prev": -0.1,
+            "v2_routed_shape": "ring",
+            "v2_score": 95.9
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": -0.3,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 18.4,
+            "v2_routed_shape": "ring",
+            "v2_score": 77.5
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L3_break_mirror",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": -2.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 79.5
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L4_off_align",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 79.5
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          2,
+          1,
+          1
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          2,
+          1
+        ],
+        "v2_all_steps_flat": false
+      }
+    },
+    "reproduction": {
+      "per_anchor_scores_match_committed": "18/18"
+    },
+    "same_criterion_counts": {
+      "corrected_comparison": "4 vs 6 (of 15 scored)",
+      "criterion": "monotone AND >= 1 strictly decreasing step; all-flat anchors counted separately",
+      "v2_monotone_decreasing_strict_same_pairs": 6,
+      "v2_monotone_nonincreasing_same_pairs": 11,
+      "v3_monotone_decreasing_strict": 4,
+      "v3_monotone_nonincreasing": 7
+    },
+    "target": {
+      "denominator": 15,
+      "met": false,
+      "min_monotone_decreasing": 12
+    },
+    "v2_all_flat_anchors": [
+      "brand-flywheel-manual-layout",
+      "classic-cld-manual-layout",
+      "comb-supply-demand-manual-layout",
+      "coupled-underinvestment-manual-layout",
+      "retest-classic-cld-manual-layout"
+    ]
+  },
+  "major_2_route_preserving_dose": {
+    "arm": "route-preserving dose (backfilled data path; edge attributes only, node centres byte-frozen — asserted per level per anchor)",
+    "dose_definition": "Route-preserving dose (edge attributes only; node centres, card w/h and viewBox asserted byte-frozen at every level). Cumulative. P1: every stored slot anchor rotated 180 degrees about its card (n<->s, e<->w, ne<->sw, nw<->se; group suffix preserved; coordinate anchors and route points reflected about the canvas centre x). P2: declared style flipped arc<->straight on hash-odd edges (auto/free/absent styles untouched). P3: hash-odd edges only — slot anchors rotated again and each stored waypoint offset by (+7,+5), breaking the drawing's mirror structure asymmetrically.",
+    "levels": [
+      "P0_original",
+      "P1_slot_rotate",
+      "P2_style_flip",
+      "P3_partial_mirror_break"
+    ],
+    "measurability_statement": "MEASURABLE: every anchor exposes edge attributes (slot anchors / declared style / waypoints), so the RP dose perturbs the features the committed model actually reads without a caliber change confound beyond the disclosed backfill. GATE STATUS: no RP target value is committed here; the committed D6 centre-moving gate remains UNMET (4/15) and any RP gate value must be decided AFTER a model refit on the fixed data path (follow-up card, not this one). The committed model was fit on the legacy caliber, so RP readings are exploratory.",
+    "n_anchors": 18,
+    "n_anchors_scored": 15,
+    "per_anchor": {
+      "bowtie-wage-price:bowtie-wage-price-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "ring",
+            "score": 94.4,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 88.6
+          },
+          {
+            "delta_vs_prev": -5.6,
+            "level": "P1_slot_rotate",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 88.6
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 88.6
+          },
+          {
+            "delta_vs_prev": 0.3,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "ring",
+            "score": 99.7,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 88.6
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          1,
+          1
+        ]
+      },
+      "brand-flywheel:brand-flywheel-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "hub",
+            "score": 98.9,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": -1.1,
+            "level": "P1_slot_rotate",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          2,
+          0
+        ]
+      },
+      "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "no-resolution (all steps flat)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "hub",
+            "score": 96.3,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P1_slot_rotate",
+            "routed_shape": "hub",
+            "score": 96.3,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "hub",
+            "score": 96.3,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "hub",
+            "score": 96.3,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          3,
+          0
+        ]
+      },
+      "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "no-resolution (all steps flat)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "hub",
+            "score": 96.0,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P1_slot_rotate",
+            "routed_shape": "hub",
+            "score": 96.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "hub",
+            "score": 96.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "hub",
+            "score": 96.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          3,
+          0
+        ]
+      },
+      "comb-supply-demand:comb-supply-demand-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "hub",
+            "score": 99.5,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": -0.5,
+            "level": "P1_slot_rotate",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          2,
+          0
+        ]
+      },
+      "coupled-underinvestment:coupled-underinvestment-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "hub",
+            "score": 85.0,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": -15.0,
+            "level": "P1_slot_rotate",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          2,
+          0
+        ]
+      },
+      "epidemic-feedback:epidemic-feedback-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "ring",
+            "score": 56.9,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 56.5
+          },
+          {
+            "delta_vs_prev": -42.7,
+            "level": "P1_slot_rotate",
+            "routed_shape": "ring",
+            "score": 99.6,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 56.5
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "ring",
+            "score": 99.6,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 56.5
+          },
+          {
+            "delta_vs_prev": 0.8,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "ring",
+            "score": 98.8,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 56.5
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          1,
+          1
+        ]
+      },
+      "fan-d12:fan-d12-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": null,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "gate-blocked-at-origin",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P0_original",
+            "min_card_gap": 12.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P1_slot_rotate",
+            "min_card_gap": 12.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P2_style_flip",
+            "min_card_gap": 12.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P3_partial_mirror_break",
+            "min_card_gap": 12.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          0,
+          0
+        ]
+      },
+      "fan-d17:fan-d17-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": null,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "gate-blocked-at-origin",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P0_original",
+            "min_card_gap": 6.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P1_slot_rotate",
+            "min_card_gap": 6.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P2_style_flip",
+            "min_card_gap": 6.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P3_partial_mirror_break",
+            "min_card_gap": 6.0
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          0,
+          0
+        ]
+      },
+      "nested-capacity:nested-capacity-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "ring",
+            "score": 67.5,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 84.1
+          },
+          {
+            "delta_vs_prev": -32.5,
+            "level": "P1_slot_rotate",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 84.1
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 84.1
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 84.1
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          2,
+          0
+        ]
+      },
+      "nested-learning:nested-learning-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "ring",
+            "score": 92.9,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 83.3
+          },
+          {
+            "delta_vs_prev": -7.1,
+            "level": "P1_slot_rotate",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 83.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 83.3
+          },
+          {
+            "delta_vs_prev": 0.3,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "ring",
+            "score": 99.7,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 83.3
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          1,
+          1
+        ]
+      },
+      "nonplanar-credit:nonplanar-credit-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "hub",
+            "score": 98.6,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": -1.4,
+            "level": "P1_slot_rotate",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          2,
+          0
+        ]
+      },
+      "nonplanar-inventory:nonplanar-inventory-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "ring",
+            "score": 97.8,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 97.8
+          },
+          {
+            "delta_vs_prev": -2.2,
+            "level": "P1_slot_rotate",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 97.8
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 97.8
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 97.8
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          2,
+          0
+        ]
+      },
+      "random-n10-i00:random-n10-i00-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "ring",
+            "score": 98.3,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 64.7
+          },
+          {
+            "delta_vs_prev": -1.7,
+            "level": "P1_slot_rotate",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 64.7
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 64.7
+          },
+          {
+            "delta_vs_prev": 0.1,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "ring",
+            "score": 99.9,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 64.7
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          1,
+          1
+        ]
+      },
+      "random-n10-i05:i05.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "ring",
+            "score": 65.8,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 85.8
+          },
+          {
+            "delta_vs_prev": -34.0,
+            "level": "P1_slot_rotate",
+            "routed_shape": "ring",
+            "score": 99.8,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 85.8
+          },
+          {
+            "delta_vs_prev": 0.1,
+            "level": "P2_style_flip",
+            "routed_shape": "ring",
+            "score": 99.7,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 85.8
+          },
+          {
+            "delta_vs_prev": 9.2,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "ring",
+            "score": 90.5,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 85.8
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          0,
+          2
+        ]
+      },
+      "random-n10-i05:random-n10-i05-manual-layout.json": {
+        "monotone_nonincreasing_v2_same_pairs": null,
+        "monotone_nonincreasing_v3": true,
+        "resolution_class_v3": "gate-blocked-at-origin",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P0_original",
+            "min_card_gap": 13.2
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P1_slot_rotate",
+            "min_card_gap": 13.2
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P2_style_flip",
+            "min_card_gap": 13.2
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "P3_partial_mirror_break",
+            "min_card_gap": 13.2
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          0,
+          0,
+          0
+        ]
+      },
+      "random-n10-i11:i11-a.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "ring",
+            "score": 99.5,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 96.9
+          },
+          {
+            "delta_vs_prev": -0.5,
+            "level": "P1_slot_rotate",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 96.9
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 96.9
+          },
+          {
+            "delta_vs_prev": 0.1,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "ring",
+            "score": 99.9,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 96.9
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          1,
+          1
+        ]
+      },
+      "random-n10-i11:i11-b.json": {
+        "monotone_nonincreasing_v2_same_pairs": true,
+        "monotone_nonincreasing_v3": false,
+        "resolution_class_v3": "mixed (has increase step)",
+        "route_preserved_all_levels": true,
+        "steps": [
+          {
+            "delta_vs_prev": null,
+            "level": "P0_original",
+            "routed_shape": "ring",
+            "score": 99.8,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 95.8
+          },
+          {
+            "delta_vs_prev": -0.2,
+            "level": "P1_slot_rotate",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 95.8
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P2_style_flip",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 95.8
+          },
+          {
+            "delta_vs_prev": 0.0,
+            "level": "P3_partial_mirror_break",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 95.8
+          }
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v3": [
+          1,
+          2,
+          0
+        ]
+      }
+    },
+    "reroute_route_status": "WITHDRAWN as an acceptance route: the review's reroute pilot produced no positive example (verifybot reroute.json — epidemic-feedback re-routed stays 56.9/56.5/0.5 and was monotone anyway; brand-flywheel re-routed changes caliber, L0 98.9->30.8, and still rises +1.2 at L1), and only 1/18 anchors carries stored polylines (>= 3 would be needed). Re-testing rerouting requires first collecting >= 3 anchors with stored polylines (follow-up corpus work, not this card).",
+    "route_preserved_violations": [],
+    "same_criterion_counts": {
+      "corrected_comparison": "0 vs 0 (of 15 scored)",
+      "criterion": "monotone AND >= 1 strictly decreasing step; all-flat anchors counted separately",
+      "v2_all_steps_flat_same_pairs": 15,
+      "v2_monotone_decreasing_strict_same_pairs": 0,
+      "v3_monotone_decreasing_strict": 0,
+      "v3_monotone_nonincreasing": 5
+    }
+  },
+  "major_3_loop_data_path": {
+    "arm": "MAJOR-3 root fix re-measurement (merge_layout_edges loop metadata backfill; committed kept set and committed model unchanged — refits are disclosed exploratory readings)",
+    "auc_readings": {
+      "committed_kept_set_backfilled_path": {
+        "global": {
+          "fitted": true,
+          "n_negative": 40,
+          "n_positive": 18,
+          "score_auc": 0.997222,
+          "separation_margin": -12.6
+        },
+        "hub": {
+          "fitted": true,
+          "n_negative": 23,
+          "n_positive": 9,
+          "score_auc": 1.0,
+          "separation_margin": 46.4
+        },
+        "ring": {
+          "fitted": true,
+          "n_negative": 17,
+          "n_positive": 9,
+          "score_auc": 1.0,
+          "separation_margin": 20.1
+        }
+      },
+      "committed_kept_set_legacy_path": {
+        "global": {
+          "fitted": true,
+          "n_negative": 40,
+          "n_positive": 18,
+          "score_auc": 0.995833,
+          "separation_margin": -10.6
+        },
+        "hub": {
+          "fitted": true,
+          "n_negative": 23,
+          "n_positive": 9,
+          "score_auc": 1.0,
+          "separation_margin": 48.8
+        },
+        "ring": {
+          "fitted": true,
+          "n_negative": 17,
+          "n_positive": 9,
+          "score_auc": 1.0,
+          "separation_margin": 21.1
+        }
+      },
+      "drop_both_format_artifacts_backfilled": {
+        "global": {
+          "fitted": true,
+          "n_negative": 40,
+          "n_positive": 18,
+          "score_auc": 0.886111,
+          "separation_margin": -65.5
+        },
+        "hub": {
+          "fitted": true,
+          "n_negative": 23,
+          "n_positive": 9,
+          "score_auc": 1.0,
+          "separation_margin": 39.2
+        },
+        "ring": {
+          "fitted": true,
+          "n_negative": 17,
+          "n_positive": 9,
+          "score_auc": 0.947712,
+          "separation_margin": -29.1
+        }
+      },
+      "drop_nonloop_straight_rate_backfilled": {
+        "global": {
+          "fitted": true,
+          "n_negative": 40,
+          "n_positive": 18,
+          "score_auc": 0.981944,
+          "separation_margin": -25.7
+        },
+        "hub": {
+          "fitted": true,
+          "n_negative": 23,
+          "n_positive": 9,
+          "score_auc": 1.0,
+          "separation_margin": 50.1
+        },
+        "ring": {
+          "fitted": true,
+          "n_negative": 17,
+          "n_positive": 9,
+          "score_auc": 0.986928,
+          "separation_margin": -6.1
+        }
+      }
+    },
+    "floors": {
+      "hub": 0.986,
+      "ring": 0.993
+    },
+    "honest_summary": [
+      "loop_arc_rate evaluability after the backfill: 4/18 positives (below floor) — the loop-closure family still cannot enter the LASSO (coverage floor 0.7 NOT met). Loop metadata reaches the positives from exactly two sources: manual exports that natively carry loop_kinds (epidemic-feedback, the only one) and negatives-library engine layouts backfilled by merge_layout_edges (brand-flywheel, classic-cld, retest-classic-cld — 3 anchors); graph-source (.cld) merges have no loop metadata to backfill, and random-graph engines declare no loops. Root cause is fixed in the data path; the corpus needs engine-delivered layouts for the remaining anchors before the family can be scored (follow-up).",
+      "ring AUC below the 0.993 floor with the committed kept set on the fixed path when drop nonloop_straight_rate (0.986928) — reported as-is; the ring bucket stays DOWNGRADED and hub (AUC 1.0, robust in every ablation) + independent LOSO carry the non-regression evidence.",
+      "ring AUC below the 0.993 floor with the committed kept set on the fixed path when drop both format artifacts (0.947712) — reported as-is; the ring bucket stays DOWNGRADED and hub (AUC 1.0, robust in every ablation) + independent LOSO carry the non-regression evidence.",
+      "hub distinct kept-space vectors: 9 (committed 9) — unchanged."
+    ],
+    "hub_distinct_recheck": {
+      "backfilled_path": 9,
+      "committed_v3_alpha": 9,
+      "legacy_path": 9
+    },
+    "loop_evaluability": {
+      "engine_source_provenance": {
+        "bowtie-wage-price:bowtie-wage-price-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 0,
+          "engine_source": "graph-source (.cld, no loop_kinds)"
+        },
+        "brand-flywheel:brand-flywheel-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 8,
+          "engine_edges_with_loop_kinds": 8,
+          "engine_source": "negatives"
+        },
+        "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 13,
+          "engine_edges_with_loop_kinds": 13,
+          "engine_source": "negatives"
+        },
+        "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 13,
+          "engine_edges_with_loop_kinds": 13,
+          "engine_source": "negatives"
+        },
+        "comb-supply-demand:comb-supply-demand-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 0,
+          "engine_source": "graph-source (.cld, no loop_kinds)"
+        },
+        "coupled-underinvestment:coupled-underinvestment-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 0,
+          "engine_source": "graph-source (.cld, no loop_kinds)"
+        },
+        "epidemic-feedback:epidemic-feedback-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 0,
+          "engine_source": "graph-source (.cld, no loop_kinds)"
+        },
+        "fan-d12:fan-d12-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 0,
+          "engine_source": "graph-source (.cld, no loop_kinds)"
+        },
+        "fan-d17:fan-d17-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 0,
+          "engine_source": "graph-source (.cld, no loop_kinds)"
+        },
+        "nested-capacity:nested-capacity-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 0,
+          "engine_source": "graph-source (.cld, no loop_kinds)"
+        },
+        "nested-learning:nested-learning-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 0,
+          "engine_source": "graph-source (.cld, no loop_kinds)"
+        },
+        "nonplanar-credit:nonplanar-credit-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 0,
+          "engine_source": "graph-source (.cld, no loop_kinds)"
+        },
+        "nonplanar-inventory:nonplanar-inventory-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 0,
+          "engine_source": "graph-source (.cld, no loop_kinds)"
+        },
+        "random-n10-i00:random-n10-i00-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 16,
+          "engine_source": "negatives"
+        },
+        "random-n10-i05:i05.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 16,
+          "engine_source": "negatives"
+        },
+        "random-n10-i05:random-n10-i05-manual-layout.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 16,
+          "engine_source": "negatives"
+        },
+        "random-n10-i11:i11-a.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 16,
+          "engine_source": "negatives"
+        },
+        "random-n10-i11:i11-b.json": {
+          "engine_edges_nonempty_loop_kinds": 0,
+          "engine_edges_with_loop_kinds": 16,
+          "engine_source": "negatives"
+        }
+      },
+      "per_anchor_loop_arc_rate": {
+        "bowtie-wage-price:bowtie-wage-price-manual-layout.json": null,
+        "brand-flywheel:brand-flywheel-manual-layout.json": 0.0,
+        "classic-cld-growth-and-burden:classic-cld-manual-layout.json": 0.153846154,
+        "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json": 0.153846154,
+        "comb-supply-demand:comb-supply-demand-manual-layout.json": null,
+        "coupled-underinvestment:coupled-underinvestment-manual-layout.json": null,
+        "epidemic-feedback:epidemic-feedback-manual-layout.json": 0.153846154,
+        "fan-d12:fan-d12-manual-layout.json": null,
+        "fan-d17:fan-d17-manual-layout.json": null,
+        "nested-capacity:nested-capacity-manual-layout.json": null,
+        "nested-learning:nested-learning-manual-layout.json": null,
+        "nonplanar-credit:nonplanar-credit-manual-layout.json": null,
+        "nonplanar-inventory:nonplanar-inventory-manual-layout.json": null,
+        "random-n10-i00:random-n10-i00-manual-layout.json": null,
+        "random-n10-i05:i05.json": null,
+        "random-n10-i05:random-n10-i05-manual-layout.json": null,
+        "random-n10-i11:i11-a.json": null,
+        "random-n10-i11:i11-b.json": null
+      },
+      "per_feature": {
+        "loop_arc_rate": {
+          "coverage_backfilled": 0.2222,
+          "meets_coverage_floor": false,
+          "n_pos_evaluable_backfilled": 4,
+          "n_pos_evaluable_legacy": 1,
+          "v2_prescreen_coverage_floor": 0.7
+        },
+        "loop_arc_share_mean": {
+          "coverage_backfilled": 0.2222,
+          "meets_coverage_floor": false,
+          "n_pos_evaluable_backfilled": 4,
+          "n_pos_evaluable_legacy": 1,
+          "v2_prescreen_coverage_floor": 0.7
+        },
+        "loop_arc_share_p75": {
+          "coverage_backfilled": 0.2222,
+          "meets_coverage_floor": false,
+          "n_pos_evaluable_backfilled": 4,
+          "n_pos_evaluable_legacy": 1,
+          "v2_prescreen_coverage_floor": 0.7
+        },
+        "loop_arc_share_sigma": {
+          "coverage_backfilled": 0.2222,
+          "meets_coverage_floor": false,
+          "n_pos_evaluable_backfilled": 4,
+          "n_pos_evaluable_legacy": 1,
+          "v2_prescreen_coverage_floor": 0.7
+        },
+        "loop_arc_share_worst": {
+          "coverage_backfilled": 0.2222,
+          "meets_coverage_floor": false,
+          "n_pos_evaluable_backfilled": 4,
+          "n_pos_evaluable_legacy": 1,
+          "v2_prescreen_coverage_floor": 0.7
+        },
+        "loop_bow_agree_mean": {
+          "coverage_backfilled": 0.0556,
+          "meets_coverage_floor": false,
+          "n_pos_evaluable_backfilled": 1,
+          "n_pos_evaluable_legacy": 1,
+          "v2_prescreen_coverage_floor": 0.7
+        },
+        "loop_bow_agree_worst": {
+          "coverage_backfilled": 0.0556,
+          "meets_coverage_floor": false,
+          "n_pos_evaluable_backfilled": 1,
+          "n_pos_evaluable_legacy": 1,
+          "v2_prescreen_coverage_floor": 0.7
+        },
+        "loop_bow_outward_mean": {
+          "coverage_backfilled": 0.0556,
+          "meets_coverage_floor": false,
+          "n_pos_evaluable_backfilled": 1,
+          "n_pos_evaluable_legacy": 1,
+          "v2_prescreen_coverage_floor": 0.7
+        },
+        "loop_bow_outward_worst": {
+          "coverage_backfilled": 0.0556,
+          "meets_coverage_floor": false,
+          "n_pos_evaluable_backfilled": 1,
+          "n_pos_evaluable_legacy": 1,
+          "v2_prescreen_coverage_floor": 0.7
+        },
+        "nonloop_straight_rate": {
+          "coverage_backfilled": 0.8333,
+          "meets_coverage_floor": true,
+          "n_pos_evaluable_backfilled": 15,
+          "n_pos_evaluable_legacy": 18,
+          "v2_prescreen_coverage_floor": 0.7
+        }
+      }
+    }
+  },
+  "minor_dispositions": {
+    "minor_1_mirror_duplicate": {
+      "disposition": "mirror_axis_err and symmetry_axis_err_px are one duplicated column (identical value on all 58/58 docs — 22 non-null equal + 36 both-null; identical weights in all three shape models). Narrative fixed: the LASSO rescue is 3 INDEPENDENT signals, not 4. Pool names kept byte-stable; merging the column is a schema change deferred to the next pool revision.",
+      "docs_both_null": 36,
+      "docs_identical_including_both_null": "58/58",
+      "docs_identical_non_null": 22
+    },
+    "minor_2_lambda_path_nnz": {
+      "disposition": "the fixed-sweep warm-start path is NOT strictly nested (nnz [0, 1, 2, 4, 4, 5, 6, 7, 7, 7, 9, 11, 12, 13, 12, 13, 13, 13, 12, 13, 13, 15, 15, 15], 2 decrease step(s)); the selection rule and the selected lambda are unaffected; disclosure added here and to the path-plot note.",
+      "nnz_sequence": [
+        0,
+        1,
+        2,
+        4,
+        4,
+        5,
+        6,
+        7,
+        7,
+        7,
+        9,
+        11,
+        12,
+        13,
+        12,
+        13,
+        13,
+        13,
+        12,
+        13,
+        13,
+        15,
+        15,
+        15
+      ],
+      "non_nested_steps": 2
+    },
+    "minor_3_saturation_table": {
+      "global": {
+        "derivative_max": 0.249735,
+        "derivative_min": 0.001755,
+        "n_positives": 18,
+        "per_positive": [
+          {
+            "derivative_p_1mp": 0.021596,
+            "graph": "bowtie-wage-price",
+            "z": 3.7906
+          },
+          {
+            "derivative_p_1mp": 0.01011,
+            "graph": "brand-flywheel",
+            "z": 4.5737
+          },
+          {
+            "derivative_p_1mp": 0.011422,
+            "graph": "classic-cld-growth-and-burden",
+            "z": 4.4489
+          },
+          {
+            "derivative_p_1mp": 0.012309,
+            "graph": "classic-cld-growth-and-burden",
+            "z": 4.3723
+          },
+          {
+            "derivative_p_1mp": 0.004389,
+            "graph": "comb-supply-demand",
+            "z": 5.4198
+          },
+          {
+            "derivative_p_1mp": 0.063554,
+            "graph": "coupled-underinvestment",
+            "z": 2.6146
+          },
+          {
+            "derivative_p_1mp": 0.205686,
+            "graph": "epidemic-feedback",
+            "z": -0.8979
+          },
+          {
+            "derivative_p_1mp": 0.043677,
+            "graph": "fan-d12",
+            "z": 3.0372
+          },
+          {
+            "derivative_p_1mp": 0.010658,
+            "graph": "fan-d17",
+            "z": 4.5198
+          },
+          {
+            "derivative_p_1mp": 0.249735,
+            "graph": "nested-capacity",
+            "z": 0.0651
+          },
+          {
+            "derivative_p_1mp": 0.026242,
+            "graph": "nested-learning",
+            "z": 3.5857
+          },
+          {
+            "derivative_p_1mp": 0.003926,
+            "graph": "nonplanar-credit",
+            "z": 5.5322
+          },
+          {
+            "derivative_p_1mp": 0.061356,
+            "graph": "nonplanar-inventory",
+            "z": 2.6552
+          },
+          {
+            "derivative_p_1mp": 0.002463,
+            "graph": "random-n10-i00",
+            "z": 6.0013
+          },
+          {
+            "derivative_p_1mp": 0.099326,
+            "graph": "random-n10-i05",
+            "z": 2.0722
+          },
+          {
+            "derivative_p_1mp": 0.083312,
+            "graph": "random-n10-i05",
+            "z": 2.2927
+          },
+          {
+            "derivative_p_1mp": 0.00377,
+            "graph": "random-n10-i11",
+            "z": 5.5732
+          },
+          {
+            "derivative_p_1mp": 0.001755,
+            "graph": "random-n10-i11",
+            "z": 6.3416
+          }
+        ],
+        "reading": "AUC 1.0 is not a numeric saturation artifact: no positive enters the floating saturation region (|z| well under ~15); it comes from real separation. Top-of-scale compression is real and is listed as a dose secondary cause.",
+        "z_max": 6.3416,
+        "z_min": -0.8979
+      },
+      "hub": {
+        "derivative_max": 0.131244,
+        "derivative_min": 0.00493,
+        "n_positives": 9,
+        "per_positive": [
+          {
+            "derivative_p_1mp": 0.010651,
+            "graph": "brand-flywheel",
+            "z": 4.5204
+          },
+          {
+            "derivative_p_1mp": 0.035799,
+            "graph": "classic-cld-growth-and-burden",
+            "z": 3.254
+          },
+          {
+            "derivative_p_1mp": 0.038268,
+            "graph": "classic-cld-growth-and-burden",
+            "z": 3.1818
+          },
+          {
+            "derivative_p_1mp": 0.00493,
+            "graph": "comb-supply-demand",
+            "z": 5.3024
+          },
+          {
+            "derivative_p_1mp": 0.12755,
+            "graph": "coupled-underinvestment",
+            "z": 1.734
+          },
+          {
+            "derivative_p_1mp": 0.083662,
+            "graph": "fan-d12",
+            "z": 2.2876
+          },
+          {
+            "derivative_p_1mp": 0.03062,
+            "graph": "fan-d17",
+            "z": 3.4219
+          },
+          {
+            "derivative_p_1mp": 0.013719,
+            "graph": "nonplanar-credit",
+            "z": 4.261
+          },
+          {
+            "derivative_p_1mp": 0.131244,
+            "graph": "random-n10-i05",
+            "z": 1.6929
+          }
+        ],
+        "reading": "AUC 1.0 is not a numeric saturation artifact: no positive enters the floating saturation region (|z| well under ~15); it comes from real separation. Top-of-scale compression is real and is listed as a dose secondary cause.",
+        "z_max": 5.3024,
+        "z_min": 1.6929
+      },
+      "ring": {
+        "derivative_max": 0.245231,
+        "derivative_min": 0.002492,
+        "n_positives": 9,
+        "per_positive": [
+          {
+            "derivative_p_1mp": 0.052772,
+            "graph": "bowtie-wage-price",
+            "z": 2.8267
+          },
+          {
+            "derivative_p_1mp": 0.245231,
+            "graph": "epidemic-feedback",
+            "z": 0.278
+          },
+          {
+            "derivative_p_1mp": 0.219394,
+            "graph": "nested-capacity",
+            "z": 0.7306
+          },
+          {
+            "derivative_p_1mp": 0.066314,
+            "graph": "nested-learning",
+            "z": 2.5652
+          },
+          {
+            "derivative_p_1mp": 0.021671,
+            "graph": "nonplanar-inventory",
+            "z": 3.787
+          },
+          {
+            "derivative_p_1mp": 0.016832,
+            "graph": "random-n10-i00",
+            "z": 4.0499
+          },
+          {
+            "derivative_p_1mp": 0.183434,
+            "graph": "random-n10-i05",
+            "z": 1.1418
+          },
+          {
+            "derivative_p_1mp": 0.00505,
+            "graph": "random-n10-i11",
+            "z": 5.2781
+          },
+          {
+            "derivative_p_1mp": 0.002492,
+            "graph": "random-n10-i11",
+            "z": 5.9897
+          }
+        ],
+        "reading": "AUC 1.0 is not a numeric saturation artifact: no positive enters the floating saturation region (|z| well under ~15); it comes from real separation. Top-of-scale compression is real and is listed as a dose secondary cause.",
+        "z_max": 5.9897,
+        "z_min": 0.278
+      }
+    },
+    "minor_4_ehq_ring_bucket": {
+      "disposition": "corrected wording: the EHQ ring bucket holds 2 NEGATIVES (the 15 is the whole EHQ tier); the AUC 0.444 reading is a 2-negative reading and is labelled as such.",
+      "ehq_negatives_routed_ring": 2,
+      "ehq_tier_negatives_total": 15,
+      "graphs": [
+        "arms-race",
+        "brand-flywheel"
+      ]
+    }
+  },
+  "red_lines": {
+    "branch_only": true,
+    "certificate_reads_scorer": false,
+    "committed_v2_model_unchanged": true,
+    "committed_v3_alpha_artifacts_unchanged": true,
+    "deterministic": true,
+    "negatives_bytes_unchanged": true,
+    "positives_files_touched": false
+  },
+  "ring_auc_downgrade": {
+    "committed_loso_min": {
+      "hub": 64.9,
+      "ring": 41.6
+    },
+    "hub_auc_committed": 1.0,
+    "ring_auc_committed": 1.0,
+    "statement": "DOWNGRADED: the ring bucket AUC 1.0 is NOT claimed as 'the feature system separates human quality better'. Part of it is explained by the manual-export format (pixel-aligned slot anchors, no stored polylines): with the format-artifact features removed the reading falls below the 0.993 floor (see Arm C ablations). Non-regression evidence is restated on the hub bucket (AUC 1.0, robust in every ablation) plus the committed independent LOSO."
+  },
+  "schema": "stdraw.calibration_report_v3beta/v1",
+  "stale_geometry_audit": {
+    "n_anchors": 18,
+    "n_stale_geometry_applies": 1,
+    "per_anchor": {
+      "bowtie-wage-price:bowtie-wage-price-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 8,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "brand-flywheel:brand-flywheel-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 6,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 0,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 0,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "comb-supply-demand:comb-supply-demand-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 4,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "coupled-underinvestment:coupled-underinvestment-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 6,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "epidemic-feedback:epidemic-feedback-manual-layout.json": {
+        "coordinate_anchor_edges": 14,
+        "slot_anchor_edges": 0,
+        "stale_geometry_applies": true,
+        "stored_route_polylines": 14
+      },
+      "fan-d12:fan-d12-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 8,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "fan-d17:fan-d17-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 14,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "nested-capacity:nested-capacity-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 2,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "nested-learning:nested-learning-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 4,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "nonplanar-credit:nonplanar-credit-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 7,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "nonplanar-inventory:nonplanar-inventory-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 12,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "random-n10-i00:random-n10-i00-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 11,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "random-n10-i05:i05.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 5,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "random-n10-i05:random-n10-i05-manual-layout.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 9,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "random-n10-i11:i11-a.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 12,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      },
+      "random-n10-i11:i11-b.json": {
+        "coordinate_anchor_edges": 0,
+        "slot_anchor_edges": 13,
+        "stale_geometry_applies": false,
+        "stored_route_polylines": 0
+      }
+    },
+    "verdict": "stale geometry (stored polylines/coordinate anchors not moved by centre doses) applies to 1/18 anchors only; for the rest the D6 noise source is the slot-anchor + centre-line semantics, not stale geometry"
+  }
+}

@@ -629,7 +629,7 @@ def route_shape(graph_name, row, labels):
     return SHAPE_RING if rho <= RHO_RING_THRESHOLD else SHAPE_HUB
 
 
-def merge_layout_edges(manual_doc, engine_doc=None):
+def merge_layout_edges(manual_doc, engine_doc=None, backfill_loop_meta=True):
     """Complete a manual anchor's edge set from the graph source.
 
     Root cause this closes (independent-review MAJOR-1): the interactive
@@ -661,9 +661,34 @@ def merge_layout_edges(manual_doc, engine_doc=None):
     The merged doc records how many edges were appended under
     ``edges_supplemented`` so the calibration report can log per-anchor
     completeness.
+
+    Loop metadata completion (independent-review MAJOR-3 root fix,
+    ``backfill_loop_meta=True`` — calibration data path only, delivery
+    geometry untouched): the manual export carries NO loop membership
+    (``edges[].loop_kinds``), so the role-conditioned families (loop-closure
+    scalars, loop_arc_rate / nonloop_straight_rate) degrade on manual
+    anchors and measure export format, not drawing quality.  With an engine
+    doc available:
+    - manual edges missing ``loop_kinds`` get it backfilled (plus
+      ``loop_color``) from the same-graph engine layout, matched by
+      multiplicity-aware (a, b) pair identity — loop membership is pure
+      graph topology, position-independent, and never overrides a manual
+      value (a manual edge that already declares loop_kinds stays human);
+    - appended (untouched) edges additionally carry the engine's declared
+      route kind as ``style`` ("arc" -> "arc", "line" -> "straight"; other
+      kinds are omitted and fall through to the geometric classification) —
+      the renderer draws untouched loop edges as auto-routed arcs, so the
+      style proxy is renderer-faithful while geometry stays the minimal
+      centre line (residual limitation: bow-direction reads on appended
+      arc-styled edges use that centre line; disclosed in the v3-beta
+      report).
+    Pass ``backfill_loop_meta=False`` for the legacy (v3-alpha) caliber —
+    byte-identical to the pre-fix merge, used by the v3-beta committed-
+    caliber reproduction arm.
     """
     nodes = manual_doc.get("nodes", {})
     appended = []
+    loop_backfilled = 0
     if engine_doc is not None:
         eng_nodes = engine_doc.get("nodes", {})
         missing_nodes = [nid for nid in nodes if nid not in eng_nodes]
@@ -678,12 +703,45 @@ def merge_layout_edges(manual_doc, engine_doc=None):
         have = {}
         for e in manual_doc.get("edges") or []:
             have[_pair(e)] = have.get(_pair(e), 0) + 1
+        # multiplicity-aware engine edge lookup: engine_edges[k] is a FIFO
+        # list so parallel edges resolve one-to-one in a stable order.
+        engine_edges = {}
+        for e in eng_edges:
+            engine_edges.setdefault(_pair(e), []).append(e)
+        if backfill_loop_meta:
+            kept_edges = []
+            for e in manual_doc.get("edges") or []:
+                if e.get("loop_kinds") is None:
+                    q = engine_edges.get(_pair(e))
+                    if q:
+                        src = q.pop(0)
+                        e2 = dict(e)   # never mutate the caller's edge dicts
+                        e2["loop_kinds"] = list(src.get("loop_kinds") or [])
+                        if src.get("loop_color") is not None:
+                            e2["loop_color"] = src.get("loop_color")
+                        loop_backfilled += 1
+                        kept_edges.append(e2)
+                        continue
+                kept_edges.append(e)
+            manual_edges_backfilled = kept_edges
         for e in eng_edges:
             k = _pair(e)
             if have.get(k, 0) > 0:
                 have[k] -= 1
                 continue
-            appended.append({"a": e.get("a"), "b": e.get("b")})
+            added = {"a": e.get("a"), "b": e.get("b")}
+            if backfill_loop_meta:
+                kinds = list(e.get("loop_kinds") or [])
+                if kinds:
+                    added["loop_kinds"] = kinds
+                    if e.get("loop_color") is not None:
+                        added["loop_color"] = e.get("loop_color")
+                rk = (e.get("route") or {}).get("kind")
+                if rk == "arc":
+                    added["style"] = "arc"
+                elif rk == "line":
+                    added["style"] = "straight"
+            appended.append(added)
     else:
         # structural fan completion: exactly one hub candidate (max degree),
         # every other node a spoke with degree <= 1; degree-0 nodes are
@@ -711,9 +769,12 @@ def merge_layout_edges(manual_doc, engine_doc=None):
         for nid in orphans:
             appended.append({"a": hub, "b": nid})
     merged = dict(manual_doc)
-    base = manual_doc.get("edges") or []
+    base = manual_edges_backfilled if engine_doc is not None \
+        and backfill_loop_meta else (manual_doc.get("edges") or [])
     merged["edges"] = list(base) + appended
     merged["edges_supplemented"] = len(appended)
+    if engine_doc is not None and backfill_loop_meta:
+        merged["loop_meta_backfilled"] = loop_backfilled
     return merged
 
 

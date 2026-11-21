@@ -149,7 +149,11 @@ def main():
             # back to structural hub+spoke completion for that family only)
             n_manual = len(doc.get("edges") or [])
             try:
-                doc = merge_layout_edges(doc, engine_by_graph.get(g))
+                # committed v1 caliber pinned: legacy minimal merge (no loop
+                # metadata backfill) so calibration-report-v1/v2 stay
+                # byte-reproducible; the v3-beta driver opts in explicitly.
+                doc = merge_layout_edges(doc, engine_by_graph.get(g),
+                                         backfill_loop_meta=False)
             except Exception as exc:  # noqa: BLE001 - fail-visible per anchor
                 failures.append({"path": str(p), "error": str(exc)})
                 continue

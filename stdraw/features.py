@@ -43,6 +43,10 @@ EPS = 1e-9                 # geometric degeneracy guard
 ALIGN_AXES_DEG = (0.0, 45.0, 90.0, 135.0)
 ALIGN_TOL_FRAC = 0.04      # v1 initial value, pending calibration (RFC §15.2: never a fixed px)
 ALIGN_MIN_GROUP = 3        # RFC §15.2: a group counts only with >=3 anchors
+# v3 tight alignment caliber (card: tolerance tightened to the measured human
+# precision, ±1 px).  A SEPARATE key — the v1 normalized key above is kept
+# byte-identical so committed v1/v2 calibration stays reproducible.
+ALIGN_TOL_TIGHT_PX = 1.0
 DEFAULT_CARD_W = 140       # same default as stdraw.metrics
 DEFAULT_CARD_H = 44        # same default as stdraw.metrics (meta.cardH)
 DEFAULT_CLEARANCE = 16.0   # L0 soft clearance (px), overridable by meta.clearance
@@ -96,6 +100,16 @@ FEATURE_KEYS = (
     # implementation).
     "degree_canvas_spearman",
     "hub_neighbor_centrality_ratio",
+    # v3 edge-aggregate family (2026-11-21 directive): conditioning-class edge
+    # indices from the merged 8-candidate list + the ±1 px tight alignment
+    # caliber.  Single-source geometry lives in this module only; the scorer
+    # stays a thin layer.  See the feature docstrings for the calibers.
+    "alignment_coverage_tight",
+    "edge_anchor_orientation",
+    "edge_mirror",
+    "edge_routing_regularity",
+    "edge_loop_closure",
+    "edge_style_consistency",
 )
 
 
@@ -379,6 +393,12 @@ class Layout:
                 "loops": loops,
                 "pts": pts,
                 "orig_index": i,
+                # v3 edge-aggregate metadata (raw passthrough, read-only;
+                # never used by v1/v2 features — see _feat_edge_aggregates):
+                "anchors_raw": e.get("anchors"),
+                "style_raw": e.get("style"),
+                "route_kind": (e.get("route") or {}).get("kind")
+                              if isinstance(e.get("route"), dict) else None,
             })
         self.degree = {nid: 0 for nid in self.ids}
         for e in self.edges:
@@ -1236,14 +1256,12 @@ def _edge_key(layout, orig_index):
 
 # ────────────────────── RFC §15.2 alignment + stability slot ──────────────────────
 
-def _feat_alignment(layout):
-    """Anchor-grouping max coverage (RFC §15.2).
+def _alignment_coverage_for_tol(layout, tol):
+    """Greedy anchor-grouping max coverage at a given tolerance (RFC §15.2).
 
     Anchors = card centers + route endpoints.  Candidate axes: 0/45/90/135°.
-    Tolerance = ALIGN_TOL_FRAC * min(canvas_w, canvas_h).  Greedy grouping:
-    anchors sorted by projected coordinate (ties by anchor id), fixed-order
-    scan; a group counts only with >= ALIGN_MIN_GROUP anchors; each anchor
-    belongs to at most one group.
+    Returns (best_coverage, per_axis detail list); shared by the v1 normalized
+    caliber and the v3 tight (±1 px) caliber.
     """
     anchors = []
     for nid in layout.ids:
@@ -1253,7 +1271,6 @@ def _feat_alignment(layout):
         for which in ("a", "b"):
             p = e["pts"][0] if which == "a" else e["pts"][-1]
             anchors.append((p[0], p[1], "edge:%d:%s" % (ei, which)))
-    tol = ALIGN_TOL_FRAC * min(layout.vw, layout.vh)
     total = len(anchors)
     per_axis = []
     best = None
@@ -1278,6 +1295,20 @@ def _feat_alignment(layout):
                          "groups_ge3": sum(1 for g in groups if len(g[1]) >= ALIGN_MIN_GROUP)})
         if best is None or (cov is not None and cov > best):
             best = cov
+    return best, per_axis, total
+
+
+def _feat_alignment(layout):
+    """Anchor-grouping max coverage (RFC §15.2) under two calibers:
+
+    - v1 (unchanged, committed-caliber): tolerance = ALIGN_TOL_FRAC *
+      min(canvas_w, canvas_h);
+    - v3 tight (±1 px, measured human precision — card directive): a separate
+      key; the v1 key stays byte-identical.
+    """
+    tol = ALIGN_TOL_FRAC * min(layout.vw, layout.vh)
+    best, per_axis, total = _alignment_coverage_for_tol(layout, tol)
+    best_t, per_axis_t, _ = _alignment_coverage_for_tol(layout, ALIGN_TOL_TIGHT_PX)
     return {
         "alignment_coverage": {
             "max_coverage": _r(best),
@@ -1285,6 +1316,612 @@ def _feat_alignment(layout):
             "anchors": total,
             "per_axis": per_axis,
             "note": "RFC §15.2: tolerance normalized by canvas scale (v1 initial value)",
+        },
+        "alignment_coverage_tight": {
+            "max_coverage": _r(best_t),
+            "tolerance_px": _r(ALIGN_TOL_TIGHT_PX),
+            "anchors": total,
+            "per_axis": per_axis_t,
+            "note": ("v3 tight caliber: fixed ±1 px tolerance (measured human "
+                     "precision); v1 normalized key kept unchanged"),
+        },
+    }
+
+
+def _pct_linear(sorted_vals, q):
+    """Linear-interpolation percentile (numpy 'linear' method), deterministic."""
+    n = len(sorted_vals)
+    if n == 0:
+        return None
+    if n == 1:
+        return sorted_vals[0]
+    pos = q * (n - 1)
+    lo = int(math.floor(pos))
+    hi = min(lo + 1, n - 1)
+    frac = pos - lo
+    return sorted_vals[lo] * (1.0 - frac) + sorted_vals[hi] * frac
+
+
+def _quant_stats(vals, worst_max=True):
+    """Multi-quantile summary: mean / sigma / worst / P75 (+ n).
+
+    worst = the least desirable observation: max for deviation-type measures
+    (higher = worse), min for consistency-type measures (lower = worse).
+    None entries are dropped; empty -> all-None (non-evaluable, never padded).
+    """
+    vs = sorted(v for v in vals if v is not None)
+    n = len(vs)
+    if n == 0:
+        return {"mean": None, "sigma": None, "worst": None, "p75": None, "n": 0}
+    mu = math.fsum(vs) / n
+    var = math.fsum((v - mu) ** 2 for v in vs) / n
+    return {
+        "mean": _r(mu),
+        "sigma": _r(math.sqrt(var)),
+        "worst": _r(vs[-1] if worst_max else vs[0]),
+        "p75": _r(_pct_linear(vs, 0.75)),
+        "n": n,
+    }
+
+
+# ─────────────── v3 edge-aggregate features (2026-11-21 directive) ───────────────
+#
+# Four conditioning-class index families from the merged 8-candidate list
+# (docs/edge-feature-candidates.md), all normalized (never absolute px):
+#   1. anchor orientation deviation + edge mirror consistency (incl. group
+#      anchors g<->g via the slot sub-caliber; golden sub-caliber as data)
+#      — strict caliber: docs/edge-mirror-feature.md;
+#   2. routing regularity (detour ratio + bend count, per edge);
+#   3. loop closure quality (same-loop arcs bow outward consistently + arc share);
+#   4. style consistency, role-conditioned (loop-edge arc rate vs non-loop
+#      straight rate measured separately).
+# Every family emits multi-quantile stats (mean / sigma / worst / P75).
+
+# mirror geometry tolerance = MIRROR_SCALE_FRAC x median nearest-neighbour
+# node distance (docs/edge-mirror-feature.md §1: adaptive, not canvas-relative)
+MIRROR_SCALE_FRAC = 0.5
+MIRROR_PATH_TOL_FRAC = 0.05   # path-mirror mean-distance tol (x canvas diagonal)
+MIRROR_SEARCH_CAP = 500_000   # enumeration state cap (truncation is flagged)
+MIRROR_RESAMPLE_K = 24        # polyline resampling for path mirror
+EDGE_TURN_MIN_DEG = 15.0      # |turn angle| counting as a routing kink
+DETOUR_EPS = 0.02             # detour ratio above which an edge counts as bowed
+
+
+def _median_nn_scale(layout):
+    """Median nearest-neighbour node distance — the drawing's own granularity."""
+    ids = layout.ids
+    if len(ids) < 2:
+        return 1.0
+    dists = []
+    for i, nid in enumerate(ids):
+        x, y = layout.pos[nid]
+        best = None
+        for other in ids:
+            if other == nid:
+                continue
+            d = math.hypot(layout.pos[other][0] - x, layout.pos[other][1] - y)
+            if best is None or d < best:
+                best = d
+        dists.append(best)
+    dists.sort()
+    s = dists[len(dists) // 2]
+    return s if s > 1e-6 else 1.0
+
+
+_ANCHOR_SIDE_DEG = {"e": 0.0, "ne": 45.0, "n": 90.0, "nw": 135.0,
+                    "w": 180.0, "sw": 225.0, "s": 270.0, "se": 315.0}
+
+
+def _anchor_side_of_id(val):
+    """Canonical side (deg) of a string anchor id like 'n', 'w-g2' (SVG
+    y-down: n points up = +90 deg in math convention)."""
+    base = val.split("-", 1)[0]
+    return _ANCHOR_SIDE_DEG.get(base)
+
+
+def _edge_anchor_specs(layout, e):
+    """((src_kind, src_val), (dst_kind, dst_val)) in edge direction a->b.
+
+    kind: 'id' (string anchor id, possibly 'w-g2'), 'coord' (attach point),
+    or (None, None) when missing/unresolvable.  Mirrors the research-card
+    reading of manual ({src,dst} ids) vs engine ({a,b} coords) documents.
+    """
+    anchors = e.get("anchors_raw")
+    a, b = e["a"], e["b"]
+    if isinstance(anchors, dict) and ("src" in anchors or "dst" in anchors):
+        keys = (("src", a), ("dst", b))
+    elif isinstance(anchors, dict) and ("a" in anchors or "b" in anchors):
+        keys = (("a", a), ("b", b))
+    else:
+        return ((None, None), (None, None))
+    out = []
+    for key, nid in keys:
+        val = anchors.get(key)
+        if isinstance(val, str):
+            out.append(("id", val))
+        elif isinstance(val, (list, tuple)) and len(val) >= 2 \
+                and nid in layout.pos:
+            out.append(("coord", (float(val[0]), float(val[1]))))
+        else:
+            out.append((None, None))
+    return tuple(out)
+
+
+def _feat_anchor_orientation(layout):
+    """Per-endpoint anchor orientation deviation, normalized to [0, 1].
+
+    Deviation = angle between the anchor attach direction (coordinate anchor
+    offset from the node centre, or the canonical side of a string anchor id)
+    and the route's departure direction at that endpoint (toward the next
+    polyline point; centre-to-centre line when no route).  Non-evaluable
+    endpoints (no anchor of either kind, degenerate geometry) are counted,
+    never silently scored.
+    """
+    devs = []
+    n_endpoints = 0
+    for e in layout.edges:
+        specs = _edge_anchor_specs(layout, e)
+        pts = e["pts"]
+        for which in range(2):
+            n_endpoints += 1
+            kind, val = specs[which]
+            if kind is None:
+                continue
+            nid = e["a"] if which == 0 else e["b"]
+            cx, cy = layout.pos[nid]
+            if kind == "coord":
+                if math.hypot(val[0] - cx, val[1] - cy) < 1e-9:
+                    continue
+                ang_a = math.degrees(math.atan2(cy - val[1], val[0] - cx))
+                ax, ay = val
+            else:
+                side = _anchor_side_of_id(val)
+                if side is None:
+                    continue
+                ang_a = side
+                ax, ay = cx, cy
+            # departure direction: attach point -> next polyline point
+            nxt = pts[1] if which == 0 else pts[-2]
+            if math.hypot(nxt[0] - ax, nxt[1] - ay) < 1e-9:
+                continue
+            ang_d = math.degrees(math.atan2(ay - nxt[1], nxt[0] - ax))
+            diff = abs(ang_a - ang_d) % 360.0
+            if diff > 180.0:
+                diff = 360.0 - diff
+            devs.append(_r(diff / 180.0))
+    return {
+        "edge_anchor_orientation": dict(
+            _quant_stats(devs, worst_max=True),
+            n_endpoints=n_endpoints,
+        ),
+    }
+
+
+# ── edge mirror machinery (strict caliber, ported per docs/edge-mirror-feature.md) ──
+
+_MIRROR_SECTOR = {"e": "w", "w": "e", "n": "n", "s": "s",
+                  "ne": "nw", "nw": "ne", "se": "sw", "sw": "se"}
+
+# Sub-caliber "golden" — derived from the engine's own anchor coordinate
+# table (stdraw.anchors.standard_anchors): mirror of an anchor id = the
+# standard anchor at the x-mirrored canonical offset
+# (e<->w, n<->n, s<->s, ne<->nw, se<->sw, n-g1<->n-g2, s-g1<->s-g2,
+#  e-g1<->w-g2, e-g2<->w-g1).
+
+def _build_anchor_mirror_golden():
+    from .anchors import ANCHOR_IDS, standard_anchors
+    pts = standard_anchors(0.0, 0.0, 10.0, 10.0)
+    table = {}
+    for p in pts:
+        mx = -p[1]
+        best, bd = None, None
+        for q in pts:
+            d = math.hypot(q[1] - mx, q[2] - p[2])
+            if bd is None or d < bd - 1e-9:
+                best, bd = q[0], d
+        table[p[0]] = best
+    assert set(table) == set(ANCHOR_IDS)
+    assert {v: k for k, v in table.items()} == table
+    return table
+
+
+def _build_anchor_mirror_slot():
+    """Sub-caliber 'slot' — mirrored side, same ordinal slot index (gk<->gk)."""
+    base = {"n": "n", "s": "s", "e": "w", "w": "e",
+            "ne": "nw", "nw": "ne", "se": "sw", "sw": "se"}
+    table = dict(base)
+    for side in ("n", "s", "e", "w"):
+        table["%s-g1" % side] = base[side] + "-g1"
+        table["%s-g2" % side] = base[side] + "-g2"
+    return table
+
+
+_ANCHOR_MIRROR_GOLDEN = _build_anchor_mirror_golden()
+_ANCHOR_MIRROR_SLOT = _build_anchor_mirror_slot()
+_MIRROR_TABLES = (("golden", _ANCHOR_MIRROR_GOLDEN),
+                  ("slot", _ANCHOR_MIRROR_SLOT))
+
+
+def _sector_from_coord(ax, ay, nx, ny):
+    dx, dy = ax - nx, ay - ny
+    if abs(dx) < 1e-9 and abs(dy) < 1e-9:
+        return None
+    ang = math.degrees(math.atan2(-dy, dx))  # SVG y-down; 0=east, 90=north
+    names = ["e", "ne", "n", "nw", "w", "sw", "s", "se"]
+    return names[int(((ang + 360.0) % 360.0 + 22.5) // 45.0) % 8]
+
+
+def _mirror_endpoint_sector(layout, e, which):
+    """-> (kind, value) for one endpoint: ('id', anchor id) | ('sector', sector)
+    | (None, None) non-evaluable."""
+    kind, val = _edge_anchor_specs(layout, e)[which]
+    if kind == "id":
+        return ("id", val)
+    if kind == "coord":
+        nid = e["a"] if which == 0 else e["b"]
+        cx, cy = layout.pos[nid]
+        return ("sector", _sector_from_coord(val[0], val[1], cx, cy))
+    return (None, None)
+
+
+def _mirror_endpoint_status(exp, got, table):
+    """Compare one anchor endpoint under a mirror table.
+    -> 'equal' | 'mismatch' | 'unknown' (non-evaluable)."""
+    ek, ev = exp
+    gk, gv = got
+    if ek is None or gk is None or ev is None or gv is None:
+        return "unknown"
+    if ek == "id":
+        base = ev.split("-", 1)[0]
+        m = table.get(ev, table.get(base))
+        if m is None:
+            return "unknown"
+        if gk == "id":
+            return "equal" if gv == m else "mismatch"
+        gbase = gv.split("-", 1)[0]
+        return "equal" if gbase == m else "mismatch"
+    # sector expectation
+    expected = _MIRROR_SECTOR.get(ev)
+    if expected is None:
+        return "unknown"
+    if gk == "id":
+        return "equal" if gv.split("-", 1)[0] == expected else "mismatch"
+    return "equal" if gv == expected else "mismatch"
+
+
+def _polyline_resample(pts, k):
+    segs, total = [], 0.0
+    for i in range(len(pts) - 1):
+        d = math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
+        segs.append(d)
+        total += d
+    if total <= 1e-9:
+        return [pts[0]] * k
+    out, step, target, acc, i = [], total / (k - 1), 0.0, 0.0, 0
+    for _ in range(k):
+        while i < len(segs) - 1 and acc + segs[i] < target:
+            acc += segs[i]
+            i += 1
+        t = (target - acc) / segs[i] if segs[i] > 1e-9 else 0.0
+        t = max(0.0, min(1.0, t))
+        out.append((pts[i][0] + t * (pts[i + 1][0] - pts[i][0]),
+                    pts[i][1] + t * (pts[i + 1][1] - pts[i][1])))
+        target += step
+    return out
+
+
+def _path_mirror_distance(pts_e, pts_p, axis_c, diag):
+    mirrored = [(2 * axis_c - x, y) for x, y in pts_e]
+    a = _polyline_resample(mirrored, MIRROR_RESAMPLE_K)
+    b = _polyline_resample(pts_p, MIRROR_RESAMPLE_K)
+    d = [math.hypot(p[0] - q[0], p[1] - q[1]) for p, q in zip(a, b)]
+    d_rev = [math.hypot(p[0] - q[0], p[1] - q[1])
+             for p, q in zip(a, list(reversed(b)))]
+    return min(math.fsum(d) / len(d), math.fsum(d_rev) / len(d_rev)) / diag
+
+
+def _find_mirror_candidates(layout, tol):
+    """All involutive automorphisms of the undirected graph that are
+    geometry-valid vertical mirrors (deterministic; cap-flagged).
+    Returns ([(sigma, axis_c, spread)...], truncated_flag)."""
+    ids = layout.ids
+    distinct = set()
+    for e in layout.edges:
+        if e["a"] == e["b"]:
+            continue
+        distinct.add((min(e["a"], e["b"]), max(e["a"], e["b"])))
+    deg = {i: 0 for i in ids}
+    for a, b in distinct:
+        deg[a] += 1
+        deg[b] += 1
+    state = {"expansions": 0, "truncated": False}
+    results = []
+
+    def local_ok(sigma, v, u):
+        for w, s in sigma.items():
+            if w == v or w == u:
+                continue
+            if (min(v, w), max(v, w)) in distinct and \
+               (min(u, s), max(u, s)) not in distinct:
+                return False
+            if (min(u, w), max(u, w)) in distinct and \
+               (min(v, s), max(v, s)) not in distinct:
+                return False
+        return True
+
+    def verify_full(sigma):
+        for a, b in distinct:
+            if (min(sigma[a], sigma[b]), max(sigma[a], sigma[b])) not in distinct:
+                return False
+        return True
+
+    def fit_axis(sigma):
+        vals = [layout.pos[v][0] if v == s
+                else (layout.pos[v][0] + layout.pos[s][0]) / 2.0
+                for v, s in sigma.items()]
+        c = math.fsum(vals) / len(vals)
+        spread = max(abs(x - c) for x in vals)
+        return c, spread
+
+    def rec(sigma, unassigned):
+        if state["truncated"]:
+            return
+        state["expansions"] += 1
+        if state["expansions"] > MIRROR_SEARCH_CAP:
+            state["truncated"] = True
+            return
+        if not unassigned:
+            if verify_full(sigma):
+                results.append(dict(sigma))
+            return
+        v = unassigned[0]
+        rest = unassigned[1:]
+        sigma[v] = v
+        if local_ok(sigma, v, v):
+            rec(sigma, rest)
+        del sigma[v]
+        for u in rest:
+            if deg[u] != deg[v] \
+                    or abs(layout.pos[v][1] - layout.pos[u][1]) > tol:
+                continue
+            sigma[v] = u
+            sigma[u] = v
+            if local_ok(sigma, v, u):
+                rec(sigma, [w for w in rest if w != u])
+            del sigma[u]
+            del sigma[v]
+
+    rec({}, ids)
+    valid = []
+    for sigma in results:
+        c, spread = fit_axis(sigma)
+        if spread <= tol:
+            valid.append((sigma, c, spread))
+    return valid, state["truncated"]
+
+
+def _feat_edge_mirror(layout):
+    """Edge mirror consistency under the strict research caliber
+    (docs/edge-mirror-feature.md): involutive automorphism + vertical-mirror
+    geometry validity (adaptive tolerance), primary mirror = fitted axis
+    closest to the canvas mid-axis, pair consistency on anchor (golden AND
+    slot sub-calibers — group anchors g<->g under slot) / style / path dims,
+    three-state (non-evaluable never counts as a silent pass)."""
+    xy_dists_scale = _median_nn_scale(layout)
+    tol = MIRROR_SCALE_FRAC * xy_dists_scale
+    tol_path = MIRROR_PATH_TOL_FRAC * layout.diagonal
+    cx = layout.vx + layout.vw / 2.0
+    edges = layout.edges
+    index_by_pair = {}
+    for i, e in enumerate(edges):
+        if e["a"] == e["b"]:
+            continue
+        key = (min(e["a"], e["b"]), max(e["a"], e["b"]))
+        index_by_pair.setdefault(key, []).append(i)
+
+    def ekey_of(e):
+        return (min(e["a"], e["b"]), max(e["a"], e["b"]))
+
+    cands, truncated = _find_mirror_candidates(layout, tol)
+    evaluated = []
+    for sigma, c, spread in cands:
+        details, n_pairs = [], 0
+        seen = set()
+        for i, e in enumerate(edges):
+            ma, mb = sigma[e["a"]], sigma[e["b"]]
+            if (min(ma, mb), max(ma, mb)) == ekey_of(e):
+                continue  # self-mirrored edge (on the axis / endpoints swapped)
+            lst = index_by_pair.get((min(ma, mb), max(ma, mb)))
+            if not lst:
+                continue  # cannot happen for a verified automorphism
+            j = lst[0]
+            pk = (min(i, j), max(i, j))
+            if pk in seen:
+                continue
+            seen.add(pk)
+            n_pairs += 1
+            e2 = edges[j]
+            rev = e2["a"] == sigma[e["b"]] and e2["b"] == sigma[e["a"]]
+            exp_specs = [_mirror_endpoint_sector(layout, e, 0),
+                         _mirror_endpoint_sector(layout, e, 1)]
+            got_specs = [_mirror_endpoint_sector(layout, e2, 1),
+                         _mirror_endpoint_sector(layout, e2, 0)] if rev else \
+                        [_mirror_endpoint_sector(layout, e2, 0),
+                         _mirror_endpoint_sector(layout, e2, 1)]
+            consistent = {"golden": True, "slot": True}
+            for cal, table in _MIRROR_TABLES:
+                sts = [_mirror_endpoint_status(exp_specs[k], got_specs[k], table)
+                       for k in range(2)]
+                if any(s == "mismatch" for s in sts):
+                    consistent[cal] = False
+            # style mirror: engine route-kind equality; manual style class
+            # equality (None -> auto); never cross-document
+            st1 = e["route_kind"] if e["route_kind"] else (e["style_raw"] or "auto")
+            st2 = e2["route_kind"] if e2["route_kind"] else (e2["style_raw"] or "auto")
+            if st1 != st2:
+                consistent = {k: False for k in consistent}
+            # path mirror (evaluable only when both edges carry points)
+            if e["pts"] is not None and e2["pts"] is not None \
+                    and (len(e["pts"]) > 2 or len(e2["pts"]) > 2):
+                dist = _path_mirror_distance(e["pts"], e2["pts"], c, layout.diagonal)
+                if dist > tol_path:
+                    consistent = {k: False for k in consistent}
+            details.append(consistent)
+        n_nonself = sum(1 for e in edges
+                        if (min(sigma[e["a"]], sigma[e["b"]]),
+                            max(sigma[e["a"]], sigma[e["b"]])) != ekey_of(e))
+        cons = {}
+        for cal, _t in _MIRROR_TABLES:
+            vals = [1 if d[cal] else 0 for d in details]
+            cons[cal] = _r(math.fsum(vals) / n_pairs) if n_pairs else None
+        evaluated.append({
+            "axis_dist": abs(c - cx),
+            "spread_frac": spread / layout.diagonal,
+            "pairs": n_pairs,
+            "pair_coverage": _r(n_pairs / n_nonself) if n_nonself else None,
+            "consistency_golden": cons["golden"],
+            "consistency_slot": cons["slot"],
+        })
+    evaluated.sort(key=lambda ev: (ev["axis_dist"], ev["spread_frac"],
+                                   -ev["pairs"]))
+    with_pairs = [ev for ev in evaluated if ev["pairs"] > 0]
+    out = {
+        "presence": 1 if with_pairs else 0,
+        "n_candidates": len(with_pairs),
+        "search_truncated": truncated,
+        "tolerance_px": _r(tol),
+    }
+    if not with_pairs:
+        out.update({
+            "pair_coverage": None,
+            "consistency_slot": None, "consistency_golden": None,
+            "best_consistency_slot": None, "best_consistency_golden": None,
+        })
+        return {"edge_mirror": out}
+    prim = with_pairs[0]
+    out.update({
+        "pair_coverage": prim["pair_coverage"],
+        "consistency_slot": prim["consistency_slot"],
+        "consistency_golden": prim["consistency_golden"],
+        "best_consistency_slot": max(ev["consistency_slot"]
+                                     for ev in with_pairs
+                                     if ev["consistency_slot"] is not None),
+        "best_consistency_golden": max(ev["consistency_golden"]
+                                       for ev in with_pairs
+                                       if ev["consistency_golden"] is not None),
+    })
+    return {"edge_mirror": out}
+
+
+def _edge_detour_ratio(layout, e):
+    """polyline length / centre-to-centre distance - 1 (>= 0 when bowed)."""
+    d = math.hypot(layout.pos[e["b"]][0] - layout.pos[e["a"]][0],
+                   layout.pos[e["b"]][1] - layout.pos[e["a"]][1])
+    if d < 1e-9:
+        return None
+    return max(0.0, _polyline_len(e["pts"]) / d - 1.0)
+
+
+def _edge_bend_count(e):
+    """Number of interior vertices whose |turn angle| >= EDGE_TURN_MIN_DEG."""
+    return sum(1 for a in _turn_angles_deg(e["pts"]) if abs(a) >= EDGE_TURN_MIN_DEG)
+
+
+def _feat_routing_regularity(layout):
+    """Routing regularity (per edge, normalized): detour ratio
+    (polyline / centre-line length - 1, unitless) + kink count
+    (|turn| >= EDGE_TURN_MIN_DEG).  A single winding edge shows in worst."""
+    detours, bends = [], []
+    for e in layout.edges:
+        detours.append(_edge_detour_ratio(layout, e))
+        bends.append(float(_edge_bend_count(e)))
+    return {
+        "edge_routing_regularity": {
+            "detour_ratio": _quant_stats(detours, worst_max=True),
+            "bend_count": _quant_stats(bends, worst_max=True),
+        },
+    }
+
+
+def _edge_is_arc(e, detour):
+    """Role-aware 'curved' classification: declared arc/route kind wins;
+    geometric fallback (detour > DETOUR_EPS or kink) for style-free edges."""
+    if e["route_kind"] == "arc" or e["style_raw"] == "arc":
+        return True
+    if e["route_kind"] in ("line",) or e["style_raw"] == "straight":
+        return False
+    return bool(detour is not None and detour > DETOUR_EPS) \
+        or _edge_bend_count(e) > 0
+
+
+def _feat_loop_closure(layout, loops):
+    """Loop closure quality (per closed loop, loop edges as the conditioning
+    class): arc share (fraction of bowed loop edges) and bow-direction
+    agreement (same-loop arcs bow consistently; outward share reported).
+    Quality-type rates use worst = min."""
+    poly_by_kind = {}
+    for lp in loops:
+        poly_by_kind[lp["kind"]] = [layout.pos[nid] for nid in lp["nodes"]]
+    arc_shares, agreements, outward_shares = [], [], []
+    n_loops = 0
+    for lp in loops:
+        if not lp["closed"] or len(lp["nodes"]) < 3:
+            continue
+        idxs = [i for i, e in enumerate(layout.edges) if lp["kind"] in e["loops"]]
+        if len(idxs) < 3:
+            continue
+        n_loops += 1
+        poly = poly_by_kind[lp["kind"]]
+        bowed, sides = 0, []
+        for i in idxs:
+            e = layout.edges[i]
+            detour = _edge_detour_ratio(layout, e)
+            if not _edge_is_arc(e, detour):
+                continue
+            bowed += 1
+            pts = e["pts"]
+            mid = pts[len(pts) // 2]
+            sides.append(1 if _point_in_poly(mid, poly) else 0)
+        arc_shares.append(bowed / len(idxs))
+        if bowed:
+            n_out = sum(sides)
+            n_in = bowed - n_out
+            agreements.append(max(n_out, n_in) / bowed)
+            outward_shares.append(n_out / bowed)
+    return {
+        "edge_loop_closure": {
+            "arc_share": _quant_stats(arc_shares, worst_max=False),
+            "bow_agreement": _quant_stats(agreements, worst_max=False),
+            "bow_outward_share": _quant_stats(outward_shares, worst_max=False),
+            "n_loops": n_loops,
+        },
+    }
+
+
+def _feat_style_consistency(layout, loops):
+    """Style consistency, role-conditioned (candidate #8 + topology-
+    conditioning principle): loop edges are measured as arcs and non-loop
+    edges as straight lines, SEPARATELY — a structurally expected arc on a
+    loop edge is never compared against chain straightness."""
+    loop_kinds = {lp["kind"] for lp in loops}
+    n_loop = n_loop_arc = 0
+    n_chain = n_chain_straight = 0
+    for e in layout.edges:
+        detour = _edge_detour_ratio(layout, e)
+        arc = _edge_is_arc(e, detour)
+        straight = (not arc) and _edge_bend_count(e) == 0
+        if e["loops"] & loop_kinds:
+            n_loop += 1
+            n_loop_arc += 1 if arc else 0
+        else:
+            n_chain += 1
+            n_chain_straight += 1 if straight else 0
+    return {
+        "edge_style_consistency": {
+            "loop_arc_rate": _r(n_loop_arc / n_loop) if n_loop else None,
+            "nonloop_straight_rate": _r(n_chain_straight / n_chain) if n_chain else None,
+            "n_loop_edges": n_loop,
+            "n_nonloop_edges": n_chain,
         },
     }
 
@@ -1321,6 +1958,11 @@ def extract_features(doc):
     features.update(_feat_canvas(layout))
     features.update(_feat_soft_clearance(layout))
     features.update(_feat_alignment(layout))
+    features.update(_feat_anchor_orientation(layout))
+    features.update(_feat_edge_mirror(layout))
+    features.update(_feat_routing_regularity(layout))
+    features.update(_feat_loop_closure(layout, loops))
+    features.update(_feat_style_consistency(layout, loops))
     features.update(_feat_stability())
 
     missing = [k for k in FEATURE_KEYS if k not in features]
@@ -1354,7 +1996,8 @@ def features_to_json(feature_doc):
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="python -m stdraw.features",
-        description="Extract 21 deterministic layout features from a layout.json")
+        description="Extract deterministic layout features from a layout.json "
+                    "(21 v1/v2 keys + v3 edge-aggregate family)")
     ap.add_argument("layout_json", help="path to layout.json (delivery coordinates)")
     ap.add_argument("--out", help="write feature JSON here (default: stdout)")
     args = ap.parse_args(argv)

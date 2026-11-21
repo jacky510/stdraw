@@ -1,0 +1,2219 @@
+{
+  "artifacts": {
+    "lasso_path_data": "benchmarks/aesthetic/lasso-path-v3-alpha.json",
+    "lasso_path_plot": "benchmarks/aesthetic/lasso-path-v3-alpha.svg",
+    "model": "benchmarks/aesthetic/model-v3-alpha.json",
+    "v2_model_verified_read_only_sha256": "e6942528599828b6"
+  },
+  "auc_non_regression": {
+    "compare": {
+      "global": {
+        "floor": null,
+        "floor_met": null,
+        "non_regression_vs_v2": true,
+        "v2_committed": 0.975,
+        "v3_alpha": 0.995833
+      },
+      "hub": {
+        "floor": 0.986,
+        "floor_met": true,
+        "non_regression_vs_v2": true,
+        "v2_committed": 0.985507,
+        "v3_alpha": 1.0
+      },
+      "ring": {
+        "floor": 0.993,
+        "floor_met": true,
+        "non_regression_vs_v2": true,
+        "v2_committed": 0.993464,
+        "v3_alpha": 1.0
+      }
+    },
+    "floors": {
+      "hub": 0.986,
+      "ring": 0.993
+    },
+    "ring_hub_non_regression": true
+  },
+  "dose_response": {
+    "cumulative": true,
+    "dose_definition": "L1 +-3px id-hash jitter on every node; L2 swap the two lowest sorted ids; L3 reflect the first half of sorted ids about the canvas centre (breaks mirror symmetry); L4 sub-grid offset (+7,+5) on odd nodes (breaks row/column alignment). Cumulative.",
+    "failure_analysis": {
+      "anchors_scored_l0_ge_90": 11,
+      "causes": [
+        "DOMINANT — stale-geometry recompute under relocation: the D6 doses move NODE CENTRES but the manual docs' stored route polylines / coordinate anchors do not move (byte-faithful ③A caliber).  The new per-edge features (anchor orientation, straight-rate, detour) recompute against that stale geometry and inject directionless noise: v2 (centre-based features) degrades coherently (11/15 monotone) while v3-alpha does not (4/15)",
+        "score saturation: 11/15 anchors already score >= 90 at L0 (in-sample AUC 1.0 -> logistic overconfidence), so small feature changes near the cluster produce outsized swings",
+        "L1 jitter (+-3 px id-hash) sits below the 0.1 score resolution: 8/15 L1 steps score 0.0 delta, so the measured dose is effectively L2+ only",
+        "L2 swap2 RELOCATES two cards wholesale; for centre-based features (hub_degree / alignment / centroid) a relocation is not a degradation — 10/14 increase steps happen at L2",
+        "shape routing flips mid-dose (3 anchors): the score switches weight sets across the routing threshold, a discontinuity the monotonicity read penalizes but the certificate does not"
+      ],
+      "followup_proposals": [
+        "re-route or geometrically regenerate edge routes/anchors for perturbed docs before extracting edge-aggregate features (needs an engine-side capability — separate card, not this one)",
+        "score calibration (isotonic/temperature scaling on a held-out split) to fix top-of-scale saturation",
+        "add a route-preserving dose level (style/bend perturbations on the stored polylines themselves) to dose-response"
+      ],
+      "increase_steps": [
+        [
+          "brand-flywheel:brand-flywheel-manual-layout.json",
+          "L2_swap2",
+          -0.9
+        ],
+        [
+          "brand-flywheel:brand-flywheel-manual-layout.json",
+          "L3_break_mirror",
+          -0.2
+        ],
+        [
+          "bowtie-wage-price:bowtie-wage-price-manual-layout.json",
+          "L2_swap2",
+          -3.5
+        ],
+        [
+          "comb-supply-demand:comb-supply-demand-manual-layout.json",
+          "L2_swap2",
+          -0.5
+        ],
+        [
+          "coupled-underinvestment:coupled-underinvestment-manual-layout.json",
+          "L1_jitter",
+          -0.4
+        ],
+        [
+          "coupled-underinvestment:coupled-underinvestment-manual-layout.json",
+          "L2_swap2",
+          -14.5
+        ],
+        [
+          "nested-capacity:nested-capacity-manual-layout.json",
+          "L1_jitter",
+          -1.9
+        ],
+        [
+          "nested-capacity:nested-capacity-manual-layout.json",
+          "L2_swap2",
+          -30.3
+        ],
+        [
+          "nested-learning:nested-learning-manual-layout.json",
+          "L2_swap2",
+          -6.7
+        ],
+        [
+          "nonplanar-credit:nonplanar-credit-manual-layout.json",
+          "L1_jitter",
+          -0.1
+        ],
+        [
+          "nonplanar-inventory:nonplanar-inventory-manual-layout.json",
+          "L2_swap2",
+          -1.9
+        ],
+        [
+          "random-n10-i05:i05.json",
+          "L2_swap2",
+          -6.9
+        ],
+        [
+          "random-n10-i11:i11-a.json",
+          "L2_swap2",
+          -0.3
+        ],
+        [
+          "random-n10-i11:i11-b.json",
+          "L2_swap2",
+          -0.3
+        ]
+      ],
+      "increase_steps_at_L2_swap": 10,
+      "l0_scores": [
+        56.9,
+        67.5,
+        75.8,
+        85.0,
+        92.9,
+        94.4,
+        96.0,
+        96.3,
+        97.8,
+        98.3,
+        98.6,
+        98.9,
+        99.5,
+        99.5,
+        99.8
+      ],
+      "l1_jitter_zero_delta": "8/15",
+      "n_l0_scored": 15,
+      "routing_shape_flips_mid_dose": [
+        {
+          "anchor": "nested-learning:nested-learning-manual-layout.json",
+          "at": "L2_swap2",
+          "from": "ring",
+          "to": "hub"
+        },
+        {
+          "anchor": "nonplanar-credit:nonplanar-credit-manual-layout.json",
+          "at": "L2_swap2",
+          "from": "hub",
+          "to": "ring"
+        },
+        {
+          "anchor": "epidemic-feedback:epidemic-feedback-manual-layout.json",
+          "at": "L2_swap2",
+          "from": "ring",
+          "to": "hub"
+        }
+      ],
+      "same_pairs_verdict": "v3-alpha REGRESSES on dose-response vs the committed v2 model on identical pairs (4 vs 11 monotone-decreasing of 15 scored)",
+      "target_met": false,
+      "v2_monotone_decreasing_same_pairs": 11,
+      "v3_monotone_decreasing": 4
+    },
+    "levels": [
+      "L0_original",
+      "L1_jitter",
+      "L2_swap2",
+      "L3_break_mirror",
+      "L4_off_align"
+    ],
+    "monotone_decreasing": 4,
+    "monotone_decreasing_v2_same_pairs": 11,
+    "monotone_nondecreasing": 7,
+    "n_anchors": 18,
+    "n_anchors_scored": 15,
+    "per_anchor": {
+      "bowtie-wage-price:bowtie-wage-price-manual-layout.json": {
+        "monotone_nondecreasing_dose": false,
+        "monotone_v2_same_pairs": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 94.4,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 88.6
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 94.4,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 88.6
+          },
+          {
+            "crossings": 3,
+            "delta_vs_prev": -3.5,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 97.9,
+            "v2_delta_vs_prev": 31.6,
+            "v2_routed_shape": "ring",
+            "v2_score": 57.0
+          },
+          {
+            "box_press_true": 2,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 2,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          1,
+          1,
+          0
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          1,
+          1
+        ]
+      },
+      "brand-flywheel:brand-flywheel-manual-layout.json": {
+        "monotone_nondecreasing_dose": false,
+        "monotone_v2_same_pairs": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 98.9,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 98.9,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": -0.9,
+            "grade": "second",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 99.8,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": -0.2,
+            "grade": "uncertified",
+            "level": "L3_break_mirror",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L4_off_align",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          2,
+          2,
+          0
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          4,
+          0
+        ]
+      },
+      "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "monotone_v2_same_pairs": true,
+        "resolution_class": "monotone-decreasing",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 96.3,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 96.3,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 9,
+            "delta_vs_prev": 2.3,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 94.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          0,
+          1,
+          1
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          2,
+          0
+        ]
+      },
+      "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "monotone_v2_same_pairs": true,
+        "resolution_class": "monotone-decreasing",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 96.0,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 96.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 9,
+            "delta_vs_prev": 3.1,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 92.9,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "box_press_true": 7,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 7,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          0,
+          1,
+          1
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          2,
+          0
+        ]
+      },
+      "comb-supply-demand:comb-supply-demand-manual-layout.json": {
+        "monotone_nondecreasing_dose": false,
+        "monotone_v2_same_pairs": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "uncertified",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 99.5,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 99.5,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 6,
+            "delta_vs_prev": -0.5,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L3_break_mirror",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L4_off_align",
+            "routed_shape": "hub",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          1,
+          3,
+          0
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          4,
+          0
+        ]
+      },
+      "coupled-underinvestment:coupled-underinvestment-manual-layout.json": {
+        "monotone_nondecreasing_dose": false,
+        "monotone_v2_same_pairs": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 85.0,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": -0.4,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 85.4,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 8,
+            "delta_vs_prev": -14.5,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 99.9,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          2,
+          0,
+          0
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          2,
+          0
+        ]
+      },
+      "epidemic-feedback:epidemic-feedback-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "monotone_v2_same_pairs": true,
+        "resolution_class": "monotone-decreasing",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 56.9,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 56.5
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.4,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 56.5,
+            "v2_delta_vs_prev": 0.3,
+            "v2_routed_shape": "ring",
+            "v2_score": 56.2
+          },
+          {
+            "crossings": 3,
+            "delta_vs_prev": 48.4,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 8.1,
+            "v2_delta_vs_prev": 29.7,
+            "v2_routed_shape": "hub",
+            "v2_score": 26.5
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          0,
+          0,
+          2
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          2
+        ]
+      },
+      "fan-d12:fan-d12-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "monotone_v2_same_pairs": null,
+        "resolution_class": "gate-blocked-at-origin",
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L0_original",
+            "min_card_gap": 12.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L1_jitter",
+            "min_card_gap": 8.0
+          },
+          {
+            "box_press_true": 3,
+            "gate_rejected": true,
+            "level": "L2_swap2",
+            "min_card_gap": 8.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          0,
+          0,
+          0
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          0
+        ]
+      },
+      "fan-d17:fan-d17-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "monotone_v2_same_pairs": null,
+        "resolution_class": "gate-blocked-at-origin",
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L0_original",
+            "min_card_gap": 6.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L1_jitter",
+            "min_card_gap": 2.0
+          },
+          {
+            "box_press_true": 8,
+            "gate_rejected": true,
+            "level": "L2_swap2",
+            "min_card_gap": 2.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          0,
+          0,
+          0
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          0
+        ]
+      },
+      "nested-capacity:nested-capacity-manual-layout.json": {
+        "monotone_nondecreasing_dose": false,
+        "monotone_v2_same_pairs": false,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 67.5,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 84.1
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": -1.9,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 69.4,
+            "v2_delta_vs_prev": -0.1,
+            "v2_routed_shape": "ring",
+            "v2_score": 84.2
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": -30.3,
+            "grade": "second",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 99.7,
+            "v2_delta_vs_prev": 50.8,
+            "v2_routed_shape": "ring",
+            "v2_score": 33.4
+          },
+          {
+            "box_press_true": 6,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 6,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          2,
+          0,
+          0
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          1,
+          0,
+          1
+        ]
+      },
+      "nested-learning:nested-learning-manual-layout.json": {
+        "monotone_nondecreasing_dose": false,
+        "monotone_v2_same_pairs": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 92.9,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 83.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.1,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 92.8,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 83.3
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": -6.7,
+            "grade": "second",
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 99.5,
+            "v2_delta_vs_prev": 2.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          1,
+          0,
+          1
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          1,
+          1
+        ]
+      },
+      "nonplanar-credit:nonplanar-credit-manual-layout.json": {
+        "monotone_nondecreasing_dose": false,
+        "monotone_v2_same_pairs": false,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 2,
+            "delta_vs_prev": null,
+            "grade": "second",
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 98.6,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": -0.1,
+            "grade": "second",
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 98.7,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "hub",
+            "v2_score": 81.3
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": 5.2,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 93.5,
+            "v2_delta_vs_prev": 68.5,
+            "v2_routed_shape": "ring",
+            "v2_score": 12.8
+          },
+          {
+            "crossings": 10,
+            "delta_vs_prev": 22.4,
+            "grade": "uncertified",
+            "level": "L3_break_mirror",
+            "routed_shape": "ring",
+            "score": 71.1,
+            "v2_delta_vs_prev": 10.2,
+            "v2_routed_shape": "ring",
+            "v2_score": 2.6
+          },
+          {
+            "crossings": 10,
+            "delta_vs_prev": 1.0,
+            "grade": "uncertified",
+            "level": "L4_off_align",
+            "routed_shape": "ring",
+            "score": 70.1,
+            "v2_delta_vs_prev": -0.2,
+            "v2_routed_shape": "ring",
+            "v2_score": 2.8
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          1,
+          0,
+          3
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          1,
+          1,
+          2
+        ]
+      },
+      "nonplanar-inventory:nonplanar-inventory-manual-layout.json": {
+        "monotone_nondecreasing_dose": false,
+        "monotone_v2_same_pairs": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 1,
+            "delta_vs_prev": null,
+            "grade": "second",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 97.8,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 97.8
+          },
+          {
+            "crossings": 1,
+            "delta_vs_prev": 0.0,
+            "grade": "second",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 97.8,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 97.8
+          },
+          {
+            "crossings": 3,
+            "delta_vs_prev": -1.9,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 99.7,
+            "v2_delta_vs_prev": 2.5,
+            "v2_routed_shape": "ring",
+            "v2_score": 95.3
+          },
+          {
+            "crossings": 8,
+            "delta_vs_prev": 0.5,
+            "grade": "uncertified",
+            "level": "L3_break_mirror",
+            "routed_shape": "ring",
+            "score": 99.2,
+            "v2_delta_vs_prev": 83.2,
+            "v2_routed_shape": "ring",
+            "v2_score": 12.1
+          },
+          {
+            "crossings": 8,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L4_off_align",
+            "routed_shape": "ring",
+            "score": 99.2,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 12.1
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          1,
+          2,
+          1
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          2,
+          2
+        ]
+      },
+      "random-n10-i00:random-n10-i00-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "monotone_v2_same_pairs": false,
+        "resolution_class": "monotone-decreasing",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 98.3,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 64.7
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 98.3,
+            "v2_delta_vs_prev": -0.3,
+            "v2_routed_shape": "ring",
+            "v2_score": 65.0
+          },
+          {
+            "crossings": 9,
+            "delta_vs_prev": 5.2,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 93.1,
+            "v2_delta_vs_prev": 60.5,
+            "v2_routed_shape": "ring",
+            "v2_score": 4.5
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          0,
+          1,
+          1
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          1,
+          0,
+          1
+        ]
+      },
+      "random-n10-i05:i05.json": {
+        "monotone_nondecreasing_dose": false,
+        "monotone_v2_same_pairs": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 75.8,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 85.8
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.7,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 75.1,
+            "v2_delta_vs_prev": 0.4,
+            "v2_routed_shape": "ring",
+            "v2_score": 85.4
+          },
+          {
+            "crossings": 10,
+            "delta_vs_prev": -6.9,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 82.0,
+            "v2_delta_vs_prev": 73.5,
+            "v2_routed_shape": "ring",
+            "v2_score": 11.9
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          1,
+          0,
+          1
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          2
+        ]
+      },
+      "random-n10-i05:random-n10-i05-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "monotone_v2_same_pairs": null,
+        "resolution_class": "gate-blocked-at-origin",
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L0_original",
+            "min_card_gap": 13.2
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L1_jitter",
+            "min_card_gap": 13.4
+          },
+          {
+            "box_press_true": 7,
+            "gate_rejected": true,
+            "level": "L2_swap2",
+            "min_card_gap": 13.4
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 2.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 2.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          0,
+          0,
+          0
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          0,
+          0
+        ]
+      },
+      "random-n10-i11:i11-a.json": {
+        "monotone_nondecreasing_dose": false,
+        "monotone_v2_same_pairs": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 99.5,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 96.9
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 99.5,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 96.9
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": -0.3,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 99.8,
+            "v2_delta_vs_prev": 17.9,
+            "v2_routed_shape": "ring",
+            "v2_score": 79.0
+          },
+          {
+            "box_press_true": 3,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 15.0
+          },
+          {
+            "box_press_true": 3,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 8.0
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          1,
+          1,
+          0
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          0,
+          1,
+          1
+        ]
+      },
+      "random-n10-i11:i11-b.json": {
+        "monotone_nondecreasing_dose": false,
+        "monotone_v2_same_pairs": false,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 99.8,
+            "v2_delta_vs_prev": null,
+            "v2_routed_shape": "ring",
+            "v2_score": 95.8
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.1,
+            "grade": "best",
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 99.7,
+            "v2_delta_vs_prev": -0.1,
+            "v2_routed_shape": "ring",
+            "v2_score": 95.9
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": -0.3,
+            "grade": "uncertified",
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 18.4,
+            "v2_routed_shape": "ring",
+            "v2_score": 77.5
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L3_break_mirror",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": -2.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 79.5
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "level": "L4_off_align",
+            "routed_shape": "ring",
+            "score": 100.0,
+            "v2_delta_vs_prev": 0.0,
+            "v2_routed_shape": "ring",
+            "v2_score": 79.5
+          }
+        ],
+        "steps_increase_flat_decrease": [
+          1,
+          2,
+          1
+        ],
+        "steps_increase_flat_decrease_v2_same_pairs": [
+          2,
+          1,
+          1
+        ]
+      }
+    },
+    "resolution_classes": {
+      "gate-blocked": 3,
+      "mixed": 11,
+      "monotone-decreasing": 4,
+      "no-resolution": 0
+    },
+    "source": "perturbation pairs = committed diagnosis card D6 (diagnosis-hub-collapse.json D6_perturbation), generators replicated verbatim; the SAME pairs are re-scored under the committed v2 model as the same-pairs comparison column",
+    "target": {
+      "denominator": 15,
+      "met": false,
+      "min_monotone_decreasing": 12
+    }
+  },
+  "edge_aggregates": {
+    "families": [
+      "anchor orientation deviation + edge mirror consistency (strict caliber, slot sub-caliber = g<->g; golden as data)",
+      "routing regularity (detour ratio + kink count, per edge)",
+      "loop closure quality (arc share + bow agreement/outward share)",
+      "style consistency role-conditioned (loop arc rate vs non-loop straight rate)"
+    ],
+    "normalization": "unitless ratios / [0,1] normalized angles; no absolute pixel features",
+    "quantiles_per_measure": [
+      "mean",
+      "sigma",
+      "worst",
+      "p75"
+    ],
+    "scalars_added": [
+      "alignment_max_coverage_tight",
+      "anchor_orient_dev_mean",
+      "anchor_orient_dev_sigma",
+      "anchor_orient_dev_worst",
+      "anchor_orient_dev_p75",
+      "edge_mirror_presence",
+      "edge_mirror_pair_coverage",
+      "edge_mirror_consistency_slot",
+      "edge_mirror_consistency_golden",
+      "edge_mirror_best_slot",
+      "edge_mirror_best_golden",
+      "edge_detour_mean",
+      "edge_detour_sigma",
+      "edge_detour_worst",
+      "edge_detour_p75",
+      "edge_bend_mean",
+      "edge_bend_sigma",
+      "edge_bend_worst",
+      "edge_bend_p75",
+      "loop_arc_share_mean",
+      "loop_arc_share_sigma",
+      "loop_arc_share_worst",
+      "loop_arc_share_p75",
+      "loop_bow_agree_mean",
+      "loop_bow_agree_worst",
+      "loop_bow_outward_mean",
+      "loop_bow_outward_worst",
+      "loop_arc_rate",
+      "nonloop_straight_rate"
+    ]
+  },
+  "generation": "scorer v3-alpha: feature-system rebuild (preview, branch-only)",
+  "hub_collapse_retest": {
+    "hub_positives": [
+      "brand-flywheel",
+      "classic-cld-growth-and-burden",
+      "classic-cld-growth-and-burden",
+      "comb-supply-demand",
+      "coupled-underinvestment",
+      "fan-d12",
+      "fan-d17",
+      "nonplanar-credit",
+      "random-n10-i05"
+    ],
+    "met": true,
+    "n_hub_positives": 9,
+    "target": "significantly more than 2",
+    "v2_committed_distinct": 2,
+    "v2_remeasure_matches_committed": true,
+    "v2_remeasured_distinct": 2,
+    "v3_alpha_distinct": 9,
+    "v3_features_used": [
+      "alignment_max_coverage",
+      "alignment_max_coverage_tight",
+      "anchor_orient_dev_mean",
+      "avg_edge_length",
+      "bend_total_curvature",
+      "hub_degree",
+      "mirror_axis_err",
+      "nonloop_straight_rate",
+      "symmetry_axis_err_px"
+    ]
+  },
+  "loso_v3_alpha": {
+    "global": {
+      "loso_max": 99.9,
+      "loso_mean": 87.7,
+      "loso_min": 16.5,
+      "n_positives": 18,
+      "note": "kept set fixed by the global LASSO selection (selected on the full corpus — mild selection leakage, disclosed); per-shape weights re-fit without the held-out anchor",
+      "per_anchor": [
+        {
+          "held_out": "brand-flywheel-manual-layout.json",
+          "score": 99.0
+        },
+        {
+          "held_out": "classic-cld-manual-layout.json",
+          "score": 98.7
+        },
+        {
+          "held_out": "fan-d12-manual-layout.json",
+          "score": 92.3
+        },
+        {
+          "held_out": "fan-d17-manual-layout.json",
+          "score": 98.5
+        },
+        {
+          "held_out": "bowtie-wage-price-manual-layout.json",
+          "score": 97.7
+        },
+        {
+          "held_out": "comb-supply-demand-manual-layout.json",
+          "score": 99.6
+        },
+        {
+          "held_out": "coupled-underinvestment-manual-layout.json",
+          "score": 92.5
+        },
+        {
+          "held_out": "nested-capacity-manual-layout.json",
+          "score": 26.3
+        },
+        {
+          "held_out": "nested-learning-manual-layout.json",
+          "score": 97.1
+        },
+        {
+          "held_out": "nonplanar-credit-manual-layout.json",
+          "score": 99.9
+        },
+        {
+          "held_out": "nonplanar-inventory-manual-layout.json",
+          "score": 92.1
+        },
+        {
+          "held_out": "retest-classic-cld-manual-layout.json",
+          "score": 98.6
+        },
+        {
+          "held_out": "random-n10-i00-manual-layout.json",
+          "score": 99.7
+        },
+        {
+          "held_out": "random-n10-i05-manual-layout.json",
+          "score": 86.4
+        },
+        {
+          "held_out": "i05.json",
+          "score": 84.3
+        },
+        {
+          "held_out": "i11-a.json",
+          "score": 99.6
+        },
+        {
+          "held_out": "i11-b.json",
+          "score": 99.8
+        },
+        {
+          "held_out": "epidemic-feedback-manual-layout.json",
+          "score": 16.5
+        }
+      ]
+    },
+    "hub": {
+      "loso_max": 99.7,
+      "loso_mean": 89.6,
+      "loso_min": 64.9,
+      "n_positives": 9,
+      "note": "kept set fixed by the global LASSO selection (selected on the full corpus — mild selection leakage, disclosed); per-shape weights re-fit without the held-out anchor",
+      "per_anchor": [
+        {
+          "held_out": "brand-flywheel-manual-layout.json",
+          "score": 98.9
+        },
+        {
+          "held_out": "classic-cld-manual-layout.json",
+          "score": 95.8
+        },
+        {
+          "held_out": "fan-d12-manual-layout.json",
+          "score": 84.0
+        },
+        {
+          "held_out": "fan-d17-manual-layout.json",
+          "score": 95.6
+        },
+        {
+          "held_out": "comb-supply-demand-manual-layout.json",
+          "score": 99.7
+        },
+        {
+          "held_out": "coupled-underinvestment-manual-layout.json",
+          "score": 64.9
+        },
+        {
+          "held_out": "nonplanar-credit-manual-layout.json",
+          "score": 99.3
+        },
+        {
+          "held_out": "retest-classic-cld-manual-layout.json",
+          "score": 95.4
+        },
+        {
+          "held_out": "random-n10-i05-manual-layout.json",
+          "score": 72.7
+        }
+      ]
+    },
+    "ring": {
+      "loso_max": 99.7,
+      "loso_mean": 79.3,
+      "loso_min": 41.6,
+      "n_positives": 9,
+      "note": "kept set fixed by the global LASSO selection (selected on the full corpus — mild selection leakage, disclosed); per-shape weights re-fit without the held-out anchor",
+      "per_anchor": [
+        {
+          "held_out": "bowtie-wage-price-manual-layout.json",
+          "score": 93.0
+        },
+        {
+          "held_out": "nested-capacity-manual-layout.json",
+          "score": 48.2
+        },
+        {
+          "held_out": "nested-learning-manual-layout.json",
+          "score": 90.3
+        },
+        {
+          "held_out": "nonplanar-inventory-manual-layout.json",
+          "score": 98.1
+        },
+        {
+          "held_out": "random-n10-i00-manual-layout.json",
+          "score": 97.8
+        },
+        {
+          "held_out": "i05.json",
+          "score": 45.5
+        },
+        {
+          "held_out": "i11-a.json",
+          "score": 99.3
+        },
+        {
+          "held_out": "i11-b.json",
+          "score": 99.7
+        },
+        {
+          "held_out": "epidemic-feedback-manual-layout.json",
+          "score": 41.6
+        }
+      ]
+    }
+  },
+  "prescreen_before_after": {
+    "after": {
+      "dropped": [
+        "anchor_orient_dev_p75",
+        "anchor_orient_dev_sigma",
+        "anchor_orient_dev_worst",
+        "angular_resolution_min",
+        "aspect_deviation",
+        "automorphism_residual",
+        "bend_soft_margin",
+        "canvas_fill_rate",
+        "crossing_count",
+        "degree_canvas_spearman",
+        "edge_bend_mean",
+        "edge_bend_p75",
+        "edge_bend_sigma",
+        "edge_bend_worst",
+        "edge_detour_mean",
+        "edge_detour_p75",
+        "edge_detour_sigma",
+        "edge_detour_worst",
+        "edge_length_cv",
+        "edge_mirror_best_golden",
+        "edge_mirror_best_slot",
+        "edge_mirror_consistency_golden",
+        "edge_mirror_consistency_slot",
+        "edge_mirror_pair_coverage",
+        "edge_mirror_presence",
+        "hub_centroid_px",
+        "hub_centroid_ratio",
+        "hub_neighbor_centrality_ratio",
+        "loop_arc_rate",
+        "loop_arc_share_mean",
+        "loop_arc_share_p75",
+        "loop_arc_share_sigma",
+        "loop_arc_share_worst",
+        "loop_bow_agree_mean",
+        "loop_bow_agree_worst",
+        "loop_bow_outward_mean",
+        "loop_bow_outward_worst",
+        "loop_compactness_mean",
+        "loop_edge_crossings",
+        "loop_edge_length_cv",
+        "loop_foreign_nodes",
+        "loop_overlap_area",
+        "loop_self_intersections",
+        "max_min_edge_ratio",
+        "min_crossing_angle",
+        "min_spacing_px",
+        "min_spacing_ratio",
+        "node_spacing_cv",
+        "visual_centroid_px",
+        "visual_centroid_ratio",
+        "voronoi_area_cv"
+      ],
+      "kept": [
+        "alignment_max_coverage",
+        "alignment_max_coverage_tight",
+        "anchor_orient_dev_mean",
+        "avg_edge_length",
+        "bend_total_curvature",
+        "hub_degree",
+        "mirror_axis_err",
+        "nonloop_straight_rate",
+        "symmetry_axis_err_px"
+      ],
+      "method": "L1 (LASSO) logistic lambda path, 5-fold CV AUC selection, nnz <= n_pos guard",
+      "nnz_at_selection": 9,
+      "overfit_guard_applied": false,
+      "selected_cv_auc_mean": 0.9625,
+      "selected_lambda": 2.9423539687817364,
+      "selected_path_index": 10
+    },
+    "before": {
+      "method": "v2 single-variable AUC prescreen (|AUC-0.5| >= 0.30, coverage >= 0.7, capped at n_pos)",
+      "pool_size": 60,
+      "table": {
+        "alignment_max_coverage": {
+          "abs_auc_minus_half": 0.350694,
+          "auc": 0.850694,
+          "coverage": 1.0,
+          "impute_median": 0.928571429,
+          "v2_would_keep": true
+        },
+        "alignment_max_coverage_tight": {
+          "abs_auc_minus_half": 0.413194,
+          "auc": 0.913194,
+          "coverage": 1.0,
+          "impute_median": 0.613408521,
+          "v2_would_keep": true
+        },
+        "anchor_orient_dev_mean": {
+          "abs_auc_minus_half": 0.39375,
+          "auc": 0.89375,
+          "coverage": 0.965517,
+          "impute_median": 0.092971579,
+          "v2_would_keep": true
+        },
+        "anchor_orient_dev_p75": {
+          "abs_auc_minus_half": 0.346875,
+          "auc": 0.846875,
+          "coverage": 0.965517,
+          "impute_median": 0.151452926,
+          "v2_would_keep": true
+        },
+        "anchor_orient_dev_sigma": {
+          "abs_auc_minus_half": 0.182813,
+          "auc": 0.682813,
+          "coverage": 0.965517,
+          "impute_median": 0.08390407799999999,
+          "v2_would_keep": false
+        },
+        "anchor_orient_dev_worst": {
+          "abs_auc_minus_half": 0.239062,
+          "auc": 0.739062,
+          "coverage": 0.965517,
+          "impute_median": 0.2861152225,
+          "v2_would_keep": false
+        },
+        "angular_resolution_min": {
+          "abs_auc_minus_half": 0.159722,
+          "auc": 0.659722,
+          "coverage": 1.0,
+          "impute_median": 4.5436475365,
+          "v2_would_keep": false
+        },
+        "aspect_deviation": {
+          "abs_auc_minus_half": 0.191667,
+          "auc": 0.691667,
+          "coverage": 1.0,
+          "impute_median": 0.20861724050000002,
+          "v2_would_keep": false
+        },
+        "automorphism_residual": {
+          "abs_auc_minus_half": 0.026786,
+          "auc": 0.473214,
+          "coverage": 0.37931,
+          "impute_median": 3.5479589939882428,
+          "v2_would_keep": false
+        },
+        "avg_edge_length": {
+          "abs_auc_minus_half": 0.222917,
+          "auc": 0.277083,
+          "coverage": 1.0,
+          "impute_median": 0.24152051129932783,
+          "v2_would_keep": false
+        },
+        "bend_soft_margin": {
+          "abs_auc_minus_half": 0.15,
+          "auc": 0.35,
+          "coverage": 1.0,
+          "impute_median": 0.004458407164903668,
+          "v2_would_keep": false
+        },
+        "bend_total_curvature": {
+          "abs_auc_minus_half": 0.411806,
+          "auc": 0.088194,
+          "coverage": 1.0,
+          "impute_median": 84.62657681900001,
+          "v2_would_keep": true
+        },
+        "canvas_fill_rate": {
+          "abs_auc_minus_half": 0.063889,
+          "auc": 0.563889,
+          "coverage": 1.0,
+          "impute_median": 0.10996879400000001,
+          "v2_would_keep": false
+        },
+        "crossing_count": {
+          "abs_auc_minus_half": 0.163889,
+          "auc": 0.336111,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "degree_canvas_spearman": {
+          "abs_auc_minus_half": 0.066239,
+          "auc": 0.433761,
+          "coverage": 0.982759,
+          "impute_median": -0.207019668,
+          "v2_would_keep": false
+        },
+        "edge_bend_mean": {
+          "abs_auc_minus_half": 0.231944,
+          "auc": 0.268056,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "edge_bend_p75": {
+          "abs_auc_minus_half": 0.025,
+          "auc": 0.475,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "edge_bend_sigma": {
+          "abs_auc_minus_half": 0.222222,
+          "auc": 0.277778,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "edge_bend_worst": {
+          "abs_auc_minus_half": 0.217361,
+          "auc": 0.282639,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "edge_detour_mean": {
+          "abs_auc_minus_half": 0.263194,
+          "auc": 0.236806,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "edge_detour_p75": {
+          "abs_auc_minus_half": 0.0625,
+          "auc": 0.4375,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "edge_detour_sigma": {
+          "abs_auc_minus_half": 0.261806,
+          "auc": 0.238194,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "edge_detour_worst": {
+          "abs_auc_minus_half": 0.260417,
+          "auc": 0.239583,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "edge_length_cv": {
+          "abs_auc_minus_half": 0.109028,
+          "auc": 0.390972,
+          "coverage": 1.0,
+          "impute_median": 0.3566483915,
+          "v2_would_keep": false
+        },
+        "edge_mirror_best_golden": {
+          "abs_auc_minus_half": 0.069444,
+          "auc": 0.430556,
+          "coverage": 0.293103,
+          "impute_median": 1.0,
+          "v2_would_keep": false
+        },
+        "edge_mirror_best_slot": {
+          "abs_auc_minus_half": 0.083333,
+          "auc": 0.416667,
+          "coverage": 0.293103,
+          "impute_median": 1.0,
+          "v2_would_keep": false
+        },
+        "edge_mirror_consistency_golden": {
+          "abs_auc_minus_half": 0.069444,
+          "auc": 0.430556,
+          "coverage": 0.293103,
+          "impute_median": 1.0,
+          "v2_would_keep": false
+        },
+        "edge_mirror_consistency_slot": {
+          "abs_auc_minus_half": 0.083333,
+          "auc": 0.416667,
+          "coverage": 0.293103,
+          "impute_median": 1.0,
+          "v2_would_keep": false
+        },
+        "edge_mirror_pair_coverage": {
+          "abs_auc_minus_half": 0.111111,
+          "auc": 0.388889,
+          "coverage": 0.293103,
+          "impute_median": 0.5,
+          "v2_would_keep": false
+        },
+        "edge_mirror_presence": {
+          "abs_auc_minus_half": 0.109722,
+          "auc": 0.609722,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "hub_centroid_px": {
+          "abs_auc_minus_half": 0.095833,
+          "auc": 0.404167,
+          "coverage": 1.0,
+          "impute_median": 0.1407371042993682,
+          "v2_would_keep": false
+        },
+        "hub_centroid_ratio": {
+          "abs_auc_minus_half": 0.095833,
+          "auc": 0.404167,
+          "coverage": 1.0,
+          "impute_median": 0.140737104,
+          "v2_would_keep": false
+        },
+        "hub_degree": {
+          "abs_auc_minus_half": 0.011806,
+          "auc": 0.511806,
+          "coverage": 1.0,
+          "impute_median": 5.0,
+          "v2_would_keep": false
+        },
+        "hub_neighbor_centrality_ratio": {
+          "abs_auc_minus_half": 0.034028,
+          "auc": 0.465972,
+          "coverage": 1.0,
+          "impute_median": 0.9237528509999999,
+          "v2_would_keep": false
+        },
+        "loop_arc_rate": {
+          "abs_auc_minus_half": 0.175,
+          "auc": 0.325,
+          "coverage": 0.362069,
+          "impute_median": 0.25,
+          "v2_would_keep": false
+        },
+        "loop_arc_share_mean": {
+          "abs_auc_minus_half": 0.1875,
+          "auc": 0.3125,
+          "coverage": 0.293103,
+          "impute_median": 0.142857143,
+          "v2_would_keep": false
+        },
+        "loop_arc_share_p75": {
+          "abs_auc_minus_half": 0.1875,
+          "auc": 0.3125,
+          "coverage": 0.293103,
+          "impute_median": 0.166666667,
+          "v2_would_keep": false
+        },
+        "loop_arc_share_sigma": {
+          "abs_auc_minus_half": 0.09375,
+          "auc": 0.40625,
+          "coverage": 0.293103,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "loop_arc_share_worst": {
+          "abs_auc_minus_half": 0.125,
+          "auc": 0.375,
+          "coverage": 0.293103,
+          "impute_median": 0.142857143,
+          "v2_would_keep": false
+        },
+        "loop_bow_agree_mean": {
+          "abs_auc_minus_half": 0.0,
+          "auc": 0.5,
+          "coverage": 0.206897,
+          "impute_median": 1.0,
+          "v2_would_keep": false
+        },
+        "loop_bow_agree_worst": {
+          "abs_auc_minus_half": 0.0,
+          "auc": 0.5,
+          "coverage": 0.206897,
+          "impute_median": 1.0,
+          "v2_would_keep": false
+        },
+        "loop_bow_outward_mean": {
+          "abs_auc_minus_half": 0.045455,
+          "auc": 0.454545,
+          "coverage": 0.206897,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "loop_bow_outward_worst": {
+          "abs_auc_minus_half": 0.045455,
+          "auc": 0.454545,
+          "coverage": 0.206897,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "loop_compactness_mean": {
+          "abs_auc_minus_half": 0.083333,
+          "auc": 0.583333,
+          "coverage": 0.224138,
+          "impute_median": 0.539012084,
+          "v2_would_keep": false
+        },
+        "loop_edge_crossings": {
+          "abs_auc_minus_half": 0.0,
+          "auc": 0.5,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "loop_edge_length_cv": {
+          "abs_auc_minus_half": 0.264706,
+          "auc": 0.235294,
+          "coverage": 0.310345,
+          "impute_median": 0.249696841,
+          "v2_would_keep": false
+        },
+        "loop_foreign_nodes": {
+          "abs_auc_minus_half": 0.0375,
+          "auc": 0.4625,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "loop_overlap_area": {
+          "abs_auc_minus_half": 0.0,
+          "auc": 0.5,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "loop_self_intersections": {
+          "abs_auc_minus_half": 0.0,
+          "auc": 0.5,
+          "coverage": 1.0,
+          "impute_median": 0.0,
+          "v2_would_keep": false
+        },
+        "max_min_edge_ratio": {
+          "abs_auc_minus_half": 0.077778,
+          "auc": 0.422222,
+          "coverage": 1.0,
+          "impute_median": 3.0,
+          "v2_would_keep": false
+        },
+        "min_crossing_angle": {
+          "abs_auc_minus_half": 0.147059,
+          "auc": 0.352941,
+          "coverage": 0.327586,
+          "impute_median": 65.150185393,
+          "v2_would_keep": false
+        },
+        "min_spacing_px": {
+          "abs_auc_minus_half": 0.110417,
+          "auc": 0.389583,
+          "coverage": 1.0,
+          "impute_median": 0.1409664683572772,
+          "v2_would_keep": false
+        },
+        "min_spacing_ratio": {
+          "abs_auc_minus_half": 0.110417,
+          "auc": 0.389583,
+          "coverage": 1.0,
+          "impute_median": 0.140966468,
+          "v2_would_keep": false
+        },
+        "mirror_axis_err": {
+          "abs_auc_minus_half": 0.160714,
+          "auc": 0.660714,
+          "coverage": 0.37931,
+          "impute_median": 16.231138790482607,
+          "v2_would_keep": false
+        },
+        "node_spacing_cv": {
+          "abs_auc_minus_half": 0.000694,
+          "auc": 0.499306,
+          "coverage": 1.0,
+          "impute_median": 0.150293963,
+          "v2_would_keep": false
+        },
+        "nonloop_straight_rate": {
+          "abs_auc_minus_half": 0.361111,
+          "auc": 0.861111,
+          "coverage": 0.706897,
+          "impute_median": 0.928571429,
+          "v2_would_keep": true
+        },
+        "symmetry_axis_err_px": {
+          "abs_auc_minus_half": 0.160714,
+          "auc": 0.660714,
+          "coverage": 0.37931,
+          "impute_median": 16.231138790482607,
+          "v2_would_keep": false
+        },
+        "visual_centroid_px": {
+          "abs_auc_minus_half": 0.066667,
+          "auc": 0.566667,
+          "coverage": 1.0,
+          "impute_median": 0.028893162498650357,
+          "v2_would_keep": false
+        },
+        "visual_centroid_ratio": {
+          "abs_auc_minus_half": 0.066667,
+          "auc": 0.566667,
+          "coverage": 1.0,
+          "impute_median": 0.0288931625,
+          "v2_would_keep": false
+        },
+        "voronoi_area_cv": {
+          "abs_auc_minus_half": 0.092361,
+          "auc": 0.592361,
+          "coverage": 1.0,
+          "impute_median": 0.31840361100000003,
+          "v2_would_keep": false
+        }
+      },
+      "would_keep": 6
+    },
+    "verdict": {
+      "note": "v2 prescreen discarded most of the pool before the model ever saw it (hub-collapse diagnosis: kept=2 hub features); v3 lets regularization decide on the full pool",
+      "signal_retained_v2_prescreen": 6,
+      "signal_retained_v3_lasso": 9
+    }
+  },
+  "red_lines": {
+    "branch_only": true,
+    "certificate_reads_scorer": false,
+    "committed_models_or_reports_modified": false,
+    "deterministic": true,
+    "negatives_bytes_unchanged": true,
+    "positives_touched": false
+  },
+  "rule_featureization": {
+    "alignment_tight_px": 1.0,
+    "mirror_caliber": "docs/edge-mirror-feature.md strict caliber; slot sub-caliber (group anchors g<->g) is the card-directed primary; golden reported as data",
+    "note": "separate key alignment_max_coverage_tight; the v1 normalized key is byte-unchanged"
+  },
+  "schema": "stdraw.aesthetic_score_v3/v1alpha",
+  "shape_stats_v3_alpha": {
+    "global": {
+      "fitted": true,
+      "kept_features": [
+        "alignment_max_coverage",
+        "alignment_max_coverage_tight",
+        "anchor_orient_dev_mean",
+        "avg_edge_length",
+        "bend_total_curvature",
+        "hub_degree",
+        "mirror_axis_err",
+        "nonloop_straight_rate",
+        "symmetry_axis_err_px"
+      ],
+      "n_negative": 40,
+      "n_positive": 18,
+      "negative_scores_max": 39.5,
+      "positive_scores_min": 28.9,
+      "score_auc": 0.995833,
+      "separation_margin": -10.6
+    },
+    "hub": {
+      "excluded_features": [],
+      "fitted": true,
+      "kept_features": [
+        "alignment_max_coverage",
+        "alignment_max_coverage_tight",
+        "anchor_orient_dev_mean",
+        "avg_edge_length",
+        "bend_total_curvature",
+        "hub_degree",
+        "mirror_axis_err",
+        "nonloop_straight_rate",
+        "symmetry_axis_err_px"
+      ],
+      "n_negative": 23,
+      "n_positive": 9,
+      "negative_scores_max": 35.7,
+      "negative_scores_mean": 11.3,
+      "negative_scores_min": 1.1,
+      "positive_scores_max": 99.5,
+      "positive_scores_mean": 94.0,
+      "positive_scores_min": 84.5,
+      "score_auc": 1.0,
+      "separation_margin": 48.8
+    },
+    "ring": {
+      "excluded_features": [
+        "alignment_max_coverage",
+        "alignment_max_coverage_tight"
+      ],
+      "fitted": true,
+      "kept_features": [
+        "anchor_orient_dev_mean",
+        "avg_edge_length",
+        "bend_total_curvature",
+        "hub_degree",
+        "mirror_axis_err",
+        "nonloop_straight_rate",
+        "symmetry_axis_err_px"
+      ],
+      "n_negative": 17,
+      "n_positive": 9,
+      "negative_scores_max": 35.8,
+      "negative_scores_mean": 12.3,
+      "negative_scores_min": 0.8,
+      "positive_scores_max": 99.8,
+      "positive_scores_mean": 87.0,
+      "positive_scores_min": 56.9,
+      "score_auc": 1.0,
+      "separation_margin": 21.1
+    }
+  },
+  "tier_readings": {
+    "engine_high_quality_only": {
+      "n_negatives": 15,
+      "shapes": {
+        "global": {
+          "fitted": true,
+          "n_negative": 15,
+          "n_positive": 18,
+          "score_auc": 0.992593,
+          "separation_margin": -11.1
+        },
+        "hub": {
+          "fitted": true,
+          "n_negative": 13,
+          "n_positive": 9,
+          "score_auc": 1.0,
+          "separation_margin": 14.5
+        },
+        "ring": {
+          "fitted": true,
+          "n_negative": 2,
+          "n_positive": 9,
+          "score_auc": 0.444444,
+          "separation_margin": -97.5
+        }
+      }
+    },
+    "standard_only": {
+      "n_negatives": 25,
+      "shapes": {
+        "global": {
+          "fitted": true,
+          "n_negative": 25,
+          "n_positive": 18,
+          "score_auc": 0.995556,
+          "separation_margin": -15.7
+        },
+        "hub": {
+          "fitted": true,
+          "n_negative": 10,
+          "n_positive": 9,
+          "score_auc": 1.0,
+          "separation_margin": 49.0
+        },
+        "ring": {
+          "fitted": true,
+          "n_negative": 15,
+          "n_positive": 9,
+          "score_auc": 1.0,
+          "separation_margin": 14.5
+        }
+      }
+    }
+  },
+  "v2_loso_reference": {}
+}
