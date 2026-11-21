@@ -2,27 +2,56 @@
   "edges": [
     {
       "a": "demand",
-      "b": "revenue"
+      "anchors": {
+        "src": "s"
+      },
+      "b": "revenue",
+      "style": "auto"
     },
     {
       "a": "profit",
-      "b": "rnd"
+      "anchors": {
+        "dst": "nw",
+        "src": "s-g1"
+      },
+      "b": "rnd",
+      "style": "auto"
     },
     {
       "a": "compete",
-      "b": "revenue"
+      "anchors": {
+        "dst": "s",
+        "src": "ne"
+      },
+      "b": "revenue",
+      "style": "auto"
     },
     {
       "a": "capacity",
-      "b": "delivery"
+      "anchors": {
+        "dst": "w-g1",
+        "src": "ne"
+      },
+      "b": "delivery",
+      "style": "auto"
     },
     {
       "a": "delivery",
-      "b": "satisfy"
+      "anchors": {
+        "dst": "nw",
+        "src": "e"
+      },
+      "b": "satisfy",
+      "style": "auto"
     },
     {
       "a": "satisfy",
-      "b": "demand"
+      "anchors": {
+        "dst": "n",
+        "src": "s"
+      },
+      "b": "demand",
+      "style": "auto"
     },
     {
       "a": "revenue",

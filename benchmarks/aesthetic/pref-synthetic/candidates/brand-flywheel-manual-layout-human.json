@@ -2,27 +2,57 @@
   "edges": [
     {
       "a": "ad_spend",
-      "b": "ad_effect"
+      "anchors": {
+        "dst": "e",
+        "src": "n"
+      },
+      "b": "ad_effect",
+      "style": "auto"
     },
     {
       "a": "ad_effect",
-      "b": "awareness"
+      "anchors": {
+        "dst": "e",
+        "src": "s"
+      },
+      "b": "awareness",
+      "style": "free"
     },
     {
       "a": "awareness",
-      "b": "sales"
+      "anchors": {
+        "dst": "n",
+        "src": "se"
+      },
+      "b": "sales",
+      "style": "auto"
     },
     {
       "a": "sales",
-      "b": "budget"
+      "anchors": {
+        "dst": "s",
+        "src": "e"
+      },
+      "b": "budget",
+      "style": "auto"
     },
     {
       "a": "sales",
-      "b": "wom"
+      "anchors": {
+        "dst": "s",
+        "src": "w"
+      },
+      "b": "wom",
+      "style": "auto"
     },
     {
       "a": "awareness",
-      "b": "ad_effect"
+      "anchors": {
+        "dst": "w",
+        "src": "n"
+      },
+      "b": "ad_effect",
+      "style": "straight"
     },
     {
       "a": "budget",

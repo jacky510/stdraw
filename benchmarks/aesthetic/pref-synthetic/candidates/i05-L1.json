@@ -2,39 +2,70 @@
   "edges": [
     {
       "a": "N00",
-      "b": "N04"
+      "anchors": {
+        "dst": "w"
+      },
+      "b": "N04",
+      "ctrl": [
+        206.9,
+        445.6
+      ],
+      "style": "arc"
     },
     {
       "a": "N00",
-      "b": "N05"
+      "anchors": {
+        "dst": "w",
+        "src": "n"
+      },
+      "b": "N05",
+      "style": "arc"
     },
     {
       "a": "N00",
-      "b": "N08"
+      "b": "N08",
+      "style": "straight"
     },
     {
       "a": "N01",
-      "b": "N07"
+      "b": "N07",
+      "style": "straight"
     },
     {
       "a": "N02",
-      "b": "N04"
+      "anchors": {
+        "dst": "e-g2",
+        "src": "s"
+      },
+      "b": "N04",
+      "style": "arc"
     },
     {
       "a": "N03",
-      "b": "N08"
+      "b": "N08",
+      "style": "straight"
     },
     {
       "a": "N04",
-      "b": "N06"
+      "b": "N06",
+      "style": "straight"
     },
     {
       "a": "N05",
-      "b": "N07"
+      "anchors": {
+        "dst": "n",
+        "src": "e"
+      },
+      "b": "N07",
+      "style": "arc"
     },
     {
       "a": "N06",
-      "b": "N09"
+      "anchors": {
+        "dst": "e-g2"
+      },
+      "b": "N09",
+      "style": "straight"
     },
     {
       "a": "N01",

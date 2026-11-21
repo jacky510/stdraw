@@ -2,19 +2,37 @@
   "edges": [
     {
       "a": "cons",
-      "b": "hub1"
+      "anchors": {
+        "dst": "n",
+        "src": "w"
+      },
+      "b": "hub1",
+      "style": "auto"
     },
     {
       "a": "cons",
-      "b": "hub2"
+      "anchors": {
+        "dst": "n",
+        "src": "e"
+      },
+      "b": "hub2",
+      "style": "auto"
     },
     {
       "a": "exp",
-      "b": "hub1"
+      "anchors": {
+        "dst": "s"
+      },
+      "b": "hub1",
+      "style": "auto"
     },
     {
       "a": "exp",
-      "b": "hub2"
+      "anchors": {
+        "dst": "s"
+      },
+      "b": "hub2",
+      "style": "auto"
     },
     {
       "a": "inv",

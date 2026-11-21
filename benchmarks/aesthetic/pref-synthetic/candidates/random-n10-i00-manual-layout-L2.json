@@ -2,55 +2,108 @@
   "edges": [
     {
       "a": "N00",
-      "b": "N03"
+      "anchors": {
+        "dst": "s"
+      },
+      "b": "N03",
+      "style": "straight"
     },
     {
       "a": "N00",
-      "b": "N06"
+      "b": "N06",
+      "style": "straight"
     },
     {
       "a": "N00",
-      "b": "N07"
+      "anchors": {
+        "dst": "s"
+      },
+      "b": "N07",
+      "style": "straight"
     },
     {
       "a": "N02",
-      "b": "N06"
+      "anchors": {
+        "dst": "nw",
+        "src": "s"
+      },
+      "b": "N06",
+      "style": "straight"
     },
     {
       "a": "N02",
-      "b": "N08"
+      "anchors": {
+        "src": "n"
+      },
+      "b": "N08",
+      "style": "auto"
     },
     {
       "a": "N03",
-      "b": "N08"
+      "anchors": {
+        "dst": "n-g1",
+        "src": "n"
+      },
+      "b": "N08",
+      "style": "auto"
     },
     {
       "a": "N04",
-      "b": "N07"
+      "anchors": {
+        "dst": "n",
+        "src": "se"
+      },
+      "b": "N07",
+      "style": "free"
     },
     {
       "a": "N06",
-      "b": "N07"
+      "anchors": {
+        "dst": "sw",
+        "src": "e-g2"
+      },
+      "b": "N07",
+      "style": "straight"
     },
     {
       "a": "N06",
-      "b": "N08"
+      "b": "N08",
+      "style": "straight"
     },
     {
       "a": "N06",
-      "b": "N09"
+      "anchors": {
+        "dst": "s",
+        "src": "ne"
+      },
+      "b": "N09",
+      "style": "free"
     },
     {
       "a": "N07",
-      "b": "N08"
+      "anchors": {
+        "dst": "e",
+        "src": "nw"
+      },
+      "b": "N08",
+      "style": "auto"
     },
     {
       "a": "N07",
-      "b": "N09"
+      "anchors": {
+        "dst": "e-g2"
+      },
+      "b": "N09",
+      "style": "auto"
     },
     {
       "a": "N08",
-      "b": "N09"
+      "anchors": {
+        "dst": "n",
+        "src": "s-g1"
+      },
+      "b": "N09",
+      "style": "auto"
     },
     {
       "a": "N01",

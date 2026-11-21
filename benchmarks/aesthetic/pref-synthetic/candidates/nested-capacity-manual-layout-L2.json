@@ -2,11 +2,19 @@
   "edges": [
     {
       "a": "coverage",
-      "b": "customers"
+      "anchors": {
+        "dst": "w"
+      },
+      "b": "customers",
+      "style": "auto"
     },
     {
       "a": "bargaining",
-      "b": "rev"
+      "anchors": {
+        "src": "s"
+      },
+      "b": "rev",
+      "style": "auto"
     },
     {
       "a": "rev",

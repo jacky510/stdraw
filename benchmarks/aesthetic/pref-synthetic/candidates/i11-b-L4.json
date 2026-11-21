@@ -2,59 +2,121 @@
   "edges": [
     {
       "a": "N00",
-      "b": "N01"
+      "anchors": {
+        "src": "e-g2"
+      },
+      "b": "N01",
+      "style": "straight"
     },
     {
       "a": "N00",
-      "b": "N02"
+      "anchors": {
+        "dst": "n",
+        "src": "sw"
+      },
+      "b": "N02",
+      "style": "straight"
     },
     {
       "a": "N00",
-      "b": "N04"
+      "anchors": {
+        "dst": "n",
+        "src": "s"
+      },
+      "b": "N04",
+      "style": "straight"
     },
     {
       "a": "N00",
-      "b": "N05"
+      "anchors": {
+        "dst": "s",
+        "src": "nw"
+      },
+      "b": "N05",
+      "style": "straight"
     },
     {
       "a": "N00",
-      "b": "N07"
+      "anchors": {
+        "dst": "n-g1",
+        "src": "s-g1"
+      },
+      "b": "N07",
+      "style": "auto"
     },
     {
       "a": "N00",
-      "b": "N08"
+      "anchors": {
+        "src": "e"
+      },
+      "b": "N08",
+      "style": "auto"
     },
     {
       "a": "N00",
-      "b": "N09"
+      "anchors": {
+        "dst": "s",
+        "src": "n"
+      },
+      "b": "N09",
+      "style": "straight"
     },
     {
       "a": "N01",
-      "b": "N04"
+      "b": "N04",
+      "style": "straight"
     },
     {
       "a": "N01",
-      "b": "N07"
+      "anchors": {
+        "dst": "se",
+        "src": "nw"
+      },
+      "b": "N07",
+      "style": "straight"
     },
     {
       "a": "N02",
-      "b": "N03"
+      "anchors": {
+        "dst": "n",
+        "src": "sw"
+      },
+      "b": "N03",
+      "style": "auto"
     },
     {
       "a": "N02",
-      "b": "N04"
+      "anchors": {
+        "dst": "nw",
+        "src": "s-g1"
+      },
+      "b": "N04",
+      "style": "auto"
     },
     {
       "a": "N04",
-      "b": "N06"
+      "anchors": {
+        "src": "s"
+      },
+      "b": "N06",
+      "style": "auto"
     },
     {
       "a": "N04",
-      "b": "N07"
+      "anchors": {
+        "dst": "s-g2",
+        "src": "ne"
+      },
+      "b": "N07",
+      "style": "free"
     },
     {
       "a": "N05",
-      "b": "N09"
+      "anchors": {
+        "src": "e"
+      },
+      "b": "N09",
+      "style": "straight"
     },
     {
       "a": "N01",
