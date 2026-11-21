@@ -23,7 +23,8 @@ certificate grading never reads the scorer; deterministic output.
   an acceptance route.
 - New route-preserving dose arm (edge attributes only; node
   centres / card dims / viewBox byte-frozen — asserted per level):
-  v3 **0 vs v2 15** strict monotone-decreasing of 15 scored;
+  v3 **0 vs v2 0** strict monotone-decreasing of 15 scored;
+  v2 is all-flat 15/15 under the same dose (structurally blind: the committed v2 models read no RP-perturbed feature), while v3 is not all-flat — the RP arm is a v3-only stress test and this comparison favours v3.
   route-preserved violations: 0.
 - MEASURABLE: every anchor exposes edge attributes (slot anchors / declared style / waypoints), so the RP dose perturbs the features the committed model actually reads without a caliber change confound beyond the disclosed backfill. GATE STATUS: no RP target value is committed here; the committed D6 centre-moving gate remains UNMET (4/15) and any RP gate value must be decided AFTER a model refit on the fixed data path (follow-up card, not this one). The committed model was fit on the legacy caliber, so RP readings are exploratory.
 - WITHDRAWN as an acceptance route: the review's reroute pilot produced no positive example (verifybot reroute.json — epidemic-feedback re-routed stays 56.9/56.5/0.5 and was monotone anyway; brand-flywheel re-routed changes caliber, L0 98.9->30.8, and still rises +1.2 at L1), and only 1/18 anchors carries stored polylines (>= 3 would be needed). Re-testing rerouting requires first collecting >= 3 anchors with stored polylines (follow-up corpus work, not this card).

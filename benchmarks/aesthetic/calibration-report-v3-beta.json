@@ -2127,8 +2127,10 @@
     "reroute_route_status": "WITHDRAWN as an acceptance route: the review's reroute pilot produced no positive example (verifybot reroute.json — epidemic-feedback re-routed stays 56.9/56.5/0.5 and was monotone anyway; brand-flywheel re-routed changes caliber, L0 98.9->30.8, and still rises +1.2 at L1), and only 1/18 anchors carries stored polylines (>= 3 would be needed). Re-testing rerouting requires first collecting >= 3 anchors with stored polylines (follow-up corpus work, not this card).",
     "route_preserved_violations": [],
     "same_criterion_counts": {
-      "corrected_comparison": "0 vs 15 (of 15 scored)",
-      "v2_monotone_decreasing_strict_same_pairs": 15,
+      "corrected_comparison": "0 vs 0 (of 15 scored)",
+      "criterion": "monotone AND >= 1 strictly decreasing step; all-flat anchors counted separately",
+      "v2_all_steps_flat_same_pairs": 15,
+      "v2_monotone_decreasing_strict_same_pairs": 0,
       "v3_monotone_decreasing_strict": 0,
       "v3_monotone_nonincreasing": 5
     }

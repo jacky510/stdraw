@@ -398,10 +398,15 @@ def main():
                     if v["resolution_class_v3"] != "gate-blocked-at-origin")
     rp_strict3 = sum(1 for v in rp.values()
                      if v["resolution_class_v3"] == "monotone-decreasing")
+    # same criterion as Arm A / _resolution_class: monotone AND >= 1
+    # strictly decreasing step — NOT "any nonzero step-count bucket"
+    # (that bug counted all-flat anchors, n_flat > 0, as strict).
     rp_strict2 = sum(1 for v in rp.values()
                      if v["monotone_nonincreasing_v2_same_pairs"] is True
-                     and any(x != 0 for x in
-                             v["steps_increase_flat_decrease_v2_same_pairs"]))
+                     and v["steps_increase_flat_decrease_v2_same_pairs"][2] > 0)
+    rp_flat2 = sum(1 for v in rp.values()
+                   if v["monotone_nonincreasing_v2_same_pairs"] is True
+                   and v["steps_increase_flat_decrease_v2_same_pairs"][2] == 0)
     rp_noninc3 = sum(1 for v in rp.values()
                      if v["monotone_nonincreasing_v3"])
     arm_b = {
@@ -418,6 +423,9 @@ def main():
             "v3_monotone_decreasing_strict": rp_strict3,
             "v2_monotone_decreasing_strict_same_pairs": rp_strict2,
             "v3_monotone_nonincreasing": rp_noninc3,
+            "v2_all_steps_flat_same_pairs": rp_flat2,
+            "criterion": "monotone AND >= 1 strictly decreasing step; "
+                         "all-flat anchors counted separately",
             "corrected_comparison": "%d vs %d (of %d scored)"
                                     % (rp_strict3, rp_strict2, rp_scored),
         },
@@ -901,10 +909,16 @@ def _render_md(report):
         "  an acceptance route.",
         "- New route-preserving dose arm (edge attributes only; node",
         "  centres / card dims / viewBox byte-frozen — asserted per level):",
-        "  v3 **%d vs v2 %d** strict monotone-decreasing of %d scored;"
-        % (b["same_criterion_counts"]["v3_monotone_decreasing_strict"],
-           b["same_criterion_counts"]["v2_monotone_decreasing_strict_same_pairs"],
-           b["n_anchors_scored"]),
+        ("  v3 **%d vs v2 %d** strict monotone-decreasing of %d scored;"
+         % (b["same_criterion_counts"]["v3_monotone_decreasing_strict"],
+            b["same_criterion_counts"]["v2_monotone_decreasing_strict_same_pairs"],
+            b["n_anchors_scored"])),
+        ("  v2 is all-flat %d/%d under the same dose (structurally blind: "
+         "the committed v2 models read no RP-perturbed feature), while v3 "
+         "is not all-flat — the RP arm is a v3-only stress test and this "
+         "comparison favours v3."
+         % (b["same_criterion_counts"]["v2_all_steps_flat_same_pairs"],
+            b["n_anchors_scored"])),
         "  route-preserved violations: %d." % len(b["route_preserved_violations"]),
         "- " + b["measurability_statement"],
         "- " + b["reroute_route_status"],
