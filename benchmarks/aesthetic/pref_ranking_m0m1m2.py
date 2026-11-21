@@ -52,8 +52,9 @@ Data calibers (PROVENANCE.md is the authority)
 - "both bad" (6): pool-quality warning only; composition reported.
 - Retest repeats (6): consistency check + noise baseline only; first-round
   answers are the evaluation set.
-- Left/right presentation swaps are already normalized in the export
-  (choice refers to candidate_a/candidate_b, not screen side).
+- Left/right presentation swaps are normalized on the analysis side: the
+  export's `choice` field is the screen side ('a'=left / 'b'=right) and the
+  evaluator converts it with `left_is_a` (see pair_winner).
 
 Red lines honoured: zero certificate-grade reads by the ranker (ranking
 features come from layout geometry only; grades appear solely in the
@@ -140,37 +141,142 @@ def _standardize(rows):
     return [0.0] * k, std
 
 
+def _objective(w, z, l2):
+    """Regularized BT objective: sum_i log(1 + exp(-s_i)) + 0.5*l2*|w|^2
+    (every diff vector is oriented so its label is 1)."""
+    obj = 0.5 * l2 * math.fsum(wj * wj for wj in w)
+    for row in z:
+        s = math.fsum(wj * v for wj, v in zip(w, row))
+        if s >= 0:
+            obj += math.log1p(math.exp(-s))
+        else:
+            obj += -s + math.log1p(math.exp(s))
+    return obj
+
+
+def _grad_norm(w, z, l2):
+    g = [l2 * wj for wj in w]
+    for row in z:
+        p = _sigmoid(math.fsum(wj * v for wj, v in zip(w, row)))
+        r = p - 1.0
+        for j in range(len(w)):
+            g[j] += r * row[j]
+    return math.sqrt(math.fsum(gj * gj for gj in g))
+
+
+def _solve_linear(M, b):
+    """Gaussian elimination with partial pivoting (deterministic; the BT
+    Hessian here is positive definite thanks to the l2 ridge, so the solve
+    itself needs no extra damping)."""
+    n = len(b)
+    A = [M[i][:] + [b[i]] for i in range(n)]
+    for col in range(n):
+        piv = max(range(col, n), key=lambda r: abs(A[r][col]))
+        if abs(A[piv][col]) < 1e-14:
+            raise ArithmeticError("singular Hessian in BT fit")
+        if piv != col:
+            A[col], A[piv] = A[piv], A[col]
+        inv = 1.0 / A[col][col]
+        for r in range(n):
+            if r != col and A[r][col] != 0.0:
+                f = A[r][col] * inv
+                for c in range(col, n + 1):
+                    A[r][c] -= f * A[col][c]
+    return [A[i][n] / A[i][i] for i in range(n)]
+
+
 def fit_bt(diff_vectors, l2=BT_L2, iters=BT_ITERS):
     """Fit P(a>b) = sigmoid(w . scaled_diff) WITHOUT a bias term (bias-free
     Bradley-Terry equivalent form; a constant preference direction would be
     circular when evaluation orients pairs winner-first).  Diffs are scaled
     per-dimension (RMS, no centering -- see _standardize).  Every vector is
-    oriented so the label is 1 -> no class weights.  Deterministic damped
-    Newton/IRLS."""
+    oriented so the label is 1 -> no class weights.
+
+    Solver (review rework): BEFORE fitting, columns whose diff-value vector
+    is bitwise identical to an earlier column are merged away and the merge
+    is recorded (the v3 kept set ships mirror_axis_err and
+    symmetry_axis_err_px as an exactly duplicated column; a duplicated
+    column carries no extra signal and makes the full Hessian singular,
+    which defeated the first delivery's diagonal-Hessian IRLS - it stalled
+    at gradient norms of 24-51 on the v3 arms, so its held-out readings
+    were optimizer artifacts).  The update itself is a DAMPED FULL-HESSIAN
+    Newton step (exact cross-terms + objective-decreasing backtracking),
+    iterated to a hard convergence gate: every fit asserts its final
+    gradient norm < 1e-6 or raises.  Deterministic: fixed iteration order,
+    no randomness, plain float ops."""
     n, k = len(diff_vectors), len(diff_vectors[0])
-    mean, std = _standardize(diff_vectors)
-    z = [[(r[j] - mean[j]) / std[j] for j in range(k)] for r in diff_vectors]
-    w = [0.0] * k
+    # duplicate-column merge (deterministic): keep the first of each group
+    # of bitwise-equal columns, record the merge for disclosure
+    col_idx = []
+    merged_pairs = []   # [kept_original_index, dropped_original_index]
+    for j in range(k):
+        twin = None
+        for j2 in col_idx:
+            if all(r[j] == r[j2] for r in diff_vectors):
+                twin = j2
+                break
+        if twin is None:
+            col_idx.append(j)
+        else:
+            merged_pairs.append([twin, j])
+    kk = len(col_idx)
+    mean = [0.0] * kk
+    std = []
+    for j in col_idx:
+        var = math.fsum(r[j] ** 2 for r in diff_vectors) / n
+        std.append(math.sqrt(var) if var > 1e-12 else 1.0)
+    z = [[r[j] / std[a] for a, j in enumerate(col_idx)] for r in diff_vectors]
+    w = [0.0] * kk
+    obj = _objective(w, z, l2)
+    used = 0
     for _ in range(iters):
-        grad_w = [l2 * w[j] for j in range(k)]
-        h_w = [l2] * k
+        g = [l2 * wj for wj in w]
+        H = [[(l2 if a == b else 0.0) for b in range(kk)] for a in range(kk)]
         for i in range(n):
-            p = _sigmoid(math.fsum(w[j] * z[i][j] for j in range(k)))
-            r = p - 1.0
+            p = _sigmoid(math.fsum(w[j] * z[i][j] for j in range(kk)))
+            r_ = p - 1.0
             h = p * (1.0 - p)
-            for j in range(k):
-                grad_w[j] += r * z[i][j]
-                h_w[j] += h * z[i][j] * z[i][j]
-        w = [w[j] - grad_w[j] / h_w[j] for j in range(k)]
+            for a in range(kk):
+                g[a] += r_ * z[i][a]
+                for b in range(a, kk):
+                    hv = h * z[i][a] * z[i][b]
+                    H[a][b] += hv
+                    if b != a:
+                        H[b][a] += hv
+        step = _solve_linear(H, g)
+        # damped step: backtrack until the objective decreases
+        w_new = w
+        t = 1.0
+        for _bt in range(60):
+            w_new = [w[j] - t * step[j] for j in range(kk)]
+            obj_new = _objective(w_new, z, l2)
+            if obj_new <= obj:
+                break
+            t *= 0.5
+        else:
+            break  # no decreasing step found: at the optimum floor
+        w, obj = w_new, obj_new
+        used += 1
+        if math.sqrt(math.fsum(sj * sj for sj in step)) < 1e-11:
+            break
+    grad_norm = _grad_norm(w, z, l2)
+    assert grad_norm < 1e-6,         "BT fit did not converge: final gradient norm %g" % grad_norm
     return {"w": w, "b": 0.0, "mean": mean, "std": std,
-            "hyper": {"l2": l2, "irls_iters": iters,
+            "col_idx": col_idx, "merged_pairs": merged_pairs,
+            "hyper": {"l2": l2, "irls_iters": used,
+                      "grad_norm_final": grad_norm,
+                      "objective_final": obj,
+                      "fit_convergence_gate": "final gradient norm < 1e-6 "
+                                              "(asserted on every fit)",
                       "form": "bradley-terry (oriented diffs, bias-free, "
-                              "RMS-scaled, no centering, no class weights)"}}
+                              "RMS-scaled, no centering, no class weights, "
+                              "duplicate columns merged, damped "
+                              "full-Hessian Newton)"}}
 
 
 def bt_margin(model, vec_a, vec_b):
-    d = [(vec_a[j] - vec_b[j] - model["mean"][j]) / model["std"][j]
-         for j in range(len(model["w"]))]
+    d = [(vec_a[j] - vec_b[j] - model["mean"][t]) / model["std"][t]
+         for t, j in enumerate(model["col_idx"])]
     return math.fsum(w * v for w, v in zip(model["w"], d))
 
 
@@ -389,8 +495,11 @@ def eval_arm(arm, folds, pool):
             margins_train.append(abs(m))
         te_ok = 0
         te_n = 0
+        te_margins = []
         for p in fold["test_pairs"]:
             m = _pair_margin(arm, model, p)
+            te_margins.append({"qid": p["qid"],
+                               "signed_margin": round(m, 6)})
             ok = m > 0
             te_ok += 1 if ok else 0
             te_n += 1
@@ -432,6 +541,7 @@ def eval_arm(arm, folds, pool):
             "test_acc": round(te_ok / te_n, 4) if te_n else None,
             "n_test": te_n,
             "test_correct": te_ok,
+            "test_pair_margins": te_margins,
         })
     for t in TIE_PAIRS:
         m = _pair_margin(arm, FOLD_MODEL_FOR_TIES.get(arm), t)
@@ -709,7 +819,7 @@ def main():
             ("sanity flip leg degenerated for %s: %s" % (arm, p))
 
     report = {
-        "schema": "stdraw.pref-ranking-m0m1m2/1",
+        "schema": "stdraw.pref-ranking-m0m1m2/2",
         "generation": {
             "determinism": "double-run byte-identical (evidence dir)",
             "training_authorization": "synthetic pairs user-confirmed (spot-check passed)",
@@ -723,7 +833,11 @@ def main():
                 "retest = noise baseline; ties -> epsilon analysis; both-bad -> "
                 "pool-quality warning; pairwise margin==0 counted as incorrect; "
                 "BT arms are bias-free (a constant preference direction would "
-                "be circular when evaluation orients pairs winner-first)"),
+                "be circular when evaluation orients pairs winner-first); "
+                "BT fits merge bitwise-duplicate feature columns before "
+                "fitting and run a damped full-Hessian Newton to a hard "
+                "convergence gate (final gradient norm < 1e-6 asserted on "
+                "EVERY fit: LOSO folds, full-data calibration, sanity leg)"),
             "dose_gate_status": (
                 "route-preserving dose gate remains unmeasurable; statement "
                 "carried over verbatim from the v3-beta report (no change here)"),
@@ -789,11 +903,26 @@ def main():
         },
         "bt_weights_full_data": {
             arm: {
-                "feature_names": list(NAMES_GLOBAL[FEAT_OF_ARM[arm]]),
-                "weights": {nm: round(w, 6) for nm, w in
-                            zip(NAMES_GLOBAL[FEAT_OF_ARM[arm]],
-                                FOLD_MODEL_FOR_TIES[arm]["w"])},
+                "feature_names": [NAMES_GLOBAL[FEAT_OF_ARM[arm]][j]
+                                  for j in
+                                  FOLD_MODEL_FOR_TIES[arm]["col_idx"]],
+                "merged_duplicate_columns": [
+                    {"merged_into": NAMES_GLOBAL[FEAT_OF_ARM[arm]][kp],
+                     "dropped": NAMES_GLOBAL[FEAT_OF_ARM[arm]][jd]}
+                    for kp, jd in FOLD_MODEL_FOR_TIES[arm]["merged_pairs"]],
+                "weights": {NAMES_GLOBAL[FEAT_OF_ARM[arm]][j]: round(wv, 6)
+                            for wv, j in
+                            zip(FOLD_MODEL_FOR_TIES[arm]["w"],
+                                FOLD_MODEL_FOR_TIES[arm]["col_idx"])},
                 "bias": round(FOLD_MODEL_FOR_TIES[arm]["b"], 6),
+                "fit_convergence": {
+                    "iters_used":
+                        FOLD_MODEL_FOR_TIES[arm]["hyper"]["irls_iters"],
+                    "grad_norm_final":
+                        FOLD_MODEL_FOR_TIES[arm]["hyper"]["grad_norm_final"],
+                    "objective_final":
+                        FOLD_MODEL_FOR_TIES[arm]["hyper"]["objective_final"],
+                },
                 "note": ("full-data calibration model (not the LOSO models); "
                          "dominant weights disclosed so a perfect reading can "
                          "be traced to its features (e.g. crossing_count)"),
@@ -863,16 +992,36 @@ def render_md(r):
     L.append("- No arm clears the coin-flip line convincingly, and no arm "
              "reaches jacky's retest noise baseline (5/6 = 83.3%): the "
              "first-round reading is **no signal** at n=13 decided pairs.")
-    L.append("- M1 (v2 features) reads 84.6% in-fold but 38.5% held-out "
-             "(gap +47.0pp) and M2 reads 0% held-out (gap +61.4pp): both "
-             "trip the 15pp overfitting review trigger; M1s/M2s diverge from "
-             "M1/M2 in opposite directions (synthetic-pair dose caliber is "
-             "the diagnosis family, not route-preserving) - reported side by "
-             "side, never merged.")
-    L.append("- M2's 0/13 held-out is a systematic anti-generalization "
-             "reading (every topology fold 0/N), not a protocol artifact: "
-             "the label-flip sanity leg reads non-degenerately (see JSON "
-             "sanity_flip_leg).")
+    g1 = r["train_holdout_gap"]["M1"]
+    g2 = r["train_holdout_gap"]["M2"]
+    p2 = r["arms"]["M2"]["pooled"]
+    p2s = r["arms"]["M2s"]["pooled"]
+    L.append("- M1 (v2 features) reads %.1f%% mean in-fold train but "
+             "%.1f%% held-out (gap +%spp) and M2 reads %.1f%% held-out "
+             "(gap +%spp): both trip the 15pp overfitting review trigger.  "
+             "After the solver-convergence fix every BT arm sits inside the "
+             "noise band - no signal; the first delivery's \"M1s/M2s "
+             "diverge from M1/M2 in opposite directions\" reading was an "
+             "unconverged-solver artifact and is withdrawn: at the "
+             "converged optimum M2 and M2s anti-generalize in the SAME "
+             "direction (the synthetic-pair dose caliber remains a "
+             "diagnosis family, reported side by side, never merged)."
+             % (100 * g1["mean_train_acc"],
+                100 * r["arms"]["M1"]["pooled"]["acc"],
+                g1["gap_pp"], 100 * p2["acc"], g2["gap_pp"]))
+    L.append("- M2's first-delivery 0/13 held-out (\"every topology fold "
+             "0/N, systematic anti-generalization, not a protocol "
+             "artifact\") was an optimizer artifact: the diagonal-Hessian "
+             "IRLS with a duplicated feature column (mirror_axis_err == "
+             "symmetry_axis_err_px on every candidate) never converged.  At "
+             "the converged optimum M2 reads %s/%s held-out and M2s reads "
+             "%s/%s - all BT arms inside the noise band, no signal.  The "
+             "anti-generalization DIRECTION survives for M2 (12/13 held-out "
+             "margins keep the delivered sign; only the classic tie pair "
+             "q19 flips), but the exact 0/13 and per-fold 0/N readings do "
+             "not; the label-flip sanity leg still reads non-degenerately "
+             "(see JSON sanity_flip_leg)."
+             % (p2["correct"], p2["n"], p2s["correct"], p2s["n"]))
     L.append("- Practical read: the 24-pair first-round budget does not "
              "support per-topology preference training yet; the pointwise "
              "M0 baseline (61.5%) and its 3/3 Top-1 rate on the three "
@@ -956,6 +1105,18 @@ def render_md(r):
         items = ", ".join("%s=%s" % (nm, bw["weights"][nm])
                           for nm in bw["feature_names"])
         L.append("- %s (bias %s): %s" % (arm, bw["bias"], items))
+        for mg in bw["merged_duplicate_columns"]:
+            L.append("  - merged duplicate column: %s dropped (bitwise "
+                     "identical to %s)" % (mg["dropped"], mg["merged_into"]))
+        fc = bw["fit_convergence"]
+        L.append("  - converged: %d Newton iters, final gradient norm %g, "
+                 "objective %g" % (fc["iters_used"], fc["grad_norm_final"],
+                                   fc["objective_final"]))
+    L.append("- convergence gate: every BT fit (LOSO folds, full-data "
+             "calibration, sanity leg) ends with final gradient norm "
+             "< 1e-6, asserted at fit time; duplicate feature columns are "
+             "merged before fitting (JSON "
+             "bt_weights_full_data.*.merged_duplicate_columns)")
     L.append("")
     L.append("## Epsilon calibration initial values (7 both-good pairs)\n")
     L.append("epsilon0 = max |margin| over tie pairs (below epsilon0 -> declare "
@@ -966,6 +1127,18 @@ def render_md(r):
         e = r["epsilon_analysis"]["per_arm"][arm]
         L.append("| %s | %s | %s |" % (arm, e["epsilon0"],
                                        e["train_decided_abs_margin_min"]))
+    L.append("")
+    L.append("Solver caliber note: the review's converged epsilon "
+             "reference (M2 1.066145 / M2s 1.399488) was computed on the "
+             "UNMERGED feature space, where the ridge acts on BOTH "
+             "duplicate columns; with mirror_axis_err / symmetry_axis_err_px "
+             "merged the merged-column readings shift in the last decimals "
+             "(M2 %s / M2s %s) while every headline reading matches.  "
+             "Convergence acceptance uses the gradient gate (< 1e-6 "
+             "asserted on every fit), not the unmerged-space objective "
+             "value."
+             % (r["epsilon_analysis"]["per_arm"]["M2"]["epsilon0"],
+                r["epsilon_analysis"]["per_arm"]["M2s"]["epsilon0"]))
     L.append("")
     L.append("## Both-bad pairs (pool-quality warning, 6)\n")
     L.append("| pair | graph | a | b |")

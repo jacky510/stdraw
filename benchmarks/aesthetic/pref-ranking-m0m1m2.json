@@ -1,10 +1,10 @@
 {
-  "schema": "stdraw.pref-ranking-m0m1m2/1",
+  "schema": "stdraw.pref-ranking-m0m1m2/2",
   "generation": {
     "determinism": "double-run byte-identical (evidence dir)",
     "training_authorization": "synthetic pairs user-confirmed (spot-check passed)",
     "dose_family_note": "synthetic pairs use the diagnosis card's cumulative L1-L4 dose caliber (node-centre movement + edge-attribute damage), NOT the route-preserving dose family; s-arm vs plain-arm disagreements are reported side by side, never merged",
-    "eval_caliber": "LOSO over topology groups; decided first-round pairs only; retest = noise baseline; ties -> epsilon analysis; both-bad -> pool-quality warning; pairwise margin==0 counted as incorrect; BT arms are bias-free (a constant preference direction would be circular when evaluation orients pairs winner-first)",
+    "eval_caliber": "LOSO over topology groups; decided first-round pairs only; retest = noise baseline; ties -> epsilon analysis; both-bad -> pool-quality warning; pairwise margin==0 counted as incorrect; BT arms are bias-free (a constant preference direction would be circular when evaluation orients pairs winner-first); BT fits merge bitwise-duplicate feature columns before fitting and run a damped full-Hessian Newton to a hard convergence gate (final gradient norm < 1e-6 asserted on EVERY fit: LOSO folds, full-data calibration, sanity leg)",
     "dose_gate_status": "route-preserving dose gate remains unmeasurable; statement carried over verbatim from the v3-beta report (no change here)"
   },
   "data": {
@@ -190,7 +190,21 @@
           "train_acc_human": 0.5,
           "test_acc": 1.0,
           "n_test": 3,
-          "test_correct": 3
+          "test_correct": 3,
+          "test_pair_margins": [
+            {
+              "qid": "q06",
+              "signed_margin": 17.5
+            },
+            {
+              "qid": "q13",
+              "signed_margin": 17.5
+            },
+            {
+              "qid": "q20",
+              "signed_margin": 17.5
+            }
+          ]
         },
         {
           "held_out_topology": "嵌套环",
@@ -203,7 +217,29 @@
           "train_acc_human": 1.0,
           "test_acc": 0.0,
           "n_test": 5,
-          "test_correct": 0
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q01",
+              "signed_margin": -35.1
+            },
+            {
+              "qid": "q04",
+              "signed_margin": -35.1
+            },
+            {
+              "qid": "q09",
+              "signed_margin": -58.6
+            },
+            {
+              "qid": "q11",
+              "signed_margin": -35.1
+            },
+            {
+              "qid": "q19",
+              "signed_margin": 0.0
+            }
+          ]
         },
         {
           "held_out_topology": "梳状",
@@ -215,7 +251,17 @@
           "train_acc_human": 0.5455,
           "test_acc": 1.0,
           "n_test": 2,
-          "test_correct": 2
+          "test_correct": 2,
+          "test_pair_margins": [
+            {
+              "qid": "q21",
+              "signed_margin": 52.4
+            },
+            {
+              "qid": "q22",
+              "signed_margin": 52.4
+            }
+          ]
         },
         {
           "held_out_topology": "非平面族",
@@ -227,7 +273,21 @@
           "train_acc_human": 0.5,
           "test_acc": 1.0,
           "n_test": 3,
-          "test_correct": 3
+          "test_correct": 3,
+          "test_pair_margins": [
+            {
+              "qid": "q05",
+              "signed_margin": 77.0
+            },
+            {
+              "qid": "q15",
+              "signed_margin": 77.0
+            },
+            {
+              "qid": "q23",
+              "signed_margin": 77.0
+            }
+          ]
         }
       ],
       "rankings": {
@@ -325,7 +385,21 @@
           "train_acc_human": 0.8,
           "test_acc": 1.0,
           "n_test": 3,
-          "test_correct": 3
+          "test_correct": 3,
+          "test_pair_margins": [
+            {
+              "qid": "q06",
+              "signed_margin": 0.230883
+            },
+            {
+              "qid": "q13",
+              "signed_margin": 0.230883
+            },
+            {
+              "qid": "q20",
+              "signed_margin": 0.230883
+            }
+          ]
         },
         {
           "held_out_topology": "嵌套环",
@@ -338,7 +412,29 @@
           "train_acc_human": 1.0,
           "test_acc": 0.0,
           "n_test": 5,
-          "test_correct": 0
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q01",
+              "signed_margin": -0.69811
+            },
+            {
+              "qid": "q04",
+              "signed_margin": -0.69811
+            },
+            {
+              "qid": "q09",
+              "signed_margin": -2.060848
+            },
+            {
+              "qid": "q11",
+              "signed_margin": -0.69811
+            },
+            {
+              "qid": "q19",
+              "signed_margin": 0.0
+            }
+          ]
         },
         {
           "held_out_topology": "梳状",
@@ -350,7 +446,17 @@
           "train_acc_human": 0.8182,
           "test_acc": 1.0,
           "n_test": 2,
-          "test_correct": 2
+          "test_correct": 2,
+          "test_pair_margins": [
+            {
+              "qid": "q21",
+              "signed_margin": 0.412871
+            },
+            {
+              "qid": "q22",
+              "signed_margin": 0.412871
+            }
+          ]
         },
         {
           "held_out_topology": "非平面族",
@@ -362,7 +468,21 @@
           "train_acc_human": 0.8,
           "test_acc": 0.0,
           "n_test": 3,
-          "test_correct": 0
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q05",
+              "signed_margin": -6.405205
+            },
+            {
+              "qid": "q15",
+              "signed_margin": -6.405205
+            },
+            {
+              "qid": "q23",
+              "signed_margin": -6.405205
+            }
+          ]
         }
       ],
       "rankings": {
@@ -440,13 +560,13 @@
     "M2": {
       "arm": "M2",
       "pooled": {
-        "correct": 0,
+        "correct": 1,
         "n": 13,
-        "acc": 0.0,
+        "acc": 0.0769,
         "ci95": [
-          0.0,
-          0.0,
-          0.2281
+          0.0769,
+          0.0137,
+          0.3331
         ]
       },
       "per_fold": [
@@ -457,10 +577,24 @@
           ],
           "n_train_human": 10,
           "n_train_synthetic": 0,
-          "train_acc_human": 0.5,
+          "train_acc_human": 1.0,
           "test_acc": 0.0,
           "n_test": 3,
-          "test_correct": 0
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q06",
+              "signed_margin": -1.080167
+            },
+            {
+              "qid": "q13",
+              "signed_margin": -1.080167
+            },
+            {
+              "qid": "q20",
+              "signed_margin": -1.080167
+            }
+          ]
         },
         {
           "held_out_topology": "嵌套环",
@@ -471,9 +605,31 @@
           "n_train_human": 8,
           "n_train_synthetic": 0,
           "train_acc_human": 1.0,
-          "test_acc": 0.0,
+          "test_acc": 0.2,
           "n_test": 5,
-          "test_correct": 0
+          "test_correct": 1,
+          "test_pair_margins": [
+            {
+              "qid": "q01",
+              "signed_margin": -1.813808
+            },
+            {
+              "qid": "q04",
+              "signed_margin": -1.813808
+            },
+            {
+              "qid": "q09",
+              "signed_margin": -1.759992
+            },
+            {
+              "qid": "q11",
+              "signed_margin": -1.813808
+            },
+            {
+              "qid": "q19",
+              "signed_margin": 0.06768
+            }
+          ]
         },
         {
           "held_out_topology": "梳状",
@@ -482,10 +638,20 @@
           ],
           "n_train_human": 11,
           "n_train_synthetic": 0,
-          "train_acc_human": 0.4545,
+          "train_acc_human": 1.0,
           "test_acc": 0.0,
           "n_test": 2,
-          "test_correct": 0
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q21",
+              "signed_margin": -2.798186
+            },
+            {
+              "qid": "q22",
+              "signed_margin": -2.798186
+            }
+          ]
         },
         {
           "held_out_topology": "非平面族",
@@ -494,10 +660,24 @@
           ],
           "n_train_human": 10,
           "n_train_synthetic": 0,
-          "train_acc_human": 0.5,
+          "train_acc_human": 1.0,
           "test_acc": 0.0,
           "n_test": 3,
-          "test_correct": 0
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q05",
+              "signed_margin": -11.955942
+            },
+            {
+              "qid": "q15",
+              "signed_margin": -11.955942
+            },
+            {
+              "qid": "q23",
+              "signed_margin": -11.955942
+            }
+          ]
         }
       ],
       "rankings": {
@@ -514,8 +694,8 @@
           "g4c3"
         ],
         "classic-cld-growth-and-burden": [
-          "g5c0",
           "g5c1",
+          "g5c0",
           "g5c2",
           "g5c3",
           "g5c4"
@@ -536,8 +716,8 @@
       "tie_margins": [
         {
           "pair_key": "comb-supply-demand|g3c0|g3c2",
-          "signed_margin": -14.848626,
-          "abs_margin": 14.848626
+          "signed_margin": 0.548495,
+          "abs_margin": 0.548495
         },
         {
           "pair_key": "coupled-underinvestment|g1c2|g1c3",
@@ -561,8 +741,8 @@
         },
         {
           "pair_key": "classic-cld-growth-and-burden|g5c1|g5c2",
-          "signed_margin": -10.371414,
-          "abs_margin": 10.371414
+          "signed_margin": 1.087513,
+          "abs_margin": 1.087513
         },
         {
           "pair_key": "classic-cld-growth-and-burden|g5c2|g5c3",
@@ -570,7 +750,7 @@
           "abs_margin": 0.0
         }
       ],
-      "train_margin_abs_min": 0.02133
+      "train_margin_abs_min": 0.054949
     },
     "M1s": {
       "arm": "M1s",
@@ -595,7 +775,21 @@
           "train_acc_human": 0.8,
           "test_acc": 1.0,
           "n_test": 3,
-          "test_correct": 3
+          "test_correct": 3,
+          "test_pair_margins": [
+            {
+              "qid": "q06",
+              "signed_margin": 0.099608
+            },
+            {
+              "qid": "q13",
+              "signed_margin": 0.099608
+            },
+            {
+              "qid": "q20",
+              "signed_margin": 0.099608
+            }
+          ]
         },
         {
           "held_out_topology": "嵌套环",
@@ -608,7 +802,29 @@
           "train_acc_human": 1.0,
           "test_acc": 0.0,
           "n_test": 5,
-          "test_correct": 0
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q01",
+              "signed_margin": -1.754415
+            },
+            {
+              "qid": "q04",
+              "signed_margin": -1.754415
+            },
+            {
+              "qid": "q09",
+              "signed_margin": -2.840554
+            },
+            {
+              "qid": "q11",
+              "signed_margin": -1.754415
+            },
+            {
+              "qid": "q19",
+              "signed_margin": 0.0
+            }
+          ]
         },
         {
           "held_out_topology": "梳状",
@@ -620,7 +836,17 @@
           "train_acc_human": 0.6364,
           "test_acc": 0.0,
           "n_test": 2,
-          "test_correct": 0
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q21",
+              "signed_margin": -0.50093
+            },
+            {
+              "qid": "q22",
+              "signed_margin": -0.50093
+            }
+          ]
         },
         {
           "held_out_topology": "非平面族",
@@ -632,7 +858,21 @@
           "train_acc_human": 0.9,
           "test_acc": 0.0,
           "n_test": 3,
-          "test_correct": 0
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q05",
+              "signed_margin": -16.999713
+            },
+            {
+              "qid": "q15",
+              "signed_margin": -16.999713
+            },
+            {
+              "qid": "q23",
+              "signed_margin": -16.999713
+            }
+          ]
         }
       ],
       "rankings": {
@@ -710,13 +950,13 @@
     "M2s": {
       "arm": "M2s",
       "pooled": {
-        "correct": 7,
+        "correct": 0,
         "n": 13,
-        "acc": 0.5385,
+        "acc": 0.0,
         "ci95": [
-          0.5385,
-          0.2914,
-          0.7679
+          0.0,
+          0.0,
+          0.2281
         ]
       },
       "per_fold": [
@@ -727,10 +967,24 @@
           ],
           "n_train_human": 10,
           "n_train_synthetic": 30,
-          "train_acc_human": 0.4,
+          "train_acc_human": 0.8,
           "test_acc": 0.0,
           "n_test": 3,
-          "test_correct": 0
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q06",
+              "signed_margin": -1.042947
+            },
+            {
+              "qid": "q13",
+              "signed_margin": -1.042947
+            },
+            {
+              "qid": "q20",
+              "signed_margin": -1.042947
+            }
+          ]
         },
         {
           "held_out_topology": "嵌套环",
@@ -740,10 +994,32 @@
           ],
           "n_train_human": 8,
           "n_train_synthetic": 30,
-          "train_acc_human": 0.375,
-          "test_acc": 0.8,
+          "train_acc_human": 1.0,
+          "test_acc": 0.0,
           "n_test": 5,
-          "test_correct": 4
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q01",
+              "signed_margin": -2.871962
+            },
+            {
+              "qid": "q04",
+              "signed_margin": -2.871962
+            },
+            {
+              "qid": "q09",
+              "signed_margin": -3.550471
+            },
+            {
+              "qid": "q11",
+              "signed_margin": -2.871962
+            },
+            {
+              "qid": "q19",
+              "signed_margin": -1.073187
+            }
+          ]
         },
         {
           "held_out_topology": "梳状",
@@ -752,10 +1028,20 @@
           ],
           "n_train_human": 11,
           "n_train_synthetic": 30,
-          "train_acc_human": 0.3636,
+          "train_acc_human": 0.9091,
           "test_acc": 0.0,
           "n_test": 2,
-          "test_correct": 0
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q21",
+              "signed_margin": -7.077342
+            },
+            {
+              "qid": "q22",
+              "signed_margin": -7.077342
+            }
+          ]
         },
         {
           "held_out_topology": "非平面族",
@@ -764,10 +1050,24 @@
           ],
           "n_train_human": 10,
           "n_train_synthetic": 30,
-          "train_acc_human": 0.5,
-          "test_acc": 1.0,
+          "train_acc_human": 0.9,
+          "test_acc": 0.0,
           "n_test": 3,
-          "test_correct": 3
+          "test_correct": 0,
+          "test_pair_margins": [
+            {
+              "qid": "q05",
+              "signed_margin": -20.626653
+            },
+            {
+              "qid": "q15",
+              "signed_margin": -20.626653
+            },
+            {
+              "qid": "q23",
+              "signed_margin": -20.626653
+            }
+          ]
         }
       ],
       "rankings": {
@@ -778,17 +1078,17 @@
           "g1c0"
         ],
         "brand-flywheel": [
+          "g4c0",
           "g4c1",
           "g4c2",
-          "g4c3",
-          "g4c0"
+          "g4c3"
         ],
         "classic-cld-growth-and-burden": [
+          "g5c0",
+          "g5c1",
           "g5c2",
           "g5c3",
-          "g5c4",
-          "g5c0",
-          "g5c1"
+          "g5c4"
         ],
         "comb-supply-demand": [
           "g3c1",
@@ -797,17 +1097,17 @@
           "g3c0"
         ],
         "nonplanar-credit": [
-          "g2c0",
           "g2c1",
           "g2c2",
-          "g2c3"
+          "g2c3",
+          "g2c0"
         ]
       },
       "tie_margins": [
         {
           "pair_key": "comb-supply-demand|g3c0|g3c2",
-          "signed_margin": -52.900503,
-          "abs_margin": 52.900503
+          "signed_margin": 0.35626,
+          "abs_margin": 0.35626
         },
         {
           "pair_key": "coupled-underinvestment|g1c2|g1c3",
@@ -831,8 +1131,8 @@
         },
         {
           "pair_key": "classic-cld-growth-and-burden|g5c1|g5c2",
-          "signed_margin": -54.12224,
-          "abs_margin": 54.12224
+          "signed_margin": 1.398247,
+          "abs_margin": 1.398247
         },
         {
           "pair_key": "classic-cld-growth-and-burden|g5c2|g5c3",
@@ -840,7 +1140,7 @@
           "abs_margin": 0.0
         }
       ],
-      "train_margin_abs_min": 1.297709
+      "train_margin_abs_min": 0.0923
     }
   },
   "sanity_flip_leg": {
@@ -856,13 +1156,13 @@
       ]
     },
     "M2": {
-      "correct": 6,
+      "correct": 5,
       "n": 13,
-      "acc": 0.4615,
+      "acc": 0.3846,
       "ci95": [
-        0.4615,
-        0.2321,
-        0.7086
+        0.3846,
+        0.1771,
+        0.6448
       ]
     }
   },
@@ -945,7 +1245,7 @@
         },
         "classic-cld-growth-and-burden": {
           "jacky_top": null,
-          "model_top": "g5c0",
+          "model_top": "g5c1",
           "match": null,
           "note": "jacky plurality tie"
         },
@@ -1007,13 +1307,13 @@
       "per_graph": {
         "brand-flywheel": {
           "jacky_top": null,
-          "model_top": "g4c1",
+          "model_top": "g4c0",
           "match": null,
           "note": "jacky plurality tie"
         },
         "classic-cld-growth-and-burden": {
           "jacky_top": null,
-          "model_top": "g5c2",
+          "model_top": "g5c0",
           "match": null,
           "note": "jacky plurality tie"
         },
@@ -1029,13 +1329,13 @@
         },
         "nonplanar-credit": {
           "jacky_top": "g2c0",
-          "model_top": "g2c0",
-          "match": true
+          "model_top": "g2c1",
+          "match": false
         }
       },
-      "hits": 1,
+      "hits": 0,
       "usable_graphs": 3,
-      "rate": 0.3333
+      "rate": 0.0
     }
   },
   "epsilon_analysis": {
@@ -1069,16 +1369,16 @@
       },
       "M2": {
         "tie_abs_margins": [
-          14.848626,
+          0.548495,
           0.0,
           0.0,
           0.0,
           0.0,
-          10.371414,
+          1.087513,
           0.0
         ],
-        "epsilon0": 14.848626,
-        "train_decided_abs_margin_min": 0.02133
+        "epsilon0": 1.087513,
+        "train_decided_abs_margin_min": 0.054949
       },
       "M1s": {
         "tie_abs_margins": [
@@ -1095,16 +1395,16 @@
       },
       "M2s": {
         "tie_abs_margins": [
-          52.900503,
+          0.35626,
           0.0,
           0.0,
           0.0,
           0.0,
-          54.12224,
+          1.398247,
           0.0
         ],
-        "epsilon0": 54.12224,
-        "train_decided_abs_margin_min": 1.297709
+        "epsilon0": 1.398247,
+        "train_decided_abs_margin_min": 0.0923
       }
     }
   },
@@ -1272,6 +1572,7 @@
         "crossing_count",
         "alignment_max_coverage"
       ],
+      "merged_duplicate_columns": [],
       "weights": {
         "avg_edge_length": 0.64565,
         "bend_total_curvature": -0.603799,
@@ -1279,6 +1580,11 @@
         "alignment_max_coverage": 0.619097
       },
       "bias": 0.0,
+      "fit_convergence": {
+        "iters_used": 6,
+        "grad_norm_final": 7.2377686124476805e-16,
+        "objective_final": 5.862246852786773
+      },
       "note": "full-data calibration model (not the LOSO models); dominant weights disclosed so a perfect reading can be traced to its features (e.g. crossing_count)"
     },
     "M2": {
@@ -1289,22 +1595,31 @@
         "hub_degree",
         "mirror_axis_err",
         "nonloop_straight_rate",
-        "symmetry_axis_err_px",
         "alignment_max_coverage",
         "alignment_max_coverage_tight"
       ],
+      "merged_duplicate_columns": [
+        {
+          "merged_into": "mirror_axis_err",
+          "dropped": "symmetry_axis_err_px"
+        }
+      ],
       "weights": {
-        "anchor_orient_dev_mean": -3.736333,
-        "avg_edge_length": 0.328299,
-        "bend_total_curvature": 1.59623,
+        "anchor_orient_dev_mean": -0.27857,
+        "avg_edge_length": 0.745198,
+        "bend_total_curvature": 0.098117,
         "hub_degree": 0.0,
-        "mirror_axis_err": -0.806636,
-        "nonloop_straight_rate": -2.473388,
-        "symmetry_axis_err_px": -0.806636,
-        "alignment_max_coverage": -2.944845,
-        "alignment_max_coverage_tight": -3.214268
+        "mirror_axis_err": -0.088587,
+        "nonloop_straight_rate": -0.062602,
+        "alignment_max_coverage": 0.535428,
+        "alignment_max_coverage_tight": 0.47416
       },
       "bias": 0.0,
+      "fit_convergence": {
+        "iters_used": 50,
+        "grad_norm_final": 8.332945396684879e-10,
+        "objective_final": 7.215151567782084
+      },
       "note": "full-data calibration model (not the LOSO models); dominant weights disclosed so a perfect reading can be traced to its features (e.g. crossing_count)"
     },
     "M1s": {
@@ -1314,6 +1629,7 @@
         "crossing_count",
         "alignment_max_coverage"
       ],
+      "merged_duplicate_columns": [],
       "weights": {
         "avg_edge_length": 0.18013,
         "bend_total_curvature": -0.353697,
@@ -1321,6 +1637,11 @@
         "alignment_max_coverage": 0.274135
       },
       "bias": 0.0,
+      "fit_convergence": {
+        "iters_used": 7,
+        "grad_norm_final": 4.544688633008236e-14,
+        "objective_final": 23.749591896656423
+      },
       "note": "full-data calibration model (not the LOSO models); dominant weights disclosed so a perfect reading can be traced to its features (e.g. crossing_count)"
     },
     "M2s": {
@@ -1331,22 +1652,31 @@
         "hub_degree",
         "mirror_axis_err",
         "nonloop_straight_rate",
-        "symmetry_axis_err_px",
         "alignment_max_coverage",
         "alignment_max_coverage_tight"
       ],
+      "merged_duplicate_columns": [
+        {
+          "merged_into": "mirror_axis_err",
+          "dropped": "symmetry_axis_err_px"
+        }
+      ],
       "weights": {
-        "anchor_orient_dev_mean": -6.795293,
-        "avg_edge_length": -8.758549,
-        "bend_total_curvature": 2.903073,
+        "anchor_orient_dev_mean": -0.23991,
+        "avg_edge_length": -1.271645,
+        "bend_total_curvature": -0.618282,
         "hub_degree": 0.0,
-        "mirror_axis_err": -8.43946,
-        "nonloop_straight_rate": -4.498366,
-        "symmetry_axis_err_px": -8.43946,
-        "alignment_max_coverage": -6.729123,
-        "alignment_max_coverage_tight": -7.878353
+        "mirror_axis_err": 0.031291,
+        "nonloop_straight_rate": 0.140156,
+        "alignment_max_coverage": 0.241772,
+        "alignment_max_coverage_tight": 0.156698
       },
       "bias": 0.0,
+      "fit_convergence": {
+        "iters_used": 6,
+        "grad_norm_final": 2.477027592188641e-13,
+        "objective_final": 24.027499476520358
+      },
       "note": "full-data calibration model (not the LOSO models); dominant weights disclosed so a perfect reading can be traced to its features (e.g. crossing_count)"
     }
   },
@@ -1357,9 +1687,9 @@
       "gap_pp": 47.0
     },
     "M2": {
-      "mean_train_acc": 0.6136,
-      "pooled_test_acc": 0.0,
-      "gap_pp": 61.4
+      "mean_train_acc": 1.0,
+      "pooled_test_acc": 0.0769,
+      "gap_pp": 92.3
     },
     "M1s": {
       "mean_train_acc": 0.8341,
@@ -1367,9 +1697,9 @@
       "gap_pp": 60.3
     },
     "M2s": {
-      "mean_train_acc": 0.4097,
-      "pooled_test_acc": 0.5385,
-      "gap_pp": -12.9
+      "mean_train_acc": 0.9023,
+      "pooled_test_acc": 0.0,
+      "gap_pp": 90.2
     }
   },
   "noise_baseline_comparison": {
@@ -1382,7 +1712,7 @@
       "above_noise_baseline": false
     },
     "M2": {
-      "acc": 0.0,
+      "acc": 0.0769,
       "above_noise_baseline": false
     },
     "M1s": {
@@ -1390,7 +1720,7 @@
       "above_noise_baseline": false
     },
     "M2s": {
-      "acc": 0.5385,
+      "acc": 0.0,
       "above_noise_baseline": false
     }
   }
