@@ -1,0 +1,1397 @@
+{
+  "schema": "stdraw.pref-ranking-m0m1m2/1",
+  "generation": {
+    "determinism": "double-run byte-identical (evidence dir)",
+    "training_authorization": "synthetic pairs user-confirmed (spot-check passed)",
+    "dose_family_note": "synthetic pairs use the diagnosis card's cumulative L1-L4 dose caliber (node-centre movement + edge-attribute damage), NOT the route-preserving dose family; s-arm vs plain-arm disagreements are reported side by side, never merged",
+    "eval_caliber": "LOSO over topology groups; decided first-round pairs only; retest = noise baseline; ties -> epsilon analysis; both-bad -> pool-quality warning; pairwise margin==0 counted as incorrect; BT arms are bias-free (a constant preference direction would be circular when evaluation orients pairs winner-first)",
+    "dose_gate_status": "route-preserving dose gate remains unmeasurable; statement carried over verbatim from the v3-beta report (no change here)"
+  },
+  "data": {
+    "n_first_round": 24,
+    "n_decided": 13,
+    "n_tie": 7,
+    "n_both_bad": 6,
+    "n_retest": 6,
+    "retest_agree": 5,
+    "retest_noise_baseline": 0.8333,
+    "retest_rows": [
+      {
+        "pair_key": "coupled-underinvestment|g1c0|g1c1",
+        "first_winner": "g1c0",
+        "retest_winner": "g1c0",
+        "agree": true
+      },
+      {
+        "pair_key": "coupled-underinvestment|g1c0|g1c3",
+        "first_winner": "g1c0",
+        "retest_winner": "g1c0",
+        "agree": true
+      },
+      {
+        "pair_key": "nonplanar-credit|g2c1|g2c3",
+        "first_winner": "both_bad",
+        "retest_winner": "both_bad",
+        "agree": true
+      },
+      {
+        "pair_key": "comb-supply-demand|g3c0|g3c2",
+        "first_winner": "both",
+        "retest_winner": "g3c0",
+        "agree": false
+      },
+      {
+        "pair_key": "brand-flywheel|g4c2|g4c3",
+        "first_winner": "both_bad",
+        "retest_winner": "both_bad",
+        "agree": true
+      },
+      {
+        "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+        "first_winner": "g5c1",
+        "retest_winner": "g5c1",
+        "agree": true
+      }
+    ],
+    "n_synthetic": 30,
+    "jacky_top1": {
+      "brand-flywheel": {
+        "win_counts": {
+          "g4c2": 1,
+          "g4c1": 1,
+          "g4c3": 1
+        },
+        "unique": false,
+        "top": null
+      },
+      "classic-cld-growth-and-burden": {
+        "win_counts": {
+          "g5c4": 1,
+          "g5c1": 1
+        },
+        "unique": false,
+        "top": null
+      },
+      "comb-supply-demand": {
+        "win_counts": {
+          "g3c0": 2
+        },
+        "unique": true,
+        "top": "g3c0"
+      },
+      "coupled-underinvestment": {
+        "win_counts": {
+          "g1c0": 3
+        },
+        "unique": true,
+        "top": "g1c0"
+      },
+      "nonplanar-credit": {
+        "win_counts": {
+          "g2c0": 3
+        },
+        "unique": true,
+        "top": "g2c0"
+      }
+    },
+    "feature_caliber": {
+      "v2": "single global feature space = union of the routed v2 shape-model names over all candidates (v2 shape routing is candidate-level); per candidate, own routed-model values + committed impute medians for the rest",
+      "v3": "same caliber on the committed LASSO kept set",
+      "global_feature_names": {
+        "v2": [
+          "avg_edge_length",
+          "bend_total_curvature",
+          "crossing_count",
+          "alignment_max_coverage"
+        ],
+        "v3": [
+          "anchor_orient_dev_mean",
+          "avg_edge_length",
+          "bend_total_curvature",
+          "hub_degree",
+          "mirror_axis_err",
+          "nonloop_straight_rate",
+          "symmetry_axis_err_px",
+          "alignment_max_coverage",
+          "alignment_max_coverage_tight"
+        ]
+      },
+      "per_graph_routing_v2": {
+        "brand-flywheel": {
+          "g4c0": "hub",
+          "g4c1": "ring",
+          "g4c2": "ring",
+          "g4c3": "ring"
+        },
+        "classic-cld-growth-and-burden": {
+          "g5c0": "hub",
+          "g5c1": "hub",
+          "g5c2": "hub",
+          "g5c3": "hub",
+          "g5c4": "hub"
+        },
+        "comb-supply-demand": {
+          "g3c0": "hub",
+          "g3c1": "hub",
+          "g3c2": "hub",
+          "g3c3": "hub"
+        },
+        "coupled-underinvestment": {
+          "g1c0": "hub",
+          "g1c1": "hub",
+          "g1c2": "hub",
+          "g1c3": "hub"
+        },
+        "nonplanar-credit": {
+          "g2c0": "hub",
+          "g2c1": "hub",
+          "g2c2": "hub",
+          "g2c3": "hub"
+        }
+      }
+    },
+    "topology_groups": {
+      "多环耦合": [
+        "coupled-underinvestment"
+      ],
+      "嵌套环": [
+        "brand-flywheel",
+        "classic-cld-growth-and-burden"
+      ],
+      "梳状": [
+        "comb-supply-demand"
+      ],
+      "非平面族": [
+        "nonplanar-credit"
+      ]
+    }
+  },
+  "arms": {
+    "M0": {
+      "arm": "M0",
+      "pooled": {
+        "correct": 8,
+        "n": 13,
+        "acc": 0.6154,
+        "ci95": [
+          0.6154,
+          0.3552,
+          0.8229
+        ]
+      },
+      "per_fold": [
+        {
+          "held_out_topology": "多环耦合",
+          "test_graphs": [
+            "coupled-underinvestment"
+          ],
+          "n_train_human": 10,
+          "n_train_synthetic": 0,
+          "train_acc_human": 0.5,
+          "test_acc": 1.0,
+          "n_test": 3,
+          "test_correct": 3
+        },
+        {
+          "held_out_topology": "嵌套环",
+          "test_graphs": [
+            "brand-flywheel",
+            "classic-cld-growth-and-burden"
+          ],
+          "n_train_human": 8,
+          "n_train_synthetic": 0,
+          "train_acc_human": 1.0,
+          "test_acc": 0.0,
+          "n_test": 5,
+          "test_correct": 0
+        },
+        {
+          "held_out_topology": "梳状",
+          "test_graphs": [
+            "comb-supply-demand"
+          ],
+          "n_train_human": 11,
+          "n_train_synthetic": 0,
+          "train_acc_human": 0.5455,
+          "test_acc": 1.0,
+          "n_test": 2,
+          "test_correct": 2
+        },
+        {
+          "held_out_topology": "非平面族",
+          "test_graphs": [
+            "nonplanar-credit"
+          ],
+          "n_train_human": 10,
+          "n_train_synthetic": 0,
+          "train_acc_human": 0.5,
+          "test_acc": 1.0,
+          "n_test": 3,
+          "test_correct": 3
+        }
+      ],
+      "rankings": {
+        "coupled-underinvestment": [
+          "g1c0",
+          "g1c1",
+          "g1c2",
+          "g1c3"
+        ],
+        "brand-flywheel": [
+          "g4c0",
+          "g4c1",
+          "g4c2",
+          "g4c3"
+        ],
+        "classic-cld-growth-and-burden": [
+          "g5c0",
+          "g5c1",
+          "g5c2",
+          "g5c3",
+          "g5c4"
+        ],
+        "comb-supply-demand": [
+          "g3c0",
+          "g3c1",
+          "g3c2",
+          "g3c3"
+        ],
+        "nonplanar-credit": [
+          "g2c0",
+          "g2c1",
+          "g2c2",
+          "g2c3"
+        ]
+      },
+      "tie_margins": [
+        {
+          "pair_key": "comb-supply-demand|g3c0|g3c2",
+          "signed_margin": 52.4,
+          "abs_margin": 52.4
+        },
+        {
+          "pair_key": "coupled-underinvestment|g1c2|g1c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "comb-supply-demand|g3c1|g3c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "comb-supply-demand|g3c2|g3c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "brand-flywheel|g4c1|g4c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c1|g5c2",
+          "signed_margin": 58.6,
+          "abs_margin": 58.6
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c2|g5c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        }
+      ],
+      "train_margin_abs_min": 0.0
+    },
+    "M1": {
+      "arm": "M1",
+      "pooled": {
+        "correct": 5,
+        "n": 13,
+        "acc": 0.3846,
+        "ci95": [
+          0.3846,
+          0.1771,
+          0.6448
+        ]
+      },
+      "per_fold": [
+        {
+          "held_out_topology": "多环耦合",
+          "test_graphs": [
+            "coupled-underinvestment"
+          ],
+          "n_train_human": 10,
+          "n_train_synthetic": 0,
+          "train_acc_human": 0.8,
+          "test_acc": 1.0,
+          "n_test": 3,
+          "test_correct": 3
+        },
+        {
+          "held_out_topology": "嵌套环",
+          "test_graphs": [
+            "brand-flywheel",
+            "classic-cld-growth-and-burden"
+          ],
+          "n_train_human": 8,
+          "n_train_synthetic": 0,
+          "train_acc_human": 1.0,
+          "test_acc": 0.0,
+          "n_test": 5,
+          "test_correct": 0
+        },
+        {
+          "held_out_topology": "梳状",
+          "test_graphs": [
+            "comb-supply-demand"
+          ],
+          "n_train_human": 11,
+          "n_train_synthetic": 0,
+          "train_acc_human": 0.8182,
+          "test_acc": 1.0,
+          "n_test": 2,
+          "test_correct": 2
+        },
+        {
+          "held_out_topology": "非平面族",
+          "test_graphs": [
+            "nonplanar-credit"
+          ],
+          "n_train_human": 10,
+          "n_train_synthetic": 0,
+          "train_acc_human": 0.8,
+          "test_acc": 0.0,
+          "n_test": 3,
+          "test_correct": 0
+        }
+      ],
+      "rankings": {
+        "coupled-underinvestment": [
+          "g1c0",
+          "g1c1",
+          "g1c2",
+          "g1c3"
+        ],
+        "brand-flywheel": [
+          "g4c0",
+          "g4c1",
+          "g4c2",
+          "g4c3"
+        ],
+        "classic-cld-growth-and-burden": [
+          "g5c0",
+          "g5c1",
+          "g5c2",
+          "g5c3",
+          "g5c4"
+        ],
+        "comb-supply-demand": [
+          "g3c0",
+          "g3c1",
+          "g3c2",
+          "g3c3"
+        ],
+        "nonplanar-credit": [
+          "g2c1",
+          "g2c2",
+          "g2c3",
+          "g2c0"
+        ]
+      },
+      "tie_margins": [
+        {
+          "pair_key": "comb-supply-demand|g3c0|g3c2",
+          "signed_margin": 1.10339,
+          "abs_margin": 1.10339
+        },
+        {
+          "pair_key": "coupled-underinvestment|g1c2|g1c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "comb-supply-demand|g3c1|g3c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "comb-supply-demand|g3c2|g3c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "brand-flywheel|g4c1|g4c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c1|g5c2",
+          "signed_margin": 1.203222,
+          "abs_margin": 1.203222
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c2|g5c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        }
+      ],
+      "train_margin_abs_min": 0.0
+    },
+    "M2": {
+      "arm": "M2",
+      "pooled": {
+        "correct": 0,
+        "n": 13,
+        "acc": 0.0,
+        "ci95": [
+          0.0,
+          0.0,
+          0.2281
+        ]
+      },
+      "per_fold": [
+        {
+          "held_out_topology": "多环耦合",
+          "test_graphs": [
+            "coupled-underinvestment"
+          ],
+          "n_train_human": 10,
+          "n_train_synthetic": 0,
+          "train_acc_human": 0.5,
+          "test_acc": 0.0,
+          "n_test": 3,
+          "test_correct": 0
+        },
+        {
+          "held_out_topology": "嵌套环",
+          "test_graphs": [
+            "brand-flywheel",
+            "classic-cld-growth-and-burden"
+          ],
+          "n_train_human": 8,
+          "n_train_synthetic": 0,
+          "train_acc_human": 1.0,
+          "test_acc": 0.0,
+          "n_test": 5,
+          "test_correct": 0
+        },
+        {
+          "held_out_topology": "梳状",
+          "test_graphs": [
+            "comb-supply-demand"
+          ],
+          "n_train_human": 11,
+          "n_train_synthetic": 0,
+          "train_acc_human": 0.4545,
+          "test_acc": 0.0,
+          "n_test": 2,
+          "test_correct": 0
+        },
+        {
+          "held_out_topology": "非平面族",
+          "test_graphs": [
+            "nonplanar-credit"
+          ],
+          "n_train_human": 10,
+          "n_train_synthetic": 0,
+          "train_acc_human": 0.5,
+          "test_acc": 0.0,
+          "n_test": 3,
+          "test_correct": 0
+        }
+      ],
+      "rankings": {
+        "coupled-underinvestment": [
+          "g1c1",
+          "g1c2",
+          "g1c3",
+          "g1c0"
+        ],
+        "brand-flywheel": [
+          "g4c0",
+          "g4c1",
+          "g4c2",
+          "g4c3"
+        ],
+        "classic-cld-growth-and-burden": [
+          "g5c0",
+          "g5c1",
+          "g5c2",
+          "g5c3",
+          "g5c4"
+        ],
+        "comb-supply-demand": [
+          "g3c1",
+          "g3c2",
+          "g3c3",
+          "g3c0"
+        ],
+        "nonplanar-credit": [
+          "g2c1",
+          "g2c2",
+          "g2c3",
+          "g2c0"
+        ]
+      },
+      "tie_margins": [
+        {
+          "pair_key": "comb-supply-demand|g3c0|g3c2",
+          "signed_margin": -14.848626,
+          "abs_margin": 14.848626
+        },
+        {
+          "pair_key": "coupled-underinvestment|g1c2|g1c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "comb-supply-demand|g3c1|g3c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "comb-supply-demand|g3c2|g3c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "brand-flywheel|g4c1|g4c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c1|g5c2",
+          "signed_margin": -10.371414,
+          "abs_margin": 10.371414
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c2|g5c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        }
+      ],
+      "train_margin_abs_min": 0.02133
+    },
+    "M1s": {
+      "arm": "M1s",
+      "pooled": {
+        "correct": 3,
+        "n": 13,
+        "acc": 0.2308,
+        "ci95": [
+          0.2308,
+          0.0818,
+          0.5026
+        ]
+      },
+      "per_fold": [
+        {
+          "held_out_topology": "多环耦合",
+          "test_graphs": [
+            "coupled-underinvestment"
+          ],
+          "n_train_human": 10,
+          "n_train_synthetic": 30,
+          "train_acc_human": 0.8,
+          "test_acc": 1.0,
+          "n_test": 3,
+          "test_correct": 3
+        },
+        {
+          "held_out_topology": "嵌套环",
+          "test_graphs": [
+            "brand-flywheel",
+            "classic-cld-growth-and-burden"
+          ],
+          "n_train_human": 8,
+          "n_train_synthetic": 30,
+          "train_acc_human": 1.0,
+          "test_acc": 0.0,
+          "n_test": 5,
+          "test_correct": 0
+        },
+        {
+          "held_out_topology": "梳状",
+          "test_graphs": [
+            "comb-supply-demand"
+          ],
+          "n_train_human": 11,
+          "n_train_synthetic": 30,
+          "train_acc_human": 0.6364,
+          "test_acc": 0.0,
+          "n_test": 2,
+          "test_correct": 0
+        },
+        {
+          "held_out_topology": "非平面族",
+          "test_graphs": [
+            "nonplanar-credit"
+          ],
+          "n_train_human": 10,
+          "n_train_synthetic": 30,
+          "train_acc_human": 0.9,
+          "test_acc": 0.0,
+          "n_test": 3,
+          "test_correct": 0
+        }
+      ],
+      "rankings": {
+        "coupled-underinvestment": [
+          "g1c0",
+          "g1c1",
+          "g1c2",
+          "g1c3"
+        ],
+        "brand-flywheel": [
+          "g4c0",
+          "g4c1",
+          "g4c2",
+          "g4c3"
+        ],
+        "classic-cld-growth-and-burden": [
+          "g5c0",
+          "g5c1",
+          "g5c2",
+          "g5c3",
+          "g5c4"
+        ],
+        "comb-supply-demand": [
+          "g3c1",
+          "g3c2",
+          "g3c3",
+          "g3c0"
+        ],
+        "nonplanar-credit": [
+          "g2c1",
+          "g2c2",
+          "g2c3",
+          "g2c0"
+        ]
+      },
+      "tie_margins": [
+        {
+          "pair_key": "comb-supply-demand|g3c0|g3c2",
+          "signed_margin": 0.871536,
+          "abs_margin": 0.871536
+        },
+        {
+          "pair_key": "coupled-underinvestment|g1c2|g1c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "comb-supply-demand|g3c1|g3c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "comb-supply-demand|g3c2|g3c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "brand-flywheel|g4c1|g4c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c1|g5c2",
+          "signed_margin": 0.991306,
+          "abs_margin": 0.991306
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c2|g5c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        }
+      ],
+      "train_margin_abs_min": 0.0
+    },
+    "M2s": {
+      "arm": "M2s",
+      "pooled": {
+        "correct": 7,
+        "n": 13,
+        "acc": 0.5385,
+        "ci95": [
+          0.5385,
+          0.2914,
+          0.7679
+        ]
+      },
+      "per_fold": [
+        {
+          "held_out_topology": "多环耦合",
+          "test_graphs": [
+            "coupled-underinvestment"
+          ],
+          "n_train_human": 10,
+          "n_train_synthetic": 30,
+          "train_acc_human": 0.4,
+          "test_acc": 0.0,
+          "n_test": 3,
+          "test_correct": 0
+        },
+        {
+          "held_out_topology": "嵌套环",
+          "test_graphs": [
+            "brand-flywheel",
+            "classic-cld-growth-and-burden"
+          ],
+          "n_train_human": 8,
+          "n_train_synthetic": 30,
+          "train_acc_human": 0.375,
+          "test_acc": 0.8,
+          "n_test": 5,
+          "test_correct": 4
+        },
+        {
+          "held_out_topology": "梳状",
+          "test_graphs": [
+            "comb-supply-demand"
+          ],
+          "n_train_human": 11,
+          "n_train_synthetic": 30,
+          "train_acc_human": 0.3636,
+          "test_acc": 0.0,
+          "n_test": 2,
+          "test_correct": 0
+        },
+        {
+          "held_out_topology": "非平面族",
+          "test_graphs": [
+            "nonplanar-credit"
+          ],
+          "n_train_human": 10,
+          "n_train_synthetic": 30,
+          "train_acc_human": 0.5,
+          "test_acc": 1.0,
+          "n_test": 3,
+          "test_correct": 3
+        }
+      ],
+      "rankings": {
+        "coupled-underinvestment": [
+          "g1c1",
+          "g1c2",
+          "g1c3",
+          "g1c0"
+        ],
+        "brand-flywheel": [
+          "g4c1",
+          "g4c2",
+          "g4c3",
+          "g4c0"
+        ],
+        "classic-cld-growth-and-burden": [
+          "g5c2",
+          "g5c3",
+          "g5c4",
+          "g5c0",
+          "g5c1"
+        ],
+        "comb-supply-demand": [
+          "g3c1",
+          "g3c2",
+          "g3c3",
+          "g3c0"
+        ],
+        "nonplanar-credit": [
+          "g2c0",
+          "g2c1",
+          "g2c2",
+          "g2c3"
+        ]
+      },
+      "tie_margins": [
+        {
+          "pair_key": "comb-supply-demand|g3c0|g3c2",
+          "signed_margin": -52.900503,
+          "abs_margin": 52.900503
+        },
+        {
+          "pair_key": "coupled-underinvestment|g1c2|g1c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "comb-supply-demand|g3c1|g3c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "comb-supply-demand|g3c2|g3c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "brand-flywheel|g4c1|g4c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c1|g5c2",
+          "signed_margin": -54.12224,
+          "abs_margin": 54.12224
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c2|g5c3",
+          "signed_margin": 0.0,
+          "abs_margin": 0.0
+        }
+      ],
+      "train_margin_abs_min": 1.297709
+    }
+  },
+  "sanity_flip_leg": {
+    "definition": "training labels deterministically half-flipped (LCG seed 20261121); holdout pairs keep jacky's real labels; a healthy evaluator reads neither 0% nor 100% here",
+    "M1": {
+      "correct": 11,
+      "n": 13,
+      "acc": 0.8462,
+      "ci95": [
+        0.8462,
+        0.5777,
+        0.9567
+      ]
+    },
+    "M2": {
+      "correct": 6,
+      "n": 13,
+      "acc": 0.4615,
+      "ci95": [
+        0.4615,
+        0.2321,
+        0.7086
+      ]
+    }
+  },
+  "top1": {
+    "M0": {
+      "per_graph": {
+        "brand-flywheel": {
+          "jacky_top": null,
+          "model_top": "g4c0",
+          "match": null,
+          "note": "jacky plurality tie"
+        },
+        "classic-cld-growth-and-burden": {
+          "jacky_top": null,
+          "model_top": "g5c0",
+          "match": null,
+          "note": "jacky plurality tie"
+        },
+        "comb-supply-demand": {
+          "jacky_top": "g3c0",
+          "model_top": "g3c0",
+          "match": true
+        },
+        "coupled-underinvestment": {
+          "jacky_top": "g1c0",
+          "model_top": "g1c0",
+          "match": true
+        },
+        "nonplanar-credit": {
+          "jacky_top": "g2c0",
+          "model_top": "g2c0",
+          "match": true
+        }
+      },
+      "hits": 3,
+      "usable_graphs": 3,
+      "rate": 1.0
+    },
+    "M1": {
+      "per_graph": {
+        "brand-flywheel": {
+          "jacky_top": null,
+          "model_top": "g4c0",
+          "match": null,
+          "note": "jacky plurality tie"
+        },
+        "classic-cld-growth-and-burden": {
+          "jacky_top": null,
+          "model_top": "g5c0",
+          "match": null,
+          "note": "jacky plurality tie"
+        },
+        "comb-supply-demand": {
+          "jacky_top": "g3c0",
+          "model_top": "g3c0",
+          "match": true
+        },
+        "coupled-underinvestment": {
+          "jacky_top": "g1c0",
+          "model_top": "g1c0",
+          "match": true
+        },
+        "nonplanar-credit": {
+          "jacky_top": "g2c0",
+          "model_top": "g2c1",
+          "match": false
+        }
+      },
+      "hits": 2,
+      "usable_graphs": 3,
+      "rate": 0.6667
+    },
+    "M2": {
+      "per_graph": {
+        "brand-flywheel": {
+          "jacky_top": null,
+          "model_top": "g4c0",
+          "match": null,
+          "note": "jacky plurality tie"
+        },
+        "classic-cld-growth-and-burden": {
+          "jacky_top": null,
+          "model_top": "g5c0",
+          "match": null,
+          "note": "jacky plurality tie"
+        },
+        "comb-supply-demand": {
+          "jacky_top": "g3c0",
+          "model_top": "g3c1",
+          "match": false
+        },
+        "coupled-underinvestment": {
+          "jacky_top": "g1c0",
+          "model_top": "g1c1",
+          "match": false
+        },
+        "nonplanar-credit": {
+          "jacky_top": "g2c0",
+          "model_top": "g2c1",
+          "match": false
+        }
+      },
+      "hits": 0,
+      "usable_graphs": 3,
+      "rate": 0.0
+    },
+    "M1s": {
+      "per_graph": {
+        "brand-flywheel": {
+          "jacky_top": null,
+          "model_top": "g4c0",
+          "match": null,
+          "note": "jacky plurality tie"
+        },
+        "classic-cld-growth-and-burden": {
+          "jacky_top": null,
+          "model_top": "g5c0",
+          "match": null,
+          "note": "jacky plurality tie"
+        },
+        "comb-supply-demand": {
+          "jacky_top": "g3c0",
+          "model_top": "g3c1",
+          "match": false
+        },
+        "coupled-underinvestment": {
+          "jacky_top": "g1c0",
+          "model_top": "g1c0",
+          "match": true
+        },
+        "nonplanar-credit": {
+          "jacky_top": "g2c0",
+          "model_top": "g2c1",
+          "match": false
+        }
+      },
+      "hits": 1,
+      "usable_graphs": 3,
+      "rate": 0.3333
+    },
+    "M2s": {
+      "per_graph": {
+        "brand-flywheel": {
+          "jacky_top": null,
+          "model_top": "g4c1",
+          "match": null,
+          "note": "jacky plurality tie"
+        },
+        "classic-cld-growth-and-burden": {
+          "jacky_top": null,
+          "model_top": "g5c2",
+          "match": null,
+          "note": "jacky plurality tie"
+        },
+        "comb-supply-demand": {
+          "jacky_top": "g3c0",
+          "model_top": "g3c1",
+          "match": false
+        },
+        "coupled-underinvestment": {
+          "jacky_top": "g1c0",
+          "model_top": "g1c1",
+          "match": false
+        },
+        "nonplanar-credit": {
+          "jacky_top": "g2c0",
+          "model_top": "g2c0",
+          "match": true
+        }
+      },
+      "hits": 1,
+      "usable_graphs": 3,
+      "rate": 0.3333
+    }
+  },
+  "epsilon_analysis": {
+    "definition": "tie margin = model score difference (M0) or BT logit (M1/M2, full-data calibration model); epsilon0 = max |margin| over the 7 both-good pairs (conservative: below epsilon0 declare tie)",
+    "per_arm": {
+      "M0": {
+        "tie_abs_margins": [
+          52.4,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          58.6,
+          0.0
+        ],
+        "epsilon0": 58.6,
+        "train_decided_abs_margin_min": 0.0
+      },
+      "M1": {
+        "tie_abs_margins": [
+          1.10339,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.203222,
+          0.0
+        ],
+        "epsilon0": 1.203222,
+        "train_decided_abs_margin_min": 0.0
+      },
+      "M2": {
+        "tie_abs_margins": [
+          14.848626,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          10.371414,
+          0.0
+        ],
+        "epsilon0": 14.848626,
+        "train_decided_abs_margin_min": 0.02133
+      },
+      "M1s": {
+        "tie_abs_margins": [
+          0.871536,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.991306,
+          0.0
+        ],
+        "epsilon0": 0.991306,
+        "train_decided_abs_margin_min": 0.0
+      },
+      "M2s": {
+        "tie_abs_margins": [
+          52.900503,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          54.12224,
+          0.0
+        ],
+        "epsilon0": 54.12224,
+        "train_decided_abs_margin_min": 1.297709
+      }
+    }
+  },
+  "both_bad_pool_warning": [
+    {
+      "pair_key": "nonplanar-credit|g2c1|g2c3",
+      "graph": "nonplanar-credit",
+      "a": {
+        "cid": "g2c1",
+        "recipe": "draft",
+        "source": "archived-draft",
+        "grade": "uncertified"
+      },
+      "b": {
+        "cid": "g2c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "uncertified"
+      }
+    },
+    {
+      "pair_key": "coupled-underinvestment|g1c1|g1c3",
+      "graph": "coupled-underinvestment",
+      "a": {
+        "cid": "g1c1",
+        "recipe": "draft",
+        "source": "archived-draft",
+        "grade": "best"
+      },
+      "b": {
+        "cid": "g1c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "best"
+      }
+    },
+    {
+      "pair_key": "brand-flywheel|g4c2|g4c3",
+      "graph": "brand-flywheel",
+      "a": {
+        "cid": "g4c2",
+        "recipe": "auto",
+        "source": "fresh-cli",
+        "grade": "best"
+      },
+      "b": {
+        "cid": "g4c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "best"
+      }
+    },
+    {
+      "pair_key": "nonplanar-credit|g2c2|g2c3",
+      "graph": "nonplanar-credit",
+      "a": {
+        "cid": "g2c2",
+        "recipe": "auto",
+        "source": "fresh-cli",
+        "grade": "uncertified"
+      },
+      "b": {
+        "cid": "g2c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "uncertified"
+      }
+    },
+    {
+      "pair_key": "nonplanar-credit|g2c1|g2c3",
+      "graph": "nonplanar-credit",
+      "a": {
+        "cid": "g2c1",
+        "recipe": "draft",
+        "source": "archived-draft",
+        "grade": "uncertified"
+      },
+      "b": {
+        "cid": "g2c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "uncertified"
+      }
+    },
+    {
+      "pair_key": "brand-flywheel|g4c2|g4c3",
+      "graph": "brand-flywheel",
+      "a": {
+        "cid": "g4c2",
+        "recipe": "auto",
+        "source": "fresh-cli",
+        "grade": "best"
+      },
+      "b": {
+        "cid": "g4c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "best"
+      }
+    }
+  ],
+  "discriminator_non_regression": {
+    "readings_recomputed": {
+      "legacy_kept_set_reproduction": {
+        "ring": 1.0,
+        "hub": 1.0,
+        "global": 0.995833
+      },
+      "committed_kept_set_backfilled": {
+        "ring": 1.0,
+        "hub": 1.0,
+        "global": 0.997222
+      },
+      "backfilled_drop_nonloop_straight_rate": {
+        "ring": 0.986928,
+        "hub": 1.0,
+        "global": 0.981944
+      },
+      "backfilled_drop_both_format_artifacts": {
+        "ring": 0.947712,
+        "hub": 1.0,
+        "global": 0.886111
+      }
+    },
+    "committed_table": {
+      "legacy_kept_set_reproduction": {
+        "ring": 1.0,
+        "hub": 1.0,
+        "global": 0.995833
+      },
+      "committed_kept_set_backfilled": {
+        "ring": 1.0,
+        "hub": 1.0,
+        "global": 0.997222
+      },
+      "backfilled_drop_nonloop_straight_rate": {
+        "ring": 0.986928,
+        "hub": 1.0,
+        "global": 0.981944
+      },
+      "backfilled_drop_both_format_artifacts": {
+        "ring": 0.947712,
+        "hub": 1.0,
+        "global": 0.886111
+      }
+    },
+    "all_rows_match_committed": true,
+    "sha_pinned_unchanged": true,
+    "sha_pinned_files": [
+      "benchmarks/aesthetic/model-v2.json",
+      "benchmarks/aesthetic/model-v3-alpha.json",
+      "benchmarks/aesthetic/lasso-path-v3-alpha.json",
+      "benchmarks/aesthetic/calibration-report-v2.json",
+      "benchmarks/aesthetic/calibration-report-v3-beta.json",
+      "stdraw/aesthetic_score.py",
+      "stdraw/aesthetic_score_v3.py"
+    ],
+    "caliber_note": "the operating instruction's 'ring 0.987' corresponds to the drop-nonloop_straight_rate ABLATION row (0.986928); the committed kept set on the backfilled path reads ring 1.0 / hub 1.0. All four committed rows reproduced exactly after preference training; preference training touches no pointwise artifact (sha256 pinned before/after)"
+  },
+  "bt_weights_full_data": {
+    "M1": {
+      "feature_names": [
+        "avg_edge_length",
+        "bend_total_curvature",
+        "crossing_count",
+        "alignment_max_coverage"
+      ],
+      "weights": {
+        "avg_edge_length": 0.64565,
+        "bend_total_curvature": -0.603799,
+        "crossing_count": -0.64565,
+        "alignment_max_coverage": 0.619097
+      },
+      "bias": 0.0,
+      "note": "full-data calibration model (not the LOSO models); dominant weights disclosed so a perfect reading can be traced to its features (e.g. crossing_count)"
+    },
+    "M2": {
+      "feature_names": [
+        "anchor_orient_dev_mean",
+        "avg_edge_length",
+        "bend_total_curvature",
+        "hub_degree",
+        "mirror_axis_err",
+        "nonloop_straight_rate",
+        "symmetry_axis_err_px",
+        "alignment_max_coverage",
+        "alignment_max_coverage_tight"
+      ],
+      "weights": {
+        "anchor_orient_dev_mean": -3.736333,
+        "avg_edge_length": 0.328299,
+        "bend_total_curvature": 1.59623,
+        "hub_degree": 0.0,
+        "mirror_axis_err": -0.806636,
+        "nonloop_straight_rate": -2.473388,
+        "symmetry_axis_err_px": -0.806636,
+        "alignment_max_coverage": -2.944845,
+        "alignment_max_coverage_tight": -3.214268
+      },
+      "bias": 0.0,
+      "note": "full-data calibration model (not the LOSO models); dominant weights disclosed so a perfect reading can be traced to its features (e.g. crossing_count)"
+    },
+    "M1s": {
+      "feature_names": [
+        "avg_edge_length",
+        "bend_total_curvature",
+        "crossing_count",
+        "alignment_max_coverage"
+      ],
+      "weights": {
+        "avg_edge_length": 0.18013,
+        "bend_total_curvature": -0.353697,
+        "crossing_count": -1.606185,
+        "alignment_max_coverage": 0.274135
+      },
+      "bias": 0.0,
+      "note": "full-data calibration model (not the LOSO models); dominant weights disclosed so a perfect reading can be traced to its features (e.g. crossing_count)"
+    },
+    "M2s": {
+      "feature_names": [
+        "anchor_orient_dev_mean",
+        "avg_edge_length",
+        "bend_total_curvature",
+        "hub_degree",
+        "mirror_axis_err",
+        "nonloop_straight_rate",
+        "symmetry_axis_err_px",
+        "alignment_max_coverage",
+        "alignment_max_coverage_tight"
+      ],
+      "weights": {
+        "anchor_orient_dev_mean": -6.795293,
+        "avg_edge_length": -8.758549,
+        "bend_total_curvature": 2.903073,
+        "hub_degree": 0.0,
+        "mirror_axis_err": -8.43946,
+        "nonloop_straight_rate": -4.498366,
+        "symmetry_axis_err_px": -8.43946,
+        "alignment_max_coverage": -6.729123,
+        "alignment_max_coverage_tight": -7.878353
+      },
+      "bias": 0.0,
+      "note": "full-data calibration model (not the LOSO models); dominant weights disclosed so a perfect reading can be traced to its features (e.g. crossing_count)"
+    }
+  },
+  "train_holdout_gap": {
+    "M1": {
+      "mean_train_acc": 0.8546,
+      "pooled_test_acc": 0.3846,
+      "gap_pp": 47.0
+    },
+    "M2": {
+      "mean_train_acc": 0.6136,
+      "pooled_test_acc": 0.0,
+      "gap_pp": 61.4
+    },
+    "M1s": {
+      "mean_train_acc": 0.8341,
+      "pooled_test_acc": 0.2308,
+      "gap_pp": 60.3
+    },
+    "M2s": {
+      "mean_train_acc": 0.4097,
+      "pooled_test_acc": 0.5385,
+      "gap_pp": -12.9
+    }
+  },
+  "noise_baseline_comparison": {
+    "M0": {
+      "acc": 0.6154,
+      "above_noise_baseline": false
+    },
+    "M1": {
+      "acc": 0.3846,
+      "above_noise_baseline": false
+    },
+    "M2": {
+      "acc": 0.0,
+      "above_noise_baseline": false
+    },
+    "M1s": {
+      "acc": 0.2308,
+      "above_noise_baseline": false
+    },
+    "M2s": {
+      "acc": 0.5385,
+      "above_noise_baseline": false
+    }
+  }
+}
