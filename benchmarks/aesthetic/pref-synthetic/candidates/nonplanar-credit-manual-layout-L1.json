@@ -1,0 +1,105 @@
+{
+  "edges": [
+    {
+      "a": "ms",
+      "b": "ir"
+    },
+    {
+      "a": "ms",
+      "b": "credit"
+    },
+    {
+      "a": "ms",
+      "b": "val"
+    },
+    {
+      "a": "ms",
+      "b": "trans"
+    },
+    {
+      "a": "trans",
+      "b": "inv"
+    },
+    {
+      "a": "credit",
+      "b": "lever"
+    },
+    {
+      "a": "lever",
+      "b": "val"
+    },
+    {
+      "a": "credit",
+      "b": "inv"
+    },
+    {
+      "a": "credit",
+      "b": "ir"
+    },
+    {
+      "a": "ir",
+      "b": "val"
+    },
+    {
+      "a": "ir",
+      "b": "fund"
+    },
+    {
+      "a": "fund",
+      "b": "inv"
+    },
+    {
+      "a": "val",
+      "b": "wealth"
+    },
+    {
+      "a": "wealth",
+      "b": "inv"
+    }
+  ],
+  "graph": "nonplanar-credit",
+  "nodes": {
+    "credit": {
+      "x": 440,
+      "y": 344
+    },
+    "fund": {
+      "x": 219,
+      "y": 417
+    },
+    "inv": {
+      "x": 311,
+      "y": 489
+    },
+    "ir": {
+      "x": 125,
+      "y": 340
+    },
+    "lever": {
+      "x": 353,
+      "y": 172
+    },
+    "ms": {
+      "x": 47,
+      "y": 72
+    },
+    "trans": {
+      "x": 57,
+      "y": 493
+    },
+    "val": {
+      "x": 196,
+      "y": 178
+    },
+    "wealth": {
+      "x": 305,
+      "y": 270
+    }
+  },
+  "viewBox": [
+    0,
+    0,
+    488,
+    560
+  ]
+}

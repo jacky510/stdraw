@@ -1,0 +1,81 @@
+{
+  "edges": [
+    {
+      "a": "wage",
+      "b": "cost"
+    },
+    {
+      "a": "cost",
+      "b": "cpi"
+    },
+    {
+      "a": "cpi",
+      "b": "living"
+    },
+    {
+      "a": "living",
+      "b": "wage"
+    },
+    {
+      "a": "wage",
+      "b": "buying"
+    },
+    {
+      "a": "buying",
+      "b": "sales"
+    },
+    {
+      "a": "profit",
+      "b": "raise"
+    },
+    {
+      "a": "raise",
+      "b": "wage"
+    },
+    {
+      "a": "sales",
+      "b": "profit"
+    }
+  ],
+  "graph": "bowtie-wage-price",
+  "nodes": {
+    "buying": {
+      "x": 545,
+      "y": 378
+    },
+    "cost": {
+      "x": 529,
+      "y": 161
+    },
+    "cpi": {
+      "x": 387,
+      "y": 65
+    },
+    "living": {
+      "x": 235,
+      "y": 160
+    },
+    "profit": {
+      "x": 303,
+      "y": 523
+    },
+    "raise": {
+      "x": 226,
+      "y": 387
+    },
+    "sales": {
+      "x": 464,
+      "y": 520
+    },
+    "wage": {
+      "x": 374,
+      "y": 270
+    }
+  },
+  "viewBox": [
+    0,
+    0,
+    720,
+    624
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "candidates": {
+    "g1c0": {
+      "crossings": 0,
+      "gap": 58.0,
+      "grade": "best",
+      "graph": "coupled-underinvestment",
+      "recipe": "manual",
+      "source": "human"
+    },
+    "g1c1": {
+      "crossings": 0,
+      "gap": 57.3,
+      "grade": "best",
+      "graph": "coupled-underinvestment",
+      "recipe": "draft",
+      "source": "archived-draft"
+    },
+    "g1c2": {
+      "crossings": 0,
+      "gap": 57.3,
+      "grade": "best",
+      "graph": "coupled-underinvestment",
+      "recipe": "auto",
+      "source": "fresh-cli"
+    },
+    "g1c3": {
+      "crossings": 0,
+      "gap": 57.3,
+      "grade": "best",
+      "graph": "coupled-underinvestment",
+      "recipe": "auto-arc",
+      "source": "fresh-cli"
+    },
+    "g2c0": {
+      "crossings": 2,
+      "gap": 30.0,
+      "grade": "second",
+      "graph": "nonplanar-credit",
+      "recipe": "manual",
+      "source": "human"
+    },
+    "g2c1": {
+      "crossings": 3,
+      "gap": 36.0,
+      "grade": "uncertified",
+      "graph": "nonplanar-credit",
+      "recipe": "draft",
+      "source": "archived-draft"
+    },
+    "g2c2": {
+      "crossings": 3,
+      "gap": 36.0,
+      "grade": "uncertified",
+      "graph": "nonplanar-credit",
+      "recipe": "auto",
+      "source": "fresh-cli"
+    },
+    "g2c3": {
+      "crossings": 3,
+      "gap": 36.0,
+      "grade": "uncertified",
+      "graph": "nonplanar-credit",
+      "recipe": "auto-arc",
+      "source": "fresh-cli"
+    },
+    "g3c0": {
+      "crossings": 0,
+      "gap": 30.0,
+      "grade": "uncertified",
+      "graph": "comb-supply-demand",
+      "recipe": "manual",
+      "source": "human"
+    },
+    "g3c1": {
+      "crossings": 0,
+      "gap": 36.0,
+      "grade": "uncertified",
+      "graph": "comb-supply-demand",
+      "recipe": "draft",
+      "source": "archived-draft"
+    },
+    "g3c2": {
+      "crossings": 0,
+      "gap": 36.0,
+      "grade": "uncertified",
+      "graph": "comb-supply-demand",
+      "recipe": "auto",
+      "source": "fresh-cli"
+    },
+    "g3c3": {
+      "crossings": 0,
+      "gap": 36.0,
+      "grade": "uncertified",
+      "graph": "comb-supply-demand",
+      "recipe": "auto-arc",
+      "source": "fresh-cli"
+    },
+    "g4c0": {
+      "crossings": 0,
+      "gap": 66.8,
+      "grade": "best",
+      "graph": "brand-flywheel",
+      "recipe": "manual",
+      "source": "human"
+    },
+    "g4c1": {
+      "crossings": 0,
+      "gap": 56.6,
+      "grade": "best",
+      "graph": "brand-flywheel",
+      "recipe": "archived",
+      "source": "archived-engine"
+    },
+    "g4c2": {
+      "crossings": 0,
+      "gap": 56.6,
+      "grade": "best",
+      "graph": "brand-flywheel",
+      "recipe": "auto",
+      "source": "fresh-cli"
+    },
+    "g4c3": {
+      "crossings": 0,
+      "gap": 56.6,
+      "grade": "best",
+      "graph": "brand-flywheel",
+      "recipe": "auto-arc",
+      "source": "fresh-cli"
+    },
+    "g5c0": {
+      "crossings": 0,
+      "gap": 67.4,
+      "grade": "best",
+      "graph": "classic-cld-growth-and-burden",
+      "recipe": "manual",
+      "source": "human"
+    },
+    "g5c1": {
+      "crossings": 0,
+      "gap": 42.0,
+      "grade": "best",
+      "graph": "classic-cld-growth-and-burden",
+      "recipe": "manual",
+      "source": "human"
+    },
+    "g5c2": {
+      "crossings": 0,
+      "gap": 35.0,
+      "grade": "best",
+      "graph": "classic-cld-growth-and-burden",
+      "recipe": "archived",
+      "source": "archived-engine"
+    },
+    "g5c3": {
+      "crossings": 0,
+      "gap": 35.0,
+      "grade": "best",
+      "graph": "classic-cld-growth-and-burden",
+      "recipe": "auto",
+      "source": "fresh-cli"
+    },
+    "g5c4": {
+      "crossings": 0,
+      "gap": 35.0,
+      "grade": "best",
+      "graph": "classic-cld-growth-and-burden",
+      "recipe": "auto-arc",
+      "source": "fresh-cli"
+    }
+  },
+  "note": "SOURCE LABELS — never render into the viewer page; blinding depends on this separation",
+  "schema": "stdraw.pairwise.candidates/1"
+}

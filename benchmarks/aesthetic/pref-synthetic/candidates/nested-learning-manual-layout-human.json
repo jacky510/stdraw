@@ -1,0 +1,81 @@
+{
+  "edges": [
+    {
+      "a": "lrn",
+      "b": "skill"
+    },
+    {
+      "a": "skill",
+      "b": "perf"
+    },
+    {
+      "a": "perf",
+      "b": "motive"
+    },
+    {
+      "a": "motive",
+      "b": "lrn"
+    },
+    {
+      "a": "perf",
+      "b": "share"
+    },
+    {
+      "a": "share",
+      "b": "orgcap"
+    },
+    {
+      "a": "orgcap",
+      "b": "result"
+    },
+    {
+      "a": "result",
+      "b": "budget"
+    },
+    {
+      "a": "budget",
+      "b": "lrn"
+    }
+  ],
+  "graph": "nested-learning",
+  "nodes": {
+    "budget": {
+      "x": 468,
+      "y": 210
+    },
+    "lrn": {
+      "x": 443,
+      "y": 329
+    },
+    "motive": {
+      "x": 287,
+      "y": 266
+    },
+    "orgcap": {
+      "x": 194,
+      "y": 89
+    },
+    "perf": {
+      "x": 137,
+      "y": 336
+    },
+    "result": {
+      "x": 373,
+      "y": 88
+    },
+    "share": {
+      "x": 89,
+      "y": 214
+    },
+    "skill": {
+      "x": 291,
+      "y": 407
+    }
+  },
+  "viewBox": [
+    0,
+    0,
+    568,
+    504
+  ]
+}
