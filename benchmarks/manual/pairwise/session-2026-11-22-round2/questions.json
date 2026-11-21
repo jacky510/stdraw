@@ -1,0 +1,190 @@
+{
+  "schema": "stdraw.pairwise.questions/1",
+  "session": "2026-11-22-round2",
+  "lcg_seed": 20261122,
+  "model_version": "aesthetic-v2",
+  "n_new": 17,
+  "n_retest": 3,
+  "questions": [
+    {
+      "qid": "q01",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c0",
+      "candidate_b": "g5c2",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "classic-cld-growth-and-burden|g5c0|g5c2"
+    },
+    {
+      "qid": "q02",
+      "graph": "brand-flywheel",
+      "candidate_a": "g4c0",
+      "candidate_b": "brand-flywheel-manual-layout-L4",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c0"
+    },
+    {
+      "qid": "q03",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c0",
+      "candidate_b": "g5c3",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3"
+    },
+    {
+      "qid": "q04",
+      "graph": "brand-flywheel",
+      "candidate_a": "g4c2",
+      "candidate_b": "brand-flywheel-manual-layout-L4",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c2"
+    },
+    {
+      "qid": "q05",
+      "graph": "nonplanar-credit",
+      "candidate_a": "g2c0",
+      "candidate_b": "nonplanar-credit-manual-layout-L4",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "nonplanar-credit|g2c0|nonplanar-credit-manual-layout-L4"
+    },
+    {
+      "qid": "q06",
+      "graph": "comb-supply-demand",
+      "candidate_a": "g3c0",
+      "candidate_b": "comb-supply-demand-manual-layout-L4",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c0"
+    },
+    {
+      "qid": "q07",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c0",
+      "candidate_b": "classic-cld-manual-layout-L2",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "classic-cld-growth-and-burden|classic-cld-manual-layout-L2|g5c0"
+    },
+    {
+      "qid": "q08",
+      "graph": "nonplanar-credit",
+      "candidate_a": "g2c3",
+      "candidate_b": "nonplanar-credit-manual-layout-L4",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "nonplanar-credit|g2c3|nonplanar-credit-manual-layout-L4"
+    },
+    {
+      "qid": "q09",
+      "graph": "coupled-underinvestment",
+      "candidate_a": "g1c1",
+      "candidate_b": "coupled-underinvestment-manual-layout-L2",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c1"
+    },
+    {
+      "qid": "q10",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c1",
+      "candidate_b": "g5c4",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "classic-cld-growth-and-burden|g5c1|g5c4"
+    },
+    {
+      "qid": "q11",
+      "graph": "nonplanar-credit",
+      "candidate_a": "g2c1",
+      "candidate_b": "nonplanar-credit-manual-layout-L4",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "nonplanar-credit|g2c1|nonplanar-credit-manual-layout-L4"
+    },
+    {
+      "qid": "q12",
+      "graph": "brand-flywheel",
+      "candidate_a": "g4c3",
+      "candidate_b": "brand-flywheel-manual-layout-L4",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c3"
+    },
+    {
+      "qid": "q13",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c1",
+      "candidate_b": "g5c3",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "classic-cld-growth-and-burden|g5c1|g5c3"
+    },
+    {
+      "qid": "q14",
+      "graph": "comb-supply-demand",
+      "candidate_a": "g3c1",
+      "candidate_b": "comb-supply-demand-manual-layout-L4",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c1"
+    },
+    {
+      "qid": "q15",
+      "graph": "brand-flywheel",
+      "candidate_a": "g4c1",
+      "candidate_b": "brand-flywheel-manual-layout-L4",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c1"
+    },
+    {
+      "qid": "q16",
+      "graph": "comb-supply-demand",
+      "candidate_a": "g3c0",
+      "candidate_b": "g3c2",
+      "left_is_a": true,
+      "is_retest": true,
+      "pair_key": "comb-supply-demand|g3c0|g3c2"
+    },
+    {
+      "qid": "q17",
+      "graph": "nonplanar-credit",
+      "candidate_a": "g2c2",
+      "candidate_b": "nonplanar-credit-manual-layout-L4",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "nonplanar-credit|g2c2|nonplanar-credit-manual-layout-L4"
+    },
+    {
+      "qid": "q18",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c1",
+      "candidate_b": "g5c2",
+      "left_is_a": true,
+      "is_retest": true,
+      "pair_key": "classic-cld-growth-and-burden|g5c1|g5c2"
+    },
+    {
+      "qid": "q19",
+      "graph": "coupled-underinvestment",
+      "candidate_a": "g1c0",
+      "candidate_b": "coupled-underinvestment-manual-layout-L2",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c0"
+    },
+    {
+      "qid": "q20",
+      "graph": "brand-flywheel",
+      "candidate_a": "g4c1",
+      "candidate_b": "g4c3",
+      "left_is_a": true,
+      "is_retest": true,
+      "pair_key": "brand-flywheel|g4c1|g4c3"
+    }
+  ]
+}
