@@ -99,7 +99,15 @@ def ihash(s):
 
 # ── corpus loading: byte-identical caliber to calibrate_v2.main ───────────
 
-def load_corpus():
+def load_corpus(merge_backfill=False):
+    """Load positives (edge-completed) + negatives + engine layouts.
+
+    ``merge_backfill`` (v3-beta MAJOR-3 root fix): when True, positives are
+    merged with loop metadata completion (``merge_layout_edges`` default
+    caliber).  Default False keeps the committed diagnosis-card / v3-alpha
+    caliber byte-reproducible (legacy minimal merge) — the v3-beta driver
+    opts in explicitly for both calibers.
+    """
     labels = load_family_labels(str(FAMILY_MAP))
     neg_docs, engine_by_graph = [], {}
     for p in collect(NEGATIVE_DIR):
@@ -128,7 +136,7 @@ def load_corpus():
             doc = dict(doc)
             doc["graph"] = g
             eng = engine_by_graph.get(g) or source_docs.get(g)
-            doc = merge_layout_edges(doc, eng)
+            doc = merge_layout_edges(doc, eng, backfill_loop_meta=merge_backfill)
             pos_docs.append((str(p), doc))
     return labels, pos_docs, neg_docs, engine_by_graph, source_docs
 
