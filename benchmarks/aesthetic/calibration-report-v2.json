@@ -1,0 +1,4319 @@
+{
+  "anchor_sources": {
+    "batch2_drafts_exclusion": "engine-certified drafts under benchmarks/manual/jacky-batch2/{drafts/**,*-draft.json} are ENGINE artifacts, not human anchors — excluded by an explicit path filter (collect_positive_files)",
+    "completeness_check": [
+      {
+        "complete": true,
+        "file": "brand-flywheel-manual-layout.json",
+        "graph": "brand-flywheel",
+        "manual_edges": 6,
+        "reference_edges": 8,
+        "total_edges": 8
+      },
+      {
+        "complete": true,
+        "file": "classic-cld-manual-layout.json",
+        "graph": "classic-cld-growth-and-burden",
+        "manual_edges": 0,
+        "reference_edges": 13,
+        "total_edges": 13
+      },
+      {
+        "complete": true,
+        "file": "fan-d12-manual-layout.json",
+        "graph": "fan-d12",
+        "manual_edges": 11,
+        "reference_edges": 12,
+        "total_edges": 12
+      },
+      {
+        "complete": true,
+        "file": "fan-d17-manual-layout.json",
+        "graph": "fan-d17",
+        "manual_edges": 17,
+        "reference_edges": 17,
+        "total_edges": 17
+      },
+      {
+        "complete": true,
+        "file": "bowtie-wage-price-manual-layout.json",
+        "graph": "bowtie-wage-price",
+        "manual_edges": 8,
+        "reference_edges": 9,
+        "total_edges": 9
+      },
+      {
+        "complete": true,
+        "file": "comb-supply-demand-manual-layout.json",
+        "graph": "comb-supply-demand",
+        "manual_edges": 4,
+        "reference_edges": 9,
+        "total_edges": 9
+      },
+      {
+        "complete": true,
+        "file": "coupled-underinvestment-manual-layout.json",
+        "graph": "coupled-underinvestment",
+        "manual_edges": 6,
+        "reference_edges": 12,
+        "total_edges": 12
+      },
+      {
+        "complete": true,
+        "file": "nested-capacity-manual-layout.json",
+        "graph": "nested-capacity",
+        "manual_edges": 2,
+        "reference_edges": 9,
+        "total_edges": 9
+      },
+      {
+        "complete": true,
+        "file": "nested-learning-manual-layout.json",
+        "graph": "nested-learning",
+        "manual_edges": 4,
+        "reference_edges": 9,
+        "total_edges": 9
+      },
+      {
+        "complete": true,
+        "file": "nonplanar-credit-manual-layout.json",
+        "graph": "nonplanar-credit",
+        "manual_edges": 9,
+        "reference_edges": 14,
+        "total_edges": 14
+      },
+      {
+        "complete": true,
+        "file": "nonplanar-inventory-manual-layout.json",
+        "graph": "nonplanar-inventory",
+        "manual_edges": 12,
+        "reference_edges": 12,
+        "total_edges": 12
+      },
+      {
+        "complete": true,
+        "file": "retest-classic-cld-manual-layout.json",
+        "graph": "classic-cld-growth-and-burden",
+        "manual_edges": 0,
+        "reference_edges": 13,
+        "total_edges": 13
+      },
+      {
+        "complete": true,
+        "file": "random-n10-i00-manual-layout.json",
+        "graph": "random-n10-i00",
+        "manual_edges": 13,
+        "reference_edges": 16,
+        "total_edges": 16
+      },
+      {
+        "complete": true,
+        "file": "random-n10-i05-manual-layout.json",
+        "graph": "random-n10-i05",
+        "manual_edges": 11,
+        "reference_edges": 16,
+        "total_edges": 16
+      },
+      {
+        "complete": true,
+        "file": "i05.json",
+        "graph": "random-n10-i05",
+        "manual_edges": 9,
+        "reference_edges": 16,
+        "total_edges": 16
+      },
+      {
+        "complete": true,
+        "file": "i11-a.json",
+        "graph": "random-n10-i11",
+        "manual_edges": 12,
+        "reference_edges": 16,
+        "total_edges": 16
+      },
+      {
+        "complete": true,
+        "file": "i11-b.json",
+        "graph": "random-n10-i11",
+        "manual_edges": 14,
+        "reference_edges": 16,
+        "total_edges": 16
+      },
+      {
+        "complete": true,
+        "file": "epidemic-feedback-manual-layout.json",
+        "graph": "epidemic-feedback",
+        "manual_edges": 14,
+        "reference_edges": 14,
+        "total_edges": 14
+      }
+    ],
+    "edge_set_caliber": "anchor edge sets completed from the graph source BEFORE any feature is measured (manual 'Export layout' JSONs carry only the edges the user touched).  Completion source: negatives engine layout when the negatives library carries the graph, else the batch-2 graph source (.cld) parsed via stdraw.dsl — same minimal {'a','b'} append semantics (untouched edge = straight line between card centres).  Per-anchor completeness is asserted (completeness_check) and logged (edge_supplement_log)",
+    "edge_supplement_log": [
+      {
+        "graph": "brand-flywheel",
+        "manual_edges": 6,
+        "path": "benchmarks/manual/brand-flywheel-manual-layout.json",
+        "source": "engine layout",
+        "supplemented": 2,
+        "total_edges": 8
+      },
+      {
+        "graph": "classic-cld-growth-and-burden",
+        "manual_edges": 0,
+        "path": "benchmarks/manual/classic-cld-manual-layout.json",
+        "source": "engine layout",
+        "supplemented": 13,
+        "total_edges": 13
+      },
+      {
+        "graph": "fan-d12",
+        "manual_edges": 11,
+        "path": "benchmarks/manual/fan-d12-manual-layout.json",
+        "source": "engine layout",
+        "supplemented": 1,
+        "total_edges": 12
+      },
+      {
+        "graph": "fan-d17",
+        "manual_edges": 17,
+        "path": "benchmarks/manual/fan-d17-manual-layout.json",
+        "source": "none needed",
+        "supplemented": 0,
+        "total_edges": 17
+      },
+      {
+        "graph": "bowtie-wage-price",
+        "manual_edges": 8,
+        "path": "benchmarks/manual/jacky-batch2/exports/bowtie-wage-price-manual-layout.json",
+        "source": "graph source (batch-2 .cld)",
+        "supplemented": 1,
+        "total_edges": 9
+      },
+      {
+        "graph": "comb-supply-demand",
+        "manual_edges": 4,
+        "path": "benchmarks/manual/jacky-batch2/exports/comb-supply-demand-manual-layout.json",
+        "source": "graph source (batch-2 .cld)",
+        "supplemented": 5,
+        "total_edges": 9
+      },
+      {
+        "graph": "coupled-underinvestment",
+        "manual_edges": 6,
+        "path": "benchmarks/manual/jacky-batch2/exports/coupled-underinvestment-manual-layout.json",
+        "source": "graph source (batch-2 .cld)",
+        "supplemented": 6,
+        "total_edges": 12
+      },
+      {
+        "graph": "nested-capacity",
+        "manual_edges": 2,
+        "path": "benchmarks/manual/jacky-batch2/exports/nested-capacity-manual-layout.json",
+        "source": "graph source (batch-2 .cld)",
+        "supplemented": 7,
+        "total_edges": 9
+      },
+      {
+        "graph": "nested-learning",
+        "manual_edges": 4,
+        "path": "benchmarks/manual/jacky-batch2/exports/nested-learning-manual-layout.json",
+        "source": "graph source (batch-2 .cld)",
+        "supplemented": 5,
+        "total_edges": 9
+      },
+      {
+        "graph": "nonplanar-credit",
+        "manual_edges": 9,
+        "path": "benchmarks/manual/jacky-batch2/exports/nonplanar-credit-manual-layout.json",
+        "source": "graph source (batch-2 .cld)",
+        "supplemented": 5,
+        "total_edges": 14
+      },
+      {
+        "graph": "nonplanar-inventory",
+        "manual_edges": 12,
+        "path": "benchmarks/manual/jacky-batch2/exports/nonplanar-inventory-manual-layout.json",
+        "source": "none needed",
+        "supplemented": 0,
+        "total_edges": 12
+      },
+      {
+        "graph": "classic-cld-growth-and-burden",
+        "manual_edges": 0,
+        "path": "benchmarks/manual/jacky-batch2/exports/retest-classic-cld-manual-layout.json",
+        "source": "engine layout",
+        "supplemented": 13,
+        "total_edges": 13
+      },
+      {
+        "graph": "random-n10-i00",
+        "manual_edges": 13,
+        "path": "benchmarks/manual/random-n10-i00-manual-layout.json",
+        "source": "engine layout",
+        "supplemented": 3,
+        "total_edges": 16
+      },
+      {
+        "graph": "random-n10-i05",
+        "manual_edges": 11,
+        "path": "benchmarks/manual/random-n10-i05-manual-layout.json",
+        "source": "engine layout",
+        "supplemented": 5,
+        "total_edges": 16
+      },
+      {
+        "graph": "random-n10-i05",
+        "manual_edges": 9,
+        "path": "benchmarks/manual/user-2026-11-20/i05.json",
+        "source": "engine layout",
+        "supplemented": 7,
+        "total_edges": 16
+      },
+      {
+        "graph": "random-n10-i11",
+        "manual_edges": 12,
+        "path": "benchmarks/manual/user-2026-11-20/i11-a.json",
+        "source": "engine layout",
+        "supplemented": 4,
+        "total_edges": 16
+      },
+      {
+        "graph": "random-n10-i11",
+        "manual_edges": 14,
+        "path": "benchmarks/manual/user-2026-11-20/i11-b.json",
+        "source": "engine layout",
+        "supplemented": 2,
+        "total_edges": 16
+      },
+      {
+        "graph": "epidemic-feedback",
+        "manual_edges": 14,
+        "path": "tests/data/epidemic-feedback-manual-layout.json",
+        "source": "none needed",
+        "supplemented": 0,
+        "total_edges": 14
+      }
+    ],
+    "graph_alias": {
+      "retest-classic-cld": "classic-cld-growth-and-burden"
+    },
+    "load_failures": [],
+    "n_negatives": 40,
+    "negatives_read_only": true,
+    "positives": [
+      "benchmarks/manual/brand-flywheel-manual-layout.json",
+      "benchmarks/manual/classic-cld-manual-layout.json",
+      "benchmarks/manual/fan-d12-manual-layout.json",
+      "benchmarks/manual/fan-d17-manual-layout.json",
+      "benchmarks/manual/jacky-batch2/exports/bowtie-wage-price-manual-layout.json",
+      "benchmarks/manual/jacky-batch2/exports/comb-supply-demand-manual-layout.json",
+      "benchmarks/manual/jacky-batch2/exports/coupled-underinvestment-manual-layout.json",
+      "benchmarks/manual/jacky-batch2/exports/nested-capacity-manual-layout.json",
+      "benchmarks/manual/jacky-batch2/exports/nested-learning-manual-layout.json",
+      "benchmarks/manual/jacky-batch2/exports/nonplanar-credit-manual-layout.json",
+      "benchmarks/manual/jacky-batch2/exports/nonplanar-inventory-manual-layout.json",
+      "benchmarks/manual/jacky-batch2/exports/retest-classic-cld-manual-layout.json",
+      "benchmarks/manual/random-n10-i00-manual-layout.json",
+      "benchmarks/manual/random-n10-i05-manual-layout.json",
+      "benchmarks/manual/user-2026-11-20/i05.json",
+      "benchmarks/manual/user-2026-11-20/i11-a.json",
+      "benchmarks/manual/user-2026-11-20/i11-b.json",
+      "tests/data/epidemic-feedback-manual-layout.json"
+    ]
+  },
+  "batch2_family_separation": {
+    "多环耦合": {
+      "anchors_routed": [
+        "coupled-underinvestment-manual-layout.json (hub, 81.3)"
+      ],
+      "batch2_anchor_scores": [
+        "coupled-underinvestment-manual-layout.json (hub, 81.3)"
+      ],
+      "batch2_positive_min": 81.3,
+      "family_min_anchor_estimate": null,
+      "family_positive_min": 81.3,
+      "routed_shapes": [
+        "hub"
+      ],
+      "same_classic_family_negative_max": 26.6,
+      "separated": true,
+      "separated_batch2_only": true,
+      "shape_negative_max": 79.3
+    },
+    "嵌套环": {
+      "anchors_routed": [
+        "brand-flywheel-manual-layout.json (hub, 81.3)",
+        "classic-cld-manual-layout.json (hub, 81.3)",
+        "nested-capacity-manual-layout.json (ring, 84.1)",
+        "nested-learning-manual-layout.json (ring, 83.3)"
+      ],
+      "batch2_anchor_scores": [
+        "nested-capacity-manual-layout.json (ring, 84.1)",
+        "nested-learning-manual-layout.json (ring, 83.3)"
+      ],
+      "batch2_positive_min": 83.3,
+      "family_min_anchor_estimate": null,
+      "family_positive_min": 81.3,
+      "routed_shapes": [
+        "hub",
+        "ring"
+      ],
+      "same_classic_family_negative_max": 79.3,
+      "separated": true,
+      "separated_batch2_only": true,
+      "shape_negative_max": 79.3
+    },
+    "梳状": {
+      "anchors_routed": [
+        "comb-supply-demand-manual-layout.json (hub, 81.3)"
+      ],
+      "batch2_anchor_scores": [
+        "comb-supply-demand-manual-layout.json (hub, 81.3)"
+      ],
+      "batch2_positive_min": 81.3,
+      "family_min_anchor_estimate": null,
+      "family_positive_min": 81.3,
+      "routed_shapes": [
+        "hub"
+      ],
+      "same_classic_family_negative_max": null,
+      "separated": true,
+      "separated_batch2_only": true,
+      "shape_negative_max": 79.3
+    },
+    "非平面族": {
+      "anchors_routed": [
+        "nonplanar-credit-manual-layout.json (hub, 81.3)",
+        "nonplanar-inventory-manual-layout.json (ring, 97.8)"
+      ],
+      "batch2_anchor_scores": [
+        "nonplanar-credit-manual-layout.json (hub, 81.3)",
+        "nonplanar-inventory-manual-layout.json (ring, 97.8)"
+      ],
+      "batch2_positive_min": 81.3,
+      "family_min_anchor_estimate": null,
+      "family_positive_min": 81.3,
+      "routed_shapes": [
+        "hub",
+        "ring"
+      ],
+      "same_classic_family_negative_max": null,
+      "separated": true,
+      "separated_batch2_only": true,
+      "shape_negative_max": 79.3
+    },
+    "领结": {
+      "anchors_routed": [
+        "bowtie-wage-price-manual-layout.json (ring, 88.6)"
+      ],
+      "batch2_anchor_scores": [
+        "bowtie-wage-price-manual-layout.json (ring, 88.6)"
+      ],
+      "batch2_positive_min": 88.6,
+      "family_min_anchor_estimate": null,
+      "family_positive_min": 88.6,
+      "routed_shapes": [
+        "ring"
+      ],
+      "same_classic_family_negative_max": null,
+      "separated": true,
+      "separated_batch2_only": true,
+      "shape_negative_max": 58.1
+    }
+  },
+  "caliber_comparison": {
+    "cross_class_order_disagreements": 26,
+    "cross_class_pairs": 720,
+    "ranking_reversal_observed": true,
+    "spearman_negatives": 0.9529,
+    "spearman_positives": 0.5172,
+    "verdict": {
+      "rule": "max worst-shape LOSO-min, tie-break worst-shape AUC",
+      "winning_caliber": "normalized",
+      "winning_domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)"
+    },
+    "worst_shape_auc_absolute": 0.944444,
+    "worst_shape_auc_normalized": 0.985507,
+    "worst_shape_loso_min_absolute": 1.0,
+    "worst_shape_loso_min_normalized": 13.8
+  },
+  "calibers": {
+    "absolute": {
+      "domain": "same-canvas-family (~960px viewBox) only",
+      "loso": {
+        "caliber": "absolute",
+        "hub_mean": 79.0,
+        "hub_min": 63.6,
+        "per_anchor": [
+          {
+            "held_out": "brand-flywheel",
+            "path": "brand-flywheel-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "classic-cld-growth-and-burden",
+            "path": "classic-cld-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "fan-d12",
+            "path": "fan-d12-manual-layout.json",
+            "score": 63.6,
+            "shape": "hub"
+          },
+          {
+            "held_out": "fan-d17",
+            "path": "fan-d17-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "bowtie-wage-price",
+            "path": "bowtie-wage-price-manual-layout.json",
+            "score": 81.7,
+            "shape": "ring"
+          },
+          {
+            "held_out": "comb-supply-demand",
+            "path": "comb-supply-demand-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "coupled-underinvestment",
+            "path": "coupled-underinvestment-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "nested-capacity",
+            "path": "nested-capacity-manual-layout.json",
+            "score": 81.7,
+            "shape": "ring"
+          },
+          {
+            "held_out": "nested-learning",
+            "path": "nested-learning-manual-layout.json",
+            "score": 81.7,
+            "shape": "ring"
+          },
+          {
+            "held_out": "nonplanar-credit",
+            "path": "nonplanar-credit-manual-layout.json",
+            "score": 79.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "nonplanar-inventory",
+            "path": "nonplanar-inventory-manual-layout.json",
+            "score": 75.7,
+            "shape": "ring"
+          },
+          {
+            "held_out": "classic-cld-growth-and-burden",
+            "path": "retest-classic-cld-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "random-n10-i00",
+            "path": "random-n10-i00-manual-layout.json",
+            "score": 81.7,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i05",
+            "path": "random-n10-i05-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "random-n10-i05",
+            "path": "i05.json",
+            "score": 1.0,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i11",
+            "path": "i11-a.json",
+            "score": 81.7,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i11",
+            "path": "i11-b.json",
+            "score": 81.7,
+            "shape": "ring"
+          },
+          {
+            "held_out": "epidemic-feedback",
+            "path": "epidemic-feedback-manual-layout.json",
+            "score": 50.9,
+            "shape": "ring"
+          }
+        ],
+        "ring_mean": 68.6,
+        "ring_min": 1.0
+      },
+      "negative_scores_by_sample": {
+        "classic/单环/arms-race": [
+          81.7
+        ],
+        "classic/多环耦合/bullwhip": [
+          10.9
+        ],
+        "classic/多环耦合/burnout-attrition": [
+          9.6
+        ],
+        "classic/多环耦合/debt-spiral": [
+          15.4
+        ],
+        "classic/多环耦合/eroding-goals": [
+          6.8
+        ],
+        "classic/多环耦合/fixes-that-fail": [
+          23.0
+        ],
+        "classic/多环耦合/learning-flywheel": [
+          26.6
+        ],
+        "classic/多环耦合/limits-to-growth": [
+          8.7
+        ],
+        "classic/多环耦合/renewable-resource": [
+          3.4
+        ],
+        "classic/多环耦合/tragedy-of-the-commons": [
+          2.6
+        ],
+        "classic/多环耦合/urban-migration": [
+          24.7
+        ],
+        "classic/多环耦合/wage-price-spiral": [
+          6.8
+        ],
+        "classic/嵌套环/brand-flywheel": [
+          72.2
+        ],
+        "classic/嵌套环/classic-cld-growth-and-burden": [
+          22.7
+        ],
+        "classic/嵌套环/fishing-collapse": [
+          73.5
+        ],
+        "classic/嵌套环/induced-demand": [
+          15.8
+        ],
+        "classic/嵌套环/population-logistic": [
+          0.1
+        ],
+        "classic/嵌套环/shifting-the-burden": [
+          50.1
+        ],
+        "classic/嵌套环/soil-erosion": [
+          79.3
+        ],
+        "classic/嵌套环/success-to-the-successful": [
+          21.5
+        ],
+        "random-n10/random-n10-i00": [
+          9.3
+        ],
+        "random-n10/random-n10-i01": [
+          2.7
+        ],
+        "random-n10/random-n10-i02": [
+          70.4
+        ],
+        "random-n10/random-n10-i03": [
+          33.9
+        ],
+        "random-n10/random-n10-i04": [
+          0.2
+        ],
+        "random-n10/random-n10-i05": [
+          16.8
+        ],
+        "random-n10/random-n10-i06": [
+          14.7
+        ],
+        "random-n10/random-n10-i07": [
+          21.5
+        ],
+        "random-n10/random-n10-i08": [
+          57.6
+        ],
+        "random-n10/random-n10-i09": [
+          4.7
+        ],
+        "random-n10/random-n10-i10": [
+          3.0
+        ],
+        "random-n10/random-n10-i11": [
+          25.3
+        ],
+        "random-n10/random-n10-i12": [
+          1.4
+        ],
+        "random-n10/random-n10-i13": [
+          28.2
+        ],
+        "random-n10/random-n10-i14": [
+          34.3
+        ],
+        "random-n10/random-n10-i15": [
+          17.2
+        ],
+        "random-n10/random-n10-i16": [
+          3.7
+        ],
+        "random-n10/random-n10-i17": [
+          62.8
+        ],
+        "random-n10/random-n10-i18": [
+          70.8
+        ],
+        "random-n10/random-n10-i19": [
+          3.8
+        ]
+      },
+      "positive_scores": {
+        "bowtie-wage-price:bowtie-wage-price-manual-layout.json": {
+          "score": 81.7,
+          "shape": "ring"
+        },
+        "brand-flywheel:brand-flywheel-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "comb-supply-demand:comb-supply-demand-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "coupled-underinvestment:coupled-underinvestment-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "epidemic-feedback:epidemic-feedback-manual-layout.json": {
+          "score": 54.9,
+          "shape": "ring"
+        },
+        "fan-d12:fan-d12-manual-layout.json": {
+          "score": 65.4,
+          "shape": "hub"
+        },
+        "fan-d17:fan-d17-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "nested-capacity:nested-capacity-manual-layout.json": {
+          "score": 81.7,
+          "shape": "ring"
+        },
+        "nested-learning:nested-learning-manual-layout.json": {
+          "score": 81.7,
+          "shape": "ring"
+        },
+        "nonplanar-credit:nonplanar-credit-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "nonplanar-inventory:nonplanar-inventory-manual-layout.json": {
+          "score": 76.5,
+          "shape": "ring"
+        },
+        "random-n10-i00:random-n10-i00-manual-layout.json": {
+          "score": 81.7,
+          "shape": "ring"
+        },
+        "random-n10-i05:i05.json": {
+          "score": 81.7,
+          "shape": "ring"
+        },
+        "random-n10-i05:random-n10-i05-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "random-n10-i11:i11-a.json": {
+          "score": 81.7,
+          "shape": "ring"
+        },
+        "random-n10-i11:i11-b.json": {
+          "score": 81.7,
+          "shape": "ring"
+        }
+      },
+      "routing_log": [
+        {
+          "graph": "brand-flywheel",
+          "hub_intensity": 0.6666666666666666,
+          "kind": "positive",
+          "path": "brand-flywheel-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "classic-cld-growth-and-burden",
+          "hub_intensity": 0.875,
+          "kind": "positive",
+          "path": "classic-cld-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "fan-d12",
+          "hub_intensity": 0.9230769230769231,
+          "kind": "positive",
+          "path": "fan-d12-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "fan-d17",
+          "hub_intensity": 0.9444444444444444,
+          "kind": "positive",
+          "path": "fan-d17-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "bowtie-wage-price",
+          "hub_intensity": 0.5,
+          "kind": "positive",
+          "path": "bowtie-wage-price-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "comb-supply-demand",
+          "hub_intensity": 0.375,
+          "kind": "positive",
+          "path": "comb-supply-demand-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "coupled-underinvestment",
+          "hub_intensity": 0.3,
+          "kind": "positive",
+          "path": "coupled-underinvestment-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "nested-capacity",
+          "hub_intensity": 0.375,
+          "kind": "positive",
+          "path": "nested-capacity-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "nested-learning",
+          "hub_intensity": 0.375,
+          "kind": "positive",
+          "path": "nested-learning-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "nonplanar-credit",
+          "hub_intensity": 0.4444444444444444,
+          "kind": "positive",
+          "path": "nonplanar-credit-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "nonplanar-inventory",
+          "hub_intensity": 0.3333333333333333,
+          "kind": "positive",
+          "path": "nonplanar-inventory-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "classic-cld-growth-and-burden",
+          "hub_intensity": 0.875,
+          "kind": "positive",
+          "path": "retest-classic-cld-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i00",
+          "hub_intensity": 0.6,
+          "kind": "positive",
+          "path": "random-n10-i00-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
+          "kind": "positive",
+          "path": "random-n10-i05-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
+          "kind": "positive",
+          "path": "i05.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
+          "kind": "positive",
+          "path": "i11-a.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
+          "kind": "positive",
+          "path": "i11-b.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "epidemic-feedback",
+          "hub_intensity": 0.5,
+          "kind": "positive",
+          "path": "epidemic-feedback-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "arms-race",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "arms-race.json",
+          "shape": "ring",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "brand-flywheel",
+          "hub_intensity": 0.6666666666666666,
+          "kind": "negative",
+          "path": "brand-flywheel.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "bullwhip",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "bullwhip.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "burnout-attrition",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "burnout-attrition.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "classic-cld-growth-and-burden",
+          "hub_intensity": 0.875,
+          "kind": "negative",
+          "path": "classic-cld-growth-and-burden.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "debt-spiral",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "debt-spiral.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "eroding-goals",
+          "hub_intensity": 0.8,
+          "kind": "negative",
+          "path": "eroding-goals.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "fishing-collapse",
+          "hub_intensity": 1.0,
+          "kind": "negative",
+          "path": "fishing-collapse.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "fixes-that-fail",
+          "hub_intensity": 0.75,
+          "kind": "negative",
+          "path": "fixes-that-fail.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "induced-demand",
+          "hub_intensity": 0.8,
+          "kind": "negative",
+          "path": "induced-demand.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "learning-flywheel",
+          "hub_intensity": 0.75,
+          "kind": "negative",
+          "path": "learning-flywheel.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "limits-to-growth",
+          "hub_intensity": 0.8,
+          "kind": "negative",
+          "path": "limits-to-growth.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "population-logistic",
+          "hub_intensity": 1.25,
+          "kind": "negative",
+          "path": "population-logistic.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i00",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i00.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i01",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i01.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i02",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i02.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i03",
+          "hub_intensity": 0.7,
+          "kind": "negative",
+          "path": "random-n10-i03.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i04",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i04.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
+          "kind": "negative",
+          "path": "random-n10-i05.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i06",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i06.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i07",
+          "hub_intensity": 0.4,
+          "kind": "negative",
+          "path": "random-n10-i07.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i08",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i08.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i09",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i09.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i10",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i10.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
+          "kind": "negative",
+          "path": "random-n10-i11.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i12",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i12.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i13",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i13.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i14",
+          "hub_intensity": 0.7,
+          "kind": "negative",
+          "path": "random-n10-i14.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i15",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i15.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i16",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i16.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i17",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i17.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i18",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i18.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i19",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i19.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "renewable-resource",
+          "hub_intensity": 0.8,
+          "kind": "negative",
+          "path": "renewable-resource.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "shifting-the-burden",
+          "hub_intensity": 1.2,
+          "kind": "negative",
+          "path": "shifting-the-burden.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "soil-erosion",
+          "hub_intensity": 0.6666666666666666,
+          "kind": "negative",
+          "path": "soil-erosion.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "success-to-the-successful",
+          "hub_intensity": 0.6666666666666666,
+          "kind": "negative",
+          "path": "success-to-the-successful.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "tragedy-of-the-commons",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "tragedy-of-the-commons.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "urban-migration",
+          "hub_intensity": 0.6666666666666666,
+          "kind": "negative",
+          "path": "urban-migration.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "wage-price-spiral",
+          "hub_intensity": 0.8,
+          "kind": "negative",
+          "path": "wage-price-spiral.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        }
+      ],
+      "shapes": {
+        "global": {
+          "domain": "same-canvas-family (~960px viewBox) only",
+          "excluded_features": [],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.850694,
+              "coverage": 1.0,
+              "impute_median": 0.928571429,
+              "kept": true
+            },
+            "angular_resolution_min": {
+              "auc": 0.659722,
+              "coverage": 1.0,
+              "impute_median": 4.5436475365,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.691667,
+              "coverage": 1.0,
+              "impute_median": 0.20861724050000002,
+              "kept": false
+            },
+            "automorphism_residual": {
+              "auc": 0.491071,
+              "coverage": 0.37931,
+              "impute_median": 3660.5,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.561806,
+              "coverage": 1.0,
+              "impute_median": 206.76896440500002,
+              "kept": false
+            },
+            "bend_soft_margin": {
+              "auc": 0.356944,
+              "coverage": 1.0,
+              "impute_median": 4.36386201,
+              "kept": false
+            },
+            "bend_total_curvature": {
+              "auc": 0.088194,
+              "coverage": 1.0,
+              "impute_median": 84.62657681900001,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.563889,
+              "coverage": 1.0,
+              "impute_median": 0.10996879400000001,
+              "kept": false
+            },
+            "crossing_count": {
+              "auc": 0.336111,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "degree_canvas_spearman": {
+              "auc": 0.433761,
+              "coverage": 0.982759,
+              "impute_median": -0.207019668,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.390972,
+              "coverage": 1.0,
+              "impute_median": 0.3566483915,
+              "kept": false
+            },
+            "hub_centroid_px": {
+              "auc": 0.455556,
+              "coverage": 1.0,
+              "impute_median": 120.34422954,
+              "kept": false
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.404167,
+              "coverage": 1.0,
+              "impute_median": 0.140737104,
+              "kept": false
+            },
+            "hub_degree": {
+              "auc": 0.511806,
+              "coverage": 1.0,
+              "impute_median": 5.0,
+              "kept": false
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.465972,
+              "coverage": 1.0,
+              "impute_median": 0.9237528509999999,
+              "kept": false
+            },
+            "loop_compactness_mean": {
+              "auc": 0.583333,
+              "coverage": 0.224138,
+              "impute_median": 0.539012084,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": 0.235294,
+              "coverage": 0.310345,
+              "impute_median": 0.249696841,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.4625,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.422222,
+              "coverage": 1.0,
+              "impute_median": 3.0,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": 0.352941,
+              "coverage": 0.327586,
+              "impute_median": 65.150185393,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.502778,
+              "coverage": 1.0,
+              "impute_median": 118.135437768,
+              "kept": false
+            },
+            "min_spacing_ratio": {
+              "auc": 0.389583,
+              "coverage": 1.0,
+              "impute_median": 0.140966468,
+              "kept": false
+            },
+            "mirror_axis_err": {
+              "auc": 0.732143,
+              "coverage": 0.37931,
+              "impute_median": 14271.7825644375,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.499306,
+              "coverage": 1.0,
+              "impute_median": 0.150293963,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 0.732143,
+              "coverage": 0.37931,
+              "impute_median": 14271.7825644375,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.629167,
+              "coverage": 1.0,
+              "impute_median": 23.507157853499997,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.566667,
+              "coverage": 1.0,
+              "impute_median": 0.0288931625,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.592361,
+              "coverage": 1.0,
+              "impute_median": 0.31840361100000003,
+              "kept": false
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "alignment_max_coverage",
+            "bend_total_curvature"
+          ],
+          "n_negative": 40,
+          "n_positive": 18,
+          "negative_scores_max": 83.6,
+          "positive_scores_min": 29.5,
+          "score_auc": 0.975,
+          "separation_margin": -54.1
+        },
+        "hub": {
+          "domain": "same-canvas-family (~960px viewBox) only",
+          "excluded_features": [],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.884058,
+              "coverage": 1.0,
+              "impute_median": 0.8983268984999999,
+              "kept": true
+            },
+            "angular_resolution_min": {
+              "auc": 0.596618,
+              "coverage": 1.0,
+              "impute_median": 0.0187241085,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.782609,
+              "coverage": 1.0,
+              "impute_median": 0.197183099,
+              "kept": false
+            },
+            "automorphism_residual": {
+              "auc": 0.408163,
+              "coverage": 0.4375,
+              "impute_median": 5247.0384615385,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.654589,
+              "coverage": 1.0,
+              "impute_median": 210.07919865949998,
+              "kept": false
+            },
+            "bend_soft_margin": {
+              "auc": 0.328502,
+              "coverage": 1.0,
+              "impute_median": 6.428816144,
+              "kept": false
+            },
+            "bend_total_curvature": {
+              "auc": 0.086957,
+              "coverage": 1.0,
+              "impute_median": 46.6756984815,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.676329,
+              "coverage": 1.0,
+              "impute_median": 0.110934723,
+              "kept": false
+            },
+            "crossing_count": {
+              "auc": 0.490338,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "degree_canvas_spearman": {
+              "auc": 0.442029,
+              "coverage": 1.0,
+              "impute_median": 0.0609984165,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.461353,
+              "coverage": 1.0,
+              "impute_median": 0.3154801575,
+              "kept": false
+            },
+            "hub_centroid_px": {
+              "auc": 0.545894,
+              "coverage": 1.0,
+              "impute_median": 115.1702352705,
+              "kept": false
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.521739,
+              "coverage": 1.0,
+              "impute_median": 0.136508048,
+              "kept": false
+            },
+            "hub_degree": {
+              "auc": 0.596618,
+              "coverage": 1.0,
+              "impute_median": 4.0,
+              "kept": false
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.442029,
+              "coverage": 1.0,
+              "impute_median": 1.0235662995,
+              "kept": false
+            },
+            "loop_compactness_mean": {
+              "auc": null,
+              "coverage": 0.3125,
+              "impute_median": 0.531485695,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": null,
+              "coverage": 0.46875,
+              "impute_median": 0.279827907,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.434783,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.570048,
+              "coverage": 1.0,
+              "impute_median": 2.49800332,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": 0.0,
+              "coverage": 0.125,
+              "impute_median": 59.912017202499996,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.480676,
+              "coverage": 1.0,
+              "impute_median": 108.9189206125,
+              "kept": false
+            },
+            "min_spacing_ratio": {
+              "auc": 0.316425,
+              "coverage": 1.0,
+              "impute_median": 0.1442717335,
+              "kept": false
+            },
+            "mirror_axis_err": {
+              "auc": 0.795918,
+              "coverage": 0.4375,
+              "impute_median": 22702.195482593503,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.543478,
+              "coverage": 1.0,
+              "impute_median": 0.18510378,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 0.795918,
+              "coverage": 0.4375,
+              "impute_median": 22702.195482593503,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.714976,
+              "coverage": 1.0,
+              "impute_median": 21.0603695855,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.637681,
+              "coverage": 1.0,
+              "impute_median": 0.027664176,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.620773,
+              "coverage": 1.0,
+              "impute_median": 0.29347337900000003,
+              "kept": false
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "alignment_max_coverage",
+            "bend_total_curvature"
+          ],
+          "n_negative": 23,
+          "n_positive": 9,
+          "negative_scores_max": 79.3,
+          "positive_scores_min": 65.4,
+          "score_auc": 0.985507,
+          "separation_margin": -13.9
+        },
+        "ring": {
+          "domain": "same-canvas-family (~960px viewBox) only",
+          "excluded_features": [
+            "alignment_max_coverage"
+          ],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.803922,
+              "coverage": 1.0,
+              "impute_median": 0.952380952,
+              "kept": true
+            },
+            "angular_resolution_min": {
+              "auc": 0.702614,
+              "coverage": 1.0,
+              "impute_median": 5.291870334,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.607843,
+              "coverage": 1.0,
+              "impute_median": 0.24180208250000002,
+              "kept": false
+            },
+            "automorphism_residual": {
+              "auc": 1.0,
+              "coverage": 0.307692,
+              "impute_median": 102.312852681,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.457516,
+              "coverage": 1.0,
+              "impute_median": 202.45486666649998,
+              "kept": false
+            },
+            "bend_soft_margin": {
+              "auc": 0.385621,
+              "coverage": 1.0,
+              "impute_median": 3.28418298,
+              "kept": false
+            },
+            "bend_total_curvature": {
+              "auc": 0.052288,
+              "coverage": 1.0,
+              "impute_median": 260.267676291,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.503268,
+              "coverage": 1.0,
+              "impute_median": 0.108659352,
+              "kept": false
+            },
+            "crossing_count": {
+              "auc": 0.117647,
+              "coverage": 1.0,
+              "impute_median": 1.0,
+              "kept": true
+            },
+            "degree_canvas_spearman": {
+              "auc": 0.381944,
+              "coverage": 0.961538,
+              "impute_median": -0.375429047,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.287582,
+              "coverage": 1.0,
+              "impute_median": 0.37384311950000004,
+              "kept": false
+            },
+            "hub_centroid_px": {
+              "auc": 0.320261,
+              "coverage": 1.0,
+              "impute_median": 154.23635529249998,
+              "kept": false
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.261438,
+              "coverage": 1.0,
+              "impute_median": 0.148194889,
+              "kept": false
+            },
+            "hub_degree": {
+              "auc": 0.408497,
+              "coverage": 1.0,
+              "impute_median": 5.0,
+              "kept": false
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.503268,
+              "coverage": 1.0,
+              "impute_median": 0.6701022125,
+              "kept": false
+            },
+            "loop_compactness_mean": {
+              "auc": 0.0,
+              "coverage": 0.115385,
+              "impute_median": 0.785398163,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": 0.5,
+              "coverage": 0.115385,
+              "impute_median": 0.141881407,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.235294,
+              "coverage": 1.0,
+              "impute_median": 3.0917557889999996,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": 0.428571,
+              "coverage": 0.576923,
+              "impute_median": 67.823387037,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.477124,
+              "coverage": 1.0,
+              "impute_median": 121.8008978195,
+              "kept": false
+            },
+            "min_spacing_ratio": {
+              "auc": 0.457516,
+              "coverage": 1.0,
+              "impute_median": 0.11762128799999999,
+              "kept": false
+            },
+            "mirror_axis_err": {
+              "auc": 1.0,
+              "coverage": 0.307692,
+              "impute_median": 102.312852681,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.444444,
+              "coverage": 1.0,
+              "impute_median": 0.1076535165,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 1.0,
+              "coverage": 0.307692,
+              "impute_median": 102.312852681,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.529412,
+              "coverage": 1.0,
+              "impute_median": 24.654786905,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.477124,
+              "coverage": 1.0,
+              "impute_median": 0.032116962,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.588235,
+              "coverage": 1.0,
+              "impute_median": 0.3650418515,
+              "kept": false
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "bend_total_curvature",
+            "crossing_count"
+          ],
+          "n_negative": 17,
+          "n_positive": 9,
+          "negative_scores_max": 81.7,
+          "positive_scores_min": 54.9,
+          "score_auc": 0.944444,
+          "separation_margin": -26.8
+        }
+      }
+    },
+    "normalized": {
+      "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+      "loso": {
+        "caliber": "normalized",
+        "hub_mean": 79.0,
+        "hub_min": 63.6,
+        "per_anchor": [
+          {
+            "held_out": "brand-flywheel",
+            "path": "brand-flywheel-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "classic-cld-growth-and-burden",
+            "path": "classic-cld-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "fan-d12",
+            "path": "fan-d12-manual-layout.json",
+            "score": 63.6,
+            "shape": "hub"
+          },
+          {
+            "held_out": "fan-d17",
+            "path": "fan-d17-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "bowtie-wage-price",
+            "path": "bowtie-wage-price-manual-layout.json",
+            "score": 88.3,
+            "shape": "ring"
+          },
+          {
+            "held_out": "comb-supply-demand",
+            "path": "comb-supply-demand-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "coupled-underinvestment",
+            "path": "coupled-underinvestment-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "nested-capacity",
+            "path": "nested-capacity-manual-layout.json",
+            "score": 83.6,
+            "shape": "ring"
+          },
+          {
+            "held_out": "nested-learning",
+            "path": "nested-learning-manual-layout.json",
+            "score": 82.7,
+            "shape": "ring"
+          },
+          {
+            "held_out": "nonplanar-credit",
+            "path": "nonplanar-credit-manual-layout.json",
+            "score": 79.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "nonplanar-inventory",
+            "path": "nonplanar-inventory-manual-layout.json",
+            "score": 98.2,
+            "shape": "ring"
+          },
+          {
+            "held_out": "classic-cld-growth-and-burden",
+            "path": "retest-classic-cld-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "random-n10-i00",
+            "path": "random-n10-i00-manual-layout.json",
+            "score": 58.1,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i05",
+            "path": "random-n10-i05-manual-layout.json",
+            "score": 81.2,
+            "shape": "hub"
+          },
+          {
+            "held_out": "random-n10-i05",
+            "path": "i05.json",
+            "score": 13.8,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i11",
+            "path": "i11-a.json",
+            "score": 97.1,
+            "shape": "ring"
+          },
+          {
+            "held_out": "random-n10-i11",
+            "path": "i11-b.json",
+            "score": 95.9,
+            "shape": "ring"
+          },
+          {
+            "held_out": "epidemic-feedback",
+            "path": "epidemic-feedback-manual-layout.json",
+            "score": 52.0,
+            "shape": "ring"
+          }
+        ],
+        "ring_mean": 74.4,
+        "ring_min": 13.8
+      },
+      "negative_scores_by_sample": {
+        "classic/单环/arms-race": [
+          41.7
+        ],
+        "classic/多环耦合/bullwhip": [
+          10.9
+        ],
+        "classic/多环耦合/burnout-attrition": [
+          9.6
+        ],
+        "classic/多环耦合/debt-spiral": [
+          15.4
+        ],
+        "classic/多环耦合/eroding-goals": [
+          6.8
+        ],
+        "classic/多环耦合/fixes-that-fail": [
+          23.0
+        ],
+        "classic/多环耦合/learning-flywheel": [
+          26.6
+        ],
+        "classic/多环耦合/limits-to-growth": [
+          8.7
+        ],
+        "classic/多环耦合/renewable-resource": [
+          3.4
+        ],
+        "classic/多环耦合/tragedy-of-the-commons": [
+          2.6
+        ],
+        "classic/多环耦合/urban-migration": [
+          24.7
+        ],
+        "classic/多环耦合/wage-price-spiral": [
+          6.8
+        ],
+        "classic/嵌套环/brand-flywheel": [
+          46.2
+        ],
+        "classic/嵌套环/classic-cld-growth-and-burden": [
+          22.7
+        ],
+        "classic/嵌套环/fishing-collapse": [
+          73.5
+        ],
+        "classic/嵌套环/induced-demand": [
+          15.8
+        ],
+        "classic/嵌套环/population-logistic": [
+          0.1
+        ],
+        "classic/嵌套环/shifting-the-burden": [
+          50.1
+        ],
+        "classic/嵌套环/soil-erosion": [
+          79.3
+        ],
+        "classic/嵌套环/success-to-the-successful": [
+          8.4
+        ],
+        "random-n10/random-n10-i00": [
+          17.1
+        ],
+        "random-n10/random-n10-i01": [
+          4.1
+        ],
+        "random-n10/random-n10-i02": [
+          58.1
+        ],
+        "random-n10/random-n10-i03": [
+          33.9
+        ],
+        "random-n10/random-n10-i04": [
+          0.2
+        ],
+        "random-n10/random-n10-i05": [
+          26.9
+        ],
+        "random-n10/random-n10-i06": [
+          15.6
+        ],
+        "random-n10/random-n10-i07": [
+          28.2
+        ],
+        "random-n10/random-n10-i08": [
+          38.4
+        ],
+        "random-n10/random-n10-i09": [
+          1.3
+        ],
+        "random-n10/random-n10-i10": [
+          1.0
+        ],
+        "random-n10/random-n10-i11": [
+          25.3
+        ],
+        "random-n10/random-n10-i12": [
+          0.9
+        ],
+        "random-n10/random-n10-i13": [
+          17.5
+        ],
+        "random-n10/random-n10-i14": [
+          51.9
+        ],
+        "random-n10/random-n10-i15": [
+          17.2
+        ],
+        "random-n10/random-n10-i16": [
+          3.1
+        ],
+        "random-n10/random-n10-i17": [
+          62.8
+        ],
+        "random-n10/random-n10-i18": [
+          70.8
+        ],
+        "random-n10/random-n10-i19": [
+          0.6
+        ]
+      },
+      "positive_scores": {
+        "bowtie-wage-price:bowtie-wage-price-manual-layout.json": {
+          "score": 88.6,
+          "shape": "ring"
+        },
+        "brand-flywheel:brand-flywheel-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "comb-supply-demand:comb-supply-demand-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "coupled-underinvestment:coupled-underinvestment-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "epidemic-feedback:epidemic-feedback-manual-layout.json": {
+          "score": 56.5,
+          "shape": "ring"
+        },
+        "fan-d12:fan-d12-manual-layout.json": {
+          "score": 65.4,
+          "shape": "hub"
+        },
+        "fan-d17:fan-d17-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "nested-capacity:nested-capacity-manual-layout.json": {
+          "score": 84.1,
+          "shape": "ring"
+        },
+        "nested-learning:nested-learning-manual-layout.json": {
+          "score": 83.3,
+          "shape": "ring"
+        },
+        "nonplanar-credit:nonplanar-credit-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "nonplanar-inventory:nonplanar-inventory-manual-layout.json": {
+          "score": 97.8,
+          "shape": "ring"
+        },
+        "random-n10-i00:random-n10-i00-manual-layout.json": {
+          "score": 64.7,
+          "shape": "ring"
+        },
+        "random-n10-i05:i05.json": {
+          "score": 85.8,
+          "shape": "ring"
+        },
+        "random-n10-i05:random-n10-i05-manual-layout.json": {
+          "score": 81.3,
+          "shape": "hub"
+        },
+        "random-n10-i11:i11-a.json": {
+          "score": 96.9,
+          "shape": "ring"
+        },
+        "random-n10-i11:i11-b.json": {
+          "score": 95.8,
+          "shape": "ring"
+        }
+      },
+      "routing_log": [
+        {
+          "graph": "brand-flywheel",
+          "hub_intensity": 0.6666666666666666,
+          "kind": "positive",
+          "path": "brand-flywheel-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "classic-cld-growth-and-burden",
+          "hub_intensity": 0.875,
+          "kind": "positive",
+          "path": "classic-cld-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "fan-d12",
+          "hub_intensity": 0.9230769230769231,
+          "kind": "positive",
+          "path": "fan-d12-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "fan-d17",
+          "hub_intensity": 0.9444444444444444,
+          "kind": "positive",
+          "path": "fan-d17-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "bowtie-wage-price",
+          "hub_intensity": 0.5,
+          "kind": "positive",
+          "path": "bowtie-wage-price-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "comb-supply-demand",
+          "hub_intensity": 0.375,
+          "kind": "positive",
+          "path": "comb-supply-demand-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "coupled-underinvestment",
+          "hub_intensity": 0.3,
+          "kind": "positive",
+          "path": "coupled-underinvestment-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "nested-capacity",
+          "hub_intensity": 0.375,
+          "kind": "positive",
+          "path": "nested-capacity-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "nested-learning",
+          "hub_intensity": 0.375,
+          "kind": "positive",
+          "path": "nested-learning-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "nonplanar-credit",
+          "hub_intensity": 0.4444444444444444,
+          "kind": "positive",
+          "path": "nonplanar-credit-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "nonplanar-inventory",
+          "hub_intensity": 0.3333333333333333,
+          "kind": "positive",
+          "path": "nonplanar-inventory-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "classic-cld-growth-and-burden",
+          "hub_intensity": 0.875,
+          "kind": "positive",
+          "path": "retest-classic-cld-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i00",
+          "hub_intensity": 0.6,
+          "kind": "positive",
+          "path": "random-n10-i00-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
+          "kind": "positive",
+          "path": "random-n10-i05-manual-layout.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
+          "kind": "positive",
+          "path": "i05.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
+          "kind": "positive",
+          "path": "i11-a.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
+          "kind": "positive",
+          "path": "i11-b.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "epidemic-feedback",
+          "hub_intensity": 0.5,
+          "kind": "positive",
+          "path": "epidemic-feedback-manual-layout.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "arms-race",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "arms-race.json",
+          "shape": "ring",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "brand-flywheel",
+          "hub_intensity": 0.6666666666666666,
+          "kind": "negative",
+          "path": "brand-flywheel.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "bullwhip",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "bullwhip.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "burnout-attrition",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "burnout-attrition.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "classic-cld-growth-and-burden",
+          "hub_intensity": 0.875,
+          "kind": "negative",
+          "path": "classic-cld-growth-and-burden.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "debt-spiral",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "debt-spiral.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "eroding-goals",
+          "hub_intensity": 0.8,
+          "kind": "negative",
+          "path": "eroding-goals.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "fishing-collapse",
+          "hub_intensity": 1.0,
+          "kind": "negative",
+          "path": "fishing-collapse.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "fixes-that-fail",
+          "hub_intensity": 0.75,
+          "kind": "negative",
+          "path": "fixes-that-fail.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "induced-demand",
+          "hub_intensity": 0.8,
+          "kind": "negative",
+          "path": "induced-demand.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "learning-flywheel",
+          "hub_intensity": 0.75,
+          "kind": "negative",
+          "path": "learning-flywheel.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "limits-to-growth",
+          "hub_intensity": 0.8,
+          "kind": "negative",
+          "path": "limits-to-growth.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "population-logistic",
+          "hub_intensity": 1.25,
+          "kind": "negative",
+          "path": "population-logistic.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i00",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i00.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i01",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i01.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i02",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i02.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i03",
+          "hub_intensity": 0.7,
+          "kind": "negative",
+          "path": "random-n10-i03.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i04",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i04.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i05",
+          "hub_intensity": 0.4,
+          "kind": "negative",
+          "path": "random-n10-i05.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i06",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i06.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i07",
+          "hub_intensity": 0.4,
+          "kind": "negative",
+          "path": "random-n10-i07.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i08",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i08.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i09",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i09.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i10",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i10.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i11",
+          "hub_intensity": 0.7,
+          "kind": "negative",
+          "path": "random-n10-i11.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i12",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i12.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i13",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i13.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i14",
+          "hub_intensity": 0.7,
+          "kind": "negative",
+          "path": "random-n10-i14.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i15",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i15.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i16",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i16.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i17",
+          "hub_intensity": 0.5,
+          "kind": "negative",
+          "path": "random-n10-i17.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i18",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i18.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "random-n10-i19",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "random-n10-i19.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "renewable-resource",
+          "hub_intensity": 0.8,
+          "kind": "negative",
+          "path": "renewable-resource.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "shifting-the-burden",
+          "hub_intensity": 1.2,
+          "kind": "negative",
+          "path": "shifting-the-burden.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "soil-erosion",
+          "hub_intensity": 0.6666666666666666,
+          "kind": "negative",
+          "path": "soil-erosion.json",
+          "shape": "hub",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "success-to-the-successful",
+          "hub_intensity": 0.6666666666666666,
+          "kind": "negative",
+          "path": "success-to-the-successful.json",
+          "shape": "ring",
+          "threshold_eligible": true
+        },
+        {
+          "graph": "tragedy-of-the-commons",
+          "hub_intensity": 0.6,
+          "kind": "negative",
+          "path": "tragedy-of-the-commons.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "urban-migration",
+          "hub_intensity": 0.6666666666666666,
+          "kind": "negative",
+          "path": "urban-migration.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        },
+        {
+          "graph": "wage-price-spiral",
+          "hub_intensity": 0.8,
+          "kind": "negative",
+          "path": "wage-price-spiral.json",
+          "shape": "hub",
+          "threshold_eligible": false
+        }
+      ],
+      "shapes": {
+        "global": {
+          "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+          "excluded_features": [],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.850694,
+              "coverage": 1.0,
+              "impute_median": 0.928571429,
+              "kept": true
+            },
+            "angular_resolution_min": {
+              "auc": 0.659722,
+              "coverage": 1.0,
+              "impute_median": 4.5436475365,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.691667,
+              "coverage": 1.0,
+              "impute_median": 0.20861724050000002,
+              "kept": false
+            },
+            "automorphism_residual": {
+              "auc": 0.473214,
+              "coverage": 0.37931,
+              "impute_median": 3.5479589939882428,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.277083,
+              "coverage": 1.0,
+              "impute_median": 0.24152051129932783,
+              "kept": false
+            },
+            "bend_soft_margin": {
+              "auc": 0.35,
+              "coverage": 1.0,
+              "impute_median": 0.004458407164903668,
+              "kept": false
+            },
+            "bend_total_curvature": {
+              "auc": 0.088194,
+              "coverage": 1.0,
+              "impute_median": 84.62657681900001,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.563889,
+              "coverage": 1.0,
+              "impute_median": 0.10996879400000001,
+              "kept": false
+            },
+            "crossing_count": {
+              "auc": 0.336111,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "degree_canvas_spearman": {
+              "auc": 0.433761,
+              "coverage": 0.982759,
+              "impute_median": -0.207019668,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.390972,
+              "coverage": 1.0,
+              "impute_median": 0.3566483915,
+              "kept": false
+            },
+            "hub_centroid_px": {
+              "auc": 0.404167,
+              "coverage": 1.0,
+              "impute_median": 0.1407371042993682,
+              "kept": false
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.404167,
+              "coverage": 1.0,
+              "impute_median": 0.140737104,
+              "kept": false
+            },
+            "hub_degree": {
+              "auc": 0.511806,
+              "coverage": 1.0,
+              "impute_median": 5.0,
+              "kept": false
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.465972,
+              "coverage": 1.0,
+              "impute_median": 0.9237528509999999,
+              "kept": false
+            },
+            "loop_compactness_mean": {
+              "auc": 0.583333,
+              "coverage": 0.224138,
+              "impute_median": 0.539012084,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": 0.235294,
+              "coverage": 0.310345,
+              "impute_median": 0.249696841,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.4625,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.422222,
+              "coverage": 1.0,
+              "impute_median": 3.0,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": 0.352941,
+              "coverage": 0.327586,
+              "impute_median": 65.150185393,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.389583,
+              "coverage": 1.0,
+              "impute_median": 0.1409664683572772,
+              "kept": false
+            },
+            "min_spacing_ratio": {
+              "auc": 0.389583,
+              "coverage": 1.0,
+              "impute_median": 0.140966468,
+              "kept": false
+            },
+            "mirror_axis_err": {
+              "auc": 0.660714,
+              "coverage": 0.37931,
+              "impute_median": 16.231138790482607,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.499306,
+              "coverage": 1.0,
+              "impute_median": 0.150293963,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 0.660714,
+              "coverage": 0.37931,
+              "impute_median": 16.231138790482607,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.566667,
+              "coverage": 1.0,
+              "impute_median": 0.028893162498650357,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.566667,
+              "coverage": 1.0,
+              "impute_median": 0.0288931625,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.592361,
+              "coverage": 1.0,
+              "impute_median": 0.31840361100000003,
+              "kept": false
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "alignment_max_coverage",
+            "bend_total_curvature"
+          ],
+          "n_negative": 40,
+          "n_positive": 18,
+          "negative_scores_max": 83.6,
+          "positive_scores_min": 29.5,
+          "score_auc": 0.975,
+          "separation_margin": -54.1
+        },
+        "hub": {
+          "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+          "excluded_features": [],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.884058,
+              "coverage": 1.0,
+              "impute_median": 0.8983268984999999,
+              "kept": true
+            },
+            "angular_resolution_min": {
+              "auc": 0.596618,
+              "coverage": 1.0,
+              "impute_median": 0.0187241085,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.782609,
+              "coverage": 1.0,
+              "impute_median": 0.197183099,
+              "kept": false
+            },
+            "automorphism_residual": {
+              "auc": 0.387755,
+              "coverage": 0.4375,
+              "impute_median": 4.785590824314799,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.359903,
+              "coverage": 1.0,
+              "impute_median": 0.24532653286055217,
+              "kept": false
+            },
+            "bend_soft_margin": {
+              "auc": 0.309179,
+              "coverage": 1.0,
+              "impute_median": 0.005758320372938631,
+              "kept": false
+            },
+            "bend_total_curvature": {
+              "auc": 0.086957,
+              "coverage": 1.0,
+              "impute_median": 46.6756984815,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.676329,
+              "coverage": 1.0,
+              "impute_median": 0.110934723,
+              "kept": false
+            },
+            "crossing_count": {
+              "auc": 0.490338,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "degree_canvas_spearman": {
+              "auc": 0.442029,
+              "coverage": 1.0,
+              "impute_median": 0.0609984165,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.461353,
+              "coverage": 1.0,
+              "impute_median": 0.3154801575,
+              "kept": false
+            },
+            "hub_centroid_px": {
+              "auc": 0.521739,
+              "coverage": 1.0,
+              "impute_median": 0.13650804820297502,
+              "kept": false
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.521739,
+              "coverage": 1.0,
+              "impute_median": 0.136508048,
+              "kept": false
+            },
+            "hub_degree": {
+              "auc": 0.596618,
+              "coverage": 1.0,
+              "impute_median": 4.0,
+              "kept": false
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.442029,
+              "coverage": 1.0,
+              "impute_median": 1.0235662995,
+              "kept": false
+            },
+            "loop_compactness_mean": {
+              "auc": null,
+              "coverage": 0.3125,
+              "impute_median": 0.531485695,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": null,
+              "coverage": 0.46875,
+              "impute_median": 0.279827907,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.434783,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.570048,
+              "coverage": 1.0,
+              "impute_median": 2.49800332,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": 0.0,
+              "coverage": 0.125,
+              "impute_median": 59.912017202499996,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.316425,
+              "coverage": 1.0,
+              "impute_median": 0.14427173334460125,
+              "kept": false
+            },
+            "min_spacing_ratio": {
+              "auc": 0.316425,
+              "coverage": 1.0,
+              "impute_median": 0.1442717335,
+              "kept": false
+            },
+            "mirror_axis_err": {
+              "auc": 0.673469,
+              "coverage": 0.4375,
+              "impute_median": 26.15124352132956,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.543478,
+              "coverage": 1.0,
+              "impute_median": 0.18510378,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 0.673469,
+              "coverage": 0.4375,
+              "impute_median": 26.15124352132956,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.637681,
+              "coverage": 1.0,
+              "impute_median": 0.027664175674869007,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.637681,
+              "coverage": 1.0,
+              "impute_median": 0.027664176,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.620773,
+              "coverage": 1.0,
+              "impute_median": 0.29347337900000003,
+              "kept": false
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "alignment_max_coverage",
+            "bend_total_curvature"
+          ],
+          "n_negative": 23,
+          "n_positive": 9,
+          "negative_scores_max": 79.3,
+          "positive_scores_min": 65.4,
+          "score_auc": 0.985507,
+          "separation_margin": -13.9
+        },
+        "ring": {
+          "domain": "cross-canvas / cross-graph (normalized by canvas diagonal, RFC §15.2)",
+          "excluded_features": [
+            "alignment_max_coverage"
+          ],
+          "feature_report": {
+            "alignment_max_coverage": {
+              "auc": 0.803922,
+              "coverage": 1.0,
+              "impute_median": 0.952380952,
+              "kept": true
+            },
+            "angular_resolution_min": {
+              "auc": 0.702614,
+              "coverage": 1.0,
+              "impute_median": 5.291870334,
+              "kept": false
+            },
+            "aspect_deviation": {
+              "auc": 0.607843,
+              "coverage": 1.0,
+              "impute_median": 0.24180208250000002,
+              "kept": false
+            },
+            "automorphism_residual": {
+              "auc": 1.0,
+              "coverage": 0.307692,
+              "impute_median": 0.07616758071422143,
+              "kept": false
+            },
+            "avg_edge_length": {
+              "auc": 0.176471,
+              "coverage": 1.0,
+              "impute_median": 0.21987181676056017,
+              "kept": true
+            },
+            "bend_soft_margin": {
+              "auc": 0.379085,
+              "coverage": 1.0,
+              "impute_median": 0.0036842221522795085,
+              "kept": false
+            },
+            "bend_total_curvature": {
+              "auc": 0.052288,
+              "coverage": 1.0,
+              "impute_median": 260.267676291,
+              "kept": true
+            },
+            "canvas_fill_rate": {
+              "auc": 0.503268,
+              "coverage": 1.0,
+              "impute_median": 0.108659352,
+              "kept": false
+            },
+            "crossing_count": {
+              "auc": 0.117647,
+              "coverage": 1.0,
+              "impute_median": 1.0,
+              "kept": true
+            },
+            "degree_canvas_spearman": {
+              "auc": 0.381944,
+              "coverage": 0.961538,
+              "impute_median": -0.375429047,
+              "kept": false
+            },
+            "edge_length_cv": {
+              "auc": 0.287582,
+              "coverage": 1.0,
+              "impute_median": 0.37384311950000004,
+              "kept": false
+            },
+            "hub_centroid_px": {
+              "auc": 0.261438,
+              "coverage": 1.0,
+              "impute_median": 0.14819488923308394,
+              "kept": false
+            },
+            "hub_centroid_ratio": {
+              "auc": 0.261438,
+              "coverage": 1.0,
+              "impute_median": 0.148194889,
+              "kept": false
+            },
+            "hub_degree": {
+              "auc": 0.408497,
+              "coverage": 1.0,
+              "impute_median": 5.0,
+              "kept": false
+            },
+            "hub_neighbor_centrality_ratio": {
+              "auc": 0.503268,
+              "coverage": 1.0,
+              "impute_median": 0.6701022125,
+              "kept": false
+            },
+            "loop_compactness_mean": {
+              "auc": 0.0,
+              "coverage": 0.115385,
+              "impute_median": 0.785398163,
+              "kept": false
+            },
+            "loop_edge_crossings": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_edge_length_cv": {
+              "auc": 0.5,
+              "coverage": 0.115385,
+              "impute_median": 0.141881407,
+              "kept": false
+            },
+            "loop_foreign_nodes": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_overlap_area": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "loop_self_intersections": {
+              "auc": 0.5,
+              "coverage": 1.0,
+              "impute_median": 0.0,
+              "kept": false
+            },
+            "max_min_edge_ratio": {
+              "auc": 0.235294,
+              "coverage": 1.0,
+              "impute_median": 3.0917557889999996,
+              "kept": false
+            },
+            "min_crossing_angle": {
+              "auc": 0.428571,
+              "coverage": 0.576923,
+              "impute_median": 67.823387037,
+              "kept": false
+            },
+            "min_spacing_px": {
+              "auc": 0.457516,
+              "coverage": 1.0,
+              "impute_median": 0.11762128789621419,
+              "kept": false
+            },
+            "min_spacing_ratio": {
+              "auc": 0.457516,
+              "coverage": 1.0,
+              "impute_median": 0.11762128799999999,
+              "kept": false
+            },
+            "mirror_axis_err": {
+              "auc": 1.0,
+              "coverage": 0.307692,
+              "impute_median": 0.07616758071422143,
+              "kept": false
+            },
+            "node_spacing_cv": {
+              "auc": 0.444444,
+              "coverage": 1.0,
+              "impute_median": 0.1076535165,
+              "kept": false
+            },
+            "symmetry_axis_err_px": {
+              "auc": 1.0,
+              "coverage": 0.307692,
+              "impute_median": 0.07616758071422143,
+              "kept": false
+            },
+            "visual_centroid_px": {
+              "auc": 0.477124,
+              "coverage": 1.0,
+              "impute_median": 0.032116962001295164,
+              "kept": false
+            },
+            "visual_centroid_ratio": {
+              "auc": 0.477124,
+              "coverage": 1.0,
+              "impute_median": 0.032116962,
+              "kept": false
+            },
+            "voronoi_area_cv": {
+              "auc": 0.588235,
+              "coverage": 1.0,
+              "impute_median": 0.3650418515,
+              "kept": false
+            }
+          },
+          "fitted": true,
+          "kept_features": [
+            "avg_edge_length",
+            "bend_total_curvature",
+            "crossing_count"
+          ],
+          "n_negative": 17,
+          "n_positive": 9,
+          "negative_scores_max": 58.1,
+          "positive_scores_min": 56.5,
+          "score_auc": 0.993464,
+          "separation_margin": -1.6
+        }
+      }
+    }
+  },
+  "edge_style_anchor_analysis": {
+    "feature_gate_note": "NOT introduced as model features in v2.  (a) single-source red line: scorer features come from the one measurement source (aesthetic_score extract_scalars); edge style/anchors live only in manual exports.  (b) coverage gate: style data exists for 8/18 anchors (44%) < MIN_COVERAGE 0.70 — the existing feature-keeping gate would drop it, and the 10 v1 anchors have no style field at all (supplemented edges are untouched = straight centre-to-centre, no user style).  Logged as data for a future card that widens the anchor library with style-native exports.",
+    "per_file": {
+      "bowtie-wage-price-manual-layout.json": {
+        "anchor_positions": {
+          "dst:e": 1,
+          "dst:n": 3,
+          "dst:nw": 1,
+          "dst:s": 1,
+          "dst:sw": 1,
+          "src:n": 3,
+          "src:ne": 1,
+          "src:s": 2,
+          "src:se": 1,
+          "src:w": 1
+        },
+        "edges_with_anchors": 8,
+        "edges_with_waypoints": 0,
+        "graph": "bowtie-wage-price",
+        "manual_edges": 8,
+        "style": {
+          "auto": 8
+        }
+      },
+      "comb-supply-demand-manual-layout.json": {
+        "anchor_positions": {
+          "dst:n": 2,
+          "dst:s": 2,
+          "src:e": 1,
+          "src:w": 1
+        },
+        "edges_with_anchors": 4,
+        "edges_with_waypoints": 0,
+        "graph": "comb-supply-demand",
+        "manual_edges": 4,
+        "style": {
+          "auto": 4
+        }
+      },
+      "coupled-underinvestment-manual-layout.json": {
+        "anchor_positions": {
+          "dst:n": 1,
+          "dst:nw": 2,
+          "dst:s": 1,
+          "dst:w-g1": 1,
+          "src:e": 1,
+          "src:ne": 2,
+          "src:s": 2,
+          "src:s-g1": 1
+        },
+        "edges_with_anchors": 6,
+        "edges_with_waypoints": 0,
+        "graph": "coupled-underinvestment",
+        "manual_edges": 6,
+        "style": {
+          "auto": 6
+        }
+      },
+      "nested-capacity-manual-layout.json": {
+        "anchor_positions": {
+          "dst:w": 1,
+          "src:s": 1
+        },
+        "edges_with_anchors": 2,
+        "edges_with_waypoints": 0,
+        "graph": "nested-capacity",
+        "manual_edges": 2,
+        "style": {
+          "auto": 2
+        }
+      },
+      "nested-learning-manual-layout.json": {
+        "anchor_positions": {
+          "dst:e": 1,
+          "dst:nw": 1,
+          "dst:s": 1,
+          "dst:w": 1,
+          "src:e": 1,
+          "src:ne": 1,
+          "src:s-g2": 1,
+          "src:w": 1
+        },
+        "edges_with_anchors": 4,
+        "edges_with_waypoints": 0,
+        "graph": "nested-learning",
+        "manual_edges": 4,
+        "style": {
+          "auto": 3,
+          "straight": 1
+        }
+      },
+      "nonplanar-credit-manual-layout.json": {
+        "anchor_positions": {
+          "dst:e": 1,
+          "dst:e-g1": 1,
+          "dst:n": 2,
+          "dst:s": 1,
+          "dst:w": 1,
+          "src:e-g2": 1,
+          "src:s": 1,
+          "src:s-g1": 1,
+          "src:se": 1
+        },
+        "edges_with_anchors": 7,
+        "edges_with_waypoints": 1,
+        "graph": "nonplanar-credit",
+        "manual_edges": 9,
+        "style": {
+          "arc": 1,
+          "auto": 4,
+          "straight": 4
+        }
+      },
+      "nonplanar-inventory-manual-layout.json": {
+        "anchor_positions": {
+          "dst:e": 1,
+          "dst:e-g2": 1,
+          "dst:n": 2,
+          "dst:s": 3,
+          "dst:sw": 2,
+          "src:e": 1,
+          "src:e-g2": 2,
+          "src:n": 2,
+          "src:s": 3,
+          "src:w": 1,
+          "src:w-g1": 1,
+          "src:w-g2": 1
+        },
+        "edges_with_anchors": 12,
+        "edges_with_waypoints": 1,
+        "graph": "nonplanar-inventory",
+        "manual_edges": 12,
+        "style": {
+          "arc": 2,
+          "auto": 9,
+          "free": 1
+        }
+      },
+      "retest-classic-cld-manual-layout.json": {
+        "anchor_positions": {},
+        "edges_with_anchors": 0,
+        "edges_with_waypoints": 0,
+        "graph": "retest-classic-cld",
+        "manual_edges": 0,
+        "style": {}
+      }
+    },
+    "totals": {
+      "anchor_positions": {
+        "dst:e": 4,
+        "dst:e-g1": 1,
+        "dst:e-g2": 1,
+        "dst:n": 10,
+        "dst:nw": 4,
+        "dst:s": 9,
+        "dst:sw": 3,
+        "dst:w": 3,
+        "dst:w-g1": 1,
+        "src:e": 4,
+        "src:e-g2": 3,
+        "src:n": 5,
+        "src:ne": 4,
+        "src:s": 9,
+        "src:s-g1": 2,
+        "src:s-g2": 1,
+        "src:se": 2,
+        "src:w": 4,
+        "src:w-g1": 1,
+        "src:w-g2": 1
+      },
+      "edges_with_anchors": 43,
+      "edges_with_waypoints": 2,
+      "manual_edges": 45,
+      "style": {
+        "arc": 3,
+        "auto": 36,
+        "free": 1,
+        "straight": 5
+      }
+    }
+  },
+  "family_separation_normalized": {
+    "classic/单环": {
+      "n_negative": 1,
+      "n_positive": 0,
+      "negative_max": 41.7,
+      "negative_mean": 41.7,
+      "positive_min": null,
+      "separated_min_pos_gt_max_neg": false
+    },
+    "classic/多环耦合": {
+      "n_negative": 11,
+      "n_positive": 0,
+      "negative_max": 26.6,
+      "negative_mean": 12.6,
+      "positive_min": null,
+      "separated_min_pos_gt_max_neg": false
+    },
+    "classic/嵌套环": {
+      "n_negative": 8,
+      "n_positive": 0,
+      "negative_max": 79.3,
+      "negative_mean": 37.0,
+      "positive_min": null,
+      "separated_min_pos_gt_max_neg": false
+    },
+    "hub": {
+      "n_negative": 0,
+      "n_positive": 9,
+      "negative_max": null,
+      "negative_mean": null,
+      "positive_min": 65.4,
+      "separated_min_pos_gt_max_neg": false
+    },
+    "random-n10": {
+      "n_negative": 20,
+      "n_positive": 0,
+      "negative_max": 70.8,
+      "negative_mean": 23.7,
+      "positive_min": null,
+      "separated_min_pos_gt_max_neg": false
+    },
+    "ring": {
+      "n_negative": 0,
+      "n_positive": 9,
+      "negative_max": null,
+      "negative_mean": null,
+      "positive_min": 56.5,
+      "separated_min_pos_gt_max_neg": false
+    }
+  },
+  "generation": "batch-2 recalibration (anchor library 10 -> 18)",
+  "human_lower_bound": {
+    "absolute": {
+      "global": 29.5,
+      "hub": 65.4,
+      "ring": 54.9
+    },
+    "normalized": {
+      "global": 29.5,
+      "hub": 65.4,
+      "ring": 56.5
+    }
+  },
+  "new_feature_sign_check": {
+    "brand-flywheel": {
+      "expected_shape": "ring",
+      "hub_neighbor_ratio": 1.110607795,
+      "measured_on": "brand-flywheel-manual-layout.json",
+      "measured_rho": 0.15430335,
+      "reference_rho": -0.14,
+      "routed_shape": "hub",
+      "sign_matches_reference": false
+    },
+    "classic-cld-growth-and-burden": {
+      "expected_shape": "hub",
+      "hub_neighbor_ratio": 0.48294243,
+      "measured_on": "classic-cld-manual-layout.json",
+      "measured_rho": -0.536349916,
+      "reference_rho": 0.4,
+      "routed_shape": "hub",
+      "sign_matches_reference": false
+    },
+    "epidemic-feedback": {
+      "expected_shape": "ring",
+      "hub_neighbor_ratio": 2.581955417,
+      "measured_on": "epidemic-feedback-manual-layout.json",
+      "measured_rho": -0.107700688,
+      "reference_rho": -0.24,
+      "routed_shape": "ring",
+      "sign_matches_reference": true
+    },
+    "random-n10-i00": {
+      "expected_shape": "hub",
+      "hub_neighbor_ratio": 0.257751013,
+      "measured_on": "random-n10-i00-manual-layout.json",
+      "measured_rho": -0.56445967,
+      "reference_rho": 0.59,
+      "routed_shape": "ring",
+      "sign_matches_reference": false
+    },
+    "random-n10-i05": {
+      "expected_shape": "ring",
+      "hub_neighbor_ratio": 1.401306241,
+      "measured_on": "random-n10-i05-manual-layout.json",
+      "measured_rho": 0.190128171,
+      "reference_rho": -0.26,
+      "routed_shape": "hub",
+      "sign_matches_reference": false
+    }
+  },
+  "schema": "stdraw.aesthetic_calibration/v2",
+  "shape_bucket_degeneracy": {
+    "absolute": {
+      "hub": {
+        "collapsed_share": 0.889,
+        "distinct_positive_vectors": 2,
+        "fully_degenerate_positive_side": false,
+        "kept_features": [
+          "alignment_max_coverage",
+          "bend_total_curvature"
+        ],
+        "largest_vector_group": 8,
+        "n_positive": 9,
+        "near_degenerate_positive_side": true,
+        "note": "NEAR-degenerate: 8/9 positives share ONE kept-feature vector (grid-snapped drags measure row/column alignment 1.0 and bend curvature 0 — export-format anchors carry no hand-routing info; v1 HONESTY NOTE caliber).  Their scores are identical and their retest deltas are 0 by construction; the bucket's AUC/separation is dominated by negative-side variance plus the minority anchors (the --from-layout product with real engine routing).",
+        "per_anchor": {
+          "brand-flywheel-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "classic-cld-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "comb-supply-demand-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "coupled-underinvestment-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "fan-d12-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 0.891891892,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "fan-d17-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "nonplanar-credit-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "random-n10-i05-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "retest-classic-cld-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          }
+        }
+      },
+      "ring": {
+        "collapsed_share": 0.778,
+        "distinct_positive_vectors": 3,
+        "fully_degenerate_positive_side": false,
+        "kept_features": [
+          "bend_total_curvature",
+          "crossing_count"
+        ],
+        "largest_vector_group": 7,
+        "n_positive": 9,
+        "near_degenerate_positive_side": false,
+        "note": null,
+        "per_anchor": {
+          "bowtie-wage-price-manual-layout.json": {
+            "features": {
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "epidemic-feedback-manual-layout.json": {
+            "features": {
+              "bend_total_curvature": 241.062236755,
+              "crossing_count": 0.0
+            }
+          },
+          "i05.json": {
+            "features": {
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "i11-a.json": {
+            "features": {
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "i11-b.json": {
+            "features": {
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "nested-capacity-manual-layout.json": {
+            "features": {
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "nested-learning-manual-layout.json": {
+            "features": {
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "nonplanar-inventory-manual-layout.json": {
+            "features": {
+              "bend_total_curvature": 0.0,
+              "crossing_count": 1.0
+            }
+          },
+          "random-n10-i00-manual-layout.json": {
+            "features": {
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          }
+        }
+      }
+    },
+    "normalized": {
+      "hub": {
+        "collapsed_share": 0.889,
+        "distinct_positive_vectors": 2,
+        "fully_degenerate_positive_side": false,
+        "kept_features": [
+          "alignment_max_coverage",
+          "bend_total_curvature"
+        ],
+        "largest_vector_group": 8,
+        "n_positive": 9,
+        "near_degenerate_positive_side": true,
+        "note": "NEAR-degenerate: 8/9 positives share ONE kept-feature vector (grid-snapped drags measure row/column alignment 1.0 and bend curvature 0 — export-format anchors carry no hand-routing info; v1 HONESTY NOTE caliber).  Their scores are identical and their retest deltas are 0 by construction; the bucket's AUC/separation is dominated by negative-side variance plus the minority anchors (the --from-layout product with real engine routing).",
+        "per_anchor": {
+          "brand-flywheel-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "classic-cld-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "comb-supply-demand-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "coupled-underinvestment-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "fan-d12-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 0.891891892,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "fan-d17-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "nonplanar-credit-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "random-n10-i05-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          },
+          "retest-classic-cld-manual-layout.json": {
+            "features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            }
+          }
+        }
+      },
+      "ring": {
+        "collapsed_share": 0.111,
+        "distinct_positive_vectors": 9,
+        "fully_degenerate_positive_side": false,
+        "kept_features": [
+          "avg_edge_length",
+          "bend_total_curvature",
+          "crossing_count"
+        ],
+        "largest_vector_group": 1,
+        "n_positive": 9,
+        "near_degenerate_positive_side": false,
+        "note": null,
+        "per_anchor": {
+          "bowtie-wage-price-manual-layout.json": {
+            "features": {
+              "avg_edge_length": 0.18531895894585204,
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "epidemic-feedback-manual-layout.json": {
+            "features": {
+              "avg_edge_length": 0.21616081625717756,
+              "bend_total_curvature": 241.062236755,
+              "crossing_count": 0.0
+            }
+          },
+          "i05.json": {
+            "features": {
+              "avg_edge_length": 0.19868481925695602,
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "i11-a.json": {
+            "features": {
+              "avg_edge_length": 0.11450692881600906,
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "i11-b.json": {
+            "features": {
+              "avg_edge_length": 0.12952285565289387,
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "nested-capacity-manual-layout.json": {
+            "features": {
+              "avg_edge_length": 0.2053249283784134,
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "nested-learning-manual-layout.json": {
+            "features": {
+              "avg_edge_length": 0.20832690091362455,
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          },
+          "nonplanar-inventory-manual-layout.json": {
+            "features": {
+              "avg_edge_length": 0.08100364219109255,
+              "bend_total_curvature": 0.0,
+              "crossing_count": 1.0
+            }
+          },
+          "random-n10-i00-manual-layout.json": {
+            "features": {
+              "avg_edge_length": 0.2600769482719638,
+              "bend_total_curvature": 0.0,
+              "crossing_count": 0.0
+            }
+          }
+        }
+      }
+    }
+  },
+  "shape_routing": {
+    "hub_intensity_threshold": 0.75,
+    "hub_intensity_threshold_derivation": {
+      "candidate_comparison": {
+        "normalized": {
+          "global": {
+            "note": "global fallback does not depend on the threshold",
+            "score_auc": [
+              0.955,
+              0.955
+            ],
+            "separation_margin": [
+              -47.1,
+              -47.1
+            ]
+          },
+          "hub": {
+            "loso_min": [
+              57.9,
+              57.4
+            ],
+            "negative_scores_max": [
+              77.0,
+              76.4
+            ],
+            "positive_scores_min": [
+              67.8,
+              67.4
+            ],
+            "score_auc": [
+              0.973913,
+              0.972727
+            ],
+            "separation_margin": [
+              -9.2,
+              -9.0
+            ]
+          },
+          "ring": {
+            "loso_min": [
+              17.3,
+              15.2
+            ],
+            "negative_scores_max": [
+              56.8,
+              54.1
+            ],
+            "positive_scores_min": [
+              49.9,
+              45.4
+            ],
+            "score_auc": [
+              0.976471,
+              0.955556
+            ],
+            "separation_margin": [
+              -6.9,
+              -8.7
+            ]
+          }
+        },
+        "routing_note": "0.8375 routing identical to the superseded 0.81 per-sample; 0.75 reclassifies induced-demand (0.80) hub->ring",
+        "source": "counterfactual refit over both gap midpoints (threshold-only difference; card evidence threshold_counterfactual.json — same numbers)",
+        "values_are": [
+          "0.75 (chosen)",
+          "0.8375 (rejected)"
+        ],
+        "verdict": "0.75 better on the headline dims (norm ring AUC/sep/pos_min/LOSO, norm hub AUC/pos_min/LOSO); 0.8375 better on three (hub separation_margin -9.0 vs -9.2, hub negative_scores_max 76.4 vs 77.0, ring negative_scores_max 54.1 vs 56.8; absolute ring neg-max 49.7 vs 50.3) — 0.75 is NOT strictly better on every metric; the choice rests on the headline AUC/LOSO advantage"
+      },
+      "derived_threshold": 0.75,
+      "empty_gaps": [
+        [
+          0.7,
+          0.8
+        ],
+        [
+          0.8,
+          0.875
+        ]
+      ],
+      "gap_midpoints": {
+        "0.75": "chosen",
+        "0.8375": "rejected"
+      },
+      "measured_distribution_this_run": {
+        "absolute": {
+          "eligible_count": 45,
+          "gap_checked": "(0.70, 0.80) open at this run",
+          "sorted_unique": [
+            0.333333,
+            0.375,
+            0.4,
+            0.444444,
+            0.5,
+            0.6,
+            0.666667,
+            0.7,
+            0.8,
+            0.875,
+            0.923077,
+            0.944444,
+            1.0,
+            1.2,
+            1.25
+          ]
+        },
+        "normalized": {
+          "eligible_count": 45,
+          "gap_checked": "(0.70, 0.80) open at this run",
+          "sorted_unique": [
+            0.333333,
+            0.375,
+            0.4,
+            0.444444,
+            0.5,
+            0.6,
+            0.666667,
+            0.7,
+            0.8,
+            0.875,
+            0.923077,
+            0.944444,
+            1.0,
+            1.2,
+            1.25
+          ]
+        }
+      },
+      "measured_values_around_gap": {
+        "classic_cld_growth_and_burden": 0.875,
+        "high_band_min": 0.923,
+        "induced_demand": 0.8,
+        "low_band_max": 0.7
+      },
+      "method": "midpoint of the measured empty hub-intensity gap over the threshold-eligible (unlabeled/nested-cycle) population (full corpus, supplemented-edge caliber). HAND-DERIVED, not auto-recomputed: every calibration run logs the per-sample intensity (routing_log \"hub_intensity\"; the calibration report carries measured_distribution_this_run) and check_hub_intensity_gap() RAISES if a threshold-eligible value lands strictly inside the (0.70, 0.80) gap — fail-loud, never a silent re-route on a stale derivation",
+      "reclassify_disclosure": "vs the superseded 0.81 snapshot this choice routes induced-demand (measured intensity 0.80) back to hub (ring n_negative 18 -> 17)",
+      "rederive_rule": "re-measure whenever the corpus grows; gap closure raises via check_hub_intensity_gap() (fail-loud), never tuned around"
+    },
+    "rho_threshold": 0.0,
+    "ring_excluded_features": [
+      "alignment_max_coverage"
+    ],
+    "rule": "unchanged from v1 (family label -> hub intensity >= 0.75 -> degree_canvas_spearman -> global fallback); batch-2 family labels (nested-ring/bowtie/comb/nonplanar) are NOT in the family->shape map, so they route by measurement exactly like the classic nested-cycle family does — routing semantics unchanged, labels only enrich reporting"
+  },
+  "test_retest_pairs": {
+    "classic-cld (11-06 vs 11-21 retest)": {
+      "delta_a": 0.0,
+      "delta_n": 0.0,
+      "drag_1": "classic-cld-manual-layout.json",
+      "drag_1_a": 81.3,
+      "drag_1_n": 81.3,
+      "drag_2": "retest-classic-cld-manual-layout.json",
+      "drag_2_a": 81.3,
+      "drag_2_n": 81.3,
+      "shape_drag_1_a": "hub",
+      "shape_drag_1_n": "hub",
+      "shape_drag_2_a": "hub",
+      "shape_drag_2_n": "hub"
+    },
+    "random-n10-i05 (11-16 vs 11-20 double drag)": {
+      "delta_a": 0.4,
+      "delta_n": 4.5,
+      "drag_1": "random-n10-i05-manual-layout.json",
+      "drag_1_a": 81.3,
+      "drag_1_n": 81.3,
+      "drag_2": "i05.json",
+      "drag_2_a": 81.7,
+      "drag_2_n": 85.8,
+      "shape_drag_1_a": "hub",
+      "shape_drag_1_n": "hub",
+      "shape_drag_2_a": "ring",
+      "shape_drag_2_n": "ring"
+    },
+    "random-n10-i11 (11-20 same-day double drag a/b)": {
+      "delta_a": 0.0,
+      "delta_n": 1.1,
+      "drag_1": "i11-a.json",
+      "drag_1_a": 81.7,
+      "drag_1_n": 96.9,
+      "drag_2": "i11-b.json",
+      "drag_2_a": 81.7,
+      "drag_2_n": 95.8,
+      "shape_drag_1_a": "ring",
+      "shape_drag_1_n": "ring",
+      "shape_drag_2_a": "ring",
+      "shape_drag_2_n": "ring"
+    }
+  },
+  "threshold_rederivation_audit": {
+    "gap_around_threshold_open": true,
+    "gap_is_empty": true,
+    "high_band_min": 0.8,
+    "low_band_max": 0.7,
+    "note": "designed flow: the anchor library doubling triggered a full gap re-measurement; verdict UNCHANGED keeps the hand-derived threshold only because the measured gap around it is still empty and the threshold is still the gap midpoint; any eligible value inside the gap would have raised via check_hub_intensity_gap() before this audit runs",
+    "sorted_unique_eligible_intensities": [
+      0.333333,
+      0.375,
+      0.4,
+      0.444444,
+      0.5,
+      0.6,
+      0.666667,
+      0.7,
+      0.8,
+      0.875,
+      0.923077,
+      0.944444,
+      1.0,
+      1.2,
+      1.25
+    ],
+    "threshold": 0.75,
+    "threshold_is_gap_midpoint": true,
+    "threshold_value_hits_a_sample": false,
+    "verdict": "UNCHANGED"
+  },
+  "v1_vs_v2_headline": {
+    "by_winning_caliber": [
+      [
+        "ring AUC",
+        0.976471,
+        0.993464
+      ],
+      [
+        "ring separation",
+        -6.9,
+        -1.6
+      ],
+      [
+        "ring neg max",
+        56.8,
+        58.1
+      ],
+      [
+        "ring pos min",
+        49.9,
+        56.5
+      ],
+      [
+        "ring n_pos/n_neg",
+        "5/17",
+        "9/17"
+      ],
+      [
+        "hub AUC",
+        0.973913,
+        0.985507
+      ],
+      [
+        "hub separation",
+        -9.2,
+        -13.9
+      ],
+      [
+        "hub neg max",
+        77.0,
+        79.3
+      ],
+      [
+        "hub pos min",
+        67.8,
+        65.4
+      ],
+      [
+        "hub n_pos/n_neg",
+        "5/23",
+        "9/23"
+      ],
+      [
+        "global AUC",
+        0.955,
+        0.975
+      ],
+      [
+        "global separation",
+        -47.1,
+        -54.1
+      ],
+      [
+        "global neg max",
+        83.2,
+        83.6
+      ],
+      [
+        "global pos min",
+        36.1,
+        29.5
+      ],
+      [
+        "global n_pos/n_neg",
+        "10/40",
+        "18/40"
+      ],
+      [
+        "LOSO ring min",
+        17.3,
+        13.8
+      ],
+      [
+        "LOSO hub min",
+        57.9,
+        63.6
+      ],
+      [
+        "human lower bound",
+        "{\"global\": 36.1, \"hub\": 67.8, \"ring\": 49.9}",
+        "{\"global\": 29.5, \"hub\": 65.4, \"ring\": 56.5}"
+      ]
+    ],
+    "calibers": {
+      "absolute": [
+        [
+          "ring AUC",
+          0.964706,
+          0.944444
+        ],
+        [
+          "ring separation",
+          -5.7,
+          -26.8
+        ],
+        [
+          "ring neg max",
+          50.3,
+          81.7
+        ],
+        [
+          "ring pos min",
+          44.6,
+          54.9
+        ],
+        [
+          "ring n_pos/n_neg",
+          "5/17",
+          "9/17"
+        ],
+        [
+          "hub AUC",
+          0.973913,
+          0.985507
+        ],
+        [
+          "hub separation",
+          -9.2,
+          -13.9
+        ],
+        [
+          "hub neg max",
+          77.0,
+          79.3
+        ],
+        [
+          "hub pos min",
+          67.8,
+          65.4
+        ],
+        [
+          "hub n_pos/n_neg",
+          "5/23",
+          "9/23"
+        ],
+        [
+          "global AUC",
+          0.955,
+          0.975
+        ],
+        [
+          "global separation",
+          -47.1,
+          -54.1
+        ],
+        [
+          "global neg max",
+          83.2,
+          83.6
+        ],
+        [
+          "global pos min",
+          36.1,
+          29.5
+        ],
+        [
+          "global n_pos/n_neg",
+          "10/40",
+          "18/40"
+        ],
+        [
+          "LOSO ring min",
+          1.3,
+          1.0
+        ],
+        [
+          "LOSO hub min",
+          57.9,
+          63.6
+        ],
+        [
+          "human lower bound",
+          "{\"global\": 36.1, \"hub\": 67.8, \"ring\": 44.6}",
+          "{\"global\": 29.5, \"hub\": 65.4, \"ring\": 54.9}"
+        ]
+      ],
+      "normalized": [
+        [
+          "ring AUC",
+          0.976471,
+          0.993464
+        ],
+        [
+          "ring separation",
+          -6.9,
+          -1.6
+        ],
+        [
+          "ring neg max",
+          56.8,
+          58.1
+        ],
+        [
+          "ring pos min",
+          49.9,
+          56.5
+        ],
+        [
+          "ring n_pos/n_neg",
+          "5/17",
+          "9/17"
+        ],
+        [
+          "hub AUC",
+          0.973913,
+          0.985507
+        ],
+        [
+          "hub separation",
+          -9.2,
+          -13.9
+        ],
+        [
+          "hub neg max",
+          77.0,
+          79.3
+        ],
+        [
+          "hub pos min",
+          67.8,
+          65.4
+        ],
+        [
+          "hub n_pos/n_neg",
+          "5/23",
+          "9/23"
+        ],
+        [
+          "global AUC",
+          0.955,
+          0.975
+        ],
+        [
+          "global separation",
+          -47.1,
+          -54.1
+        ],
+        [
+          "global neg max",
+          83.2,
+          83.6
+        ],
+        [
+          "global pos min",
+          36.1,
+          29.5
+        ],
+        [
+          "global n_pos/n_neg",
+          "10/40",
+          "18/40"
+        ],
+        [
+          "LOSO ring min",
+          17.3,
+          13.8
+        ],
+        [
+          "LOSO hub min",
+          57.9,
+          63.6
+        ],
+        [
+          "human lower bound",
+          "{\"global\": 36.1, \"hub\": 67.8, \"ring\": 49.9}",
+          "{\"global\": 29.5, \"hub\": 65.4, \"ring\": 56.5}"
+        ]
+      ]
+    },
+    "v1_snapshot": {
+      "file": "benchmarks/aesthetic/calibration-report.json",
+      "note": "committed v1 artifact read as-is (baseline snapshot)",
+      "winner": "normalized"
+    },
+    "v2_winner": "normalized"
+  }
+}

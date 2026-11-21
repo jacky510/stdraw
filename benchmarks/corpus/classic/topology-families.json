@@ -4,13 +4,15 @@
     "caliber": "纯图论口径（与引擎版本无关）：解析 .cld 的 var/edge/loop 三类行；环=有向基本环（含 2 节点双向眼）；分析脚本为本卡工作区临时件，不随仓维护，结果可由 networkx 3.7 复算",
     "pool_note": "目录现 20 图；canonical_19=true 的 19 图 = benchmarks/REPORT.md §3 WS4 口径经典池；success-to-the-successful 于 2026-11-11 作为第 20 图加入（REPORT §10.1 重测口径含它）",
     "family_rules": {
-      "优先级顺序": "非平面族 > 链/星(无环) > 单环 > 嵌套环 > 多环耦合",
+      "优先级顺序": "非平面族 > 梳状 > 领结 > 链/星(无环) > 单环 > 嵌套环 > 多环耦合（梳状/领结为 batch-2 新增族规则）",
       "非平面族": "无向简单图不满足平面性判据（networkx check_planarity）",
       "链": "无环(独立环维数=0) 且最大度<=2 的树",
       "星": "无环 且存在度>=3 枢纽的树",
       "单环": "恰 1 个有向基本环（可含悬挂枝）",
       "嵌套环": ">=2 个有向基本环，且存在环对(A,B)满足 V(A) 严格子集 V(B) 且共享有向边<=1（内环不沿外环路径重走）；本池内嵌套一律表现为「2 节点自增强眼嵌在长环节点对上」",
-      "多环耦合": "其余 >=2 环情形；subtype 细分——共享路径型(环对共享>=2条有向边)/共享单节点型(恰共享1节点,共享0边)/枢纽-单边束型(经共享单边或枢纽节点串联)"
+      "多环耦合": "其余 >=2 环情形；subtype 细分——共享路径型(环对共享>=2条有向边)/共享单节点型(恰共享1节点,共享0边)/枢纽-单边束型(经共享单边或枢纽节点串联)",
+      "梳状": "无环(独立环维数=0) 且存在两个度>=3 枢纽的无向邻域完全相同（共享邻居集），其余核心节点为悬挂树——comb-bilateral 触发形态（K_{m,2} 型）；梳状判据优先于星（否则无环+度>=3 会被星判据吞噬）",
+      "领结": "恰 2 个有向基本环且恰共享 1 个节点、共享 0 条有向边（bowtie-vertex 型，引擎 docs/layout-modes.md 同名模式）；若两环共享一条边（两三角共边）则为 bowtie-pair 型，同属领结族"
     },
     "metric_calibers": {
       "环数 cycles": "有向基本环计数（含 2 节点双向眼）；另报 cycle_basis_dim=无向独立环维数(m-n+c,不含双向眼) 与 declared_loops=DSL 声明环数",
@@ -20,7 +22,12 @@
     },
     "known_fixture_quirks": [
       "fishing-collapse 声明环 R2 [fleet,catch_amount,fish_stock] 缺闭合边 fish_stock->fleet，非有向环；仅登记不改动（loops lint 口径属语料维护方）"
-    ]
+    ],
+    "batch2_addition": {
+      "date": "2026-11-21",
+      "source": "benchmarks/manual/jacky-batch2/sources/*.cld + exports/ (PROVENANCE.md 为族标签权威)",
+      "note": "batch-2 人工锚点 8 份入库，供 aesthetic_score 校准使用；retest-classic-cld 与 classic-cld-growth-and-burden 为同一张图（重测对），不重复立頡目、沿用既有标签。族标签以 jacky 的 PROVENANCE 表为准；与池内旧判据的条款差异在各目 rationale 内如实登记。"
+    }
   },
   "family_counts": {
     "pool_20": {
@@ -38,6 +45,13 @@
       "多环耦合": 11,
       "嵌套环": 7,
       "非平面族": 0
+    },
+    "batch2": {
+      "嵌套环": 2,
+      "非平面族": 2,
+      "梳状": 1,
+      "领结": 1,
+      "多环耦合": 1
     }
   },
   "coverage_gaps": [
@@ -586,6 +600,197 @@
           "prices"
         ],
         "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "nested-capacity",
+      "file": "manual/jacky-batch2/sources/nested-capacity.cld",
+      "title": "产能投资双环",
+      "canonical_19": false,
+      "batch2": true,
+      "n": 8,
+      "m": 9,
+      "family": "嵌套环",
+      "subtype": "内环嵌外环共享前段路径",
+      "rationale": "2 个有向基本环（4 节点内环嵌 8 节点外环），V(内环)⊂V(外环) 成立；环对共享 3 条有向边，超出池内嵌套判据「共享有向边<=1」条款（本批嵌套形态为共享路径嵌套，PROVENANCE 族标签为准，条款差异如实登记不改判据）；环数=2/最长环=8/共享节点=4/平面",
+      "metrics": {
+        "cycles": 2,
+        "cycle_basis_dim": 2,
+        "declared_loops": 2,
+        "longest_cycle": 8,
+        "shared_loop_nodes": 4,
+        "shared_loop_node_names": [
+          "rev",
+          "profit",
+          "invest",
+          "capacity"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "nested-learning",
+      "file": "manual/jacky-batch2/sources/nested-learning.cld",
+      "title": "学习双环",
+      "canonical_19": false,
+      "batch2": true,
+      "n": 8,
+      "m": 9,
+      "family": "嵌套环",
+      "subtype": "内环嵌外环共享后段路径",
+      "rationale": "2 个有向基本环（4 节点内环 + 7 节点外环），内环节点集不严格子集于外环、共享 2 条有向边的路径段（池内「V 严格子集+共享边<=1」判据不满足，PROVENANCE 族标签为嵌套环，如实登记）；环数=2/最长环=7/共享节点=3/平面",
+      "metrics": {
+        "cycles": 2,
+        "cycle_basis_dim": 2,
+        "declared_loops": 2,
+        "longest_cycle": 7,
+        "shared_loop_nodes": 3,
+        "shared_loop_node_names": [
+          "lrn",
+          "perf",
+          "skill"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "coupled-underinvestment",
+      "file": "manual/jacky-batch2/sources/coupled-underinvestment.cld",
+      "title": "投资不足多环耦合",
+      "canonical_19": false,
+      "batch2": true,
+      "n": 10,
+      "m": 12,
+      "family": "多环耦合",
+      "subtype": "共享路径型",
+      "rationale": "3 个有向基本环（4/6/7 节点），环对共享 2–4 条有向边的路径段（共享路径型）；环数=3/最长环=7/共享节点=7/平面",
+      "metrics": {
+        "cycles": 3,
+        "cycle_basis_dim": 3,
+        "declared_loops": 3,
+        "longest_cycle": 7,
+        "shared_loop_nodes": 7,
+        "shared_loop_node_names": [
+          "capacity",
+          "delivery",
+          "demand",
+          "invest",
+          "profit",
+          "revenue",
+          "satisfy"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "comb-supply-demand",
+      "file": "manual/jacky-batch2/sources/comb-supply-demand.cld",
+      "title": "供需梳状",
+      "canonical_19": false,
+      "batch2": true,
+      "n": 8,
+      "m": 9,
+      "family": "梳状",
+      "subtype": "K_{m,2} 型双侧梳",
+      "rationale": "无环（独立环维数=0）；hub1/hub2 两枢纽无向邻域完全相同（共享邻居集），funding/fx/income 悬挂——梳状判据（本批新增族规则）优先于星；环数=0/平面/悬挂=3",
+      "metrics": {
+        "cycles": 0,
+        "cycle_basis_dim": 0,
+        "declared_loops": 0,
+        "longest_cycle": 0,
+        "shared_loop_nodes": 0,
+        "shared_loop_node_names": [],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": [
+          "funding",
+          "fx",
+          "income"
+        ]
+      }
+    },
+    {
+      "name": "bowtie-wage-price",
+      "file": "manual/jacky-batch2/sources/bowtie-wage-price.cld",
+      "title": "工资物价领结",
+      "canonical_19": false,
+      "batch2": true,
+      "n": 8,
+      "m": 9,
+      "family": "领结",
+      "subtype": "bowtie-vertex（单节点相切）",
+      "rationale": "恰 2 个有向基本环（4/5 节点）且恰共享 1 个节点 wage（共享 0 边，bowtie-vertex 型）；环数=2/最长环=5/共享节点=1/平面",
+      "metrics": {
+        "cycles": 2,
+        "cycle_basis_dim": 2,
+        "declared_loops": 2,
+        "longest_cycle": 5,
+        "shared_loop_nodes": 1,
+        "shared_loop_node_names": [
+          "wage"
+        ],
+        "planar": true,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "nonplanar-credit",
+      "file": "manual/jacky-batch2/sources/nonplanar-credit.cld",
+      "title": "信贷非平面",
+      "canonical_19": false,
+      "batch2": true,
+      "n": 9,
+      "m": 14,
+      "family": "非平面族",
+      "subtype": "无向非平面（DAG）",
+      "rationale": "无向简单图不满足平面性判据（networkx check_planarity=False，本表首个非平面族实例）；有向侧 0 基本环（DAG）、无声明环；环数=0/平面=False",
+      "metrics": {
+        "cycles": 0,
+        "cycle_basis_dim": 6,
+        "declared_loops": 0,
+        "longest_cycle": 0,
+        "shared_loop_nodes": 0,
+        "shared_loop_node_names": [],
+        "planar": false,
+        "components": 1,
+        "bidi_pairs": 0,
+        "pendant_nodes": []
+      }
+    },
+    {
+      "name": "nonplanar-inventory",
+      "file": "manual/jacky-batch2/sources/nonplanar-inventory.cld",
+      "title": "库存非平面",
+      "canonical_19": false,
+      "batch2": true,
+      "n": 9,
+      "m": 12,
+      "family": "非平面族",
+      "subtype": "无向非平面（DAG）",
+      "rationale": "无向简单图不满足平面性判据（networkx check_planarity=False）；有向侧 0 基本环（DAG）、无声明环；环数=0/平面=False",
+      "metrics": {
+        "cycles": 0,
+        "cycle_basis_dim": 4,
+        "declared_loops": 0,
+        "longest_cycle": 0,
+        "shared_loop_nodes": 0,
+        "shared_loop_node_names": [],
+        "planar": false,
         "components": 1,
         "bidi_pairs": 0,
         "pendant_nodes": []
