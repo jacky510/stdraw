@@ -176,7 +176,12 @@ def fresh_candidate(graph, source, outroot):
             r = subprocess.run(cmd, cwd=str(REPO), capture_output=True,
                                text=True, encoding="utf-8", errors="replace")
             if not (lj.exists() and cj.exists()):
-                out.append({"recipe": name, "error": (r.stderr or r.stdout)[-400:]})
+                # MINOR-1 fix (verifybot review 2026-11-21): sanitize the candidate
+                # cache directory out of stored error text — the cache path
+                # must not influence the output hash (path-independence).
+                raw = ((r.stderr or "") + (r.stdout or "")).replace(
+                    str(outroot), "<cand-cache>")
+                out.append({"recipe": name, "error": raw[-400:]})
                 continue
         # reuse: the CLI is deterministic, cached candidates are byte-identical
         with open(lj, "r", encoding="utf-8") as f:
@@ -195,8 +200,12 @@ class Scorer:
         self.model = model
         self.labels = labels
 
-    def score(self, doc):
-        g = doc.get("graph") or graph_name_of("")
+    def score(self, doc, graph=None):
+        # MAJOR-1 fix (verifybot review 2026-11-21): negatives-library docs carry no
+        # "graph" field; routing MUST use the filename-stem + family-label
+        # caliber of calibration-report-v2 (route_shape(graph_name, ...)),
+        # never an empty graph name.  Callers pass the stem explicitly.
+        g = graph or doc.get("graph") or graph_name_of("")
         row = scalars_for_layout(doc, WINNER_CALIBER)
         s = route_shape(g, row, self.labels)
         m = self.model["models"].get(s) or self.model["models"]["global"]
@@ -311,7 +320,7 @@ def main():
     neg_recs = []
     for p, doc in neg_docs:
         g = doc.get("graph") or graph_name_of(p)
-        score, shape, row = scorer.score(doc)
+        score, shape, row = scorer.score(doc, g)
         neg_recs.append({"path": p, "graph": g, "file": Path(p).name,
                          "score": score, "shape": shape, "row": row})
     committed = rep2["calibers"][WINNER_CALIBER]["positive_scores"]
@@ -513,7 +522,7 @@ def main():
         cands = []
         if g in engine_by_graph:
             doc = engine_by_graph[g]
-            sc, sh, _row = scorer.score(doc)
+            sc, sh, _row = scorer.score(doc, g)  # archived doc: route by filename stem
             cert = certificate_proxy(doc, g)
             cands.append({"source": "negatives-library (archived engine layout)",
                           "recipe": "archived", "score": sc, "shape": sh,
@@ -696,8 +705,12 @@ def main():
                           "crossings": cert["metrics"]["crossings"]})
         scored_steps = [s for s in steps if not s.get("gate_rejected")]
         drops = [s["delta_vs_prev"] for s in scored_steps if s["delta_vs_prev"] is not None]
-        n_dec = sum(1 for d in drops if d < 0)
-        n_inc = sum(1 for d in drops if d > 0)
+        # MAJOR-2 fix (verifybot review 2026-11-21): delta = prev_score - score, so
+        # d > 0 is a score DECREASE and d < 0 is a score INCREASE (the old
+        # code counted them swapped, making "monotone and n_dec > 0" a
+        # contradiction and "monotone-decreasing" unreachable).
+        n_dec = sum(1 for d in drops if d > 0)   # score went down
+        n_inc = sum(1 for d in drops if d < 0)   # score went up
         n_flat = sum(1 for d in drops if d == 0)
         if not scored_steps:
             resolution = "gate-blocked-at-origin"
@@ -707,12 +720,12 @@ def main():
             resolution = "monotone-decreasing"
         else:
             resolution = "mixed (has increase step)"
-        if monotone:
+        if monotone and scored_steps:
             mono_ok += 1
         dose[r["graph"] + ":" + r["file"]] = {
             "monotone_nondecreasing_dose": monotone,
             "resolution_class": resolution,
-            "steps_decrease_flat_increase": [n_dec, n_flat, n_inc],
+            "steps_increase_flat_decrease": [n_inc, n_flat, n_dec],
             "steps": steps}
     report["D6_perturbation"] = {
         "levels": LEVEL_NAMES,
@@ -734,7 +747,13 @@ def main():
                       "to rise (that IS the degradation being measured)"),
         "gate_rejections_per_level": rej,
         "n_anchors": len(pos_recs),
+        "n_anchors_scored": sum(1 for v in dose.values()
+                                if v["resolution_class"] != "gate-blocked-at-origin"),
         "n_anchors_monotone_nondecreasing": mono_ok,
+        "monotone_counter_note": ("counts only anchors with at least one scored "
+                                  "step and no score-increase step (verifybot "
+                                  "MINOR-4); the per-class breakdown above is "
+                                  "the honest reporting surface"),
         "per_anchor": dose,
         "dose_definition": ("L1 +-3px id-hash jitter on every node; L2 swap the "
                             "two lowest sorted ids; L3 reflect the first half of "

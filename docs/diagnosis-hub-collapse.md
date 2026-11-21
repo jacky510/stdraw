@@ -9,16 +9,24 @@
 - 复算：仓库开发解释器（Python 3.12）跑
   `python benchmarks/aesthetic/diagnose_collapse.py`（工作树根目录执行；
   本机解释器绝对路径不进被跟踪文件——泄漏门口径）
-- 确定性：同树双跑字节一致（输出 sha256 `430cfc96…5c5ba`）；脚本自断言 18 锚点
+- 确定性：同树双跑字节一致，且输出与候选缓存目录无关（冷/热缓存重跑 sha256 均
+  `79c7cfb9…d65e63`；2026-11-21 返修：候选缓存绝对路径已从产物脱敏，缓存路径
+  不再影响输出哈希）；脚本自断言 18 锚点
   分数/路由与 committed `calibration-report-v2.json` 逐位一致（loader 口径复现门）。
 
-口径声明（影响读数的三处）：
+口径声明（影响读数的四处）：
 1. 加载管线 = `calibrate_v2.py` 同一函数（同筛选、同补边链、同 completeness 门）；
 2. 打分只用 committed `model-v2.json`（normalized caliber 胜出口径），不重拟合；
 3. 存档文档（negatives 库 / batch-2 草稿）的证书为**代理口径**：直线中心距线段 +
    缺省卡 96×44（引擎交付缺省）过 `metrics.certificate`；现场重生成的引擎候选
    （auto / ortho / auto-arc，`--skip-3d`）用引擎真 `certificate.json`。两种口径在
    表中分别标注，不混用。
+4. **负样本打分路由与 calibration-report-v2 同口径**（文件名 stem + 家族标签 →
+   `route_shape`）。2026-11-21 返修（verifybot MAJOR-1）：初版误按空图名路由，
+   4 份负样本分数错误（urban-migration 87.7→24.7、burnout-attrition 71.0→9.6、
+   debt-spiral 41.7→15.4、arms-race 51.0→41.7）；修正后 40/40 负样本逐分与
+   committed `negative_scores_by_sample` 对齐，「5 份超人工下界 / 最高 87.7」
+   相应更正为「**3 份 / 79.3**」，`hub_bucket.n_negative` 20→23（=模型 fit 计数）。
 
 ---
 
@@ -28,7 +36,7 @@
 |---|---|---|
 | **A 特征盲** | hub 模型只保留 2 特征：`alignment_max_coverage`（w=+1.395）与 `bend_total_curvature`（w=−1.498）。9 正样本中 bend **恒为 0.0**（distinct=1），alignment 只有 **2 个取值**（8 个 =1.0，fan-d12 =0.8919）→ 输入侧本来就只有 2 个向量，81.3×8 + 65.4×1 是恒等映射，不是变换压缩 | **成立，主因** |
 | **C 优化压缩** | L4 饱和轻微：\|z\|≤1.473，sigmoid 导数 0.152–0.226（p≈0.81 处仍敏感）；L2 标准化后 kept 特征方差 0.035/0.0，L3 z 只有 2 个值（var 0.069）。z 差 0.835 完整保留到输出（81.3 vs 65.4）——压缩层没有吃掉任何差异 | **排除为主因** |
-| **C′ 筛选压缩**（评审"第三种解释"的修正落点） | 23/32 个标量在正样本间**有差异**，但被单变量 AUC 筛（\|AUC−0.5\|≥0.30）全部丢弃；其中 aspect_deviation AUC=0.783、layout_n_nodes 0.781、canvas_fill_rate 0.672、visual_centroid 0.656、voronoi_area_cv 0.636、mirror/symmetry_axis_err 0.619——多个近阈值判别信号在进入模型前被砍掉，多元组合信息从未参与 | **部分成立**（是筛选门槛压缩，不是 L2 收缩；权重收缩无从谈起，因为根本没进模型） |
+| **C′ 筛选压缩**（评审"第三种解释"的修正落点） | 23/32 个标量在正样本间**有差异**，但被单变量 AUC 筛（\|AUC−0.5\|≥0.30）全部丢弃；其中 layout_n_nodes AUC=0.807、aspect_deviation 0.783、canvas_fill_rate 0.676、mirror/symmetry_axis_err 0.673、visual_centroid 0.638、voronoi_area_cv 0.621——多个近阈值判别信号在进入模型前被砍掉，多元组合信息从未参与 | **部分成立**（是筛选门槛压缩，不是 L2 收缩；权重收缩无从谈起，因为根本没进模型） |
 | **D 子形态混合** | 桶内确为多族混合：嵌套环×3、fan/radial×2、梳状×1、非平面×1、多环耦合×1、随机×1（结构二分：radial 5 / non-radial 4）。但按族/结构分组后**组内分数仍全等**（嵌套环组 3 个全 81.3）——混合本身不致病，是 A 让桶"看不见"族差异 | **成立但不独立致病** |
 | **B 信号缺维** | 边风格/锚位数据只在 batch-2 导出存在（8/18=43% < MIN_COVERAGE 0.70，v2 卡已如实拒纳）；本审计未发现可由现有单源特征补入的新缺维 | **无新证据** |
 
@@ -49,23 +57,24 @@
   `loop_foreign_nodes`、`loop_overlap_area`、`loop_self_intersections`、
   `min_crossing_angle`（+ 2 个无数据 `loop_edge_length_cv`/`loop_compactness_mean`，
   覆盖率 0）
-- **有差异但被 AUC 筛丢弃（23 个）**：近阈值代表——
+- **有差异但被 AUC 筛丢弃（23 个）**：近阈值代表（AUC = hub 桶 9 正样本 vs **23 个
+  hub 负样本**，2026-11-21 返修统一口径后逐项微调）——
 
 | 特征 | 正样本 distinct | 正样本范围 | AUC(pos vs neg) | 模型内权重 |
 |---|---|---|---|---|
+| layout_n_nodes | 6 | 6–18 | **0.807** | —（被筛） |
 | aspect_deviation | 9 | 0.138–1.123 | **0.783** | —（被筛） |
-| layout_n_nodes | 6 | 6–18 | **0.781** | —（被筛） |
-| canvas_fill_rate | 9 | 0.063–0.224 | 0.672 | — |
-| visual_centroid_px / ratio | 9 | 0.014–0.050 | 0.656 | — |
-| voronoi_area_cv | 9 | 0.054–0.732 | 0.636 | — |
-| mirror_axis_err / symmetry_axis_err_px | 7 | 0.007–89.19 | 0.619 | — |
+| canvas_fill_rate | 9 | 0.063–0.224 | 0.676 | — |
+| mirror_axis_err / symmetry_axis_err_px | 7 | 0.007–89.19 | 0.673 | — |
+| visual_centroid_px / ratio | 9 | 0.014–0.050 | 0.638 | — |
+| voronoi_area_cv | 9 | 0.054–0.732 | 0.621 | — |
 | angular_resolution_min | 7 | — | 0.597 | — |
-| max_min_edge_ratio | 9 | — | 0.572 | — |
-| automorphism_residual | 7 | 0.007–33.51 | 0.286 | — |
-| min_spacing_px / ratio | 9 | 0.035–0.226 | 0.308 | — |
+| max_min_edge_ratio | 9 | — | 0.570 | — |
+| automorphism_residual | 7 | 0.007–33.51 | 0.388 | — |
+| min_spacing_px / ratio | 9 | 0.035–0.226 | 0.316 | — |
 
 - **有差异且保留（1 个）**：`alignment_max_coverage`，distinct=2，范围
-  [0.8919, 1.0]，AUC=0.867，w=+1.395（符号约束 expect w>0 ✓）
+  [0.8919, 1.0]，AUC=0.884，w=+1.395（符号约束 expect w>0 ✓）
 
 判别读数：**"特征在正样本间是常数"只对 bend_total_curvature 这一 kept 特征成立**；
 其余 22 个常数特征根本不在模型里。塌缩的直接机制 = kept 二特征输入向量只有 2 种。
@@ -85,7 +94,8 @@
 | **fan-d12** | (0.319, −0.690) | (+0.445, +1.034) | **+0.638** | **65.4** | 0.226 |
 
 - L2 压缩检查：kept 特征标准化后方差 0.035 / 0.0——alignment 的 0.108 原始差被
-  σ=1.187 放大为 0.598 标准差差，**L2 没有压缩差异**。
+  σ=0.180717 放大为 0.598 标准差差，**L2 没有压缩差异**（2026-11-21 返修：初版
+  误写 σ=1.187，实为 hub 模型 `standardize_std[alignment]`=0.180717）。
 - L4 饱和检查：最大 \|z\|=1.473，导数区间 [0.152, 0.226]，**饱和轻微**；两簇 z 差
   0.835 原样表现为 15.9 分差。分数恒等 = 输入恒等。
 
@@ -163,18 +173,28 @@ alignment=1.0、bend=0）。漏斗的同图排序能力在塌缩区为零。
 
 ## 5. 诊断五：高分负样本审计（v2 打分，top 8 / 40）
 
+打分路由 = calibration-report-v2 同款口径（口径声明第 4 条）；40/40 负样本逐分与
+committed `negative_scores_by_sample` 对齐（2026-11-21 返修修正 4 份错分，见上）。
+
 | 负样本 | 族 | 分 | 路由 | 交叉 | 证书 grade | kept 距最近锚 |
 |---|---|---|---|---|---|---|
-| urban-migration | classic/多环耦合 | **87.7** | ring | 0 | second | 0.735 (epidemic-feedback) |
 | **soil-erosion** | classic/嵌套环 | **79.3** | hub | **0** | **best** | **0.086**（brand-flywheel） |
 | **fishing-collapse** | classic/嵌套环 | 73.5 | hub | **0** | **best** | 0.302（brand-flywheel） |
-| burnout-attrition | classic/多环耦合 | 71.0 | ring | 0 | second | 1.718 |
-| random-n10-i18 | random-n10 | 70.8 | hub | 2 | second | 0.145 |
-| random-n10-i17 | random-n10 | 62.8 | hub | 2 | second | 0.633 |
-| random-n10-i02 | random-n10 | 58.1 | ring | 1 | second | 0.300 |
-| random-n10-i14 | random-n10 | 51.9 | ring | 2 | second | 0.204 |
+| random-n10-i18 | random-n10 | 70.8 | hub | 2 | second | 0.145（i05.json） |
+| random-n10-i17 | random-n10 | 62.8 | hub | 2 | second | 0.633（brand-flywheel） |
+| random-n10-i02 | random-n10 | 58.1 | ring | 1 | second | 0.300（brand-flywheel） |
+| random-n10-i14 | random-n10 | 51.9 | ring | 2 | second | 0.204（epidemic-feedback） |
+| shifting-the-burden | classic/嵌套环 | 50.1 | hub | 0 | **best** | 0.456（fan-d12） |
+| brand-flywheel（负例） | classic/嵌套环 | 46.2 | ring | 0 | **best** | 0.534（fan-d12） |
 
-汇总：40 负样本 **15 个 grade=best**；5 个分数高于人工下界 65.4；最高 87.7。
+汇总：40 负样本 **15 个 grade=best**（代理证书口径）；**3 个分数高于人工下界
+65.4**（soil-erosion / fishing-collapse / random-n10-i18）；最高 **79.3**。
+
+**证书口径限定（verifybot MINOR-3）**：代理证书只量直线中心距交叉，看不见折线
+自身交叉。random-n10-i03 在其交付折线几何下有 3 处端点共享型交叉（N05→N06 弧 ×
+N00→N06 / N06→N07 直线），按引擎 `visual_crossings` 硬门其 grade 不应为 best →
+「15/40 grade=best」在引擎语义下**可能是 14/40**（其余 14 份 best 均无折线交叉；
+soil-erosion / fishing-collapse 均 0，重标素材不受影响）。
 
 **供 default+jacky 拍板的重标素材**：soil-erosion（0 交叉 grade=best，kept 特征
 距最近人工锚仅 0.086——模型视野里与人手锚几乎同一个点）与 fishing-collapse
@@ -192,8 +212,14 @@ alignment=1.0、bend=0）。漏斗的同图排序能力在塌缩区为零。
 - 门剔除计数：L0=3，L1=3，L2=3，**L3=13，L4=13**（镜像反射大量造成卡重叠/压线，
   被门如实剔除）；3 锚点在原始布局就不过门（fan-d12、fan-d17、random-n10-i05
   手工导出），整条剂量线不可测，如实计为 gate-blocked。
-- **分辨率分类（15 个可测锚点）：严格单调下降 0；全平坦（无分辨率）5；混有上升步
-  10。**
+- **分辨率分类（15 个可测锚点；2026-11-21 返修：初版分类分支变量倒置，
+  `monotone-decreasing` 分支恒不可达，其"严格单调降 0 / 混有上升步 10"不可用，
+  已按下述真实口径重述）**：
+  - **严格单调不增**（每步 ≤ 前值且至少一步严格降）**6**：bowtie-wage-price、
+    nested-learning、nonplanar-inventory、i05.json、i11-a、epidemic-feedback；
+  - **混有上升步 4**：nested-capacity（L1 +0.1）、random-n10-i00（L1 +0.3）、
+    nonplanar-credit（L4 +0.2）、i11-b（L3 +2.0）；
+  - **全程平坦（无分辨率）5**；门拦 3。**6+4+5+3 = 18** ✓。
 
 | 锚点（可测，节选） | L0→…→L4 分数 | 分类 |
 |---|---|---|
@@ -201,18 +227,23 @@ alignment=1.0、bend=0）。漏斗的同图排序能力在塌缩区为零。
 | comb-supply-demand | 81.3 全程恒 | 无分辨率 |
 | classic-cld（两个 drag） | 81.3 恒至 L2，L3+ 被门剔 | 无分辨率 |
 | coupled-underinvestment | 81.3 恒至 L2，L3+ 被门剔 | 无分辨率 |
-| nonplanar-credit | 81.3 → 81.3 → 12.8 → 2.6 → 2.8 | 混合（L4 反升 +0.2；大跌幅来自路由翻转 hub→ring 换模型，非桶内梯度） |
-| nonplanar-inventory | 97.8 → 97.8 → 95.3 → 12.1 → 12.1 | 混合 |
+| nonplanar-credit | 81.3 → 81.3 → 12.8 → 2.6 → 2.8 | 混合（L2 起路由翻转 hub→ring；L4 反升 +0.2） |
+| nonplanar-inventory | 97.8 → 97.8 → 95.3 → 12.1 → 12.1 | 严格单调不增（L3 桶内 −83.2，ring→ring 未翻转） |
 | nested-capacity | 84.1 → **84.2**（抖动反升）→ 33.4 → 剔 | 混合 |
-| i11-a / i11-b | 96.9→…；95.8 → **95.9** → 77.5 → 79.5 | 混合 |
+| i05.json | 85.8 → 85.4 → 11.9 → 剔 | 严格单调不增（L2 桶内 −73.5，ring→ring） |
+| bowtie-wage-price | 88.6 → 88.6 → 57.0 → 剔 | 严格单调不增（L2 桶内 −31.6，ring→ring） |
+| i11-a / i11-b | 96.9→…（单调不增）；95.8 → **95.9** → 77.5 → 79.5（L1 +0.1、L3 +2.0） | i11-a 单调不增 / i11-b 混合 |
 
 **两个诚实的限定**：
 1. 剂量-容差：alignment 容差 = `ALIGN_TOL_FRAC(0.04) × min(画布边)` ≈ 22px，
    L4 挪离量 (7,5)px 远小于容差 → kept 特征在全部剂量内保持 1.0/0.0 不动。"无
    分辨率"结论限定在本卡剂量内；更强的挪离剂量是后续卡问题（改剂量参数表即可复算）。
-2. 大幅度分数变化全部来自**路由翻转**（换 shape 模型），桶内不存在连续梯度——
-   这正是"该区域无分辨率"的 fail-visible 证据：评分器对保持路由不翻转的布局恶化
-   完全不响应，对翻转则跳变。
+2. （2026-11-21 返修改写）**桶内大幅响应真实存在**：i05.json L2 85.4→11.9（−73.5）、
+   nonplanar-inventory L3 95.3→12.1（−83.2）、bowtie L2 88.6→57.0（−31.6）均为
+   **路由不翻转（ring→ring）的桶内大跌幅**——初版"大跌幅全部来自路由翻转、桶内
+   不存在连续梯度"的表述被自身数据否证，已删除。准确读法：**hub 桶 5 个可测锚点
+   全程平坦（该桶零分辨率）**；ring/global 侧则存在未翻转的桶内连续梯度，评分器
+   对布局恶化并非一律不响应。
 
 ## 7. 口径修正影响：v1/v2 哪些数字需要换口径重读
 
@@ -226,13 +257,15 @@ alignment=1.0、bend=0）。漏斗的同图排序能力在塌缩区为零。
 4. **8/9 塌缩本身**：不是模型失灵，是 kept 特征输入恒等的准确反映；应与"漏斗同图
    排序在塌缩区不可用（4/12 打平 + 评分器/交付 5/12 分歧）"一起披露。
 5. **hub test-retest delta=0**：构造性结果（v2 已披露），本次口径确认。
-6. **负样本库口径**：15/40 grade=best（含 soil-erosion / fishing-collapse 这类
-   0 交叉且 kept 距人工锚 <0.31 的输出）是否仍作负样本——待 jacky/default 拍板，
-   拍板前一切 sep/AUC 数字保持现口径不动。
+6. **负样本库口径**：15/40 grade=best（代理证书口径；random-n10-i03 在引擎折线
+   语义下存疑，或为 14/40——见 §5 证书口径限定。含 soil-erosion / fishing-collapse
+   这类 0 交叉且 kept 距人工锚 <0.31 的输出）是否仍作负样本——待 jacky/default
+   拍板，拍板前一切 sep/AUC 数字保持现口径不动。
 
 ## 8. 红线自查
 
 - 评分器代码 / 模型 / 校准产物 / 阈值 / 基线：零改动（`git status` 仅新增诊断脚本、
-  本报告、诊断 JSON）；负样本库只读未写；确定性双跑字节一致；分支推回不并 main。
+  本报告、诊断 JSON）；负样本库只读未写；确定性双跑字节一致且与候选缓存路径无关
+  （2026-11-21 返修）；分支推回不并 main。
 - 诊断自身新增口径（证书代理 96×44、直线段）均已在 §口径声明 标注，不回写任何
   正式产物。

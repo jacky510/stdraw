@@ -210,7 +210,7 @@
     "n_varies_but_dropped": 23,
     "per_feature": [
       {
-        "auc_pos_vs_neg": 0.866667,
+        "auc_pos_vs_neg": 0.884058,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 2,
@@ -223,7 +223,7 @@
         "weight": 1.395225209
       },
       {
-        "auc_pos_vs_neg": 0.597222,
+        "auc_pos_vs_neg": 0.596618,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 7,
@@ -236,7 +236,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.783333,
+        "auc_pos_vs_neg": 0.782609,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -249,9 +249,9 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.285714,
+        "auc_pos_vs_neg": 0.387755,
         "blind_class": "varies",
-        "coverage": 0.448276,
+        "coverage": 0.4375,
         "distinct_among_pos": 7,
         "feature": "automorphism_residual",
         "kept_in_hub_model": false,
@@ -262,7 +262,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.341667,
+        "auc_pos_vs_neg": 0.359903,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -275,7 +275,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.316667,
+        "auc_pos_vs_neg": 0.309179,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -288,7 +288,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.075,
+        "auc_pos_vs_neg": 0.086957,
         "blind_class": "A-constant-among-positives",
         "coverage": 1.0,
         "distinct_among_pos": 1,
@@ -301,7 +301,7 @@
         "weight": -1.49750669
       },
       {
-        "auc_pos_vs_neg": 0.672222,
+        "auc_pos_vs_neg": 0.676329,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -314,7 +314,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.480556,
+        "auc_pos_vs_neg": 0.490338,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 2,
@@ -327,7 +327,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.458333,
+        "auc_pos_vs_neg": 0.461353,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -340,7 +340,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.425,
+        "auc_pos_vs_neg": 0.442029,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -353,7 +353,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.566667,
+        "auc_pos_vs_neg": 0.596618,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 5,
@@ -366,7 +366,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.430556,
+        "auc_pos_vs_neg": 0.442029,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -379,7 +379,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.527778,
+        "auc_pos_vs_neg": 0.521739,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -392,7 +392,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.527778,
+        "auc_pos_vs_neg": 0.521739,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -420,7 +420,7 @@
       {
         "auc_pos_vs_neg": null,
         "blind_class": "A-no-data",
-        "coverage": 0.413793,
+        "coverage": 0.46875,
         "distinct_among_pos": 0,
         "feature": "loop_edge_length_cv",
         "kept_in_hub_model": false,
@@ -431,7 +431,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.475,
+        "auc_pos_vs_neg": 0.434783,
         "blind_class": "A-constant-among-positives",
         "coverage": 1.0,
         "distinct_among_pos": 1,
@@ -446,7 +446,7 @@
       {
         "auc_pos_vs_neg": null,
         "blind_class": "A-no-data",
-        "coverage": 0.241379,
+        "coverage": 0.3125,
         "distinct_among_pos": 0,
         "feature": "loop_compactness_mean",
         "kept_in_hub_model": false,
@@ -483,7 +483,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.572222,
+        "auc_pos_vs_neg": 0.570048,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -498,7 +498,7 @@
       {
         "auc_pos_vs_neg": 0.0,
         "blind_class": "A-constant-among-positives",
-        "coverage": 0.137931,
+        "coverage": 0.125,
         "distinct_among_pos": 1,
         "feature": "min_crossing_angle",
         "kept_in_hub_model": false,
@@ -509,7 +509,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.308333,
+        "auc_pos_vs_neg": 0.316425,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -522,7 +522,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.308333,
+        "auc_pos_vs_neg": 0.316425,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -535,9 +535,9 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.619048,
+        "auc_pos_vs_neg": 0.673469,
         "blind_class": "varies",
-        "coverage": 0.448276,
+        "coverage": 0.4375,
         "distinct_among_pos": 7,
         "feature": "mirror_axis_err",
         "kept_in_hub_model": false,
@@ -548,7 +548,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.552778,
+        "auc_pos_vs_neg": 0.543478,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -561,9 +561,9 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.619048,
+        "auc_pos_vs_neg": 0.673469,
         "blind_class": "varies",
-        "coverage": 0.448276,
+        "coverage": 0.4375,
         "distinct_among_pos": 7,
         "feature": "symmetry_axis_err_px",
         "kept_in_hub_model": false,
@@ -574,7 +574,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.655556,
+        "auc_pos_vs_neg": 0.637681,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -587,7 +587,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.655556,
+        "auc_pos_vs_neg": 0.637681,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -600,7 +600,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.636111,
+        "auc_pos_vs_neg": 0.620773,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 9,
@@ -613,7 +613,7 @@
         "weight": null
       },
       {
-        "auc_pos_vs_neg": 0.780556,
+        "auc_pos_vs_neg": 0.806763,
         "blind_class": "varies",
         "coverage": 1.0,
         "distinct_among_pos": 6,
@@ -2728,7 +2728,7 @@
             "source": "fresh CLI (this tree)"
           },
           {
-            "error": "roblems 0 -> C:\\Users\\jacky\\AppData\\Local\\Temp\\stdraw-diag-candidates\\nonplanar-credit.ortho\\loops_audit.json\n[3/6] 2D planar layer inapplicable: core subgraph non-planar (9 nodes / 14 edges) — 2D planar layer inapplicable; degrade to the 3D layer or use the uniform placement forms\n      honest degradation: skipping the 2D certificate (a replaceable layout-layer implementation is M1+)\n[6/6] done.\n",
+            "error": "d 0, closed 0, independently enumerated 0, problems 0 -> <cand-cache>\\nonplanar-credit.ortho\\loops_audit.json\n[3/6] 2D planar layer inapplicable: core subgraph non-planar (9 nodes / 14 edges) — 2D planar layer inapplicable; degrade to the 3D layer or use the uniform placement forms\n      honest degradation: skipping the 2D certificate (a replaceable layout-layer implementation is M1+)\n[6/6] done.\n",
             "recipe": "ortho",
             "source": "fresh CLI"
           },
@@ -2783,7 +2783,7 @@
             "source": "fresh CLI (this tree)"
           },
           {
-            "error": "lems 0 -> C:\\Users\\jacky\\AppData\\Local\\Temp\\stdraw-diag-candidates\\nonplanar-inventory.ortho\\loops_audit.json\n[3/6] 2D planar layer inapplicable: core subgraph non-planar (9 nodes / 12 edges) — 2D planar layer inapplicable; degrade to the 3D layer or use the uniform placement forms\n      honest degradation: skipping the 2D certificate (a replaceable layout-layer implementation is M1+)\n[6/6] done.\n",
+            "error": ", closed 0, independently enumerated 0, problems 0 -> <cand-cache>\\nonplanar-inventory.ortho\\loops_audit.json\n[3/6] 2D planar layer inapplicable: core subgraph non-planar (9 nodes / 12 edges) — 2D planar layer inapplicable; degrade to the 3D layer or use the uniform placement forms\n      honest degradation: skipping the 2D certificate (a replaceable layout-layer implementation is M1+)\n[6/6] done.\n",
             "recipe": "ortho",
             "source": "fresh CLI"
           },
@@ -3036,22 +3036,11 @@
   },
   "D5_negatives_summary": {
     "n_scored": 40,
-    "neg_score_max": 87.7,
-    "negatives_above_human_lower_bound": 5,
+    "neg_score_max": 79.3,
+    "negatives_above_human_lower_bound": 3,
     "negatives_with_grade_best": 15
   },
   "D5_negatives_top": [
-    {
-      "crossings": 0.0,
-      "family": "classic/多环耦合",
-      "grade": "second",
-      "grade_caliber": "proxy (straight segments)",
-      "graph": "urban-migration",
-      "kept_feature_l2_distance": 0.735,
-      "nearest_anchor": "epidemic-feedback:epidemic-feedback-manual-layout.json",
-      "score": 87.7,
-      "shape": "ring"
-    },
     {
       "crossings": 0.0,
       "family": "classic/嵌套环",
@@ -3073,17 +3062,6 @@
       "nearest_anchor": "brand-flywheel:brand-flywheel-manual-layout.json",
       "score": 73.5,
       "shape": "hub"
-    },
-    {
-      "crossings": 0.0,
-      "family": "classic/多环耦合",
-      "grade": "second",
-      "grade_caliber": "proxy (straight segments)",
-      "graph": "burnout-attrition",
-      "kept_feature_l2_distance": 1.7177,
-      "nearest_anchor": "fan-d12:fan-d12-manual-layout.json",
-      "score": 71.0,
-      "shape": "ring"
     },
     {
       "crossings": 2.0,
@@ -3128,6 +3106,28 @@
       "nearest_anchor": "epidemic-feedback:epidemic-feedback-manual-layout.json",
       "score": 51.9,
       "shape": "ring"
+    },
+    {
+      "crossings": 0.0,
+      "family": "classic/嵌套环",
+      "grade": "best",
+      "grade_caliber": "proxy (straight segments)",
+      "graph": "shifting-the-burden",
+      "kept_feature_l2_distance": 0.4558,
+      "nearest_anchor": "fan-d12:fan-d12-manual-layout.json",
+      "score": 50.1,
+      "shape": "hub"
+    },
+    {
+      "crossings": 0.0,
+      "family": "classic/嵌套环",
+      "grade": "best",
+      "grade_caliber": "proxy (straight segments)",
+      "graph": "brand-flywheel",
+      "kept_feature_l2_distance": 0.5339,
+      "nearest_anchor": "fan-d12:fan-d12-manual-layout.json",
+      "score": 46.2,
+      "shape": "ring"
     }
   ],
   "D6_perturbation": {
@@ -3148,13 +3148,15 @@
       "L3_break_mirror",
       "L4_off_align"
     ],
+    "monotone_counter_note": "counts only anchors with at least one scored step and no score-increase step (verifybot MINOR-4); the per-class breakdown above is the honest reporting surface",
     "n_anchors": 18,
-    "n_anchors_monotone_nondecreasing": 14,
+    "n_anchors_monotone_nondecreasing": 11,
+    "n_anchors_scored": 15,
     "n_l0_viable": 15,
     "per_anchor": {
       "bowtie-wage-price:bowtie-wage-price-manual-layout.json": {
         "monotone_nondecreasing_dose": true,
-        "resolution_class": "mixed (has increase step)",
+        "resolution_class": "monotone-decreasing",
         "steps": [
           {
             "crossings": 0,
@@ -3205,7 +3207,7 @@
             "min_card_gap": 0.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           1,
           1
@@ -3276,7 +3278,7 @@
             "score": 81.3
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           4,
           0
@@ -3335,7 +3337,7 @@
             "min_card_gap": 0.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           2,
           0
@@ -3394,7 +3396,7 @@
             "min_card_gap": 0.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           2,
           0
@@ -3465,7 +3467,7 @@
             "score": 81.3
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           4,
           0
@@ -3524,7 +3526,7 @@
             "min_card_gap": 0.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           2,
           0
@@ -3532,7 +3534,7 @@
       },
       "epidemic-feedback:epidemic-feedback-manual-layout.json": {
         "monotone_nondecreasing_dose": true,
-        "resolution_class": "mixed (has increase step)",
+        "resolution_class": "monotone-decreasing",
         "steps": [
           {
             "crossings": 0,
@@ -3583,7 +3585,7 @@
             "min_card_gap": 0.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           0,
           2
@@ -3624,7 +3626,7 @@
             "min_card_gap": 0.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           0,
           0
@@ -3665,7 +3667,7 @@
             "min_card_gap": 0.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           0,
           0
@@ -3724,7 +3726,7 @@
             "min_card_gap": 0.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           1,
           0,
           1
@@ -3732,7 +3734,7 @@
       },
       "nested-learning:nested-learning-manual-layout.json": {
         "monotone_nondecreasing_dose": true,
-        "resolution_class": "mixed (has increase step)",
+        "resolution_class": "monotone-decreasing",
         "steps": [
           {
             "crossings": 0,
@@ -3783,7 +3785,7 @@
             "min_card_gap": 0.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           1,
           1
@@ -3854,7 +3856,7 @@
             "score": 2.8
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           1,
           1,
           2
@@ -3862,7 +3864,7 @@
       },
       "nonplanar-inventory:nonplanar-inventory-manual-layout.json": {
         "monotone_nondecreasing_dose": true,
-        "resolution_class": "mixed (has increase step)",
+        "resolution_class": "monotone-decreasing",
         "steps": [
           {
             "crossings": 1,
@@ -3925,7 +3927,7 @@
             "score": 12.1
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           2,
           2
@@ -3984,7 +3986,7 @@
             "min_card_gap": 0.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           1,
           0,
           1
@@ -3992,7 +3994,7 @@
       },
       "random-n10-i05:i05.json": {
         "monotone_nondecreasing_dose": true,
-        "resolution_class": "mixed (has increase step)",
+        "resolution_class": "monotone-decreasing",
         "steps": [
           {
             "crossings": 0,
@@ -4043,7 +4045,7 @@
             "min_card_gap": 0.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           0,
           2
@@ -4084,7 +4086,7 @@
             "min_card_gap": 2.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           0,
           0
@@ -4092,7 +4094,7 @@
       },
       "random-n10-i11:i11-a.json": {
         "monotone_nondecreasing_dose": true,
-        "resolution_class": "mixed (has increase step)",
+        "resolution_class": "monotone-decreasing",
         "steps": [
           {
             "crossings": 0,
@@ -4143,7 +4145,7 @@
             "min_card_gap": 8.0
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           0,
           1,
           1
@@ -4214,7 +4216,7 @@
             "score": 79.5
           }
         ],
-        "steps_decrease_flat_increase": [
+        "steps_increase_flat_decrease": [
           2,
           1,
           1
@@ -4223,15 +4225,15 @@
     },
     "resolution_classes": {
       "gate-blocked": 3,
-      "mixed": 10,
-      "monotone-decreasing": 0,
+      "mixed": 4,
+      "monotone-decreasing": 6,
       "no-resolution": 5
     }
   },
   "caliber": "normalized",
   "card": "hub-bucket collapse diagnosis",
   "hub_bucket": {
-    "n_negative": 20,
+    "n_negative": 23,
     "n_positive": 9,
     "positives": [
       {
