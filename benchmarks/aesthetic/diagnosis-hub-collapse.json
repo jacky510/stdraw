@@ -1,0 +1,4277 @@
+{
+  "D1_layers": {
+    "L2_per_kept_feature": [
+      {
+        "distinct": 2,
+        "feature": "alignment_max_coverage",
+        "var": 0.03534466918755555
+      },
+      {
+        "distinct": 1,
+        "feature": "bend_total_curvature",
+        "var": 0.0
+      }
+    ],
+    "L3_distinct_z": 2,
+    "L3_z_var": 0.06880368236088888,
+    "L4_distinct_p": 2,
+    "L4_saturation": {
+      "max_abs_z": 1.472878,
+      "note": "logistic saturation is MILD when p in [0.5, 0.9]: the sigmoid derivative p(1-p) stays >= ~0.09; saturation can only explain score flattening between ALREADY-similar z values, not the identity of those values",
+      "p_at_collapsed_point": 0.813494,
+      "sigmoid_derivative_range": [
+        0.151721,
+        0.226175
+      ]
+    },
+    "per_anchor": [
+      {
+        "L1_raw": {
+          "alignment_max_coverage": 1.0,
+          "bend_total_curvature": 0.0
+        },
+        "L2_standardized": {
+          "alignment_max_coverage": 0.917141,
+          "bend_total_curvature": -0.690175
+        },
+        "L3_contributions": {
+          "alignment_max_coverage": 1.279619,
+          "bend_total_curvature": 1.033542
+        },
+        "L3_logit_z": 1.472878,
+        "L4_p": 0.813494,
+        "L4_score": 81.3,
+        "L4_sigmoid_derivative": 0.151721,
+        "anchor": "brand-flywheel:brand-flywheel-manual-layout.json"
+      },
+      {
+        "L1_raw": {
+          "alignment_max_coverage": 1.0,
+          "bend_total_curvature": 0.0
+        },
+        "L2_standardized": {
+          "alignment_max_coverage": 0.917141,
+          "bend_total_curvature": -0.690175
+        },
+        "L3_contributions": {
+          "alignment_max_coverage": 1.279619,
+          "bend_total_curvature": 1.033542
+        },
+        "L3_logit_z": 1.472878,
+        "L4_p": 0.813494,
+        "L4_score": 81.3,
+        "L4_sigmoid_derivative": 0.151721,
+        "anchor": "classic-cld-growth-and-burden:classic-cld-manual-layout.json"
+      },
+      {
+        "L1_raw": {
+          "alignment_max_coverage": 0.891892,
+          "bend_total_curvature": 0.0
+        },
+        "L2_standardized": {
+          "alignment_max_coverage": 0.318923,
+          "bend_total_curvature": -0.690175
+        },
+        "L3_contributions": {
+          "alignment_max_coverage": 0.44497,
+          "bend_total_curvature": 1.033542
+        },
+        "L3_logit_z": 0.63823,
+        "L4_p": 0.654353,
+        "L4_score": 65.4,
+        "L4_sigmoid_derivative": 0.226175,
+        "anchor": "fan-d12:fan-d12-manual-layout.json"
+      },
+      {
+        "L1_raw": {
+          "alignment_max_coverage": 1.0,
+          "bend_total_curvature": 0.0
+        },
+        "L2_standardized": {
+          "alignment_max_coverage": 0.917141,
+          "bend_total_curvature": -0.690175
+        },
+        "L3_contributions": {
+          "alignment_max_coverage": 1.279619,
+          "bend_total_curvature": 1.033542
+        },
+        "L3_logit_z": 1.472878,
+        "L4_p": 0.813494,
+        "L4_score": 81.3,
+        "L4_sigmoid_derivative": 0.151721,
+        "anchor": "fan-d17:fan-d17-manual-layout.json"
+      },
+      {
+        "L1_raw": {
+          "alignment_max_coverage": 1.0,
+          "bend_total_curvature": 0.0
+        },
+        "L2_standardized": {
+          "alignment_max_coverage": 0.917141,
+          "bend_total_curvature": -0.690175
+        },
+        "L3_contributions": {
+          "alignment_max_coverage": 1.279619,
+          "bend_total_curvature": 1.033542
+        },
+        "L3_logit_z": 1.472878,
+        "L4_p": 0.813494,
+        "L4_score": 81.3,
+        "L4_sigmoid_derivative": 0.151721,
+        "anchor": "comb-supply-demand:comb-supply-demand-manual-layout.json"
+      },
+      {
+        "L1_raw": {
+          "alignment_max_coverage": 1.0,
+          "bend_total_curvature": 0.0
+        },
+        "L2_standardized": {
+          "alignment_max_coverage": 0.917141,
+          "bend_total_curvature": -0.690175
+        },
+        "L3_contributions": {
+          "alignment_max_coverage": 1.279619,
+          "bend_total_curvature": 1.033542
+        },
+        "L3_logit_z": 1.472878,
+        "L4_p": 0.813494,
+        "L4_score": 81.3,
+        "L4_sigmoid_derivative": 0.151721,
+        "anchor": "coupled-underinvestment:coupled-underinvestment-manual-layout.json"
+      },
+      {
+        "L1_raw": {
+          "alignment_max_coverage": 1.0,
+          "bend_total_curvature": 0.0
+        },
+        "L2_standardized": {
+          "alignment_max_coverage": 0.917141,
+          "bend_total_curvature": -0.690175
+        },
+        "L3_contributions": {
+          "alignment_max_coverage": 1.279619,
+          "bend_total_curvature": 1.033542
+        },
+        "L3_logit_z": 1.472878,
+        "L4_p": 0.813494,
+        "L4_score": 81.3,
+        "L4_sigmoid_derivative": 0.151721,
+        "anchor": "nonplanar-credit:nonplanar-credit-manual-layout.json"
+      },
+      {
+        "L1_raw": {
+          "alignment_max_coverage": 1.0,
+          "bend_total_curvature": 0.0
+        },
+        "L2_standardized": {
+          "alignment_max_coverage": 0.917141,
+          "bend_total_curvature": -0.690175
+        },
+        "L3_contributions": {
+          "alignment_max_coverage": 1.279619,
+          "bend_total_curvature": 1.033542
+        },
+        "L3_logit_z": 1.472878,
+        "L4_p": 0.813494,
+        "L4_score": 81.3,
+        "L4_sigmoid_derivative": 0.151721,
+        "anchor": "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json"
+      },
+      {
+        "L1_raw": {
+          "alignment_max_coverage": 1.0,
+          "bend_total_curvature": 0.0
+        },
+        "L2_standardized": {
+          "alignment_max_coverage": 0.917141,
+          "bend_total_curvature": -0.690175
+        },
+        "L3_contributions": {
+          "alignment_max_coverage": 1.279619,
+          "bend_total_curvature": 1.033542
+        },
+        "L3_logit_z": 1.472878,
+        "L4_p": 0.813494,
+        "L4_score": 81.3,
+        "L4_sigmoid_derivative": 0.151721,
+        "anchor": "random-n10-i05:random-n10-i05-manual-layout.json"
+      }
+    ],
+    "score_scale_note": "score = 100*p; reported score rounding to 0.1 makes any dZ < ~0.001 invisible in the final score"
+  },
+  "D1_raw_audit": {
+    "kept_features": [
+      "alignment_max_coverage",
+      "bend_total_curvature"
+    ],
+    "n_constant_among_pos": 6,
+    "n_scalars_audited": 32,
+    "n_varies_and_kept": 1,
+    "n_varies_but_dropped": 23,
+    "per_feature": [
+      {
+        "auc_pos_vs_neg": 0.866667,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 2,
+        "feature": "alignment_max_coverage",
+        "kept_in_hub_model": true,
+        "pos_max": 1.0,
+        "pos_min": 0.891891892,
+        "pos_var": 0.0011543074583051528,
+        "sign_constraint": "expect w>0",
+        "weight": 1.395225209
+      },
+      {
+        "auc_pos_vs_neg": 0.597222,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 7,
+        "feature": "angular_resolution_min",
+        "kept_in_hub_model": false,
+        "pos_max": 38.237464016,
+        "pos_min": 0.0,
+        "pos_var": 162.9405107936067,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.783333,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "aspect_deviation",
+        "kept_in_hub_model": false,
+        "pos_max": 1.123287671,
+        "pos_min": 0.137931034,
+        "pos_var": 0.10634142950126052,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.285714,
+        "blind_class": "varies",
+        "coverage": 0.448276,
+        "distinct_among_pos": 7,
+        "feature": "automorphism_residual",
+        "kept_in_hub_model": false,
+        "pos_max": 33.51008071549333,
+        "pos_min": 0.006836250438991692,
+        "pos_var": 122.28332596110444,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.341667,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "avg_edge_length",
+        "kept_in_hub_model": false,
+        "pos_max": 0.3358903276746313,
+        "pos_min": 0.12413467060541418,
+        "pos_var": 0.00461817280153063,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.316667,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "bend_soft_margin",
+        "kept_in_hub_model": false,
+        "pos_max": 0.07038918832187852,
+        "pos_min": -0.02175455737730224,
+        "pos_var": 0.0006742351079450579,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.075,
+        "blind_class": "A-constant-among-positives",
+        "coverage": 1.0,
+        "distinct_among_pos": 1,
+        "feature": "bend_total_curvature",
+        "kept_in_hub_model": true,
+        "pos_max": 0.0,
+        "pos_min": 0.0,
+        "pos_var": 0.0,
+        "sign_constraint": "expect w<0",
+        "weight": -1.49750669
+      },
+      {
+        "auc_pos_vs_neg": 0.672222,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "canvas_fill_rate",
+        "kept_in_hub_model": false,
+        "pos_max": 0.223980528,
+        "pos_min": 0.062854346,
+        "pos_var": 0.00257576585745331,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.480556,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 2,
+        "feature": "crossing_count",
+        "kept_in_hub_model": false,
+        "pos_max": 2.0,
+        "pos_min": 0.0,
+        "pos_var": 0.3950617283950617,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.458333,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "edge_length_cv",
+        "kept_in_hub_model": false,
+        "pos_max": 0.489842178,
+        "pos_min": 0.081170292,
+        "pos_var": 0.017996630390387056,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.425,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "degree_canvas_spearman",
+        "kept_in_hub_model": false,
+        "pos_max": 0.190128171,
+        "pos_min": -0.575163946,
+        "pos_var": 0.10320117205581042,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.566667,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 5,
+        "feature": "hub_degree",
+        "kept_in_hub_model": false,
+        "pos_max": 17.0,
+        "pos_min": 3.0,
+        "pos_var": 20.39506172839506,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.430556,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "hub_neighbor_centrality_ratio",
+        "kept_in_hub_model": false,
+        "pos_max": 1.401306241,
+        "pos_min": 0.189382294,
+        "pos_var": 0.1768920906828937,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.527778,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "hub_centroid_ratio",
+        "kept_in_hub_model": false,
+        "pos_max": 0.417332853,
+        "pos_min": 0.003391914,
+        "pos_var": 0.01839245876458631,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.527778,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "hub_centroid_px",
+        "kept_in_hub_model": false,
+        "pos_max": 0.417332852531499,
+        "pos_min": 0.0033919137558948314,
+        "pos_var": 0.018392458715559792,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.5,
+        "blind_class": "A-constant-among-positives",
+        "coverage": 1.0,
+        "distinct_among_pos": 1,
+        "feature": "loop_edge_crossings",
+        "kept_in_hub_model": false,
+        "pos_max": 0.0,
+        "pos_min": 0.0,
+        "pos_var": 0.0,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": null,
+        "blind_class": "A-no-data",
+        "coverage": 0.413793,
+        "distinct_among_pos": 0,
+        "feature": "loop_edge_length_cv",
+        "kept_in_hub_model": false,
+        "pos_max": null,
+        "pos_min": null,
+        "pos_var": null,
+        "sign_constraint": null,
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.475,
+        "blind_class": "A-constant-among-positives",
+        "coverage": 1.0,
+        "distinct_among_pos": 1,
+        "feature": "loop_foreign_nodes",
+        "kept_in_hub_model": false,
+        "pos_max": 0.0,
+        "pos_min": 0.0,
+        "pos_var": 0.0,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": null,
+        "blind_class": "A-no-data",
+        "coverage": 0.241379,
+        "distinct_among_pos": 0,
+        "feature": "loop_compactness_mean",
+        "kept_in_hub_model": false,
+        "pos_max": null,
+        "pos_min": null,
+        "pos_var": null,
+        "sign_constraint": null,
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.5,
+        "blind_class": "A-constant-among-positives",
+        "coverage": 1.0,
+        "distinct_among_pos": 1,
+        "feature": "loop_overlap_area",
+        "kept_in_hub_model": false,
+        "pos_max": 0.0,
+        "pos_min": 0.0,
+        "pos_var": 0.0,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.5,
+        "blind_class": "A-constant-among-positives",
+        "coverage": 1.0,
+        "distinct_among_pos": 1,
+        "feature": "loop_self_intersections",
+        "kept_in_hub_model": false,
+        "pos_max": 0.0,
+        "pos_min": 0.0,
+        "pos_var": 0.0,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.572222,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "max_min_edge_ratio",
+        "kept_in_hub_model": false,
+        "pos_max": 4.314305516,
+        "pos_min": 1.297077878,
+        "pos_var": 1.1884061627718763,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.0,
+        "blind_class": "A-constant-among-positives",
+        "coverage": 0.137931,
+        "distinct_among_pos": 1,
+        "feature": "min_crossing_angle",
+        "kept_in_hub_model": false,
+        "pos_max": 36.410785403,
+        "pos_min": 36.410785403,
+        "pos_var": null,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.308333,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "min_spacing_ratio",
+        "kept_in_hub_model": false,
+        "pos_max": 0.226446465,
+        "pos_min": 0.034696629,
+        "pos_var": 0.0028346593010798848,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.308333,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "min_spacing_px",
+        "kept_in_hub_model": false,
+        "pos_max": 0.2264464652831459,
+        "pos_min": 0.03469662880854091,
+        "pos_var": 0.0028346593085511757,
+        "sign_constraint": "expect w<0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.619048,
+        "blind_class": "varies",
+        "coverage": 0.448276,
+        "distinct_among_pos": 7,
+        "feature": "mirror_axis_err",
+        "kept_in_hub_model": false,
+        "pos_max": 89.18991146917193,
+        "pos_min": 0.006836250438991692,
+        "pos_var": 836.944983132437,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.552778,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "node_spacing_cv",
+        "kept_in_hub_model": false,
+        "pos_max": 0.545588009,
+        "pos_min": 0.047874751,
+        "pos_var": 0.02093195166033954,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.619048,
+        "blind_class": "varies",
+        "coverage": 0.448276,
+        "distinct_among_pos": 7,
+        "feature": "symmetry_axis_err_px",
+        "kept_in_hub_model": false,
+        "pos_max": 89.18991146917193,
+        "pos_min": 0.006836250438991692,
+        "pos_var": 836.944983132437,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.655556,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "visual_centroid_px",
+        "kept_in_hub_model": false,
+        "pos_max": 0.05009140538883048,
+        "pos_min": 0.013955366486750933,
+        "pos_var": 0.00015048460660700122,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.655556,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "visual_centroid_ratio",
+        "kept_in_hub_model": false,
+        "pos_max": 0.050091405,
+        "pos_min": 0.013955366,
+        "pos_var": 0.0001504846071267112,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.636111,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 9,
+        "feature": "voronoi_area_cv",
+        "kept_in_hub_model": false,
+        "pos_max": 0.732319647,
+        "pos_min": 0.054330123,
+        "pos_var": 0.046934991094519846,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      },
+      {
+        "auc_pos_vs_neg": 0.780556,
+        "blind_class": "varies",
+        "coverage": 1.0,
+        "distinct_among_pos": 6,
+        "feature": "layout_n_nodes",
+        "kept_in_hub_model": false,
+        "pos_max": 18.0,
+        "pos_min": 6.0,
+        "pos_var": 11.333333333333334,
+        "sign_constraint": "expect w>0",
+        "weight": null
+      }
+    ]
+  },
+  "D2_correlation": {
+    "effective_dim_note": "effective independent dimension among the 9 hub positives = matrix rank of their raw feature matrix",
+    "hot_pairs": [
+      {
+        "a": "aspect_deviation",
+        "b": "degree_canvas_spearman",
+        "spearman": -0.9167
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "canvas_fill_rate",
+        "spearman": 0.9167
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.9167
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "hub_centroid_px",
+        "spearman": 0.9167
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": 0.9667
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.95
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "hub_centroid_px",
+        "spearman": 0.95
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.9833
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.9667
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "hub_centroid_px",
+        "spearman": 0.9667
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "hub_centroid_px",
+        "spearman": 1.0
+      },
+      {
+        "a": "min_spacing_ratio",
+        "b": "min_spacing_px",
+        "spearman": 1.0
+      },
+      {
+        "a": "mirror_axis_err",
+        "b": "symmetry_axis_err_px",
+        "spearman": 1.0
+      },
+      {
+        "a": "visual_centroid_px",
+        "b": "visual_centroid_ratio",
+        "spearman": 1.0
+      }
+    ],
+    "matrix_rank_among_positives": 9,
+    "n_pairs_ge_0.9": 14,
+    "n_variance_carriers": 24,
+    "pairwise_spearman": [
+      {
+        "a": "alignment_max_coverage",
+        "b": "angular_resolution_min",
+        "spearman": -0.2785
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "aspect_deviation",
+        "spearman": -0.2739
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "automorphism_residual",
+        "spearman": 0.0
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "avg_edge_length",
+        "spearman": 0.4108
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "bend_soft_margin",
+        "spearman": -0.2739
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "canvas_fill_rate",
+        "spearman": 0.2739
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "crossing_count",
+        "spearman": 0.125
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "edge_length_cv",
+        "spearman": 0.4108
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "degree_canvas_spearman",
+        "spearman": 0.2739
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "hub_degree",
+        "spearman": -0.4215
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": 0.4108
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.5477
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "hub_centroid_px",
+        "spearman": 0.5477
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.4108
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "min_spacing_ratio",
+        "spearman": 0.4108
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "min_spacing_px",
+        "spearman": 0.4108
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "mirror_axis_err",
+        "spearman": 0.2041
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "node_spacing_cv",
+        "spearman": -0.1369
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.2041
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "visual_centroid_px",
+        "spearman": -0.1369
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "visual_centroid_ratio",
+        "spearman": -0.1369
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "voronoi_area_cv",
+        "spearman": -0.5477
+      },
+      {
+        "a": "alignment_max_coverage",
+        "b": "layout_n_nodes",
+        "spearman": -0.4196
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "aspect_deviation",
+        "spearman": -0.1526
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "automorphism_residual",
+        "spearman": -0.8108
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "avg_edge_length",
+        "spearman": -0.2034
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "bend_soft_margin",
+        "spearman": 0.0678
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "canvas_fill_rate",
+        "spearman": 0.1187
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "crossing_count",
+        "spearman": -0.1393
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "edge_length_cv",
+        "spearman": 0.2373
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "degree_canvas_spearman",
+        "spearman": 0.2712
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "hub_degree",
+        "spearman": -0.4261
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": 0.1526
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.0
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "hub_centroid_px",
+        "spearman": 0.0
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.2373
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "min_spacing_ratio",
+        "spearman": -0.712
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "min_spacing_px",
+        "spearman": -0.712
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "mirror_axis_err",
+        "spearman": -0.7568
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "node_spacing_cv",
+        "spearman": 0.5933
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "symmetry_axis_err_px",
+        "spearman": -0.7568
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "visual_centroid_px",
+        "spearman": -0.2543
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "visual_centroid_ratio",
+        "spearman": -0.2543
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "voronoi_area_cv",
+        "spearman": 0.2034
+      },
+      {
+        "a": "angular_resolution_min",
+        "b": "layout_n_nodes",
+        "spearman": 0.5455
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "automorphism_residual",
+        "spearman": 0.25
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "avg_edge_length",
+        "spearman": -0.6833
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "bend_soft_margin",
+        "spearman": 0.5333
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "canvas_fill_rate",
+        "spearman": -0.8167
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "crossing_count",
+        "spearman": -0.5477
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "edge_length_cv",
+        "spearman": -0.5
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "degree_canvas_spearman",
+        "spearman": -0.9167
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "hub_degree",
+        "spearman": 0.5643
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": -0.7333
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "hub_centroid_ratio",
+        "spearman": -0.8
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "hub_centroid_px",
+        "spearman": -0.8
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "max_min_edge_ratio",
+        "spearman": -0.4833
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "min_spacing_ratio",
+        "spearman": -0.25
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "min_spacing_px",
+        "spearman": -0.25
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "mirror_axis_err",
+        "spearman": 0.0714
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "node_spacing_cv",
+        "spearman": -0.2167
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.0714
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "visual_centroid_px",
+        "spearman": 0.5667
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.5667
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "voronoi_area_cv",
+        "spearman": 0.5833
+      },
+      {
+        "a": "aspect_deviation",
+        "b": "layout_n_nodes",
+        "spearman": 0.1192
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "avg_edge_length",
+        "spearman": 0.3214
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "bend_soft_margin",
+        "spearman": -0.2143
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "canvas_fill_rate",
+        "spearman": 0.0357
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "crossing_count",
+        "spearman": 0.6124
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "edge_length_cv",
+        "spearman": 0.0714
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "degree_canvas_spearman",
+        "spearman": -0.1786
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "hub_degree",
+        "spearman": 0.291
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": 0.1071
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.0714
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "hub_centroid_px",
+        "spearman": 0.0714
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.1071
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "min_spacing_ratio",
+        "spearman": 0.6071
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "min_spacing_px",
+        "spearman": 0.6071
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "mirror_axis_err",
+        "spearman": 0.8214
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "node_spacing_cv",
+        "spearman": -0.5
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.8214
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "visual_centroid_px",
+        "spearman": 0.6786
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.6786
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "voronoi_area_cv",
+        "spearman": -0.2143
+      },
+      {
+        "a": "automorphism_residual",
+        "b": "layout_n_nodes",
+        "spearman": -0.1853
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "bend_soft_margin",
+        "spearman": -0.6667
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "canvas_fill_rate",
+        "spearman": 0.9167
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "crossing_count",
+        "spearman": 0.4108
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "edge_length_cv",
+        "spearman": 0.7833
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "degree_canvas_spearman",
+        "spearman": 0.6667
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "hub_degree",
+        "spearman": -0.5472
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": 0.8833
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.9167
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "hub_centroid_px",
+        "spearman": 0.9167
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.7333
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "min_spacing_ratio",
+        "spearman": 0.6833
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "min_spacing_px",
+        "spearman": 0.6833
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "mirror_axis_err",
+        "spearman": 0.3214
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "node_spacing_cv",
+        "spearman": -0.2
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.3214
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "visual_centroid_px",
+        "spearman": 0.0833
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.0833
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "voronoi_area_cv",
+        "spearman": -0.6833
+      },
+      {
+        "a": "avg_edge_length",
+        "b": "layout_n_nodes",
+        "spearman": -0.4512
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "canvas_fill_rate",
+        "spearman": -0.5167
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "crossing_count",
+        "spearman": -0.4108
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "edge_length_cv",
+        "spearman": -0.6
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "degree_canvas_spearman",
+        "spearman": -0.4667
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "hub_degree",
+        "spearman": 0.1368
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": -0.45
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "hub_centroid_ratio",
+        "spearman": -0.5333
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "hub_centroid_px",
+        "spearman": -0.5333
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "max_min_edge_ratio",
+        "spearman": -0.5333
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "min_spacing_ratio",
+        "spearman": -0.1333
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "min_spacing_px",
+        "spearman": -0.1333
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "mirror_axis_err",
+        "spearman": -0.4286
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "node_spacing_cv",
+        "spearman": -0.45
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "symmetry_axis_err_px",
+        "spearman": -0.4286
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "visual_centroid_px",
+        "spearman": -0.0167
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "visual_centroid_ratio",
+        "spearman": -0.0167
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "voronoi_area_cv",
+        "spearman": 0.0167
+      },
+      {
+        "a": "bend_soft_margin",
+        "b": "layout_n_nodes",
+        "spearman": 0.0341
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "crossing_count",
+        "spearman": 0.4108
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "edge_length_cv",
+        "spearman": 0.7833
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "degree_canvas_spearman",
+        "spearman": 0.85
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "hub_degree",
+        "spearman": -0.6925
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": 0.9667
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.95
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "hub_centroid_px",
+        "spearman": 0.95
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.75
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "min_spacing_ratio",
+        "spearman": 0.4833
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "min_spacing_px",
+        "spearman": 0.4833
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "mirror_axis_err",
+        "spearman": 0.0
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "node_spacing_cv",
+        "spearman": -0.1
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.0
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "visual_centroid_px",
+        "spearman": -0.1
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "visual_centroid_ratio",
+        "spearman": -0.1
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "voronoi_area_cv",
+        "spearman": -0.7333
+      },
+      {
+        "a": "canvas_fill_rate",
+        "b": "layout_n_nodes",
+        "spearman": -0.2469
+      },
+      {
+        "a": "crossing_count",
+        "b": "edge_length_cv",
+        "spearman": 0.4108
+      },
+      {
+        "a": "crossing_count",
+        "b": "degree_canvas_spearman",
+        "spearman": 0.4108
+      },
+      {
+        "a": "crossing_count",
+        "b": "hub_degree",
+        "spearman": -0.1405
+      },
+      {
+        "a": "crossing_count",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": 0.4108
+      },
+      {
+        "a": "crossing_count",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.4108
+      },
+      {
+        "a": "crossing_count",
+        "b": "hub_centroid_px",
+        "spearman": 0.4108
+      },
+      {
+        "a": "crossing_count",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.4108
+      },
+      {
+        "a": "crossing_count",
+        "b": "min_spacing_ratio",
+        "spearman": 0.2739
+      },
+      {
+        "a": "crossing_count",
+        "b": "min_spacing_px",
+        "spearman": 0.2739
+      },
+      {
+        "a": "crossing_count",
+        "b": "mirror_axis_err",
+        "spearman": 0.6124
+      },
+      {
+        "a": "crossing_count",
+        "b": "node_spacing_cv",
+        "spearman": 0.2739
+      },
+      {
+        "a": "crossing_count",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.6124
+      },
+      {
+        "a": "crossing_count",
+        "b": "visual_centroid_px",
+        "spearman": 0.0
+      },
+      {
+        "a": "crossing_count",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.0
+      },
+      {
+        "a": "crossing_count",
+        "b": "voronoi_area_cv",
+        "spearman": -0.2739
+      },
+      {
+        "a": "crossing_count",
+        "b": "layout_n_nodes",
+        "spearman": 0.0
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "degree_canvas_spearman",
+        "spearman": 0.5833
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "hub_degree",
+        "spearman": -0.7182
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": 0.8667
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.8
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "hub_centroid_px",
+        "spearman": 0.8
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.9833
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "min_spacing_ratio",
+        "spearman": 0.2833
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "min_spacing_px",
+        "spearman": 0.2833
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "mirror_axis_err",
+        "spearman": 0.0
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "node_spacing_cv",
+        "spearman": 0.15
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.0
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "visual_centroid_px",
+        "spearman": 0.2667
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.2667
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "voronoi_area_cv",
+        "spearman": -0.4333
+      },
+      {
+        "a": "edge_length_cv",
+        "b": "layout_n_nodes",
+        "spearman": -0.1958
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "hub_degree",
+        "spearman": -0.5643
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": 0.8167
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.85
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "hub_centroid_px",
+        "spearman": 0.85
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.6
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "min_spacing_ratio",
+        "spearman": 0.1333
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "min_spacing_px",
+        "spearman": 0.1333
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "mirror_axis_err",
+        "spearman": -0.1071
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "node_spacing_cv",
+        "spearman": 0.15
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "symmetry_axis_err_px",
+        "spearman": -0.1071
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "visual_centroid_px",
+        "spearman": -0.4
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "visual_centroid_ratio",
+        "spearman": -0.4
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "voronoi_area_cv",
+        "spearman": -0.5833
+      },
+      {
+        "a": "degree_canvas_spearman",
+        "b": "layout_n_nodes",
+        "spearman": 0.0596
+      },
+      {
+        "a": "hub_degree",
+        "b": "hub_neighbor_centrality_ratio",
+        "spearman": -0.7609
+      },
+      {
+        "a": "hub_degree",
+        "b": "hub_centroid_ratio",
+        "spearman": -0.7011
+      },
+      {
+        "a": "hub_degree",
+        "b": "hub_centroid_px",
+        "spearman": -0.7011
+      },
+      {
+        "a": "hub_degree",
+        "b": "max_min_edge_ratio",
+        "spearman": -0.7182
+      },
+      {
+        "a": "hub_degree",
+        "b": "min_spacing_ratio",
+        "spearman": -0.2479
+      },
+      {
+        "a": "hub_degree",
+        "b": "min_spacing_px",
+        "spearman": -0.2479
+      },
+      {
+        "a": "hub_degree",
+        "b": "mirror_axis_err",
+        "spearman": 0.4183
+      },
+      {
+        "a": "hub_degree",
+        "b": "node_spacing_cv",
+        "spearman": -0.0171
+      },
+      {
+        "a": "hub_degree",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.4183
+      },
+      {
+        "a": "hub_degree",
+        "b": "visual_centroid_px",
+        "spearman": 0.2394
+      },
+      {
+        "a": "hub_degree",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.2394
+      },
+      {
+        "a": "hub_degree",
+        "b": "voronoi_area_cv",
+        "spearman": 0.6156
+      },
+      {
+        "a": "hub_degree",
+        "b": "layout_n_nodes",
+        "spearman": 0.4061
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "hub_centroid_ratio",
+        "spearman": 0.9667
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "hub_centroid_px",
+        "spearman": 0.9667
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.85
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "min_spacing_ratio",
+        "spearman": 0.4667
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "min_spacing_px",
+        "spearman": 0.4667
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "mirror_axis_err",
+        "spearman": 0.0357
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "node_spacing_cv",
+        "spearman": -0.1167
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.0357
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "visual_centroid_px",
+        "spearman": 0.0
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.0
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "voronoi_area_cv",
+        "spearman": -0.7667
+      },
+      {
+        "a": "hub_neighbor_centrality_ratio",
+        "b": "layout_n_nodes",
+        "spearman": -0.2384
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "hub_centroid_px",
+        "spearman": 1.0
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.7833
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "min_spacing_ratio",
+        "spearman": 0.5333
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "min_spacing_px",
+        "spearman": 0.5333
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "mirror_axis_err",
+        "spearman": 0.1071
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "node_spacing_cv",
+        "spearman": -0.1333
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.1071
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "visual_centroid_px",
+        "spearman": -0.1167
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "visual_centroid_ratio",
+        "spearman": -0.1167
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "voronoi_area_cv",
+        "spearman": -0.8
+      },
+      {
+        "a": "hub_centroid_ratio",
+        "b": "layout_n_nodes",
+        "spearman": -0.315
+      },
+      {
+        "a": "hub_centroid_px",
+        "b": "max_min_edge_ratio",
+        "spearman": 0.7833
+      },
+      {
+        "a": "hub_centroid_px",
+        "b": "min_spacing_ratio",
+        "spearman": 0.5333
+      },
+      {
+        "a": "hub_centroid_px",
+        "b": "min_spacing_px",
+        "spearman": 0.5333
+      },
+      {
+        "a": "hub_centroid_px",
+        "b": "mirror_axis_err",
+        "spearman": 0.1071
+      },
+      {
+        "a": "hub_centroid_px",
+        "b": "node_spacing_cv",
+        "spearman": -0.1333
+      },
+      {
+        "a": "hub_centroid_px",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.1071
+      },
+      {
+        "a": "hub_centroid_px",
+        "b": "visual_centroid_px",
+        "spearman": -0.1167
+      },
+      {
+        "a": "hub_centroid_px",
+        "b": "visual_centroid_ratio",
+        "spearman": -0.1167
+      },
+      {
+        "a": "hub_centroid_px",
+        "b": "voronoi_area_cv",
+        "spearman": -0.8
+      },
+      {
+        "a": "hub_centroid_px",
+        "b": "layout_n_nodes",
+        "spearman": -0.315
+      },
+      {
+        "a": "max_min_edge_ratio",
+        "b": "min_spacing_ratio",
+        "spearman": 0.25
+      },
+      {
+        "a": "max_min_edge_ratio",
+        "b": "min_spacing_px",
+        "spearman": 0.25
+      },
+      {
+        "a": "max_min_edge_ratio",
+        "b": "mirror_axis_err",
+        "spearman": -0.0714
+      },
+      {
+        "a": "max_min_edge_ratio",
+        "b": "node_spacing_cv",
+        "spearman": 0.1333
+      },
+      {
+        "a": "max_min_edge_ratio",
+        "b": "symmetry_axis_err_px",
+        "spearman": -0.0714
+      },
+      {
+        "a": "max_min_edge_ratio",
+        "b": "visual_centroid_px",
+        "spearman": 0.2833
+      },
+      {
+        "a": "max_min_edge_ratio",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.2833
+      },
+      {
+        "a": "max_min_edge_ratio",
+        "b": "voronoi_area_cv",
+        "spearman": -0.4167
+      },
+      {
+        "a": "max_min_edge_ratio",
+        "b": "layout_n_nodes",
+        "spearman": -0.1958
+      },
+      {
+        "a": "min_spacing_ratio",
+        "b": "min_spacing_px",
+        "spearman": 1.0
+      },
+      {
+        "a": "min_spacing_ratio",
+        "b": "mirror_axis_err",
+        "spearman": 0.5
+      },
+      {
+        "a": "min_spacing_ratio",
+        "b": "node_spacing_cv",
+        "spearman": -0.7167
+      },
+      {
+        "a": "min_spacing_ratio",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.5
+      },
+      {
+        "a": "min_spacing_ratio",
+        "b": "visual_centroid_px",
+        "spearman": 0.1833
+      },
+      {
+        "a": "min_spacing_ratio",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.1833
+      },
+      {
+        "a": "min_spacing_ratio",
+        "b": "voronoi_area_cv",
+        "spearman": -0.7333
+      },
+      {
+        "a": "min_spacing_ratio",
+        "b": "layout_n_nodes",
+        "spearman": -0.7917
+      },
+      {
+        "a": "min_spacing_px",
+        "b": "mirror_axis_err",
+        "spearman": 0.5
+      },
+      {
+        "a": "min_spacing_px",
+        "b": "node_spacing_cv",
+        "spearman": -0.7167
+      },
+      {
+        "a": "min_spacing_px",
+        "b": "symmetry_axis_err_px",
+        "spearman": 0.5
+      },
+      {
+        "a": "min_spacing_px",
+        "b": "visual_centroid_px",
+        "spearman": 0.1833
+      },
+      {
+        "a": "min_spacing_px",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.1833
+      },
+      {
+        "a": "min_spacing_px",
+        "b": "voronoi_area_cv",
+        "spearman": -0.7333
+      },
+      {
+        "a": "min_spacing_px",
+        "b": "layout_n_nodes",
+        "spearman": -0.7917
+      },
+      {
+        "a": "mirror_axis_err",
+        "b": "node_spacing_cv",
+        "spearman": -0.2143
+      },
+      {
+        "a": "mirror_axis_err",
+        "b": "symmetry_axis_err_px",
+        "spearman": 1.0
+      },
+      {
+        "a": "mirror_axis_err",
+        "b": "visual_centroid_px",
+        "spearman": 0.2857
+      },
+      {
+        "a": "mirror_axis_err",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.2857
+      },
+      {
+        "a": "mirror_axis_err",
+        "b": "voronoi_area_cv",
+        "spearman": -0.2143
+      },
+      {
+        "a": "mirror_axis_err",
+        "b": "layout_n_nodes",
+        "spearman": 0.0371
+      },
+      {
+        "a": "node_spacing_cv",
+        "b": "symmetry_axis_err_px",
+        "spearman": -0.2143
+      },
+      {
+        "a": "node_spacing_cv",
+        "b": "visual_centroid_px",
+        "spearman": -0.2833
+      },
+      {
+        "a": "node_spacing_cv",
+        "b": "visual_centroid_ratio",
+        "spearman": -0.2833
+      },
+      {
+        "a": "node_spacing_cv",
+        "b": "voronoi_area_cv",
+        "spearman": 0.55
+      },
+      {
+        "a": "node_spacing_cv",
+        "b": "layout_n_nodes",
+        "spearman": 0.5363
+      },
+      {
+        "a": "symmetry_axis_err_px",
+        "b": "visual_centroid_px",
+        "spearman": 0.2857
+      },
+      {
+        "a": "symmetry_axis_err_px",
+        "b": "visual_centroid_ratio",
+        "spearman": 0.2857
+      },
+      {
+        "a": "symmetry_axis_err_px",
+        "b": "voronoi_area_cv",
+        "spearman": -0.2143
+      },
+      {
+        "a": "symmetry_axis_err_px",
+        "b": "layout_n_nodes",
+        "spearman": 0.0371
+      },
+      {
+        "a": "visual_centroid_px",
+        "b": "visual_centroid_ratio",
+        "spearman": 1.0
+      },
+      {
+        "a": "visual_centroid_px",
+        "b": "voronoi_area_cv",
+        "spearman": 0.2
+      },
+      {
+        "a": "visual_centroid_px",
+        "b": "layout_n_nodes",
+        "spearman": -0.0255
+      },
+      {
+        "a": "visual_centroid_ratio",
+        "b": "voronoi_area_cv",
+        "spearman": 0.2
+      },
+      {
+        "a": "visual_centroid_ratio",
+        "b": "layout_n_nodes",
+        "spearman": -0.0255
+      },
+      {
+        "a": "voronoi_area_cv",
+        "b": "layout_n_nodes",
+        "spearman": 0.4767
+      }
+    ],
+    "usable_features": [
+      "alignment_max_coverage",
+      "angular_resolution_min",
+      "aspect_deviation",
+      "automorphism_residual",
+      "avg_edge_length",
+      "bend_soft_margin",
+      "bend_total_curvature",
+      "canvas_fill_rate",
+      "crossing_count",
+      "edge_length_cv",
+      "degree_canvas_spearman",
+      "hub_degree",
+      "hub_neighbor_centrality_ratio",
+      "hub_centroid_ratio",
+      "hub_centroid_px",
+      "loop_edge_crossings",
+      "loop_foreign_nodes",
+      "loop_overlap_area",
+      "loop_self_intersections",
+      "max_min_edge_ratio",
+      "min_spacing_ratio",
+      "min_spacing_px",
+      "mirror_axis_err",
+      "node_spacing_cv",
+      "symmetry_axis_err_px",
+      "visual_centroid_px",
+      "visual_centroid_ratio",
+      "voronoi_area_cv",
+      "layout_n_nodes"
+    ],
+    "variance_carriers": [
+      "alignment_max_coverage",
+      "angular_resolution_min",
+      "aspect_deviation",
+      "automorphism_residual",
+      "avg_edge_length",
+      "bend_soft_margin",
+      "canvas_fill_rate",
+      "crossing_count",
+      "edge_length_cv",
+      "degree_canvas_spearman",
+      "hub_degree",
+      "hub_neighbor_centrality_ratio",
+      "hub_centroid_ratio",
+      "hub_centroid_px",
+      "max_min_edge_ratio",
+      "min_spacing_ratio",
+      "min_spacing_px",
+      "mirror_axis_err",
+      "node_spacing_cv",
+      "symmetry_axis_err_px",
+      "visual_centroid_px",
+      "visual_centroid_ratio",
+      "voronoi_area_cv",
+      "layout_n_nodes"
+    ]
+  },
+  "D3_sub_morphology": {
+    "groups": {
+      "family:fan/radial": {
+        "distinct_scores": 2,
+        "members": [
+          "fan-d12:fan-d12-manual-layout.json",
+          "fan-d17:fan-d17-manual-layout.json"
+        ],
+        "score_spread": 15.899999999999991,
+        "scores": [
+          65.4,
+          81.3
+        ]
+      },
+      "family:random-n10": {
+        "distinct_scores": 1,
+        "members": [
+          "random-n10-i05:random-n10-i05-manual-layout.json"
+        ],
+        "score_spread": 0.0,
+        "scores": [
+          81.3
+        ]
+      },
+      "family:多环耦合": {
+        "distinct_scores": 1,
+        "members": [
+          "coupled-underinvestment:coupled-underinvestment-manual-layout.json"
+        ],
+        "score_spread": 0.0,
+        "scores": [
+          81.3
+        ]
+      },
+      "family:嵌套环": {
+        "distinct_scores": 1,
+        "members": [
+          "brand-flywheel:brand-flywheel-manual-layout.json",
+          "classic-cld-growth-and-burden:classic-cld-manual-layout.json",
+          "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json"
+        ],
+        "score_spread": 0.0,
+        "scores": [
+          81.3,
+          81.3,
+          81.3
+        ]
+      },
+      "family:梳状": {
+        "distinct_scores": 1,
+        "members": [
+          "comb-supply-demand:comb-supply-demand-manual-layout.json"
+        ],
+        "score_spread": 0.0,
+        "scores": [
+          81.3
+        ]
+      },
+      "family:非平面族": {
+        "distinct_scores": 1,
+        "members": [
+          "nonplanar-credit:nonplanar-credit-manual-layout.json"
+        ],
+        "score_spread": 0.0,
+        "scores": [
+          81.3
+        ]
+      },
+      "structure:non-radial": {
+        "distinct_scores": 2,
+        "members": [
+          "classic-cld-growth-and-burden:classic-cld-manual-layout.json",
+          "fan-d12:fan-d12-manual-layout.json",
+          "fan-d17:fan-d17-manual-layout.json",
+          "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json"
+        ],
+        "score_spread": 15.899999999999991,
+        "scores": [
+          81.3,
+          65.4,
+          81.3,
+          81.3
+        ]
+      },
+      "structure:radial(fan-like)": {
+        "distinct_scores": 1,
+        "members": [
+          "brand-flywheel:brand-flywheel-manual-layout.json",
+          "comb-supply-demand:comb-supply-demand-manual-layout.json",
+          "coupled-underinvestment:coupled-underinvestment-manual-layout.json",
+          "nonplanar-credit:nonplanar-credit-manual-layout.json",
+          "random-n10-i05:random-n10-i05-manual-layout.json"
+        ],
+        "score_spread": 0.0,
+        "scores": [
+          81.3,
+          81.3,
+          81.3,
+          81.3,
+          81.3
+        ]
+      }
+    },
+    "readout_note": "a bucket whose members span multiple families/structures can only collapse if the KEPT features cannot see the difference — cross-check with D1 blind classes"
+  },
+  "D4_candidate_ranking": {
+    "delivery_rule": "certificate grade best > crossed-certified > second > uncertified, tie-break crossings asc, then score desc (delivery never reads the aesthetic score — by design)",
+    "disagree": 5,
+    "graphs_with_2plus_candidates": 12,
+    "per_graph": {
+      "bowtie-wage-price": {
+        "candidates": [
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "draft",
+            "score": 54.3,
+            "shape": "ring",
+            "source": "batch-2 engine draft (archived)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 54.3,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "ortho",
+            "score": 79.3,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 54.3,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "best",
+          "recipe": "draft",
+          "score": 54.3,
+          "source": "batch-2 engine draft (archived)"
+        },
+        "delta_human_minus_engine_best": 9.3,
+        "engine_best_score": 79.3,
+        "human_min": 88.6,
+        "human_scores": [
+          88.6
+        ],
+        "n_candidates": 4,
+        "scorer_top": {
+          "recipe": "ortho",
+          "score": 79.3,
+          "source": "fresh CLI (this tree)"
+        },
+        "scorer_top_equals_delivery_pick": false
+      },
+      "brand-flywheel": {
+        "candidates": [
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "archived",
+            "score": 46.2,
+            "shape": "ring",
+            "source": "negatives-library (archived engine layout)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 46.2,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "ortho",
+            "score": 31.2,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 46.2,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "best",
+          "recipe": "archived",
+          "score": 46.2,
+          "source": "negatives-library (archived engine layout)"
+        },
+        "delta_human_minus_engine_best": 35.1,
+        "engine_best_score": 46.2,
+        "human_min": 81.3,
+        "human_scores": [
+          81.3
+        ],
+        "n_candidates": 4,
+        "scorer_top": {
+          "recipe": "archived",
+          "score": 46.2,
+          "source": "negatives-library (archived engine layout)"
+        },
+        "scorer_top_equals_delivery_pick": true
+      },
+      "classic-cld-growth-and-burden": {
+        "candidates": [
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "archived",
+            "score": 22.7,
+            "shape": "hub",
+            "source": "negatives-library (archived engine layout)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 22.7,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "ortho",
+            "score": 81.3,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 22.7,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "best",
+          "recipe": "archived",
+          "score": 22.7,
+          "source": "negatives-library (archived engine layout)"
+        },
+        "delta_human_minus_engine_best": 0.0,
+        "engine_best_score": 81.3,
+        "human_min": 81.3,
+        "human_scores": [
+          81.3,
+          81.3
+        ],
+        "n_candidates": 4,
+        "scorer_top": {
+          "recipe": "ortho",
+          "score": 81.3,
+          "source": "fresh CLI (this tree)"
+        },
+        "scorer_top_equals_delivery_pick": false
+      },
+      "comb-supply-demand": {
+        "candidates": [
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "draft",
+            "score": 81.3,
+            "shape": "hub",
+            "source": "batch-2 engine draft (archived)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 28.9,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "ortho",
+            "score": 55.6,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 28.9,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "best",
+          "recipe": "auto",
+          "score": 28.9,
+          "source": "fresh CLI (this tree)"
+        },
+        "delta_human_minus_engine_best": 0.0,
+        "engine_best_score": 81.3,
+        "human_min": 81.3,
+        "human_scores": [
+          81.3
+        ],
+        "n_candidates": 4,
+        "scorer_top": {
+          "recipe": "draft",
+          "score": 81.3,
+          "source": "batch-2 engine draft (archived)"
+        },
+        "scorer_top_equals_delivery_pick": false
+      },
+      "coupled-underinvestment": {
+        "candidates": [
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "draft",
+            "score": 81.3,
+            "shape": "hub",
+            "source": "batch-2 engine draft (archived)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 63.8,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "ortho",
+            "score": 81.3,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 63.8,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "best",
+          "recipe": "draft",
+          "score": 81.3,
+          "source": "batch-2 engine draft (archived)"
+        },
+        "delta_human_minus_engine_best": 0.0,
+        "engine_best_score": 81.3,
+        "human_min": 81.3,
+        "human_scores": [
+          81.3
+        ],
+        "n_candidates": 4,
+        "scorer_top": {
+          "recipe": "draft",
+          "score": 81.3,
+          "source": "batch-2 engine draft (archived)"
+        },
+        "scorer_top_equals_delivery_pick": true
+      },
+      "epidemic-feedback": {
+        "candidates": [],
+        "delivery_pick": null,
+        "delta_human_minus_engine_best": null,
+        "engine_best_score": null,
+        "human_min": 56.5,
+        "human_scores": [
+          56.5
+        ],
+        "n_candidates": 0,
+        "scorer_top": null,
+        "scorer_top_equals_delivery_pick": null
+      },
+      "fan-d12": {
+        "candidates": [],
+        "delivery_pick": null,
+        "delta_human_minus_engine_best": null,
+        "engine_best_score": null,
+        "human_min": 65.4,
+        "human_scores": [
+          65.4
+        ],
+        "n_candidates": 0,
+        "scorer_top": null,
+        "scorer_top_equals_delivery_pick": null
+      },
+      "fan-d17": {
+        "candidates": [],
+        "delivery_pick": null,
+        "delta_human_minus_engine_best": null,
+        "engine_best_score": null,
+        "human_min": 81.3,
+        "human_scores": [
+          81.3
+        ],
+        "n_candidates": 0,
+        "scorer_top": null,
+        "scorer_top_equals_delivery_pick": null
+      },
+      "nested-capacity": {
+        "candidates": [
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "draft",
+            "score": 79.0,
+            "shape": "ring",
+            "source": "batch-2 engine draft (archived)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 79.0,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "ortho",
+            "score": 57.8,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 79.0,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "best",
+          "recipe": "draft",
+          "score": 79.0,
+          "source": "batch-2 engine draft (archived)"
+        },
+        "delta_human_minus_engine_best": 5.1,
+        "engine_best_score": 79.0,
+        "human_min": 84.1,
+        "human_scores": [
+          84.1
+        ],
+        "n_candidates": 4,
+        "scorer_top": {
+          "recipe": "draft",
+          "score": 79.0,
+          "source": "batch-2 engine draft (archived)"
+        },
+        "scorer_top_equals_delivery_pick": true
+      },
+      "nested-learning": {
+        "candidates": [
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "draft",
+            "score": 81.3,
+            "shape": "hub",
+            "source": "batch-2 engine draft (archived)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 81.3,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "ortho",
+            "score": 15.1,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "best",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 81.3,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "best",
+          "recipe": "draft",
+          "score": 81.3,
+          "source": "batch-2 engine draft (archived)"
+        },
+        "delta_human_minus_engine_best": 2.0,
+        "engine_best_score": 81.3,
+        "human_min": 83.3,
+        "human_scores": [
+          83.3
+        ],
+        "n_candidates": 4,
+        "scorer_top": {
+          "recipe": "draft",
+          "score": 81.3,
+          "source": "batch-2 engine draft (archived)"
+        },
+        "scorer_top_equals_delivery_pick": true
+      },
+      "nonplanar-credit": {
+        "candidates": [
+          {
+            "crossings": 3,
+            "grade": "uncertified",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "draft",
+            "score": 81.3,
+            "shape": "hub",
+            "source": "batch-2 engine draft (archived)"
+          },
+          {
+            "crossings": 1,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 4.3,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "error": "roblems 0 -> C:\\Users\\jacky\\AppData\\Local\\Temp\\stdraw-diag-candidates\\nonplanar-credit.ortho\\loops_audit.json\n[3/6] 2D planar layer inapplicable: core subgraph non-planar (9 nodes / 14 edges) — 2D planar layer inapplicable; degrade to the 3D layer or use the uniform placement forms\n      honest degradation: skipping the 2D certificate (a replaceable layout-layer implementation is M1+)\n[6/6] done.\n",
+            "recipe": "ortho",
+            "source": "fresh CLI"
+          },
+          {
+            "crossings": 1,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 4.3,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "uncertified",
+          "recipe": "auto",
+          "score": 4.3,
+          "source": "fresh CLI (this tree)"
+        },
+        "delta_human_minus_engine_best": 0.0,
+        "engine_best_score": 81.3,
+        "human_min": 81.3,
+        "human_scores": [
+          81.3
+        ],
+        "n_candidates": 3,
+        "scorer_top": {
+          "recipe": "draft",
+          "score": 81.3,
+          "source": "batch-2 engine draft (archived)"
+        },
+        "scorer_top_equals_delivery_pick": false
+      },
+      "nonplanar-inventory": {
+        "candidates": [
+          {
+            "crossings": 1,
+            "grade": "uncertified",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "draft",
+            "score": 34.1,
+            "shape": "ring",
+            "source": "batch-2 engine draft (archived)"
+          },
+          {
+            "crossings": 1,
+            "grade": "crossed-certified",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 0.6,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "error": "lems 0 -> C:\\Users\\jacky\\AppData\\Local\\Temp\\stdraw-diag-candidates\\nonplanar-inventory.ortho\\loops_audit.json\n[3/6] 2D planar layer inapplicable: core subgraph non-planar (9 nodes / 12 edges) — 2D planar layer inapplicable; degrade to the 3D layer or use the uniform placement forms\n      honest degradation: skipping the 2D certificate (a replaceable layout-layer implementation is M1+)\n[6/6] done.\n",
+            "recipe": "ortho",
+            "source": "fresh CLI"
+          },
+          {
+            "crossings": 1,
+            "grade": "crossed-certified",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 0.6,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "crossed-certified",
+          "recipe": "auto",
+          "score": 0.6,
+          "source": "fresh CLI (this tree)"
+        },
+        "delta_human_minus_engine_best": 63.7,
+        "engine_best_score": 34.1,
+        "human_min": 97.8,
+        "human_scores": [
+          97.8
+        ],
+        "n_candidates": 3,
+        "scorer_top": {
+          "recipe": "draft",
+          "score": 34.1,
+          "source": "batch-2 engine draft (archived)"
+        },
+        "scorer_top_equals_delivery_pick": false
+      },
+      "random-n10-i00": {
+        "candidates": [
+          {
+            "crossings": 6,
+            "grade": "uncertified",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "archived",
+            "score": 17.1,
+            "shape": "ring",
+            "source": "negatives-library (archived engine layout)"
+          },
+          {
+            "crossings": 2,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 17.1,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "ortho",
+            "score": 41.2,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 2,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 17.1,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "uncertified",
+          "recipe": "ortho",
+          "score": 41.2,
+          "source": "fresh CLI (this tree)"
+        },
+        "delta_human_minus_engine_best": 23.5,
+        "engine_best_score": 41.2,
+        "human_min": 64.7,
+        "human_scores": [
+          64.7
+        ],
+        "n_candidates": 4,
+        "scorer_top": {
+          "recipe": "ortho",
+          "score": 41.2,
+          "source": "fresh CLI (this tree)"
+        },
+        "scorer_top_equals_delivery_pick": true
+      },
+      "random-n10-i05": {
+        "candidates": [
+          {
+            "crossings": 6,
+            "grade": "uncertified",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "archived",
+            "score": 26.9,
+            "shape": "ring",
+            "source": "negatives-library (archived engine layout)"
+          },
+          {
+            "crossings": 1,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 26.9,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "ortho",
+            "score": 43.3,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 1,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 26.9,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "uncertified",
+          "recipe": "ortho",
+          "score": 43.3,
+          "source": "fresh CLI (this tree)"
+        },
+        "delta_human_minus_engine_best": 38.0,
+        "engine_best_score": 43.3,
+        "human_min": 81.3,
+        "human_scores": [
+          81.3,
+          85.8
+        ],
+        "n_candidates": 4,
+        "scorer_top": {
+          "recipe": "ortho",
+          "score": 43.3,
+          "source": "fresh CLI (this tree)"
+        },
+        "scorer_top_equals_delivery_pick": true
+      },
+      "random-n10-i11": {
+        "candidates": [
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "proxy (straight segments)",
+            "recipe": "archived",
+            "score": 25.3,
+            "shape": "hub",
+            "source": "negatives-library (archived engine layout)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto",
+            "score": 25.3,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "ortho",
+            "score": 14.9,
+            "shape": "ring",
+            "source": "fresh CLI (this tree)"
+          },
+          {
+            "crossings": 0,
+            "grade": "uncertified",
+            "grade_caliber": "engine certificate",
+            "recipe": "auto-arc",
+            "score": 25.3,
+            "shape": "hub",
+            "source": "fresh CLI (this tree)"
+          }
+        ],
+        "delivery_pick": {
+          "grade": "uncertified",
+          "recipe": "archived",
+          "score": 25.3,
+          "source": "negatives-library (archived engine layout)"
+        },
+        "delta_human_minus_engine_best": 70.5,
+        "engine_best_score": 25.3,
+        "human_min": 95.8,
+        "human_scores": [
+          96.9,
+          95.8
+        ],
+        "n_candidates": 4,
+        "scorer_top": {
+          "recipe": "archived",
+          "score": 25.3,
+          "source": "negatives-library (archived engine layout)"
+        },
+        "scorer_top_equals_delivery_pick": true
+      }
+    },
+    "scorer_top_equals_delivery_pick_agree": 7
+  },
+  "D4_topology_internal": {
+    "crossing_pairs": [
+      {
+        "gap": -8.1,
+        "neg_score": 73.5,
+        "negative": "fishing-collapse",
+        "pos_score": 65.4,
+        "positive": "fan-d12:fan-d12-manual-layout.json"
+      },
+      {
+        "gap": -5.4,
+        "neg_score": 70.8,
+        "negative": "random-n10-i18",
+        "pos_score": 65.4,
+        "positive": "fan-d12:fan-d12-manual-layout.json"
+      },
+      {
+        "gap": -13.9,
+        "neg_score": 79.3,
+        "negative": "soil-erosion",
+        "pos_score": 65.4,
+        "positive": "fan-d12:fan-d12-manual-layout.json"
+      }
+    ],
+    "crossing_pairs_count": 3,
+    "hub_neg_max": {
+      "negative": "soil-erosion",
+      "score": 79.3
+    },
+    "hub_pos_min": {
+      "anchor": "fan-d12:fan-d12-manual-layout.json",
+      "score": 65.4
+    },
+    "positives_above_neg_max": 8
+  },
+  "D5_negatives_summary": {
+    "n_scored": 40,
+    "neg_score_max": 87.7,
+    "negatives_above_human_lower_bound": 5,
+    "negatives_with_grade_best": 15
+  },
+  "D5_negatives_top": [
+    {
+      "crossings": 0.0,
+      "family": "classic/多环耦合",
+      "grade": "second",
+      "grade_caliber": "proxy (straight segments)",
+      "graph": "urban-migration",
+      "kept_feature_l2_distance": 0.735,
+      "nearest_anchor": "epidemic-feedback:epidemic-feedback-manual-layout.json",
+      "score": 87.7,
+      "shape": "ring"
+    },
+    {
+      "crossings": 0.0,
+      "family": "classic/嵌套环",
+      "grade": "best",
+      "grade_caliber": "proxy (straight segments)",
+      "graph": "soil-erosion",
+      "kept_feature_l2_distance": 0.0856,
+      "nearest_anchor": "brand-flywheel:brand-flywheel-manual-layout.json",
+      "score": 79.3,
+      "shape": "hub"
+    },
+    {
+      "crossings": 0.0,
+      "family": "classic/嵌套环",
+      "grade": "best",
+      "grade_caliber": "proxy (straight segments)",
+      "graph": "fishing-collapse",
+      "kept_feature_l2_distance": 0.3023,
+      "nearest_anchor": "brand-flywheel:brand-flywheel-manual-layout.json",
+      "score": 73.5,
+      "shape": "hub"
+    },
+    {
+      "crossings": 0.0,
+      "family": "classic/多环耦合",
+      "grade": "second",
+      "grade_caliber": "proxy (straight segments)",
+      "graph": "burnout-attrition",
+      "kept_feature_l2_distance": 1.7177,
+      "nearest_anchor": "fan-d12:fan-d12-manual-layout.json",
+      "score": 71.0,
+      "shape": "ring"
+    },
+    {
+      "crossings": 2.0,
+      "family": "random-n10",
+      "grade": "second",
+      "grade_caliber": "proxy (straight segments)",
+      "graph": "random-n10-i18",
+      "kept_feature_l2_distance": 0.1454,
+      "nearest_anchor": "random-n10-i05:i05.json",
+      "score": 70.8,
+      "shape": "hub"
+    },
+    {
+      "crossings": 2.0,
+      "family": "random-n10",
+      "grade": "second",
+      "grade_caliber": "proxy (straight segments)",
+      "graph": "random-n10-i17",
+      "kept_feature_l2_distance": 0.6327,
+      "nearest_anchor": "brand-flywheel:brand-flywheel-manual-layout.json",
+      "score": 62.8,
+      "shape": "hub"
+    },
+    {
+      "crossings": 1.0,
+      "family": "random-n10",
+      "grade": "second",
+      "grade_caliber": "proxy (straight segments)",
+      "graph": "random-n10-i02",
+      "kept_feature_l2_distance": 0.2995,
+      "nearest_anchor": "brand-flywheel:brand-flywheel-manual-layout.json",
+      "score": 58.1,
+      "shape": "ring"
+    },
+    {
+      "crossings": 2.0,
+      "family": "random-n10",
+      "grade": "second",
+      "grade_caliber": "proxy (straight segments)",
+      "graph": "random-n10-i14",
+      "kept_feature_l2_distance": 0.2044,
+      "nearest_anchor": "epidemic-feedback:epidemic-feedback-manual-layout.json",
+      "score": 51.9,
+      "shape": "ring"
+    }
+  ],
+  "D6_perturbation": {
+    "cumulative": true,
+    "dose_definition": "L1 +-3px id-hash jitter on every node; L2 swap the two lowest sorted ids; L3 reflect the first half of sorted ids about the canvas centre (breaks mirror symmetry); L4 sub-grid offset (+7,+5) on odd nodes (breaks row/column alignment). Cumulative.",
+    "gate_rejections_per_level": {
+      "L0_original": 3,
+      "L1_jitter": 3,
+      "L2_swap2": 3,
+      "L3_break_mirror": 13,
+      "L4_off_align": 13
+    },
+    "gate_rule": "viability = min card gap >= 16px AND zero true box-press (metrics.certificate on straight segments; missing card w defaults to the engine-delivered 96px); crossings allowed to rise (that IS the degradation being measured)",
+    "levels": [
+      "L0_original",
+      "L1_jitter",
+      "L2_swap2",
+      "L3_break_mirror",
+      "L4_off_align"
+    ],
+    "n_anchors": 18,
+    "n_anchors_monotone_nondecreasing": 14,
+    "n_l0_viable": 15,
+    "per_anchor": {
+      "bowtie-wage-price:bowtie-wage-price-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 88.6
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 88.6
+          },
+          {
+            "crossings": 3,
+            "delta_vs_prev": 31.6,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 57.0
+          },
+          {
+            "box_press_true": 2,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 2,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          1,
+          1
+        ]
+      },
+      "brand-flywheel:brand-flywheel-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "no-resolution (all steps flat)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": 0.0,
+            "grade": "second",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L3_break_mirror",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L4_off_align",
+            "routed_shape": "hub",
+            "score": 81.3
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          4,
+          0
+        ]
+      },
+      "classic-cld-growth-and-burden:classic-cld-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "no-resolution (all steps flat)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 9,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          2,
+          0
+        ]
+      },
+      "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "no-resolution (all steps flat)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 9,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "box_press_true": 7,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 7,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          2,
+          0
+        ]
+      },
+      "comb-supply-demand:comb-supply-demand-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "no-resolution (all steps flat)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 6,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L3_break_mirror",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L4_off_align",
+            "routed_shape": "hub",
+            "score": 81.3
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          4,
+          0
+        ]
+      },
+      "coupled-underinvestment:coupled-underinvestment-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "no-resolution (all steps flat)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 8,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          2,
+          0
+        ]
+      },
+      "epidemic-feedback:epidemic-feedback-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 0.921053,
+              "bend_total_curvature": 241.062237
+            },
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 56.5
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.3,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 0.921053,
+              "bend_total_curvature": 241.062237
+            },
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 56.2
+          },
+          {
+            "crossings": 3,
+            "delta_vs_prev": 29.7,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 0.921053,
+              "bend_total_curvature": 241.062237
+            },
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 26.5
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          0,
+          2
+        ]
+      },
+      "fan-d12:fan-d12-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "gate-blocked-at-origin",
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L0_original",
+            "min_card_gap": 12.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L1_jitter",
+            "min_card_gap": 8.0
+          },
+          {
+            "box_press_true": 3,
+            "gate_rejected": true,
+            "level": "L2_swap2",
+            "min_card_gap": 8.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          0,
+          0
+        ]
+      },
+      "fan-d17:fan-d17-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "gate-blocked-at-origin",
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L0_original",
+            "min_card_gap": 6.0
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L1_jitter",
+            "min_card_gap": 2.0
+          },
+          {
+            "box_press_true": 8,
+            "gate_rejected": true,
+            "level": "L2_swap2",
+            "min_card_gap": 2.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          0,
+          0
+        ]
+      },
+      "nested-capacity:nested-capacity-manual-layout.json": {
+        "monotone_nondecreasing_dose": false,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 84.1
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": -0.1,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 84.2
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": 50.8,
+            "grade": "second",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 33.4
+          },
+          {
+            "box_press_true": 6,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 6,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          1,
+          0,
+          1
+        ]
+      },
+      "nested-learning:nested-learning-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 83.3
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 83.3
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": 2.0,
+            "grade": "second",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          1,
+          1
+        ]
+      },
+      "nonplanar-credit:nonplanar-credit-manual-layout.json": {
+        "monotone_nondecreasing_dose": false,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 2,
+            "delta_vs_prev": null,
+            "grade": "second",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 2,
+            "delta_vs_prev": 0.0,
+            "grade": "second",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "hub",
+            "score": 81.3
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": 68.5,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 12.8
+          },
+          {
+            "crossings": 10,
+            "delta_vs_prev": 10.2,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L3_break_mirror",
+            "routed_shape": "ring",
+            "score": 2.6
+          },
+          {
+            "crossings": 10,
+            "delta_vs_prev": -0.2,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L4_off_align",
+            "routed_shape": "ring",
+            "score": 2.8
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          1,
+          1,
+          2
+        ]
+      },
+      "nonplanar-inventory:nonplanar-inventory-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 1,
+            "delta_vs_prev": null,
+            "grade": "second",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 97.8
+          },
+          {
+            "crossings": 1,
+            "delta_vs_prev": 0.0,
+            "grade": "second",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 97.8
+          },
+          {
+            "crossings": 3,
+            "delta_vs_prev": 2.5,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 95.3
+          },
+          {
+            "crossings": 8,
+            "delta_vs_prev": 83.2,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L3_break_mirror",
+            "routed_shape": "ring",
+            "score": 12.1
+          },
+          {
+            "crossings": 8,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L4_off_align",
+            "routed_shape": "ring",
+            "score": 12.1
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          2,
+          2
+        ]
+      },
+      "random-n10-i00:random-n10-i00-manual-layout.json": {
+        "monotone_nondecreasing_dose": false,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 64.7
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": -0.3,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 65.0
+          },
+          {
+            "crossings": 9,
+            "delta_vs_prev": 60.5,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 4.5
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          1,
+          0,
+          1
+        ]
+      },
+      "random-n10-i05:i05.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 0.952381,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 85.8
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.4,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 0.952381,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 85.4
+          },
+          {
+            "crossings": 10,
+            "delta_vs_prev": 73.5,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 0.952381,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 11.9
+          },
+          {
+            "box_press_true": 9,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 0.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 0.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          0,
+          2
+        ]
+      },
+      "random-n10-i05:random-n10-i05-manual-layout.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "gate-blocked-at-origin",
+        "steps": [
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L0_original",
+            "min_card_gap": 13.2
+          },
+          {
+            "box_press_true": 0,
+            "gate_rejected": true,
+            "level": "L1_jitter",
+            "min_card_gap": 13.4
+          },
+          {
+            "box_press_true": 7,
+            "gate_rejected": true,
+            "level": "L2_swap2",
+            "min_card_gap": 13.4
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 2.0
+          },
+          {
+            "box_press_true": 10,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 2.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          0,
+          0
+        ]
+      },
+      "random-n10-i11:i11-a.json": {
+        "monotone_nondecreasing_dose": true,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 96.9
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": 0.0,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 96.9
+          },
+          {
+            "crossings": 5,
+            "delta_vs_prev": 17.9,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 79.0
+          },
+          {
+            "box_press_true": 3,
+            "gate_rejected": true,
+            "level": "L3_break_mirror",
+            "min_card_gap": 15.0
+          },
+          {
+            "box_press_true": 3,
+            "gate_rejected": true,
+            "level": "L4_off_align",
+            "min_card_gap": 8.0
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          0,
+          1,
+          1
+        ]
+      },
+      "random-n10-i11:i11-b.json": {
+        "monotone_nondecreasing_dose": false,
+        "resolution_class": "mixed (has increase step)",
+        "steps": [
+          {
+            "crossings": 0,
+            "delta_vs_prev": null,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L0_original",
+            "routed_shape": "ring",
+            "score": 95.8
+          },
+          {
+            "crossings": 0,
+            "delta_vs_prev": -0.1,
+            "grade": "best",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L1_jitter",
+            "routed_shape": "ring",
+            "score": 95.9
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": 18.4,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L2_swap2",
+            "routed_shape": "ring",
+            "score": 77.5
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": -2.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L3_break_mirror",
+            "routed_shape": "ring",
+            "score": 79.5
+          },
+          {
+            "crossings": 4,
+            "delta_vs_prev": 0.0,
+            "grade": "uncertified",
+            "kept_features": {
+              "alignment_max_coverage": 1.0,
+              "bend_total_curvature": 0.0
+            },
+            "level": "L4_off_align",
+            "routed_shape": "ring",
+            "score": 79.5
+          }
+        ],
+        "steps_decrease_flat_increase": [
+          2,
+          1,
+          1
+        ]
+      }
+    },
+    "resolution_classes": {
+      "gate-blocked": 3,
+      "mixed": 10,
+      "monotone-decreasing": 0,
+      "no-resolution": 5
+    }
+  },
+  "caliber": "normalized",
+  "card": "hub-bucket collapse diagnosis",
+  "hub_bucket": {
+    "n_negative": 20,
+    "n_positive": 9,
+    "positives": [
+      {
+        "anchor": "brand-flywheel:brand-flywheel-manual-layout.json",
+        "score": 81.3
+      },
+      {
+        "anchor": "classic-cld-growth-and-burden:classic-cld-manual-layout.json",
+        "score": 81.3
+      },
+      {
+        "anchor": "fan-d12:fan-d12-manual-layout.json",
+        "score": 65.4
+      },
+      {
+        "anchor": "fan-d17:fan-d17-manual-layout.json",
+        "score": 81.3
+      },
+      {
+        "anchor": "comb-supply-demand:comb-supply-demand-manual-layout.json",
+        "score": 81.3
+      },
+      {
+        "anchor": "coupled-underinvestment:coupled-underinvestment-manual-layout.json",
+        "score": 81.3
+      },
+      {
+        "anchor": "nonplanar-credit:nonplanar-credit-manual-layout.json",
+        "score": 81.3
+      },
+      {
+        "anchor": "classic-cld-growth-and-burden:retest-classic-cld-manual-layout.json",
+        "score": 81.3
+      },
+      {
+        "anchor": "random-n10-i05:random-n10-i05-manual-layout.json",
+        "score": 81.3
+      }
+    ]
+  },
+  "model": "benchmarks\\aesthetic\\model-v2.json",
+  "schema": "stdraw.hub_collapse_diagnosis/v1"
+}
