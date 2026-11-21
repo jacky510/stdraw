@@ -1,0 +1,81 @@
+{
+  "edges": [
+    {
+      "a": "coverage",
+      "b": "customers"
+    },
+    {
+      "a": "bargaining",
+      "b": "rev"
+    },
+    {
+      "a": "rev",
+      "b": "profit"
+    },
+    {
+      "a": "profit",
+      "b": "invest"
+    },
+    {
+      "a": "invest",
+      "b": "capacity"
+    },
+    {
+      "a": "capacity",
+      "b": "rev"
+    },
+    {
+      "a": "capacity",
+      "b": "delivery"
+    },
+    {
+      "a": "delivery",
+      "b": "coverage"
+    },
+    {
+      "a": "customers",
+      "b": "bargaining"
+    }
+  ],
+  "graph": "nested-capacity",
+  "nodes": {
+    "bargaining": {
+      "x": 472,
+      "y": 206
+    },
+    "capacity": {
+      "x": 129,
+      "y": 342
+    },
+    "coverage": {
+      "x": 205,
+      "y": 110
+    },
+    "customers": {
+      "x": 398,
+      "y": 108
+    },
+    "delivery": {
+      "x": 121,
+      "y": 206
+    },
+    "invest": {
+      "x": 217,
+      "y": 439
+    },
+    "profit": {
+      "x": 401,
+      "y": 437
+    },
+    "rev": {
+      "x": 475,
+      "y": 340
+    }
+  },
+  "viewBox": [
+    0,
+    0,
+    600,
+    544
+  ]
+}

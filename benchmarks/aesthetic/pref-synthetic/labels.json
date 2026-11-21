@@ -1,0 +1,950 @@
+{
+  "gate_rejections_per_level": {
+    "L0_original": 3,
+    "L1_jitter": 3,
+    "L2_swap2": 3,
+    "L3_break_mirror": 13,
+    "L4_off_align": 13
+  },
+  "gate_rule": "viability = min card gap >= 16px AND zero true box-press (certificate proxy on straight segments; identical to diagnose_collapse D6 gate_rule)",
+  "per_anchor": {
+    "bowtie-wage-price-manual-layout": {
+      "graph": "bowtie-wage-price",
+      "heavy_level": 2,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L2"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 65.0
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 63.0
+        },
+        {
+          "crossings": 3,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 63.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 0.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 0.0
+        }
+      ]
+    },
+    "brand-flywheel-manual-layout": {
+      "graph": "brand-flywheel",
+      "heavy_level": 4,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L4"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 66.8
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 64.2
+        },
+        {
+          "crossings": 2,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 64.2
+        },
+        {
+          "crossings": 4,
+          "gate_rejected": false,
+          "level": "L3_break_mirror",
+          "min_card_gap": 64.2
+        },
+        {
+          "crossings": 4,
+          "gate_rejected": false,
+          "level": "L4_off_align",
+          "min_card_gap": 67.2
+        }
+      ]
+    },
+    "classic-cld-manual-layout": {
+      "graph": "classic-cld-growth-and-burden",
+      "heavy_level": 2,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L2"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 67.4
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 65.9
+        },
+        {
+          "crossings": 9,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 65.9
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 0.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 0.0
+        }
+      ]
+    },
+    "comb-supply-demand-manual-layout": {
+      "graph": "comb-supply-demand",
+      "heavy_level": 4,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L4"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 30.0
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 30.0
+        },
+        {
+          "crossings": 6,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 30.0
+        },
+        {
+          "crossings": 5,
+          "gate_rejected": false,
+          "level": "L3_break_mirror",
+          "min_card_gap": 30.0
+        },
+        {
+          "crossings": 5,
+          "gate_rejected": false,
+          "level": "L4_off_align",
+          "min_card_gap": 31.0
+        }
+      ]
+    },
+    "coupled-underinvestment-manual-layout": {
+      "graph": "coupled-underinvestment",
+      "heavy_level": 2,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L2"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 58.0
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 52.0
+        },
+        {
+          "crossings": 8,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 52.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 0.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 0.0
+        }
+      ]
+    },
+    "epidemic-feedback-manual-layout": {
+      "graph": "epidemic-feedback",
+      "heavy_level": 2,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L2"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 31.1
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 29.1
+        },
+        {
+          "crossings": 3,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 29.1
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 0.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 0.0
+        }
+      ]
+    },
+    "fan-d12-manual-layout": {
+      "graph": "fan-d12",
+      "heavy_level": null,
+      "light_gate_ok": false,
+      "pairs": [],
+      "steps": [
+        {
+          "gate_rejected": true,
+          "level": "L0_original",
+          "min_card_gap": 12.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L1_jitter",
+          "min_card_gap": 8.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L2_swap2",
+          "min_card_gap": 8.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 0.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 0.0
+        }
+      ]
+    },
+    "fan-d17-manual-layout": {
+      "graph": "fan-d17",
+      "heavy_level": null,
+      "light_gate_ok": false,
+      "pairs": [],
+      "steps": [
+        {
+          "gate_rejected": true,
+          "level": "L0_original",
+          "min_card_gap": 6.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L1_jitter",
+          "min_card_gap": 2.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L2_swap2",
+          "min_card_gap": 2.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 0.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 0.0
+        }
+      ]
+    },
+    "i05": {
+      "graph": "random-n10-i05",
+      "heavy_level": 2,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L2"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 17.0
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 17.0
+        },
+        {
+          "crossings": 10,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 17.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 0.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 0.0
+        }
+      ]
+    },
+    "i11-a": {
+      "graph": "random-n10-i11",
+      "heavy_level": 2,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L2"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 41.0
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 41.0
+        },
+        {
+          "crossings": 5,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 41.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 15.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 8.0
+        }
+      ]
+    },
+    "i11-b": {
+      "graph": "random-n10-i11",
+      "heavy_level": 4,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L4"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 37.0
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 38.0
+        },
+        {
+          "crossings": 4,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 38.0
+        },
+        {
+          "crossings": 4,
+          "gate_rejected": false,
+          "level": "L3_break_mirror",
+          "min_card_gap": 34.0
+        },
+        {
+          "crossings": 4,
+          "gate_rejected": false,
+          "level": "L4_off_align",
+          "min_card_gap": 27.0
+        }
+      ]
+    },
+    "nested-capacity-manual-layout": {
+      "graph": "nested-capacity",
+      "heavy_level": 2,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L2"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 52.0
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 50.0
+        },
+        {
+          "crossings": 2,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 50.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 0.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 0.0
+        }
+      ]
+    },
+    "nested-learning-manual-layout": {
+      "graph": "nested-learning",
+      "heavy_level": 2,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L2"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 59.9
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 59.2
+        },
+        {
+          "crossings": 2,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 59.2
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 0.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 0.0
+        }
+      ]
+    },
+    "nonplanar-credit-manual-layout": {
+      "graph": "nonplanar-credit",
+      "heavy_level": 4,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L4"
+      ],
+      "steps": [
+        {
+          "crossings": 2,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 30.0
+        },
+        {
+          "crossings": 2,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 28.0
+        },
+        {
+          "crossings": 5,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 28.0
+        },
+        {
+          "crossings": 10,
+          "gate_rejected": false,
+          "level": "L3_break_mirror",
+          "min_card_gap": 24.0
+        },
+        {
+          "crossings": 10,
+          "gate_rejected": false,
+          "level": "L4_off_align",
+          "min_card_gap": 24.0
+        }
+      ]
+    },
+    "nonplanar-inventory-manual-layout": {
+      "graph": "nonplanar-inventory",
+      "heavy_level": 4,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L4"
+      ],
+      "steps": [
+        {
+          "crossings": 1,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 74.0
+        },
+        {
+          "crossings": 1,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 73.0
+        },
+        {
+          "crossings": 3,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 73.0
+        },
+        {
+          "crossings": 8,
+          "gate_rejected": false,
+          "level": "L3_break_mirror",
+          "min_card_gap": 73.0
+        },
+        {
+          "crossings": 8,
+          "gate_rejected": false,
+          "level": "L4_off_align",
+          "min_card_gap": 68.0
+        }
+      ]
+    },
+    "random-n10-i00-manual-layout": {
+      "graph": "random-n10-i00",
+      "heavy_level": 2,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L2"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 39.0
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 37.0
+        },
+        {
+          "crossings": 9,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 37.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 0.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 0.0
+        }
+      ]
+    },
+    "random-n10-i05-manual-layout": {
+      "graph": "random-n10-i05",
+      "heavy_level": null,
+      "light_gate_ok": false,
+      "pairs": [],
+      "steps": [
+        {
+          "gate_rejected": true,
+          "level": "L0_original",
+          "min_card_gap": 13.2
+        },
+        {
+          "gate_rejected": true,
+          "level": "L1_jitter",
+          "min_card_gap": 13.4
+        },
+        {
+          "gate_rejected": true,
+          "level": "L2_swap2",
+          "min_card_gap": 13.4
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 2.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 2.0
+        }
+      ]
+    },
+    "retest-classic-cld-manual-layout": {
+      "graph": "classic-cld-growth-and-burden",
+      "heavy_level": 2,
+      "light_gate_ok": true,
+      "pairs": [
+        "light",
+        "heavy@L2"
+      ],
+      "steps": [
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L0_original",
+          "min_card_gap": 42.0
+        },
+        {
+          "crossings": 0,
+          "gate_rejected": false,
+          "level": "L1_jitter",
+          "min_card_gap": 47.0
+        },
+        {
+          "crossings": 9,
+          "gate_rejected": false,
+          "level": "L2_swap2",
+          "min_card_gap": 47.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L3_break_mirror",
+          "min_card_gap": 0.0
+        },
+        {
+          "gate_rejected": true,
+          "level": "L4_off_align",
+          "min_card_gap": 0.0
+        }
+      ]
+    }
+  },
+  "per_pair": {
+    "sp000": {
+      "a_level": "L0_original",
+      "anchor": "brand-flywheel-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "brand-flywheel",
+      "source": "synthetic_perturbation"
+    },
+    "sp001": {
+      "a_level": "L1_jitter",
+      "anchor": "brand-flywheel-manual-layout",
+      "b_level": "L4_off_align",
+      "dose_level": "heavy",
+      "graph": "brand-flywheel",
+      "source": "synthetic_perturbation"
+    },
+    "sp002": {
+      "a_level": "L0_original",
+      "anchor": "classic-cld-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "classic-cld-growth-and-burden",
+      "source": "synthetic_perturbation"
+    },
+    "sp003": {
+      "a_level": "L1_jitter",
+      "anchor": "classic-cld-manual-layout",
+      "b_level": "L2_swap2",
+      "dose_level": "heavy",
+      "graph": "classic-cld-growth-and-burden",
+      "source": "synthetic_perturbation"
+    },
+    "sp004": {
+      "a_level": "L0_original",
+      "anchor": "bowtie-wage-price-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "bowtie-wage-price",
+      "source": "synthetic_perturbation"
+    },
+    "sp005": {
+      "a_level": "L1_jitter",
+      "anchor": "bowtie-wage-price-manual-layout",
+      "b_level": "L2_swap2",
+      "dose_level": "heavy",
+      "graph": "bowtie-wage-price",
+      "source": "synthetic_perturbation"
+    },
+    "sp006": {
+      "a_level": "L0_original",
+      "anchor": "comb-supply-demand-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "comb-supply-demand",
+      "source": "synthetic_perturbation"
+    },
+    "sp007": {
+      "a_level": "L1_jitter",
+      "anchor": "comb-supply-demand-manual-layout",
+      "b_level": "L4_off_align",
+      "dose_level": "heavy",
+      "graph": "comb-supply-demand",
+      "source": "synthetic_perturbation"
+    },
+    "sp008": {
+      "a_level": "L0_original",
+      "anchor": "coupled-underinvestment-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "coupled-underinvestment",
+      "source": "synthetic_perturbation"
+    },
+    "sp009": {
+      "a_level": "L1_jitter",
+      "anchor": "coupled-underinvestment-manual-layout",
+      "b_level": "L2_swap2",
+      "dose_level": "heavy",
+      "graph": "coupled-underinvestment",
+      "source": "synthetic_perturbation"
+    },
+    "sp010": {
+      "a_level": "L0_original",
+      "anchor": "nested-capacity-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "nested-capacity",
+      "source": "synthetic_perturbation"
+    },
+    "sp011": {
+      "a_level": "L1_jitter",
+      "anchor": "nested-capacity-manual-layout",
+      "b_level": "L2_swap2",
+      "dose_level": "heavy",
+      "graph": "nested-capacity",
+      "source": "synthetic_perturbation"
+    },
+    "sp012": {
+      "a_level": "L0_original",
+      "anchor": "nested-learning-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "nested-learning",
+      "source": "synthetic_perturbation"
+    },
+    "sp013": {
+      "a_level": "L1_jitter",
+      "anchor": "nested-learning-manual-layout",
+      "b_level": "L2_swap2",
+      "dose_level": "heavy",
+      "graph": "nested-learning",
+      "source": "synthetic_perturbation"
+    },
+    "sp014": {
+      "a_level": "L0_original",
+      "anchor": "nonplanar-credit-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "nonplanar-credit",
+      "source": "synthetic_perturbation"
+    },
+    "sp015": {
+      "a_level": "L1_jitter",
+      "anchor": "nonplanar-credit-manual-layout",
+      "b_level": "L4_off_align",
+      "dose_level": "heavy",
+      "graph": "nonplanar-credit",
+      "source": "synthetic_perturbation"
+    },
+    "sp016": {
+      "a_level": "L0_original",
+      "anchor": "nonplanar-inventory-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "nonplanar-inventory",
+      "source": "synthetic_perturbation"
+    },
+    "sp017": {
+      "a_level": "L1_jitter",
+      "anchor": "nonplanar-inventory-manual-layout",
+      "b_level": "L4_off_align",
+      "dose_level": "heavy",
+      "graph": "nonplanar-inventory",
+      "source": "synthetic_perturbation"
+    },
+    "sp018": {
+      "a_level": "L0_original",
+      "anchor": "retest-classic-cld-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "classic-cld-growth-and-burden",
+      "source": "synthetic_perturbation"
+    },
+    "sp019": {
+      "a_level": "L1_jitter",
+      "anchor": "retest-classic-cld-manual-layout",
+      "b_level": "L2_swap2",
+      "dose_level": "heavy",
+      "graph": "classic-cld-growth-and-burden",
+      "source": "synthetic_perturbation"
+    },
+    "sp020": {
+      "a_level": "L0_original",
+      "anchor": "random-n10-i00-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "random-n10-i00",
+      "source": "synthetic_perturbation"
+    },
+    "sp021": {
+      "a_level": "L1_jitter",
+      "anchor": "random-n10-i00-manual-layout",
+      "b_level": "L2_swap2",
+      "dose_level": "heavy",
+      "graph": "random-n10-i00",
+      "source": "synthetic_perturbation"
+    },
+    "sp022": {
+      "a_level": "L0_original",
+      "anchor": "i05",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "random-n10-i05",
+      "source": "synthetic_perturbation"
+    },
+    "sp023": {
+      "a_level": "L1_jitter",
+      "anchor": "i05",
+      "b_level": "L2_swap2",
+      "dose_level": "heavy",
+      "graph": "random-n10-i05",
+      "source": "synthetic_perturbation"
+    },
+    "sp024": {
+      "a_level": "L0_original",
+      "anchor": "i11-a",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "random-n10-i11",
+      "source": "synthetic_perturbation"
+    },
+    "sp025": {
+      "a_level": "L1_jitter",
+      "anchor": "i11-a",
+      "b_level": "L2_swap2",
+      "dose_level": "heavy",
+      "graph": "random-n10-i11",
+      "source": "synthetic_perturbation"
+    },
+    "sp026": {
+      "a_level": "L0_original",
+      "anchor": "i11-b",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "random-n10-i11",
+      "source": "synthetic_perturbation"
+    },
+    "sp027": {
+      "a_level": "L1_jitter",
+      "anchor": "i11-b",
+      "b_level": "L4_off_align",
+      "dose_level": "heavy",
+      "graph": "random-n10-i11",
+      "source": "synthetic_perturbation"
+    },
+    "sp028": {
+      "a_level": "L0_original",
+      "anchor": "epidemic-feedback-manual-layout",
+      "b_level": "L1_jitter",
+      "dose_level": "light",
+      "graph": "epidemic-feedback",
+      "source": "synthetic_perturbation"
+    },
+    "sp029": {
+      "a_level": "L1_jitter",
+      "anchor": "epidemic-feedback-manual-layout",
+      "b_level": "L2_swap2",
+      "dose_level": "heavy",
+      "graph": "epidemic-feedback",
+      "source": "synthetic_perturbation"
+    }
+  },
+  "schema": "stdraw.pref-synthetic.labels/1",
+  "source_constant": "synthetic_perturbation"
+}

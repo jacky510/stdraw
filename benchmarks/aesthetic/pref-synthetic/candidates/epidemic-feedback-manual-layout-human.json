@@ -1,0 +1,119 @@
+{
+  "edges": [
+    {
+      "a": "susceptible",
+      "b": "new_infections"
+    },
+    {
+      "a": "contact_rate",
+      "b": "new_infections"
+    },
+    {
+      "a": "infected",
+      "b": "new_infections"
+    },
+    {
+      "a": "new_infections",
+      "b": "infected"
+    },
+    {
+      "a": "infected",
+      "b": "susceptible"
+    },
+    {
+      "a": "infected",
+      "b": "recovered"
+    },
+    {
+      "a": "infected",
+      "b": "hospital_load"
+    },
+    {
+      "a": "hospital_load",
+      "b": "fatality"
+    },
+    {
+      "a": "bed_capacity",
+      "b": "fatality"
+    },
+    {
+      "a": "fatality",
+      "b": "public_concern"
+    },
+    {
+      "a": "public_concern",
+      "b": "npi"
+    },
+    {
+      "a": "npi",
+      "b": "contact_rate"
+    },
+    {
+      "a": "public_concern",
+      "b": "bed_capacity"
+    },
+    {
+      "a": "bed_capacity",
+      "b": "hospital_load"
+    }
+  ],
+  "graph": "epidemic-feedback",
+  "nodes": {
+    "bed_capacity": {
+      "w": 96,
+      "x": 340,
+      "y": 252
+    },
+    "contact_rate": {
+      "w": 96,
+      "x": 128,
+      "y": 430
+    },
+    "fatality": {
+      "w": 96,
+      "x": 490,
+      "y": 126
+    },
+    "hospital_load": {
+      "w": 96,
+      "x": 572,
+      "y": 268
+    },
+    "infected": {
+      "w": 96,
+      "x": 544,
+      "y": 430
+    },
+    "new_infections": {
+      "w": 96,
+      "x": 254,
+      "y": 536
+    },
+    "npi": {
+      "w": 96,
+      "x": 100,
+      "y": 268
+    },
+    "public_concern": {
+      "w": 96,
+      "x": 182,
+      "y": 126
+    },
+    "recovered": {
+      "w": 110,
+      "x": 424,
+      "y": 360
+    },
+    "susceptible": {
+      "w": 110,
+      "x": 418,
+      "y": 536
+    }
+  },
+  "viewBox": [
+    0,
+    0,
+    696,
+    632
+  ]
+}

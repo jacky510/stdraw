@@ -1,0 +1,97 @@
+{
+  "edges": [
+    {
+      "a": "rate",
+      "b": "adopters"
+    },
+    {
+      "a": "adopters",
+      "b": "word"
+    },
+    {
+      "a": "word",
+      "b": "rate"
+    },
+    {
+      "a": "potential",
+      "b": "rate"
+    },
+    {
+      "a": "adopters",
+      "b": "potential"
+    },
+    {
+      "a": "adopters",
+      "b": "crowding"
+    },
+    {
+      "a": "crowding",
+      "b": "rate"
+    },
+    {
+      "a": "crowding",
+      "b": "quickfix"
+    },
+    {
+      "a": "quickfix",
+      "b": "crowding"
+    },
+    {
+      "a": "crowding",
+      "b": "fundamental"
+    },
+    {
+      "a": "fundamental",
+      "b": "crowding"
+    },
+    {
+      "a": "quickfix",
+      "b": "sideeffect"
+    },
+    {
+      "a": "sideeffect",
+      "b": "crowding"
+    }
+  ],
+  "graph": "classic-cld-growth-and-burden",
+  "nodes": {
+    "adopters": {
+      "x": 514,
+      "y": 233
+    },
+    "crowding": {
+      "x": 382,
+      "y": 72
+    },
+    "fundamental": {
+      "x": 542,
+      "y": 392
+    },
+    "potential": {
+      "x": 112,
+      "y": 232
+    },
+    "quickfix": {
+      "x": 670,
+      "y": 150
+    },
+    "rate": {
+      "x": 382,
+      "y": 389
+    },
+    "sideeffect": {
+      "x": 674,
+      "y": 315
+    },
+    "word": {
+      "x": 255,
+      "y": 229
+    }
+  },
+  "viewBox": [
+    0,
+    0,
+    800,
+    464
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "edges": [
+    {
+      "a": "ad_spend",
+      "b": "ad_effect"
+    },
+    {
+      "a": "ad_effect",
+      "b": "awareness"
+    },
+    {
+      "a": "awareness",
+      "b": "sales"
+    },
+    {
+      "a": "sales",
+      "b": "budget"
+    },
+    {
+      "a": "sales",
+      "b": "wom"
+    },
+    {
+      "a": "awareness",
+      "b": "ad_effect"
+    },
+    {
+      "a": "budget",
+      "b": "ad_spend"
+    },
+    {
+      "a": "wom",
+      "b": "awareness"
+    }
+  ],
+  "graph": "brand-flywheel",
+  "nodes": {
+    "ad_effect": {
+      "x": 244,
+      "y": 70
+    },
+    "ad_spend": {
+      "x": 392,
+      "y": 156
+    },
+    "awareness": {
+      "x": 76,
+      "y": 148
+    },
+    "budget": {
+      "x": 393,
+      "y": 311
+    },
+    "sales": {
+      "x": 245,
+      "y": 405
+    },
+    "wom": {
+      "x": 75,
+      "y": 308
+    }
+  },
+  "viewBox": [
+    0,
+    0,
+    488,
+    480
+  ]
+}

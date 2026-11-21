@@ -1,0 +1,216 @@
+{
+  "schema": "stdraw.pref-synthetic.pairs/1",
+  "note": "preference records only — source/dose labels live in labels.json (separated by red line)",
+  "pairs": [
+    {
+      "pair_id": "sp000",
+      "graph": "brand-flywheel",
+      "candidate_a": "brand-flywheel-manual-layout-human",
+      "candidate_b": "brand-flywheel-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp001",
+      "graph": "brand-flywheel",
+      "candidate_a": "brand-flywheel-manual-layout-L1",
+      "candidate_b": "brand-flywheel-manual-layout-L4",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp002",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "classic-cld-manual-layout-human",
+      "candidate_b": "classic-cld-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp003",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "classic-cld-manual-layout-L1",
+      "candidate_b": "classic-cld-manual-layout-L2",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp004",
+      "graph": "bowtie-wage-price",
+      "candidate_a": "bowtie-wage-price-manual-layout-human",
+      "candidate_b": "bowtie-wage-price-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp005",
+      "graph": "bowtie-wage-price",
+      "candidate_a": "bowtie-wage-price-manual-layout-L1",
+      "candidate_b": "bowtie-wage-price-manual-layout-L2",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp006",
+      "graph": "comb-supply-demand",
+      "candidate_a": "comb-supply-demand-manual-layout-human",
+      "candidate_b": "comb-supply-demand-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp007",
+      "graph": "comb-supply-demand",
+      "candidate_a": "comb-supply-demand-manual-layout-L1",
+      "candidate_b": "comb-supply-demand-manual-layout-L4",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp008",
+      "graph": "coupled-underinvestment",
+      "candidate_a": "coupled-underinvestment-manual-layout-human",
+      "candidate_b": "coupled-underinvestment-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp009",
+      "graph": "coupled-underinvestment",
+      "candidate_a": "coupled-underinvestment-manual-layout-L1",
+      "candidate_b": "coupled-underinvestment-manual-layout-L2",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp010",
+      "graph": "nested-capacity",
+      "candidate_a": "nested-capacity-manual-layout-human",
+      "candidate_b": "nested-capacity-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp011",
+      "graph": "nested-capacity",
+      "candidate_a": "nested-capacity-manual-layout-L1",
+      "candidate_b": "nested-capacity-manual-layout-L2",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp012",
+      "graph": "nested-learning",
+      "candidate_a": "nested-learning-manual-layout-human",
+      "candidate_b": "nested-learning-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp013",
+      "graph": "nested-learning",
+      "candidate_a": "nested-learning-manual-layout-L1",
+      "candidate_b": "nested-learning-manual-layout-L2",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp014",
+      "graph": "nonplanar-credit",
+      "candidate_a": "nonplanar-credit-manual-layout-human",
+      "candidate_b": "nonplanar-credit-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp015",
+      "graph": "nonplanar-credit",
+      "candidate_a": "nonplanar-credit-manual-layout-L1",
+      "candidate_b": "nonplanar-credit-manual-layout-L4",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp016",
+      "graph": "nonplanar-inventory",
+      "candidate_a": "nonplanar-inventory-manual-layout-human",
+      "candidate_b": "nonplanar-inventory-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp017",
+      "graph": "nonplanar-inventory",
+      "candidate_a": "nonplanar-inventory-manual-layout-L1",
+      "candidate_b": "nonplanar-inventory-manual-layout-L4",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp018",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "retest-classic-cld-manual-layout-human",
+      "candidate_b": "retest-classic-cld-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp019",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "retest-classic-cld-manual-layout-L1",
+      "candidate_b": "retest-classic-cld-manual-layout-L2",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp020",
+      "graph": "random-n10-i00",
+      "candidate_a": "random-n10-i00-manual-layout-human",
+      "candidate_b": "random-n10-i00-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp021",
+      "graph": "random-n10-i00",
+      "candidate_a": "random-n10-i00-manual-layout-L1",
+      "candidate_b": "random-n10-i00-manual-layout-L2",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp022",
+      "graph": "random-n10-i05",
+      "candidate_a": "i05-human",
+      "candidate_b": "i05-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp023",
+      "graph": "random-n10-i05",
+      "candidate_a": "i05-L1",
+      "candidate_b": "i05-L2",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp024",
+      "graph": "random-n10-i11",
+      "candidate_a": "i11-a-human",
+      "candidate_b": "i11-a-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp025",
+      "graph": "random-n10-i11",
+      "candidate_a": "i11-a-L1",
+      "candidate_b": "i11-a-L2",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp026",
+      "graph": "random-n10-i11",
+      "candidate_a": "i11-b-human",
+      "candidate_b": "i11-b-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp027",
+      "graph": "random-n10-i11",
+      "candidate_a": "i11-b-L1",
+      "candidate_b": "i11-b-L4",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp028",
+      "graph": "epidemic-feedback",
+      "candidate_a": "epidemic-feedback-manual-layout-human",
+      "candidate_b": "epidemic-feedback-manual-layout-L1",
+      "expected_order": "candidate_a"
+    },
+    {
+      "pair_id": "sp029",
+      "graph": "epidemic-feedback",
+      "candidate_a": "epidemic-feedback-manual-layout-L1",
+      "candidate_b": "epidemic-feedback-manual-layout-L2",
+      "expected_order": "candidate_a"
+    }
+  ]
+}
