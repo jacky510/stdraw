@@ -2,19 +2,39 @@
   "edges": [
     {
       "a": "lrn",
-      "b": "skill"
+      "anchors": {
+        "dst": "e",
+        "src": "s-g2"
+      },
+      "b": "skill",
+      "style": "auto"
     },
     {
       "a": "skill",
-      "b": "perf"
+      "anchors": {
+        "dst": "s",
+        "src": "w"
+      },
+      "b": "perf",
+      "style": "auto"
     },
     {
       "a": "perf",
-      "b": "motive"
+      "anchors": {
+        "dst": "w",
+        "src": "ne"
+      },
+      "b": "motive",
+      "style": "straight"
     },
     {
       "a": "motive",
-      "b": "lrn"
+      "anchors": {
+        "dst": "nw",
+        "src": "e"
+      },
+      "b": "lrn",
+      "style": "auto"
     },
     {
       "a": "perf",

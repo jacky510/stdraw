@@ -2,58 +2,198 @@
   "edges": [
     {
       "a": "susceptible",
+      "anchors": {
+        "a": [
+          366.0,
+          536.0
+        ],
+        "b": [
+          299.0,
+          536.0
+        ]
+      },
       "b": "new_infections"
     },
     {
       "a": "contact_rate",
+      "anchors": {
+        "a": [
+          138.62,
+          449.0
+        ],
+        "b": [
+          243.38,
+          517.0
+        ]
+      },
       "b": "new_infections"
     },
     {
       "a": "infected",
+      "anchors": {
+        "a": [
+          499.0,
+          434.484
+        ],
+        "b": [
+          299.0,
+          531.516
+        ]
+      },
       "b": "new_infections"
     },
     {
       "a": "new_infections",
+      "anchors": {
+        "a": [
+          264.62,
+          555.0
+        ],
+        "b": [
+          589.0,
+          449.0
+        ]
+      },
       "b": "infected"
     },
     {
       "a": "infected",
+      "anchors": {
+        "a": [
+          544.0,
+          449.0
+        ],
+        "b": [
+          470.0,
+          517.0
+        ]
+      },
       "b": "susceptible"
     },
     {
       "a": "infected",
+      "anchors": {
+        "a": [
+          499.0,
+          411.0
+        ],
+        "b": [
+          476.0,
+          379.0
+        ]
+      },
       "b": "recovered"
     },
     {
       "a": "infected",
+      "anchors": {
+        "a": [
+          544.0,
+          411.0
+        ],
+        "b": [
+          572.0,
+          287.0
+        ]
+      },
       "b": "hospital_load"
     },
     {
       "a": "hospital_load",
+      "anchors": {
+        "a": [
+          561.38,
+          249.0
+        ],
+        "b": [
+          500.62,
+          145.0
+        ]
+      },
       "b": "fatality"
     },
     {
       "a": "bed_capacity",
+      "anchors": {
+        "a": [
+          350.62,
+          233.0
+        ],
+        "b": [
+          479.38,
+          145.0
+        ]
+      },
       "b": "fatality"
     },
     {
       "a": "fatality",
+      "anchors": {
+        "a": [
+          445.0,
+          126.0
+        ],
+        "b": [
+          227.0,
+          126.0
+        ]
+      },
       "b": "public_concern"
     },
     {
       "a": "public_concern",
+      "anchors": {
+        "a": [
+          171.38,
+          145.0
+        ],
+        "b": [
+          110.62,
+          249.0
+        ]
+      },
       "b": "npi"
     },
     {
       "a": "npi",
+      "anchors": {
+        "a": [
+          100.0,
+          287.0
+        ],
+        "b": [
+          128.0,
+          411.0
+        ]
+      },
       "b": "contact_rate"
     },
     {
       "a": "public_concern",
+      "anchors": {
+        "a": [
+          192.62,
+          145.0
+        ],
+        "b": [
+          329.38,
+          233.0
+        ]
+      },
       "b": "bed_capacity"
     },
     {
       "a": "bed_capacity",
+      "anchors": {
+        "a": [
+          385.0,
+          256.484
+        ],
+        "b": [
+          527.0,
+          263.516
+        ]
+      },
       "b": "hospital_load"
     }
   ],

@@ -2,51 +2,117 @@
   "edges": [
     {
       "a": "cons",
-      "b": "heat"
+      "anchors": {
+        "dst": "n",
+        "src": "s"
+      },
+      "b": "heat",
+      "style": "auto"
     },
     {
       "a": "heat",
-      "b": "cpi"
+      "anchors": {
+        "src": "s"
+      },
+      "b": "cpi",
+      "style": "auto"
     },
     {
       "a": "cons",
-      "b": "appr"
+      "anchors": {
+        "dst": "sw",
+        "src": "w-g1"
+      },
+      "b": "appr",
+      "style": "auto"
     },
     {
       "a": "appr",
-      "b": "cap"
+      "anchors": {
+        "src": "s"
+      },
+      "b": "cap",
+      "style": "auto"
     },
     {
       "a": "cons",
-      "b": "replen"
+      "anchors": {
+        "src": "e-g2"
+      },
+      "b": "replen",
+      "style": "auto"
     },
     {
       "a": "replen",
-      "b": "stk"
+      "anchors": {
+        "dst": "n"
+      },
+      "b": "stk",
+      "style": "auto"
     },
     {
       "a": "inv",
-      "b": "cpi"
+      "anchors": {
+        "dst": "s",
+        "src": "n"
+      },
+      "b": "cpi",
+      "style": "free"
     },
     {
       "a": "inv",
-      "b": "stk"
+      "anchors": {
+        "dst": "sw",
+        "src": "e-g2"
+      },
+      "b": "stk",
+      "style": "auto"
     },
     {
       "a": "inv",
-      "b": "cap"
+      "anchors": {
+        "dst": "e-g2",
+        "src": "w"
+      },
+      "b": "cap",
+      "style": "auto"
     },
     {
       "a": "exp",
-      "b": "cpi"
+      "anchors": {
+        "dst": "e",
+        "src": "n"
+      },
+      "b": "cpi",
+      "style": "auto",
+      "waypoints": [
+        [
+          794,
+          686
+        ],
+        [
+          794,
+          566
+        ]
+      ]
     },
     {
       "a": "exp",
-      "b": "cap"
+      "anchors": {
+        "dst": "s",
+        "src": "w-g2"
+      },
+      "b": "cap",
+      "style": "arc"
     },
     {
       "a": "exp",
-      "b": "stk"
+      "anchors": {
+        "dst": "s",
+        "src": "e"
+      },
+      "b": "stk",
+      "style": "arc"
     }
   ],
   "graph": "nonplanar-inventory",

@@ -2,39 +2,78 @@
   "edges": [
     {
       "a": "ms",
-      "b": "ir"
+      "anchors": {
+        "dst": "n",
+        "src": "s-g1"
+      },
+      "b": "ir",
+      "style": "straight"
     },
     {
       "a": "ms",
-      "b": "credit"
+      "anchors": {
+        "dst": "n",
+        "src": "e-g2"
+      },
+      "b": "credit",
+      "style": "auto",
+      "waypoints": [
+        [
+          431,
+          76
+        ]
+      ]
     },
     {
       "a": "ms",
-      "b": "val"
+      "anchors": {
+        "src": "se"
+      },
+      "b": "val",
+      "style": "auto"
     },
     {
       "a": "ms",
-      "b": "trans"
+      "b": "trans",
+      "style": "straight"
     },
     {
       "a": "trans",
-      "b": "inv"
+      "anchors": {
+        "dst": "w"
+      },
+      "b": "inv",
+      "style": "straight"
     },
     {
       "a": "credit",
-      "b": "lever"
+      "anchors": {
+        "dst": "s"
+      },
+      "b": "lever",
+      "style": "auto"
     },
     {
       "a": "lever",
-      "b": "val"
+      "anchors": {
+        "dst": "e-g1"
+      },
+      "b": "val",
+      "style": "auto"
     },
     {
       "a": "credit",
-      "b": "inv"
+      "anchors": {
+        "dst": "e",
+        "src": "s"
+      },
+      "b": "inv",
+      "style": "arc"
     },
     {
       "a": "credit",
-      "b": "ir"
+      "b": "ir",
+      "style": "straight"
     },
     {
       "a": "ir",

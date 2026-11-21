@@ -2,35 +2,74 @@
   "edges": [
     {
       "a": "wage",
-      "b": "cost"
+      "anchors": {
+        "src": "ne"
+      },
+      "b": "cost",
+      "style": "auto"
     },
     {
       "a": "cost",
-      "b": "cpi"
+      "anchors": {
+        "dst": "e",
+        "src": "n"
+      },
+      "b": "cpi",
+      "style": "auto"
     },
     {
       "a": "cpi",
-      "b": "living"
+      "anchors": {
+        "dst": "n",
+        "src": "w"
+      },
+      "b": "living",
+      "style": "auto"
     },
     {
       "a": "living",
-      "b": "wage"
+      "anchors": {
+        "dst": "nw",
+        "src": "s"
+      },
+      "b": "wage",
+      "style": "auto"
     },
     {
       "a": "wage",
-      "b": "buying"
+      "anchors": {
+        "dst": "n",
+        "src": "se"
+      },
+      "b": "buying",
+      "style": "auto"
     },
     {
       "a": "buying",
-      "b": "sales"
+      "anchors": {
+        "dst": "n",
+        "src": "s"
+      },
+      "b": "sales",
+      "style": "auto"
     },
     {
       "a": "profit",
-      "b": "raise"
+      "anchors": {
+        "dst": "s",
+        "src": "n"
+      },
+      "b": "raise",
+      "style": "auto"
     },
     {
       "a": "raise",
-      "b": "wage"
+      "anchors": {
+        "dst": "sw",
+        "src": "n"
+      },
+      "b": "wage",
+      "style": "auto"
     },
     {
       "a": "sales",

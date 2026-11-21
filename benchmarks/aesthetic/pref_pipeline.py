@@ -113,12 +113,25 @@ def gate_viability(doc, graph_name):
     return ok, cert
 
 
+SLIM_EDGE_KEYS = ("a", "b", "style", "anchors", "waypoints", "ctrl")
+
+
 def slim_doc(doc):
-    """Training-format candidate snapshot: graph / viewBox / nodes / edges."""
+    """Training-format candidate snapshot: graph / viewBox / nodes / edges.
+
+    Edge entries keep the human-side geometry the engine's --from-layout
+    reader consumes (style / anchors / waypoints / ctrl — the exact field
+    set of _manual_edge_styles / _manual_anchors / _manual_waypoints /
+    _manual_arc_ctrls), so feeding a slim_doc back through --from-layout
+    replays the stored layout byte-faithfully instead of re-routing from
+    bare a/b.  The rendered picture and the certificate-proxy counters
+    (computed on the full stored doc) therefore stay same-source.
+    """
     return {"graph": doc.get("graph"),
             "viewBox": doc.get("viewBox"),
             "nodes": doc["nodes"],
-            "edges": [{"a": e["a"], "b": e["b"]} for e in doc["edges"]]}
+            "edges": [{k: e[k] for k in SLIM_EDGE_KEYS if k in e}
+                      for e in doc["edges"]]}
 
 
 # ═════════════════════════════ Part A: synthetic pairs ════════════════════
@@ -339,7 +352,7 @@ def render_spotcheck_html(rows):
 </style></head><body><div class="wrap">
 <h1>扰动合成对 · 抽查包</h1>
 <p class="sub">4 份锚点 ×（原图 / 轻扰 / 重扰）三联，引擎权威渲染（--from-layout 重放，--skip-3d）。请肉眼确认「扰动确实更差」后再让合成对全量进训练。</p>
-<p class="note">判读提示：轻扰 = 每节点 ±3px 确定性抖动（整体观感轻微变糙）；重扰 = 累积剂量（若重扰档被几何硬门拦下，则展示为可通过门的最深档，并在角标注明档位——硬门：卡片间距 ≥16px 且零真压卡）。每格下方有最小间距(px)与交叉数，供辅助判读。</p>"""]
+<p class="note">判读提示：轻扰 = 每节点 ±3px 确定性抖动（整体观感轻微变糙）；重扰 = 累积剂量（若重扰档被几何硬门拦下，则展示为可通过门的最深档，并在角标注明档位——硬门：卡片间距 ≥16px 且零真压卡）。每格下方有最小间距(px)与交叉数，供辅助判读。交叉数为证书代理口径：按存储布局的卡片中心直连线段求交计算；用户绕行折线的意义正是消除直连交叉，故画面可见交叉可少于该数（渲染画面为存储布局的字节保真重放，与该数同源）。</p>"""]
     for r in rows:
         parts.append('<div class="row"><h2>%s <span style="color:#64748b;font-size:13px;font-weight:400">（图: %s · 族: %s）</span></h2><div class="tri">' % (
             html.escape(r["anchor"]), html.escape(r["graph"]), html.escape(str(r["family"]))))
