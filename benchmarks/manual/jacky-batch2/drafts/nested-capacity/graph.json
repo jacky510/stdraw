@@ -1,0 +1,167 @@
+{
+ "name": "产能投资双环",
+ "nodes": [
+  {
+   "id": "rev",
+   "label": "销售收入",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "profit",
+   "label": "经营利润",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "invest",
+   "label": "产能投资",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "capacity",
+   "label": "生产产能",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "delivery",
+   "label": "交付速度",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "coverage",
+   "label": "市场覆盖",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "customers",
+   "label": "客户基数",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "bargaining",
+   "label": "议价规模",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  }
+ ],
+ "edges": [
+  {
+   "a": "rev",
+   "b": "profit",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "R2"
+   ]
+  },
+  {
+   "a": "profit",
+   "b": "invest",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "R2"
+   ]
+  },
+  {
+   "a": "invest",
+   "b": "capacity",
+   "polarity": "+",
+   "loops": [
+    "R1",
+    "R2"
+   ]
+  },
+  {
+   "a": "capacity",
+   "b": "rev",
+   "polarity": "+",
+   "loops": [
+    "R1"
+   ]
+  },
+  {
+   "a": "capacity",
+   "b": "delivery",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "delivery",
+   "b": "coverage",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "coverage",
+   "b": "customers",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "customers",
+   "b": "bargaining",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  },
+  {
+   "a": "bargaining",
+   "b": "rev",
+   "polarity": "+",
+   "loops": [
+    "R2"
+   ]
+  }
+ ],
+ "loops": [
+  {
+   "id": "R1",
+   "label": "利润再投资环",
+   "nodes": [
+    "rev",
+    "profit",
+    "invest",
+    "capacity"
+   ],
+   "kind": "R"
+  },
+  {
+   "id": "R2",
+   "label": "增长扩张环",
+   "nodes": [
+    "rev",
+    "profit",
+    "invest",
+    "capacity",
+    "delivery",
+    "coverage",
+    "customers",
+    "bargaining"
+   ],
+   "kind": "R"
+  }
+ ],
+ "groups": []
+}

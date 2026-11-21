@@ -1,0 +1,29 @@
+# 审美采样批次2 · 非平面族 B：货币-信贷-估值网络（K5 型，细分 4 边）
+# 9 节点 / 14 边：5 个核心变量两两相连（10 对），细分 4 条边
+# 交叉数下界 cr(K5)=1，目标最小交叉 = 1
+graph "货币信贷估值网络"
+
+var ms "货币供给"
+var ir "利率水平"
+var credit "信贷规模"
+var val "股票估值"
+var inv "企业投资"
+var trans "流动性传导"
+var fund "融资成本"
+var lever "杠杆资金"
+var wealth "财富效应"
+
+ms -> - ir
+ms -> + credit
+ms -> + val
+ms -> + trans
+trans -> + inv
+ir -> - val
+ir -> - fund
+fund -> - inv
+credit -> + lever
+lever -> + val
+credit -> + inv
+val -> + wealth
+wealth -> + inv
+credit -> + ir

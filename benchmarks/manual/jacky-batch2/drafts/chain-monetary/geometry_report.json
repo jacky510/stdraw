@@ -1,0 +1,91 @@
+{
+ "checks": [
+  {
+   "check": "1. crossings <= 2 (polyline/arc sampled intersection; on hard-gate conflict keep gates, release crossings)",
+   "pass": true,
+   "detail": "6 edges, conflicts 0"
+  },
+  {
+   "check": "2. box press = 0 (any angle, incl. 1px margin)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "3. edge-box clearance >= 16px",
+   "pass": true,
+   "detail": "minimum 77.0px (ms->ir vs inv)"
+  },
+  {
+   "check": "4. anchor smoothness (border anchors, tangent angle >= 20 deg)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "5. cards pairwise non-overlapping (per-node width)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "6a. uniform row pitch (parking-lane nodes excluded)",
+   "pass": true,
+   "detail": "pitch=80"
+  },
+  {
+   "check": "6b. all coordinates on the 2px grid (even)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "7. all content inside the viewBox",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "8. 1280x800 rendering scale >= 0.85",
+   "pass": true,
+   "detail": "viewBox 192x640 -> s=1.062; title 12.5x1.06~=13.3px"
+  },
+  {
+   "check": "9. simple-graph placement regularity",
+   "pass": true,
+   "detail": "n=7, 24px column snap 1.00, pitch uniform True"
+  },
+  {
+   "check": "10. auto-v2 metadata complete",
+   "pass": true,
+   "detail": "recipe=auto-v2 line_style=straight engine=cp-sat"
+  },
+  {
+   "check": "11. dual crossing accounting consistent (routing theory vs delivered-geometry recheck)",
+   "pass": true,
+   "detail": "router=0 geometric=0"
+  },
+  {
+   "check": "12. mutual-pair two-line minimum distance >= 4px (lens double arcs, merging forbidden)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "check": "13. path_d rendering geometry consistent with verification geometry + arc G1 tangent continuity",
+   "pass": true,
+   "detail": "no vg path_d routes in this graph (trivially passes)"
+  }
+ ],
+ "fail": 0,
+ "summary": {
+  "viewBox": [
+   192,
+   640
+  ],
+  "aspect": 0.3,
+  "nodes": 7,
+  "edges": 6,
+  "rows": 7,
+  "pitch": 80,
+  "scale_1280x800": 1.062,
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "cp-sat",
+  "fail": 0
+ }
+}

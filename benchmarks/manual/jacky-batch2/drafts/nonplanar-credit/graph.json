@@ -1,0 +1,156 @@
+{
+ "name": "货币信贷估值网络",
+ "nodes": [
+  {
+   "id": "ms",
+   "label": "货币供给",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "ir",
+   "label": "利率水平",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "credit",
+   "label": "信贷规模",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "val",
+   "label": "股票估值",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "inv",
+   "label": "企业投资",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "trans",
+   "label": "流动性传导",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "fund",
+   "label": "融资成本",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "lever",
+   "label": "杠杆资金",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "wealth",
+   "label": "财富效应",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  }
+ ],
+ "edges": [
+  {
+   "a": "ms",
+   "b": "ir",
+   "polarity": "-",
+   "loops": []
+  },
+  {
+   "a": "ms",
+   "b": "credit",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "ms",
+   "b": "val",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "ms",
+   "b": "trans",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "trans",
+   "b": "inv",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "ir",
+   "b": "val",
+   "polarity": "-",
+   "loops": []
+  },
+  {
+   "a": "ir",
+   "b": "fund",
+   "polarity": "-",
+   "loops": []
+  },
+  {
+   "a": "fund",
+   "b": "inv",
+   "polarity": "-",
+   "loops": []
+  },
+  {
+   "a": "credit",
+   "b": "lever",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "lever",
+   "b": "val",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "credit",
+   "b": "inv",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "val",
+   "b": "wealth",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "wealth",
+   "b": "inv",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "credit",
+   "b": "ir",
+   "polarity": "+",
+   "loops": []
+  }
+ ],
+ "loops": [],
+ "groups": []
+}

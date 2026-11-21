@@ -1,0 +1,144 @@
+{
+ "name": "库存价格需求振荡",
+ "nodes": [
+  {
+   "id": "cons",
+   "label": "消费需求",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "inv",
+   "label": "投资需求",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "exp",
+   "label": "出口需求",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "cpi",
+   "label": "物价水平",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "cap",
+   "label": "生产产能",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "stk",
+   "label": "库存水位",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "appr",
+   "label": "产能审批",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "replen",
+   "label": "渠道补货",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "heat",
+   "label": "市场热度",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  }
+ ],
+ "edges": [
+  {
+   "a": "cons",
+   "b": "heat",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "heat",
+   "b": "cpi",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "cons",
+   "b": "appr",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "appr",
+   "b": "cap",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "cons",
+   "b": "replen",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "replen",
+   "b": "stk",
+   "polarity": "-",
+   "loops": []
+  },
+  {
+   "a": "inv",
+   "b": "cpi",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "inv",
+   "b": "stk",
+   "polarity": "-",
+   "loops": []
+  },
+  {
+   "a": "inv",
+   "b": "cap",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "exp",
+   "b": "cpi",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "exp",
+   "b": "cap",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "exp",
+   "b": "stk",
+   "polarity": "-",
+   "loops": []
+  }
+ ],
+ "loops": [],
+ "groups": []
+}

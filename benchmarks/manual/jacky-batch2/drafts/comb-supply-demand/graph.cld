@@ -1,0 +1,21 @@
+graph "供需双侧梳"
+
+var cons "消费需求"
+var inv "投资需求"
+var exp "出口需求"
+var hub1 "总需求压力"
+var hub2 "生产负荷"
+var income "收入预期"
+var funding "融资成本"
+var fx "汇率水平"
+
+cons -> + hub1
+cons -> + hub2
+inv -> + hub1
+inv -> + hub2
+exp -> + hub1
+exp -> + hub2
+income -> + cons
+funding -> - inv
+fx -> + exp
+

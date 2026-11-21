@@ -1,0 +1,46 @@
+{
+ "tool": "stdraw",
+ "kind": "manual-layout",
+ "graph": "nested-learning",
+ "viewBox": [
+  0,
+  0,
+  568,
+  504
+ ],
+ "nodes": {
+  "lrn": {
+   "x": 434,
+   "y": 142
+  },
+  "skill": {
+   "x": 354,
+   "y": 304
+  },
+  "perf": {
+   "x": 368,
+   "y": 432
+  },
+  "motive": {
+   "x": 472,
+   "y": 302
+  },
+  "share": {
+   "x": 204,
+   "y": 432
+  },
+  "orgcap": {
+   "x": 100,
+   "y": 302
+  },
+  "result": {
+   "x": 138,
+   "y": 142
+  },
+  "budget": {
+   "x": 286,
+   "y": 70
+  }
+ },
+ "note": "engine auto-v2 draft (batch2 prep); schema identical to demo-2d Export layout"
+}

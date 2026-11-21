@@ -1,0 +1,85 @@
+{
+ "loops": [
+  {
+   "id": "R1",
+   "label": "价格成本螺旋",
+   "declared_kind": "R",
+   "nodes": [
+    "wage",
+    "cost",
+    "cpi",
+    "living"
+   ],
+   "closed": true,
+   "walk": [
+    "wage",
+    "cost",
+    "cpi",
+    "living",
+    "wage"
+   ],
+   "neg_edges": 0,
+   "parity_kind": "R",
+   "kind_consistent": true
+  },
+  {
+   "id": "R2",
+   "label": "购买力螺旋",
+   "declared_kind": "R",
+   "nodes": [
+    "wage",
+    "buying",
+    "sales",
+    "profit",
+    "raise"
+   ],
+   "closed": true,
+   "walk": [
+    "wage",
+    "buying",
+    "sales",
+    "profit",
+    "raise",
+    "wage"
+   ],
+   "neg_edges": 0,
+   "parity_kind": "R",
+   "kind_consistent": true
+  }
+ ],
+ "problems": [],
+ "extra_cycles": [
+  {
+   "nodes": [
+    "buying",
+    "profit",
+    "raise",
+    "sales",
+    "wage"
+   ],
+   "kind": "R",
+   "neg_edges": 0,
+   "matches_declared": "R2"
+  },
+  {
+   "nodes": [
+    "cost",
+    "cpi",
+    "living",
+    "wage"
+   ],
+   "kind": "R",
+   "neg_edges": 0,
+   "matches_declared": "R1"
+  }
+ ],
+ "summary": {
+  "declared": 2,
+  "closed": 2,
+  "kind_consistent": 2,
+  "enumerated": 2,
+  "undeclared": 0,
+  "problems": 0
+ },
+ "pass": true
+}

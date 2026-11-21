@@ -1,0 +1,94 @@
+{
+ "loops": [
+  {
+   "id": "R1",
+   "label": "利润再投资环",
+   "declared_kind": "R",
+   "nodes": [
+    "rev",
+    "profit",
+    "invest",
+    "capacity"
+   ],
+   "closed": true,
+   "walk": [
+    "rev",
+    "profit",
+    "invest",
+    "capacity",
+    "rev"
+   ],
+   "neg_edges": 0,
+   "parity_kind": "R",
+   "kind_consistent": true
+  },
+  {
+   "id": "R2",
+   "label": "增长扩张环",
+   "declared_kind": "R",
+   "nodes": [
+    "rev",
+    "profit",
+    "invest",
+    "capacity",
+    "delivery",
+    "coverage",
+    "customers",
+    "bargaining"
+   ],
+   "closed": true,
+   "walk": [
+    "rev",
+    "profit",
+    "invest",
+    "capacity",
+    "delivery",
+    "coverage",
+    "customers",
+    "bargaining",
+    "rev"
+   ],
+   "neg_edges": 0,
+   "parity_kind": "R",
+   "kind_consistent": true
+  }
+ ],
+ "problems": [],
+ "extra_cycles": [
+  {
+   "nodes": [
+    "bargaining",
+    "capacity",
+    "coverage",
+    "customers",
+    "delivery",
+    "invest",
+    "profit",
+    "rev"
+   ],
+   "kind": "R",
+   "neg_edges": 0,
+   "matches_declared": "R2"
+  },
+  {
+   "nodes": [
+    "capacity",
+    "invest",
+    "profit",
+    "rev"
+   ],
+   "kind": "R",
+   "neg_edges": 0,
+   "matches_declared": "R1"
+  }
+ ],
+ "summary": {
+  "declared": 2,
+  "closed": 2,
+  "kind_consistent": 2,
+  "enumerated": 2,
+  "undeclared": 0,
+  "problems": 0
+ },
+ "pass": true
+}

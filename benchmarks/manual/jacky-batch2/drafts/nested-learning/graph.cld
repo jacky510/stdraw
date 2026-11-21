@@ -1,0 +1,23 @@
+graph "学习组织双环"
+
+var lrn "学习投入"
+var skill "个人技能"
+var perf "工作绩效"
+var motive "学习动力"
+var share "知识共享"
+var orgcap "组织能力"
+var result "业务成果"
+var budget "培训预算"
+
+lrn -> + skill @loops R1,R2
+skill -> + perf @loops R1,R2
+perf -> + motive @loops R1
+motive -> + lrn @loops R1
+perf -> + share @loops R2
+share -> + orgcap @loops R2
+orgcap -> + result @loops R2
+result -> + budget @loops R2
+budget -> + lrn @loops R2
+
+loop R1 "个人成长环" "R" [lrn, skill, perf, motive]
+loop R2 "组织学习环" "R" [lrn, skill, perf, share, orgcap, result, budget]

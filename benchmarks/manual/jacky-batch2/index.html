@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>审美采样第二批 · 拖拽会话（jacky-batch2）</title>
+<style>
+  :root { --ink:#1e293b; --muted:#64748b; --line:#e2e8f0; --accent:#1e6fae; --ok:#0a7d43; --warn:#b45309; }
+  * { box-sizing:border-box; }
+  body { font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif; color:var(--ink); margin:0; background:#f8fafc; line-height:1.6; }
+  .wrap { max-width:960px; margin:0 auto; padding:24px 20px 60px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:14px; margin-bottom:20px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px; }
+  .card h2 { font-size:16px; margin:0 0 8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .badge { font-size:12px; padding:2px 10px; border-radius:999px; background:#e0f2fe; color:#075985; white-space:nowrap; }
+  .badge.gold { background:#fef3c7; color:#92400e; }
+  .badge.green { background:#dcfce7; color:#166534; }
+  .badge.orange { background:#ffedd5; color:#9a3412; }
+  .meta { font-size:13px; color:var(--muted); }
+  .go { display:inline-block; margin-top:8px; background:var(--accent); color:#fff; text-decoration:none; font-size:14px; padding:7px 16px; border-radius:8px; }
+  .go:hover { filter:brightness(1.1); }
+  table { border-collapse:collapse; width:100%; font-size:13px; margin-top:10px; }
+  th,td { border:1px solid var(--line); padding:6px 10px; text-align:left; }
+  th { background:#f1f5f9; }
+  ol li, ul li { margin-bottom:6px; font-size:14px; }
+  .note { font-size:13px; color:var(--warn); }
+  code { background:#f1f5f9; padding:1px 5px; border-radius:4px; font-size:12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>审美采样第二批 · 拖拽会话</h1>
+  <p class="sub">10 张图 · 每图 5~10 分钟 · 拖完点「Export layout」导出 · 采样协议见 <code>docs/manual-batch2-protocol.md</code> · 顺序不限，可分多次完成</p>
+
+  <div class="card">
+    <h2>怎么拖（30 秒版）</h2>
+    <ol>
+      <li><b>节点</b>：直接拖卡片到你觉得好看的位置。</li>
+      <li><b>边样式</b>：双击一条边，循环切换 <code>auto → straight → arc → free</code>；free 后沿边拖动可插入折点手柄（每边最多 3 个），拖折点即钉住该边。</li>
+      <li><b>边锚点</b>：鼠标悬停在某张卡片上会显示它的 <b>16 个标准锚点</b>（n/s/e/w、四角、黄金分割点等）；点击一个可见锚点，就把它指定给最近那条连边的端点（形如 <code>n</code> / <code>se</code> / <code>g1</code>）。同侧多条边的锚点想怎么分组就怎么点。</li>
+      <li><b>导出</b>：拖完后点页面工具栏的 <b>Export layout</b>，浏览器会下载一个 JSON，把它改名成 <code>&lt;图名&gt;-jacky.json</code>（图名见下面每张卡的编号）。</li>
+      <li><b>都不满意？</b>照样导出并注明「均不满意」——如实标注的负样本同样有价值（协议 §3）。</li>
+    </ol>
+    <p class="meta">拖拽前初稿（<code>&lt;图名&gt;-draft.json</code>）已由准备卡预存在 <code>benchmarks/manual/jacky-batch2/</code>，你不需要动它。</p>
+  </div>
+
+  <div class="card">
+    <h2>图源清单</h2>
+    <table>
+      <tr><th>#</th><th>图</th><th>族</th><th>n/e</th><th>初稿评级</th><th>交叉</th></tr>
+      <tr><td>1</td><td>chain-monetary</td><td>链</td><td>7/6</td><td>best</td><td>0</td></tr>
+      <tr><td>2</td><td>chain-supply</td><td>链</td><td>6/5</td><td>best</td><td>0</td></tr>
+      <tr><td>3</td><td>nested-learning</td><td>嵌套环</td><td>8/9</td><td>best</td><td>0</td></tr>
+      <tr><td>4</td><td>nested-capacity</td><td>嵌套环</td><td>8/10</td><td>best</td><td>0</td></tr>
+      <tr><td>5</td><td>nonplanar-inventory</td><td>非平面 K3,3</td><td>9/12</td><td>crossed-certified</td><td>1（=最小）</td></tr>
+      <tr><td>6</td><td>nonplanar-credit</td><td>非平面 K5</td><td>9/14</td><td>uncertified*</td><td>1（=最小）</td></tr>
+      <tr><td>7</td><td>bowtie-wage-price</td><td>领结双环共点</td><td>8/9</td><td>best</td><td>0</td></tr>
+      <tr><td>8</td><td>comb-supply-demand</td><td>双侧梳</td><td>8/9</td><td>best</td><td>0</td></tr>
+      <tr><td>9</td><td>coupled-underinvestment</td><td>多环耦合</td><td>10/12</td><td>best</td><td>0</td></tr>
+      <tr><td>10</td><td>retest-classic-cld</td><td>重测（二拖）</td><td>8/13</td><td>best</td><td>0</td></tr>
+    </table>
+    <p class="note">* 第 6 张：非平面图按定义无法 0 交叉；当前引擎在最小交叉 1 上其余硬门全过，评级按诚实口径记 uncertified（形态门回落 layered）。拖拽不受影响。</p>
+    <p class="note">第 5 张初稿画布较宽（2368px），浏览器里可缩小查看后照常拖拽。</p>
+  </div>
+
+  <div class="card"><h2>① chain-monetary <span class="badge">链</span> <span class="badge green">best / 0 交叉</span></h2>
+    <p class="meta">货币政策传导链：货币供给→利率→投资→产出→收入→消费→物价（7 节点纯链）。</p>
+    <a class="go" href="drafts/chain-monetary/demo-2d.html">打开拖拽 →</a>
+    <p class="meta">导出后改名：<code>chain-monetary-jacky.json</code></p></div>
+
+  <div class="card"><h2>② chain-supply <span class="badge">链</span> <span class="badge green">best / 0 交叉</span></h2>
+    <p class="meta">供应链价格传导：原材料→成本→出厂价→零售价→销量→渠道库存（6 节点纯链）。</p>
+    <a class="go" href="drafts/chain-supply/demo-2d.html">打开拖拽 →</a>
+    <p class="meta">导出后改名：<code>chain-supply-jacky.json</code></p></div>
+
+  <div class="card"><h2>③ nested-learning <span class="badge">嵌套环</span> <span class="badge green">best / 0 交叉</span></h2>
+    <p class="meta">学习组织：内环（学习→技能→绩效→动力）嵌在外环（→共享→组织能力→成果→预算）前段路径上。</p>
+    <a class="go" href="drafts/nested-learning/demo-2d.html">打开拖拽 →</a>
+    <p class="meta">导出后改名：<code>nested-learning-jacky.json</code></p></div>
+
+  <div class="card"><h2>④ nested-capacity <span class="badge">嵌套环</span> <span class="badge green">best / 0 交叉</span></h2>
+    <p class="meta">产能投资：内环（收入→利润→投资→产能）嵌在外环（→交付速度→覆盖→客户→议价）前段上。</p>
+    <a class="go" href="drafts/nested-capacity/demo-2d.html">打开拖拽 →</a>
+    <p class="meta">导出后改名：<code>nested-capacity-jacky.json</code></p></div>
+
+  <div class="card"><h2>⑤ nonplanar-inventory <span class="badge gold">非平面 K3,3</span> <span class="badge orange">crossed-certified / 1 交叉=最小</span></h2>
+    <p class="meta">库存-价格-需求振荡：消费/投资/出口 × 物价/产能/库存 完全二部（Kuratowski 下界 cr=1）。初稿画布较宽，可缩小后拖。</p>
+    <a class="go" href="drafts/nonplanar-inventory/demo-2d.html">打开拖拽 →</a>
+    <p class="meta">导出后改名：<code>nonplanar-inventory-jacky.json</code></p></div>
+
+  <div class="card"><h2>⑥ nonplanar-credit <span class="badge gold">非平面 K5</span> <span class="badge orange">uncertified / 1 交叉=最小</span></h2>
+    <p class="meta">货币-信贷-估值网络：货币供给/利率/信贷/估值/投资 五核心两两相连（K5 下界 cr=1），4 条边经中介细分。</p>
+    <a class="go" href="drafts/nonplanar-credit/demo-2d.html">打开拖拽 →</a>
+    <p class="meta">导出后改名：<code>nonplanar-credit-jacky.json</code></p></div>
+
+  <div class="card"><h2>⑦ bowtie-wage-price <span class="badge">领结·双环共点</span> <span class="badge green">best / 0 交叉</span></h2>
+    <p class="meta">工资-价格螺旋：价格环（工资→成本→物价→生活成本）与购买力环（工资→购买力→销量→利润→加薪）只共享「工资水平」一点。</p>
+    <a class="go" href="drafts/bowtie-wage-price/demo-2d.html">打开拖拽 →</a>
+    <p class="meta">导出后改名：<code>bowtie-wage-price-jacky.json</code></p></div>
+
+  <div class="card"><h2>⑧ comb-supply-demand <span class="badge">梳·双侧</span> <span class="badge green">best / 0 交叉</span></h2>
+    <p class="meta">供需双侧梳：消费/投资/出口三源各连「总需求压力」「生产负荷」双枢纽，源侧各挂一片垂叶。</p>
+    <a class="go" href="drafts/comb-supply-demand/demo-2d.html">打开拖拽 →</a>
+    <p class="meta">导出后改名：<code>comb-supply-demand-jacky.json</code></p></div>
+
+  <div class="card"><h2>⑨ coupled-underinvestment <span class="badge">多环耦合</span> <span class="badge green">best / 0 交叉</span></h2>
+    <p class="meta">增长与投资不足：R1 增长环 + B1 投资不足环（共享交付链）+ R2 竞争力环，三环耦合。</p>
+    <a class="go" href="drafts/coupled-underinvestment/demo-2d.html">打开拖拽 →</a>
+    <p class="meta">导出后改名：<code>coupled-underinvestment-jacky.json</code></p></div>
+
+  <div class="card"><h2>⑩ retest-classic-cld <span class="badge gold">重测·二拖</span> <span class="badge green">best / 0 交叉（spine-wing）</span></h2>
+    <p class="meta">增长与负担（经典 CLD，与第一批 11-06 人工锚点同图）：请凭记忆尽量按「上次的画法」拖，也可完全重画——两种都欢迎，导出注明即可。</p>
+    <a class="go" href="drafts/retest-classic-cld/demo-2d.html">打开拖拽 →</a>
+    <p class="meta">导出后改名：<code>retest-classic-cld-jacky.json</code></p></div>
+
+  <div class="card">
+    <h2>完成后</h2>
+    <ul>
+      <li>10 个 <code>*-jacky.json</code> 收齐后发回（或放进 <code>benchmarks/manual/jacky-batch2/</code>）。</li>
+      <li>每份可用 <code>--from-layout</code> 重放复核；偏好对进入人工锚点库（协议 §5）。</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

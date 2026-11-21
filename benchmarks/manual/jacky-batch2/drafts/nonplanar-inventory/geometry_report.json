@@ -1,0 +1,91 @@
+{
+ "checks": [
+  {
+   "check": "1. crossings witnessed (== witness count, each maps to a planarization marker; docs/planarization-degrade-contract.md)",
+   "pass": true,
+   "detail": "12 edges, crossings 1, witnesses 1"
+  },
+  {
+   "check": "2. box press = 0 (any angle, incl. 1px margin)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "3. edge-box clearance >= 16px",
+   "pass": true,
+   "detail": "minimum 49.4px (inv->cpi vs stk)"
+  },
+  {
+   "check": "4. anchor smoothness (border anchors, tangent angle >= 20 deg)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "5. cards pairwise non-overlapping (per-node width)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "6a. uniform row pitch (parking-lane nodes excluded)",
+   "pass": true,
+   "detail": "pitch=None"
+  },
+  {
+   "check": "6b. all coordinates on the 2px grid (even)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "7. all content inside the viewBox",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "8. 1280x800 rendering scale >= 0.85 (planarized: tier pending, report only)",
+   "pass": true,
+   "detail": "viewBox 2368x1056 -> s=0.541; title 12.5x0.54~=6.8px"
+  },
+  {
+   "check": "9. simple-graph placement regularity (planarized: N/A)",
+   "pass": true,
+   "detail": "n=9, 24px column snap 0.00, pitch uniform False; inapplicable to planarized straight-line drawings"
+  },
+  {
+   "check": "10. auto-v2 metadata complete",
+   "pass": true,
+   "detail": "recipe=auto-v2 line_style=straight engine=planarized"
+  },
+  {
+   "check": "11. dual crossing accounting consistent (routing theory vs delivered-geometry recheck)",
+   "pass": true,
+   "detail": "router=1 geometric=1"
+  },
+  {
+   "check": "12. mutual-pair two-line minimum distance >= 4px (lens double arcs, merging forbidden)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "check": "13. path_d rendering geometry consistent with verification geometry + arc G1 tangent continuity",
+   "pass": true,
+   "detail": "no vg path_d routes in this graph (trivially passes)"
+  }
+ ],
+ "fail": 0,
+ "summary": {
+  "viewBox": [
+   2368,
+   1056
+  ],
+  "aspect": 2.242,
+  "nodes": 9,
+  "edges": 12,
+  "rows": 0,
+  "pitch": null,
+  "scale_1280x800": 0.541,
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "planarized",
+  "fail": 0
+ }
+}

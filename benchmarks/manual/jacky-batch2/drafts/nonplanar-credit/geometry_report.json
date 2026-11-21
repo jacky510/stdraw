@@ -1,0 +1,91 @@
+{
+ "checks": [
+  {
+   "check": "1. crossings <= 2 (polyline/arc sampled intersection; on hard-gate conflict keep gates, release crossings)",
+   "pass": true,
+   "detail": "14 edges, conflicts 1[('ms->val', 'credit->inv')]"
+  },
+  {
+   "check": "2. box press = 0 (any angle, incl. 1px margin)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "3. edge-box clearance >= 16px",
+   "pass": true,
+   "detail": "minimum 17.5px (credit->inv vs val)"
+  },
+  {
+   "check": "4. anchor smoothness (border anchors, tangent angle >= 20 deg)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "5. cards pairwise non-overlapping (per-node width)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "6a. uniform row pitch (parking-lane nodes excluded)",
+   "pass": true,
+   "detail": "pitch=80"
+  },
+  {
+   "check": "6b. all coordinates on the 2px grid (even)",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "7. all content inside the viewBox",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "8. 1280x800 rendering scale >= 0.85",
+   "pass": true,
+   "detail": "viewBox 488x560 -> s=1.214; title 12.5x1.21~=15.2px"
+  },
+  {
+   "check": "9. simple-graph placement regularity",
+   "pass": true,
+   "detail": "n=9, 24px column snap 1.00, pitch uniform True"
+  },
+  {
+   "check": "10. auto-v2 metadata complete",
+   "pass": true,
+   "detail": "recipe=auto-v2 line_style=straight engine=cp-sat"
+  },
+  {
+   "check": "11. dual crossing accounting consistent (routing theory vs delivered-geometry recheck)",
+   "pass": true,
+   "detail": "router=1 geometric=1"
+  },
+  {
+   "check": "12. mutual-pair two-line minimum distance >= 4px (lens double arcs, merging forbidden)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "check": "13. path_d rendering geometry consistent with verification geometry + arc G1 tangent continuity",
+   "pass": true,
+   "detail": "2 vg paths render/verify consistent (G1 <=4 deg, geometry deviation <=1.5px)"
+  }
+ ],
+ "fail": 0,
+ "summary": {
+  "viewBox": [
+   488,
+   560
+  ],
+  "aspect": 0.871,
+  "nodes": 9,
+  "edges": 14,
+  "rows": 6,
+  "pitch": 80,
+  "scale_1280x800": 1.214,
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "cp-sat",
+  "fail": 0
+ }
+}

@@ -1,0 +1,14 @@
+{
+ "loops": [],
+ "problems": [],
+ "extra_cycles": [],
+ "summary": {
+  "declared": 0,
+  "closed": 0,
+  "kind_consistent": 0,
+  "enumerated": 0,
+  "undeclared": 0,
+  "problems": 0
+ },
+ "pass": true
+}

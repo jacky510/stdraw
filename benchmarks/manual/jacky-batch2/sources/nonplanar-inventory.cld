@@ -1,0 +1,28 @@
+# 审美采样批次2 · 非平面族 A：库存-价格-需求振荡（K3,3 型，细分 3 边）
+# 9 节点 / 12 边：需求侧{消费,投资,出口} × 供给面{物价,产能,库存} 完全二部结构
+# 交叉数下界 cr(K3,3)=1（Kuratowski），目标最小交叉 = 1
+graph "库存价格需求振荡"
+
+var cons "消费需求"
+var inv "投资需求"
+var exp "出口需求"
+var cpi "物价水平"
+var cap "生产产能"
+var stk "库存水位"
+var appr "产能审批"
+var replen "渠道补货"
+var heat "市场热度"
+
+cons -> + heat
+heat -> + cpi
+cons -> + appr
+appr -> + cap
+cons -> + replen
+replen -> - stk
+inv -> + cpi
+inv -> - stk
+inv -> + cap
+exp -> + cpi
+exp -> + cap
+exp -> - stk
+

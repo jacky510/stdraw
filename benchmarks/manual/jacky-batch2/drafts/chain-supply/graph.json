@@ -1,0 +1,81 @@
+{
+ "name": "供应链价格传导链",
+ "nodes": [
+  {
+   "id": "raw",
+   "label": "原材料价格",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "cost",
+   "label": "生产成本",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "exw",
+   "label": "出厂价格",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "retail",
+   "label": "零售价格",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "sales",
+   "label": "终端销量",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  },
+  {
+   "id": "inv2",
+   "label": "渠道库存",
+   "value": "",
+   "group": null,
+   "extra_w": 0
+  }
+ ],
+ "edges": [
+  {
+   "a": "raw",
+   "b": "cost",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "cost",
+   "b": "exw",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "exw",
+   "b": "retail",
+   "polarity": "+",
+   "loops": []
+  },
+  {
+   "a": "retail",
+   "b": "sales",
+   "polarity": "-",
+   "loops": []
+  },
+  {
+   "a": "sales",
+   "b": "inv2",
+   "polarity": "+",
+   "loops": []
+  }
+ ],
+ "loops": [],
+ "groups": []
+}

@@ -1,0 +1,31 @@
+# 审美采样批次2 · 多环耦合族：增长与投资不足（三环耦合）
+# 10 节点 / 12 边：R1 增长环 + B1 投资不足环（共享交付链）+ R2 竞争力环
+graph "增长与投资不足"
+
+var demand "市场需求"
+var revenue "营业收入"
+var profit "经营利润"
+var invest "产能投资"
+var capacity "生产产能"
+var delivery "交付水平"
+var satisfy "客户满意度"
+var pressure "绩效压力"
+var rnd "研发投入"
+var compete "产品竞争力"
+
+demand -> + revenue @loops R1
+revenue -> + profit @loops R1,R2
+profit -> + invest @loops R1,B1
+profit -> + rnd @loops R2
+rnd -> + compete @loops R2
+compete -> + revenue @loops R2
+invest -> + capacity @loops R1,B1
+capacity -> + delivery @loops R1,B1
+delivery -> + satisfy @loops R1,B1
+satisfy -> + demand @loops R1,B1
+demand -> + pressure @loops B1
+pressure -> - invest @loops B1
+
+loop R1 "增长环" "R" [demand, revenue, profit, invest, capacity, delivery, satisfy]
+loop B1 "投资不足环" "B" [demand, pressure, invest, capacity, delivery, satisfy]
+loop R2 "竞争力环" "R" [revenue, profit, rnd, compete]

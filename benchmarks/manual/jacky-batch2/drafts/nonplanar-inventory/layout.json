@@ -1,0 +1,602 @@
+{
+ "viewBox": [
+  0,
+  0,
+  2368,
+  1056
+ ],
+ "nodes": {
+  "appr": {
+   "x": 52.0,
+   "y": 26.0,
+   "w": 96
+  },
+  "cap": {
+   "x": 892.0,
+   "y": 866.0,
+   "w": 96
+  },
+  "cons": {
+   "x": 2292.0,
+   "y": 26.0,
+   "w": 96
+  },
+  "cpi": {
+   "x": 1452.0,
+   "y": 586.0,
+   "w": 96
+  },
+  "exp": {
+   "x": 1034.0,
+   "y": 448.0,
+   "w": 96
+  },
+  "heat": {
+   "x": 1592.0,
+   "y": 726.0,
+   "w": 96
+  },
+  "inv": {
+   "x": 1034.0,
+   "y": 1008.0,
+   "w": 96
+  },
+  "replen": {
+   "x": 474.0,
+   "y": 168.0,
+   "w": 96
+  },
+  "stk": {
+   "x": 1174.0,
+   "y": 726.0,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "cons",
+   "b": "heat",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      2270.0,
+      48.0
+     ],
+     [
+      1614.0,
+      704.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     2270.0,
+     48.0
+    ],
+    "b": [
+     1614.0,
+     704.0
+    ]
+   },
+   "arrow": [
+    1614.0,
+    704.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "heat",
+   "b": "cpi",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      1570.0,
+      704.0
+     ],
+     [
+      1474.0,
+      608.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     1570.0,
+     704.0
+    ],
+    "b": [
+     1474.0,
+     608.0
+    ]
+   },
+   "arrow": [
+    1474.0,
+    608.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "cons",
+   "b": "appr",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      2244.0,
+      26.0
+     ],
+     [
+      100.0,
+      26.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     2244.0,
+     26.0
+    ],
+    "b": [
+     100.0,
+     26.0
+    ]
+   },
+   "arrow": [
+    100.0,
+    26.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "appr",
+   "b": "cap",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      74.0,
+      48.0
+     ],
+     [
+      870.0,
+      844.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     74.0,
+     48.0
+    ],
+    "b": [
+     870.0,
+     844.0
+    ]
+   },
+   "arrow": [
+    870.0,
+    844.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "cons",
+   "b": "replen",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      2244.0,
+      29.7
+     ],
+     [
+      522.0,
+      164.3
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     2244.0,
+     29.7
+    ],
+    "b": [
+     522.0,
+     164.3
+    ]
+   },
+   "arrow": [
+    522.0,
+    164.3
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "replen",
+   "b": "stk",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      474.0,
+      190.0
+     ],
+     [
+      474.0,
+      309.2
+     ],
+     [
+      473.0,
+      307.4
+     ],
+     [
+      1137.2,
+      704.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     474.0,
+     190.0
+    ],
+    "b": [
+     1137.2,
+     704.0
+    ]
+   },
+   "arrow": [
+    1137.2,
+    704.0
+   ],
+   "route_cross_edges": 1
+  },
+  {
+   "a": "inv",
+   "b": "cpi",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      1055.8,
+      986.0
+     ],
+     [
+      1430.2,
+      608.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     1055.8,
+     986.0
+    ],
+    "b": [
+     1430.2,
+     608.0
+    ]
+   },
+   "arrow": [
+    1430.2,
+    608.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "inv",
+   "b": "stk",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      1044.9,
+      986.0
+     ],
+     [
+      1163.1,
+      748.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     1044.9,
+     986.0
+    ],
+    "b": [
+     1163.1,
+     748.0
+    ]
+   },
+   "arrow": [
+    1163.1,
+    748.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "inv",
+   "b": "cap",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      1012.0,
+      986.0
+     ],
+     [
+      914.0,
+      888.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     1012.0,
+     986.0
+    ],
+    "b": [
+     914.0,
+     888.0
+    ]
+   },
+   "arrow": [
+    914.0,
+    888.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "exp",
+   "b": "cpi",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      1082.0,
+      463.8
+     ],
+     [
+      1404.0,
+      570.2
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     1082.0,
+     463.8
+    ],
+    "b": [
+     1404.0,
+     570.2
+    ]
+   },
+   "arrow": [
+    1404.0,
+    570.2
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "exp",
+   "b": "cap",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      986.0,
+      436.0
+     ],
+     [
+      472.8,
+      307.7
+     ],
+     [
+      473.3,
+      307.0
+     ],
+     [
+      875.5,
+      844.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     986.0,
+     436.0
+    ],
+    "b": [
+     875.5,
+     844.0
+    ]
+   },
+   "arrow": [
+    875.5,
+    844.0
+   ],
+   "route_cross_edges": 1
+  },
+  {
+   "a": "exp",
+   "b": "stk",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "polyline",
+    "points": [
+     [
+      1045.1,
+      470.0
+     ],
+     [
+      1162.9,
+      704.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     1045.1,
+     470.0
+    ],
+    "b": [
+     1162.9,
+     704.0
+    ]
+   },
+   "arrow": [
+    1162.9,
+    704.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 0,
+  "rowY": [],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "planarized",
+  "mode_decision_trace": {
+   "engine": "planarized",
+   "placement": "planarized",
+   "manual": false,
+   "rules": [],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "planarization": {
+    "mode": "L1",
+    "cap": 27,
+    "ub": 1,
+    "h_vertices": 10,
+    "cores": 1
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 1,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "planarized",
+  "method": "per-core planarization (greedy U + oil-optimal insertion) + Tutte straight-line drawing on H; crossings are witness-marked planarization points",
+  "planarization": {
+   "mode": "L1",
+   "cap": 27,
+   "budget": {
+    "insert_steps": 2000,
+    "h_vertices": 600
+   },
+   "ub": 1,
+   "lb": 1,
+   "gap": 0,
+   "witness_count": 1,
+   "markers": [
+    {
+     "witness_id": 1,
+     "point": [
+      474.0,
+      308.0
+     ],
+     "edges": [
+      [
+       "replen",
+       "stk"
+      ],
+      [
+       "exp",
+       "cap"
+      ]
+     ]
+    }
+   ],
+   "exactness": {
+    "crossing_number": 1,
+    "proven_optimal": true,
+    "lb": 1,
+    "gap": 0,
+    "coverage": "full",
+    "method": "exact (Kuratowski-z lower bound meets planarization upper bound)",
+    "witness": [
+     {
+      "F": [
+       7
+      ],
+      "routes": {
+       "7": {
+        "a": "replen",
+        "b": "stk",
+        "crossings": [
+         8
+        ]
+       }
+      },
+      "mutual": []
+     }
+    ],
+    "reduced": null
+   },
+   "caliber": "planarized L1 (docs/planarization-degrade-contract.md): every crossing sits on a planarization witness; the three accounts (geometric recount == witness count == oracle UB) must agree for crossed-certified",
+   "marker_style": {
+    "size_px": 9,
+    "stroke_px": 1.2,
+    "color": "#64748b",
+    "color_by_theme": {
+     "light": "#64748b",
+     "dark": "#8b98ab"
+    }
+   }
+  }
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}
