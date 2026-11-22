@@ -1,0 +1,684 @@
+{
+ "viewBox": [
+  0,
+  0,
+  728,
+  656
+ ],
+ "nodes": {
+  "z": {
+   "x": 296,
+   "y": 252,
+   "w": 96
+  },
+  "y": {
+   "x": 480,
+   "y": 340,
+   "w": 96
+  },
+  "x": {
+   "x": 454,
+   "y": 270,
+   "w": 96
+  },
+  "g": {
+   "x": 154,
+   "y": 172,
+   "w": 96
+  },
+  "f": {
+   "x": 102,
+   "y": 400,
+   "w": 96
+  },
+  "e": {
+   "x": 248,
+   "y": 584,
+   "w": 96
+  },
+  "d": {
+   "x": 484,
+   "y": 584,
+   "w": 96
+  },
+  "c": {
+   "x": 630,
+   "y": 400,
+   "w": 96
+  },
+  "b": {
+   "x": 578,
+   "y": 172,
+   "w": 96
+  },
+  "a": {
+   "x": 366,
+   "y": 70,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "z",
+   "b": "b",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      341.0,
+      247.5
+     ],
+     [
+      533.0,
+      176.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     341.0,
+     247.516
+    ],
+    "b": [
+     533.0,
+     176.484
+    ]
+   },
+   "arrow": [
+    533.0,
+    176.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "y",
+   "b": "z",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      435.0,
+      321.0
+     ],
+     [
+      424.9,
+      324.8
+     ],
+     [
+      415.1,
+      328.0
+     ],
+     [
+      405.8,
+      330.8
+     ],
+     [
+      396.9,
+      333.0
+     ],
+     [
+      388.5,
+      334.8
+     ],
+     [
+      380.4,
+      336.0
+     ],
+     [
+      372.8,
+      336.7
+     ],
+     [
+      365.5,
+      336.9
+     ],
+     [
+      358.7,
+      336.6
+     ],
+     [
+      352.3,
+      335.8
+     ],
+     [
+      346.4,
+      334.5
+     ],
+     [
+      340.8,
+      332.7
+     ],
+     [
+      335.7,
+      330.3
+     ],
+     [
+      330.9,
+      327.5
+     ],
+     [
+      326.6,
+      324.1
+     ],
+     [
+      322.7,
+      320.3
+     ],
+     [
+      319.3,
+      315.9
+     ],
+     [
+      316.2,
+      311.0
+     ],
+     [
+      313.6,
+      305.6
+     ],
+     [
+      311.3,
+      299.7
+     ],
+     [
+      309.5,
+      293.3
+     ],
+     [
+      308.1,
+      286.4
+     ],
+     [
+      307.2,
+      278.9
+     ],
+     [
+      306.6,
+      271.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     310.8,
+     369.4
+    ]
+   },
+   "anchors": {
+    "a": [
+     435.0,
+     321.0
+    ],
+    "b": [
+     306.62,
+     271.0
+    ]
+   },
+   "arrow": [
+    306.6,
+    271.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "x",
+   "b": "y",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      464.6,
+      289.0
+     ],
+     [
+      469.4,
+      321.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     464.62,
+     289.0
+    ],
+    "b": [
+     469.38,
+     321.0
+    ]
+   },
+   "arrow": [
+    469.4,
+    321.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "b",
+   "b": "x",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      567.4,
+      191.0
+     ],
+     [
+      499.0,
+      251.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     567.38,
+     191.0
+    ],
+    "b": [
+     499.0,
+     251.0
+    ]
+   },
+   "arrow": [
+    499.0,
+    251.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "g",
+   "b": "a",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      199.0,
+      153.0
+     ],
+     [
+      321.0,
+      89.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     199.0,
+     153.0
+    ],
+    "b": [
+     321.0,
+     89.0
+    ]
+   },
+   "arrow": [
+    321.0,
+    89.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "f",
+   "b": "g",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      102.0,
+      381.0
+     ],
+     [
+      154.0,
+      191.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     102.0,
+     381.0
+    ],
+    "b": [
+     154.0,
+     191.0
+    ]
+   },
+   "arrow": [
+    154.0,
+    191.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "e",
+   "b": "f",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      237.4,
+      565.0
+     ],
+     [
+      112.6,
+      419.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     237.38,
+     565.0
+    ],
+    "b": [
+     112.62,
+     419.0
+    ]
+   },
+   "arrow": [
+    112.6,
+    419.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "d",
+   "b": "e",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      439.0,
+      584.0
+     ],
+     [
+      293.0,
+      584.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     439.0,
+     584.0
+    ],
+    "b": [
+     293.0,
+     584.0
+    ]
+   },
+   "arrow": [
+    293.0,
+    584.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "c",
+   "b": "d",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      619.4,
+      419.0
+     ],
+     [
+      494.6,
+      565.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     619.38,
+     419.0
+    ],
+    "b": [
+     494.62,
+     565.0
+    ]
+   },
+   "arrow": [
+    494.6,
+    565.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "b",
+   "b": "c",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      588.6,
+      191.0
+     ],
+     [
+      630.0,
+      381.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     588.62,
+     191.0
+    ],
+    "b": [
+     630.0,
+     381.0
+    ]
+   },
+   "arrow": [
+    630.0,
+    381.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "a",
+   "b": "b",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      411.0,
+      89.0
+     ],
+     [
+      533.0,
+      153.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     411.0,
+     89.0
+    ],
+    "b": [
+     533.0,
+     153.0
+    ]
+   },
+   "arrow": [
+    533.0,
+    153.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 7,
+  "rowY": [
+   78,
+   180,
+   260,
+   278,
+   348,
+   408,
+   592
+  ],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "ring-construct",
+  "mode_decision_trace": {
+   "engine": "ring-construct",
+   "placement": "ring-cycle",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=10, edges m=11 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "exactly 2 simple loops sharing exactly 1 node (shared=b), rings cover all 10 core nodes — trial gate: hard-gate proxy failed (crossings<=2 / press=0 / clearance>=16 / smooth anchors / mutual separation / card gap)",
+     "trial_gate": "fail"
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": false,
+     "reason": "no hub-pair candidate: no directed edge whose endpoints share 3..4 common neighbors",
+     "trial_gate": null
+    },
+    {
+     "tier": 3,
+     "rule": "column-chain",
+     "triggered": false,
+     "reason": "not evaluated: ring detection would take the ratio branch (pure-cycle/ratio graphs go to ring-cycle)",
+     "trial_gate": null
+    },
+    {
+     "tier": 4,
+     "rule": "ring-cycle",
+     "triggered": true,
+     "reason": "loop-dominated (trigger=ratio), main ring k=7, chord crossings=0",
+     "trial_gate": "pass"
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": true,
+    "detail": "ring-cycle: keeps the registered v0.7.2 anchor-band baseline ratios (CI BASELINE_BAND lock); the enhanced mid-band re-anchor + mutual-straight reroute channels are spine-wing only"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "ring-cycle",
+  "ring": {
+   "nodes": [
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g"
+   ],
+   "radius": 270,
+   "center": [
+    270,
+    332
+   ],
+   "declared_loop": "R1",
+   "polarity": "R",
+   "trigger": "ratio",
+   "chord_crossings": 0,
+   "residuals": {
+    "x": [
+     "inner",
+     0.42
+    ],
+    "y": [
+     "inner",
+     0.42
+    ],
+    "z": [
+     "inner",
+     0.42
+    ]
+   }
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

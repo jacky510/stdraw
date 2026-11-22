@@ -1,0 +1,828 @@
+{
+ "viewBox": [
+  0,
+  0,
+  800,
+  464
+ ],
+ "nodes": {
+  "rate": {
+   "x": 384,
+   "y": 392,
+   "w": 96
+  },
+  "adopters": {
+   "x": 384,
+   "y": 72,
+   "w": 96
+  },
+  "word": {
+   "x": 252,
+   "y": 232,
+   "w": 96
+  },
+  "potential": {
+   "x": 114,
+   "y": 232,
+   "w": 108
+  },
+  "crowding": {
+   "x": 516,
+   "y": 232,
+   "w": 96
+  },
+  "quickfix": {
+   "x": 672,
+   "y": 152,
+   "w": 146
+  },
+  "fundamental": {
+   "x": 540,
+   "y": 392,
+   "w": 146
+  },
+  "sideeffect": {
+   "x": 672,
+   "y": 312,
+   "w": 160
+  }
+ },
+ "edges": [
+  {
+   "a": "rate",
+   "b": "adopters",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      384.0,
+      373.0
+     ],
+     [
+      384.0,
+      91.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     384.0,
+     373.0
+    ],
+    "b": [
+     384.0,
+     91.0
+    ]
+   },
+   "arrow": [
+    384.0,
+    91.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "adopters",
+   "b": "word",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      373.4,
+      91.0
+     ],
+     [
+      262.6,
+      213.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     373.38,
+     91.0
+    ],
+    "b": [
+     262.62,
+     213.0
+    ]
+   },
+   "arrow": [
+    262.6,
+    213.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "word",
+   "b": "rate",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      262.6,
+      251.0
+     ],
+     [
+      373.4,
+      373.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     262.62,
+     251.0
+    ],
+    "b": [
+     373.38,
+     373.0
+    ]
+   },
+   "arrow": [
+    373.4,
+    373.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "potential",
+   "b": "rate",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      165.0,
+      251.0
+     ],
+     [
+      339.0,
+      373.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     165.0,
+     251.0
+    ],
+    "b": [
+     339.0,
+     373.0
+    ]
+   },
+   "arrow": [
+    339.0,
+    373.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "adopters",
+   "b": "potential",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      339.0,
+      91.0
+     ],
+     [
+      165.0,
+      213.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     339.0,
+     91.0
+    ],
+    "b": [
+     165.0,
+     213.0
+    ]
+   },
+   "arrow": [
+    165.0,
+    213.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "adopters",
+   "b": "crowding",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      394.6,
+      91.0
+     ],
+     [
+      505.4,
+      213.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     394.62,
+     91.0
+    ],
+    "b": [
+     505.38,
+     213.0
+    ]
+   },
+   "arrow": [
+    505.4,
+    213.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "crowding",
+   "b": "rate",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      471.0,
+      251.0
+     ],
+     [
+      394.6,
+      373.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     471.0,
+     251.0
+    ],
+    "b": [
+     394.62,
+     373.0
+    ]
+   },
+   "arrow": [
+    394.6,
+    373.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "crowding",
+   "b": "quickfix",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      561.0,
+      213.0
+     ],
+     [
+      602.0,
+      171.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     561.0,
+     213.0
+    ],
+    "b": [
+     602.0,
+     171.0
+    ]
+   },
+   "arrow": [
+    602.0,
+    171.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "quickfix",
+   "b": "crowding",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      602.0,
+      152.0
+     ],
+     [
+      516.0,
+      213.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     602.0,
+     152.0
+    ],
+    "b": [
+     516.0,
+     213.0
+    ]
+   },
+   "arrow": [
+    516.0,
+    213.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "crowding",
+   "b": "fundamental",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      526.6,
+      251.0
+     ],
+     [
+      527.7,
+      260.5
+     ],
+     [
+      528.8,
+      269.5
+     ],
+     [
+      529.8,
+      278.2
+     ],
+     [
+      530.8,
+      286.6
+     ],
+     [
+      531.7,
+      294.5
+     ],
+     [
+      532.6,
+      302.0
+     ],
+     [
+      533.4,
+      309.2
+     ],
+     [
+      534.2,
+      316.0
+     ],
+     [
+      534.9,
+      322.4
+     ],
+     [
+      535.6,
+      328.5
+     ],
+     [
+      536.2,
+      334.1
+     ],
+     [
+      536.8,
+      339.4
+     ],
+     [
+      537.4,
+      344.3
+     ],
+     [
+      537.8,
+      348.8
+     ],
+     [
+      538.3,
+      352.9
+     ],
+     [
+      538.7,
+      356.7
+     ],
+     [
+      539.0,
+      360.1
+     ],
+     [
+      539.3,
+      363.0
+     ],
+     [
+      539.5,
+      365.7
+     ],
+     [
+      539.7,
+      367.9
+     ],
+     [
+      539.9,
+      369.7
+     ],
+     [
+      540.0,
+      371.2
+     ],
+     [
+      540.0,
+      372.3
+     ],
+     [
+      540.0,
+      373.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     540.3,
+     366.8
+    ]
+   },
+   "anchors": {
+    "a": [
+     526.62,
+     251.0
+    ],
+    "b": [
+     540.0,
+     373.0
+    ]
+   },
+   "arrow": [
+    540.0,
+    373.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "fundamental",
+   "b": "crowding",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      523.5,
+      373.0
+     ],
+     [
+      522.0,
+      363.5
+     ],
+     [
+      520.6,
+      354.5
+     ],
+     [
+      519.2,
+      345.8
+     ],
+     [
+      517.9,
+      337.5
+     ],
+     [
+      516.7,
+      329.5
+     ],
+     [
+      515.5,
+      322.0
+     ],
+     [
+      514.4,
+      314.8
+     ],
+     [
+      513.4,
+      308.0
+     ],
+     [
+      512.4,
+      301.6
+     ],
+     [
+      511.5,
+      295.6
+     ],
+     [
+      510.6,
+      289.9
+     ],
+     [
+      509.9,
+      284.6
+     ],
+     [
+      509.1,
+      279.7
+     ],
+     [
+      508.5,
+      275.2
+     ],
+     [
+      507.9,
+      271.1
+     ],
+     [
+      507.4,
+      267.3
+     ],
+     [
+      506.9,
+      264.0
+     ],
+     [
+      506.5,
+      261.0
+     ],
+     [
+      506.1,
+      258.4
+     ],
+     [
+      505.9,
+      256.1
+     ],
+     [
+      505.6,
+      254.3
+     ],
+     [
+      505.5,
+      252.8
+     ],
+     [
+      505.4,
+      251.7
+     ],
+     [
+      505.4,
+      251.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     505.3,
+     257.2
+    ]
+   },
+   "anchors": {
+    "a": [
+     523.48,
+     373.0
+    ],
+    "b": [
+     505.38,
+     251.0
+    ]
+   },
+   "arrow": [
+    505.4,
+    251.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "quickfix",
+   "b": "sideeffect",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      672.0,
+      171.0
+     ],
+     [
+      672.0,
+      293.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     672.0,
+     171.0
+    ],
+    "b": [
+     672.0,
+     293.0
+    ]
+   },
+   "arrow": [
+    672.0,
+    293.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "sideeffect",
+   "b": "crowding",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      595.0,
+      293.0
+     ],
+     [
+      561.0,
+      251.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     595.0,
+     293.0
+    ],
+    "b": [
+     561.0,
+     251.0
+    ]
+   },
+   "arrow": [
+    561.0,
+    251.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 5,
+  "rowY": [
+   324,
+   392,
+   460,
+   528,
+   596
+  ],
+  "pitch": 68,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "arc",
+  "position_engine": "spine-construct",
+  "mode_decision_trace": {
+   "engine": "spine-construct",
+   "placement": "spine-wing",
+   "manual": false,
+   "rules": [
+    {
+     "tier": 1,
+     "rule": "symmetric (shared-edge bowtie)",
+     "triggered": false,
+     "reason": "core n=8, edges m=13 (need exactly 4 core nodes / 5 edges)",
+     "trial_gate": null
+    },
+    {
+     "tier": 1,
+     "rule": "bowtie-vertex",
+     "triggered": false,
+     "reason": "7 simple loops enumerated (need exactly 2)",
+     "trial_gate": null
+    },
+    {
+     "tier": 2,
+     "rule": "spine-wing",
+     "triggered": true,
+     "reason": "hub pair rate->adopters with W=3 common neighbors, rest n=3 mirror-pairable (1 pairs / 1 leftover)",
+     "trial_gate": "pass"
+    }
+   ],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": false,
+    "detail": "spine-wing: 100% in-band enforced (enhanced re-anchor channel active, no legacy exemption)"
+   }
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "placement": "spine-wing",
+  "spine_wing": {
+   "axis_x": 384,
+   "axis_y": 232,
+   "spine": [
+    "adopters",
+    "rate"
+   ],
+   "wings_left": [
+    "word",
+    "potential"
+   ],
+   "wing_anchor": "crowding",
+   "wings": [
+    "word",
+    "potential",
+    "crowding"
+   ],
+   "mirror_pairs": [
+    [
+     "quickfix",
+     "sideeffect"
+    ]
+   ],
+   "rest_single": [
+    "fundamental"
+   ],
+   "row_pitch": 80,
+   "spine_half": 160,
+   "gap": 36,
+   "line_style_rule": "spine vertical straight + router lines/arcs"
+  },
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px"
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

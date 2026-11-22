@@ -1,0 +1,26 @@
+# preference round-3 new topology source · chain + ring hybrid
+# 9 nodes / 9 edges: open transmission chain feeding a reinforcing loop,
+# with a dangling tail chain off the loop (chain-family + ring-family mix)
+graph "传导链激励环混合"
+
+var ms "货币供给"
+var ir "市场利率"
+var inv "企业投资"
+var gdp "总产出"
+var inc "居民收入"
+var cons "消费需求"
+var conf "增长信心"
+var cpi "物价水平"
+var pur "实际购买力"
+
+ms -> - ir
+ir -> - inv
+inv -> + gdp
+gdp -> + inc @loops R1
+inc -> + cons @loops R1
+cons -> + conf @loops R1
+conf -> + gdp @loops R1
+cons -> + cpi
+cpi -> - pur
+
+loop R1 "收入消费环" "R" [gdp, inc, cons, conf]

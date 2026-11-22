@@ -1,133 +1,5 @@
 {
   "candidates": {
-    "anchor-comb-supply-demand": {
-      "crossings": "-",
-      "gap": "-",
-      "grade": "human",
-      "graph": "comb-supply-demand",
-      "recipe": "manual",
-      "source": "human-anchor"
-    },
-    "anchor-coupled-underinvestment": {
-      "crossings": "-",
-      "gap": "-",
-      "grade": "human",
-      "graph": "coupled-underinvestment",
-      "recipe": "manual",
-      "source": "human-anchor"
-    },
-    "anchor-nonplanar-credit": {
-      "crossings": "-",
-      "gap": "-",
-      "grade": "human",
-      "graph": "nonplanar-credit",
-      "recipe": "manual",
-      "source": "human-anchor"
-    },
-    "chain-loop-mix-chain-loop-mix": {
-      "crossings": 2,
-      "gap": 20.0,
-      "grade": "second",
-      "graph": "chain-loop-mix",
-      "recipe": "chain-loop-mix",
-      "source": "engine"
-    },
-    "chain-loop-mix-chain-loop-mix-perm1": {
-      "crossings": 2,
-      "gap": 20.0,
-      "grade": "second",
-      "graph": "chain-loop-mix",
-      "recipe": "chain-loop-mix-perm1",
-      "source": "engine"
-    },
-    "chain-loop-mix-chain-loop-mix-perm2": {
-      "crossings": 2,
-      "gap": 20.0,
-      "grade": "second",
-      "graph": "chain-loop-mix",
-      "recipe": "chain-loop-mix-perm2",
-      "source": "engine"
-    },
-    "chain-loop-mix-chain-loop-mix-perm4": {
-      "crossings": 2,
-      "gap": 20.0,
-      "grade": "second",
-      "graph": "chain-loop-mix",
-      "recipe": "chain-loop-mix-perm4",
-      "source": "engine"
-    },
-    "dual-hub-asymmetric-dual-hub-asymmetric": {
-      "crossings": 4,
-      "gap": 36.0,
-      "grade": "uncertified",
-      "graph": "dual-hub-asymmetric",
-      "recipe": "dual-hub-asymmetric",
-      "source": "engine"
-    },
-    "dual-hub-asymmetric-dual-hub-asymmetric-perm1": {
-      "crossings": 2,
-      "gap": 36.0,
-      "grade": "second",
-      "graph": "dual-hub-asymmetric",
-      "recipe": "dual-hub-asymmetric-perm1",
-      "source": "engine"
-    },
-    "dual-hub-asymmetric-dual-hub-asymmetric-perm2": {
-      "crossings": 3,
-      "gap": 36.0,
-      "grade": "uncertified",
-      "graph": "dual-hub-asymmetric",
-      "recipe": "dual-hub-asymmetric-perm2",
-      "source": "engine"
-    },
-    "dual-hub-asymmetric-dual-hub-asymmetric-perm3": {
-      "crossings": 6,
-      "gap": 36.0,
-      "grade": "uncertified",
-      "graph": "dual-hub-asymmetric",
-      "recipe": "dual-hub-asymmetric-perm3",
-      "source": "engine"
-    },
-    "dual-hub-asymmetric-dual-hub-asymmetric-perm4": {
-      "crossings": 3,
-      "gap": 36.0,
-      "grade": "uncertified",
-      "graph": "dual-hub-asymmetric",
-      "recipe": "dual-hub-asymmetric-perm4",
-      "source": "engine"
-    },
-    "figure-eight-figure-eight": {
-      "crossings": 0,
-      "gap": 36.0,
-      "grade": "best",
-      "graph": "figure-eight",
-      "recipe": "figure-eight",
-      "source": "engine"
-    },
-    "figure-eight-figure-eight-perm1": {
-      "crossings": 0,
-      "gap": 36.0,
-      "grade": "best",
-      "graph": "figure-eight",
-      "recipe": "figure-eight-perm1",
-      "source": "engine"
-    },
-    "figure-eight-figure-eight-perm2": {
-      "crossings": 0,
-      "gap": 36.0,
-      "grade": "best",
-      "graph": "figure-eight",
-      "recipe": "figure-eight-perm2",
-      "source": "engine"
-    },
-    "figure-eight-figure-eight-perm4": {
-      "crossings": 0,
-      "gap": 36.0,
-      "grade": "best",
-      "graph": "figure-eight",
-      "recipe": "figure-eight-perm4",
-      "source": "engine"
-    },
     "g1c0": {
       "crossings": 0,
       "gap": 58.0,
@@ -168,14 +40,6 @@
       "recipe": "draft",
       "source": "archived-draft"
     },
-    "g2c2": {
-      "crossings": 3,
-      "gap": 36.0,
-      "grade": "uncertified",
-      "graph": "nonplanar-credit",
-      "recipe": "auto",
-      "source": "fresh-cli"
-    },
     "g3c0": {
       "crossings": 0,
       "gap": 30.0,
@@ -200,6 +64,14 @@
       "recipe": "auto",
       "source": "fresh-cli"
     },
+    "g4c0": {
+      "crossings": 0,
+      "gap": 66.8,
+      "grade": "best",
+      "graph": "brand-flywheel",
+      "recipe": "manual",
+      "source": "human"
+    },
     "g4c1": {
       "crossings": 0,
       "gap": 56.6,
@@ -216,9 +88,25 @@
       "recipe": "auto",
       "source": "fresh-cli"
     },
+    "g4c3": {
+      "crossings": 0,
+      "gap": 56.6,
+      "grade": "best",
+      "graph": "brand-flywheel",
+      "recipe": "auto-arc",
+      "source": "fresh-cli"
+    },
     "g5c0": {
       "crossings": 0,
       "gap": 67.4,
+      "grade": "best",
+      "graph": "classic-cld-growth-and-burden",
+      "recipe": "manual",
+      "source": "human"
+    },
+    "g5c1": {
+      "crossings": 0,
+      "gap": 42.0,
       "grade": "best",
       "graph": "classic-cld-growth-and-burden",
       "recipe": "manual",
@@ -247,8 +135,176 @@
       "graph": "classic-cld-growth-and-burden",
       "recipe": "auto-arc",
       "source": "fresh-cli"
+    },
+    "r3e1g0c0": {
+      "crossings": 3,
+      "gap": 36.0,
+      "grade": "best",
+      "graph": "coupled-underinvestment",
+      "recipe": "ortho+A@80",
+      "source": "fresh-r3"
+    },
+    "r3e2g0c0": {
+      "crossings": 1,
+      "gap": 24.0,
+      "grade": "uncertified",
+      "graph": "nonplanar-credit",
+      "recipe": "auto+A@68",
+      "source": "fresh-r3"
+    },
+    "r3e2g0c2": {
+      "crossings": 4,
+      "gap": 28.0,
+      "grade": "uncertified",
+      "graph": "nonplanar-credit",
+      "recipe": "auto+A@72",
+      "source": "fresh-r3"
+    },
+    "r3e3g0c0": {
+      "crossings": 0,
+      "gap": 24.0,
+      "grade": "best",
+      "graph": "comb-supply-demand",
+      "recipe": "auto+A@68",
+      "source": "fresh-r3"
+    },
+    "r3e3g0c1": {
+      "crossings": 1,
+      "gap": 36.0,
+      "grade": "best",
+      "graph": "comb-supply-demand",
+      "recipe": "ortho+A@80",
+      "source": "fresh-r3"
+    },
+    "r3e3g0c2": {
+      "crossings": 0,
+      "gap": 28.0,
+      "grade": "best",
+      "graph": "comb-supply-demand",
+      "recipe": "auto+A@72",
+      "source": "fresh-r3"
+    },
+    "r3e4g0c0": {
+      "crossings": 4,
+      "gap": 36.0,
+      "grade": "best",
+      "graph": "brand-flywheel",
+      "recipe": "ortho+A@80",
+      "source": "fresh-r3"
+    },
+    "r3e5g0c0": {
+      "crossings": 0,
+      "gap": 36.0,
+      "grade": "best",
+      "graph": "classic-cld-growth-and-burden",
+      "recipe": "ortho+A@80",
+      "source": "fresh-r3"
+    },
+    "r3e5g0c1": {
+      "crossings": 0,
+      "gap": 35.0,
+      "grade": "best",
+      "graph": "classic-cld-growth-and-burden",
+      "recipe": "candidate-v1+A@56",
+      "source": "fresh-r3"
+    },
+    "r3n1g0c0": {
+      "crossings": 0,
+      "gap": 26.0,
+      "grade": "best",
+      "graph": "nested-ring-shared-node",
+      "recipe": "auto+A@68",
+      "source": "fresh-r3"
+    },
+    "r3n1g0c1": {
+      "crossings": 1,
+      "gap": 36.0,
+      "grade": "best",
+      "graph": "nested-ring-shared-node",
+      "recipe": "ortho+A@80",
+      "source": "fresh-r3"
+    },
+    "r3n1g0c2": {
+      "crossings": 0,
+      "gap": 26.0,
+      "grade": "best",
+      "graph": "nested-ring-shared-node",
+      "recipe": "auto+B@68",
+      "source": "fresh-r3"
+    },
+    "r3n1g0c3": {
+      "crossings": 2,
+      "gap": 36.0,
+      "grade": "best",
+      "graph": "nested-ring-shared-node",
+      "recipe": "ortho+B@80",
+      "source": "fresh-r3"
+    },
+    "r3n2g0c0": {
+      "crossings": 0,
+      "gap": 24.0,
+      "grade": "best",
+      "graph": "chain-ring-hybrid",
+      "recipe": "auto+A@68",
+      "source": "fresh-r3"
+    },
+    "r3n2g0c1": {
+      "crossings": 1,
+      "gap": 36.0,
+      "grade": "best",
+      "graph": "chain-ring-hybrid",
+      "recipe": "ortho+A@80",
+      "source": "fresh-r3"
+    },
+    "r3n2g0c2": {
+      "crossings": 0,
+      "gap": 24.0,
+      "grade": "best",
+      "graph": "chain-ring-hybrid",
+      "recipe": "auto+B@68",
+      "source": "fresh-r3"
+    },
+    "r3n2g0c3": {
+      "crossings": 0,
+      "gap": 36.0,
+      "grade": "best",
+      "graph": "chain-ring-hybrid",
+      "recipe": "ortho+B@80",
+      "source": "fresh-r3"
+    },
+    "r3n3g0c0": {
+      "crossings": 1,
+      "gap": 24.0,
+      "grade": "best",
+      "graph": "dual-hub-asymmetric",
+      "recipe": "auto+A@68",
+      "source": "fresh-r3"
+    },
+    "r3n3g0c1": {
+      "crossings": 0,
+      "gap": 36.0,
+      "grade": "best",
+      "graph": "dual-hub-asymmetric",
+      "recipe": "ortho+A@80",
+      "source": "fresh-r3"
+    },
+    "r3n3g0c2": {
+      "crossings": 2,
+      "gap": 24.0,
+      "grade": "uncertified",
+      "graph": "dual-hub-asymmetric",
+      "recipe": "auto+B@68",
+      "source": "fresh-r3"
+    },
+    "r3n3g0c3": {
+      "crossings": 0,
+      "gap": 36.0,
+      "grade": "uncertified",
+      "graph": "dual-hub-asymmetric",
+      "recipe": "ortho+B@80",
+      "source": "fresh-r3"
     }
   },
-  "note": "SOURCE LABELS - never render into the viewer page; zero dose pairs by design",
+  "note": "SOURCE LABELS - never render into the viewer page; blinding depends on this separation",
   "schema": "stdraw.pairwise.candidates/1"
 }

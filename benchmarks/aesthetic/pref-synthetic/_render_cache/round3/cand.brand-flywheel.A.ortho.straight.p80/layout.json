@@ -1,0 +1,193 @@
+{
+ "viewBox": [
+  0,
+  0,
+  632,
+  360
+ ],
+ "nodes": {
+  "ad_spend": {
+   "x": 380,
+   "y": 156,
+   "w": 96
+  },
+  "ad_effect": {
+   "x": 176,
+   "y": 236,
+   "w": 98
+  },
+  "awareness": {
+   "x": 108,
+   "y": 76,
+   "w": 96
+  },
+  "sales": {
+   "x": 312,
+   "y": 316,
+   "w": 96
+  },
+  "budget": {
+   "x": 562,
+   "y": 236,
+   "w": 96
+  },
+  "wom": {
+   "x": 84,
+   "y": 156,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "ad_spend",
+   "b": "ad_effect",
+   "x": 222,
+   "y1": 156,
+   "y2": 236,
+   "arrow": [
+    222,
+    227,
+    1
+   ]
+  },
+  {
+   "a": "ad_effect",
+   "b": "awareness",
+   "x": 130,
+   "y1": 236,
+   "y2": 76,
+   "arrow": [
+    130,
+    102,
+    -1
+   ]
+  },
+  {
+   "a": "awareness",
+   "b": "sales",
+   "x": 40,
+   "y1": 76,
+   "y2": 316,
+   "arrow": [
+    40,
+    307,
+    1
+   ]
+  },
+  {
+   "a": "sales",
+   "b": "budget",
+   "x": 586,
+   "y1": 316,
+   "y2": 236,
+   "arrow": [
+    586,
+    262,
+    -1
+   ]
+  },
+  {
+   "a": "budget",
+   "b": "ad_spend",
+   "x": 540,
+   "y1": 236,
+   "y2": 156,
+   "arrow": [
+    540,
+    165,
+    -1
+   ]
+  },
+  {
+   "a": "sales",
+   "b": "wom",
+   "x": 84,
+   "y1": 316,
+   "y2": 156,
+   "arrow": [
+    84,
+    182,
+    -1
+   ]
+  },
+  {
+   "a": "wom",
+   "b": "awareness",
+   "x": 84,
+   "y1": 156,
+   "y2": 76,
+   "arrow": [
+    84,
+    102,
+    -1
+   ]
+  },
+  {
+   "a": "awareness",
+   "b": "ad_effect",
+   "x": 176,
+   "y1": 76,
+   "y2": 236,
+   "arrow": [
+    176,
+    210,
+    1
+   ]
+  }
+ ],
+ "bars": {
+  "ad_spend": [
+   218,
+   544
+  ],
+  "ad_effect": [
+   126,
+   226
+  ],
+  "awareness": [
+   36,
+   180
+  ],
+  "sales": [
+   36,
+   590
+  ],
+  "budget": [
+   536,
+   590
+  ]
+ },
+ "meta": {
+  "rows": 4,
+  "rowY": [
+   76,
+   156,
+   236,
+   316
+  ],
+  "pitch": 80,
+  "deg0": [],
+  "cols": [
+   40,
+   84,
+   130,
+   176,
+   222,
+   540,
+   586
+  ],
+  "cardH": 42,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "st": [
+   "awareness",
+   "sales"
+  ],
+  "down": 3,
+  "n": 6,
+  "m": 8,
+  "method": "visibility-representation (Rosenstiehl-Tarjan) 0-crossing guaranteed; wires strictly vertical; compact packing (occlusion allowed under cards)"
+ }
+}

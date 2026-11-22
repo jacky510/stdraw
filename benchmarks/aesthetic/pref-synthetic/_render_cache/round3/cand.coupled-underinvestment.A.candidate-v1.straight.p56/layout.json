@@ -1,0 +1,1018 @@
+{
+ "viewBox": [
+  0,
+  0,
+  672,
+  600
+ ],
+ "nodes": {
+  "demand": {
+   "x": 540,
+   "y": 426,
+   "w": 96
+  },
+  "revenue": {
+   "x": 416,
+   "y": 532,
+   "w": 96
+  },
+  "profit": {
+   "x": 100,
+   "y": 266,
+   "w": 96
+  },
+  "invest": {
+   "x": 182,
+   "y": 126,
+   "w": 96
+  },
+  "capacity": {
+   "x": 334,
+   "y": 70,
+   "w": 96
+  },
+  "delivery": {
+   "x": 486,
+   "y": 126,
+   "w": 96
+  },
+  "satisfy": {
+   "x": 568,
+   "y": 266,
+   "w": 108
+  },
+  "pressure": {
+   "x": 398,
+   "y": 232,
+   "w": 96
+  },
+  "rnd": {
+   "x": 128,
+   "y": 428,
+   "w": 96
+  },
+  "compete": {
+   "x": 252,
+   "y": 532,
+   "w": 108
+  }
+ },
+ "edges": [
+  {
+   "a": "demand",
+   "b": "revenue",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      529.4,
+      445.0
+     ],
+     [
+      426.6,
+      513.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     529.38,
+     445.0
+    ],
+    "b": [
+     426.62,
+     513.0
+    ]
+   },
+   "arrow": [
+    426.6,
+    513.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "revenue",
+   "b": "profit",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      405.4,
+      513.0
+     ],
+     [
+      110.6,
+      285.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     405.38,
+     513.0
+    ],
+    "b": [
+     110.62,
+     285.0
+    ]
+   },
+   "arrow": [
+    110.6,
+    285.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "profit",
+   "b": "invest",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      110.6,
+      247.0
+     ],
+     [
+      171.4,
+      145.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     110.62,
+     247.0
+    ],
+    "b": [
+     171.38,
+     145.0
+    ]
+   },
+   "arrow": [
+    171.4,
+    145.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "profit",
+   "b": "rnd",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      89.4,
+      285.0
+     ],
+     [
+      128.0,
+      409.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     89.38,
+     285.0
+    ],
+    "b": [
+     128.0,
+     409.0
+    ]
+   },
+   "arrow": [
+    128.0,
+    409.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "rnd",
+   "b": "compete",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      138.6,
+      447.0
+     ],
+     [
+      240.0,
+      513.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     138.62,
+     447.0
+    ],
+    "b": [
+     239.964,
+     513.0
+    ]
+   },
+   "arrow": [
+    240.0,
+    513.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "compete",
+   "b": "revenue",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      303.0,
+      532.0
+     ],
+     [
+      371.0,
+      532.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     303.0,
+     532.0
+    ],
+    "b": [
+     371.0,
+     532.0
+    ]
+   },
+   "arrow": [
+    371.0,
+    532.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "invest",
+   "b": "capacity",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      227.0,
+      121.5
+     ],
+     [
+      289.0,
+      74.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     227.0,
+     121.516
+    ],
+    "b": [
+     289.0,
+     74.484
+    ]
+   },
+   "arrow": [
+    289.0,
+    74.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "capacity",
+   "b": "delivery",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      379.0,
+      74.5
+     ],
+     [
+      441.0,
+      121.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     379.0,
+     74.484
+    ],
+    "b": [
+     441.0,
+     121.516
+    ]
+   },
+   "arrow": [
+    441.0,
+    121.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "delivery",
+   "b": "satisfy",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      496.6,
+      145.0
+     ],
+     [
+      556.0,
+      247.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     496.62,
+     145.0
+    ],
+    "b": [
+     555.9639999999999,
+     247.0
+    ]
+   },
+   "arrow": [
+    556.0,
+    247.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "satisfy",
+   "b": "demand",
+   "polarity": "+",
+   "loop_kinds": [
+    "B",
+    "R"
+   ],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      568.0,
+      285.0
+     ],
+     [
+      550.6,
+      407.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     568.0,
+     285.0
+    ],
+    "b": [
+     550.62,
+     407.0
+    ]
+   },
+   "arrow": [
+    550.6,
+    407.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "demand",
+   "b": "pressure",
+   "polarity": "+",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      529.4,
+      407.0
+     ],
+     [
+      408.6,
+      251.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     529.38,
+     407.0
+    ],
+    "b": [
+     408.62,
+     251.0
+    ]
+   },
+   "arrow": [
+    408.6,
+    251.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "pressure",
+   "b": "invest",
+   "polarity": "-",
+   "loop_kinds": [
+    "B"
+   ],
+   "loop_color": "#1e6fae",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      353.0,
+      213.0
+     ],
+     [
+      227.0,
+      145.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     353.0,
+     213.0
+    ],
+    "b": [
+     227.0,
+     145.0
+    ]
+   },
+   "arrow": [
+    227.0,
+    145.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 7,
+  "rowY": [
+   78,
+   134,
+   240,
+   274,
+   434,
+   436,
+   540
+  ],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "manual",
+  "mode_decision_trace": {
+   "engine": "manual",
+   "placement": null,
+   "manual": true,
+   "rules": [],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": false,
+    "detail": "manual layout: the auto mode chain did not run; routing hard gates still apply, graded honestly"
+   }
+  },
+  "from_layout": {
+   "source": "candidate-v1/ring-cycle:000",
+   "manual_viewBox": [
+    0,
+    0,
+    570,
+    590
+   ],
+   "snapped_to_2px": []
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px",
+  "recipe_requested": "candidate-v1",
+  "candidate_pool": {
+   "analysis": {
+    "n_nodes": 10,
+    "n_edges": 12,
+    "max_degree": 3,
+    "core_nodes": 10,
+    "isolated_nodes": 0,
+    "loop_model": {
+     "status": "ok",
+     "reason": null,
+     "enumerated_total": 76,
+     "loop_count": 6,
+     "primary_loop": [
+      "capacity",
+      "delivery",
+      "demand",
+      "invest",
+      "profit",
+      "revenue",
+      "satisfy"
+     ],
+     "loops": [
+      {
+       "cycle": [
+        "capacity",
+        "delivery",
+        "satisfy",
+        "demand",
+        "revenue",
+        "profit",
+        "invest"
+       ],
+       "length": 7,
+       "kind": "R",
+       "neg_edges": 0,
+       "importance": 1.411111,
+       "tier": "primary",
+       "declared_match": "R1",
+       "shared_nodes": 5
+      },
+      {
+       "cycle": [
+        "capacity",
+        "delivery",
+        "satisfy",
+        "demand",
+        "revenue",
+        "compete",
+        "rnd",
+        "profit",
+        "invest"
+       ],
+       "length": 9,
+       "kind": "R",
+       "neg_edges": 0,
+       "importance": 1.35,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 5
+      },
+      {
+       "cycle": [
+        "capacity",
+        "delivery",
+        "satisfy",
+        "demand",
+        "pressure",
+        "invest"
+       ],
+       "length": 6,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 1.216667,
+       "tier": "supporting",
+       "declared_match": "B1",
+       "shared_nodes": 4
+      },
+      {
+       "cycle": [
+        "compete",
+        "revenue",
+        "demand",
+        "pressure",
+        "invest",
+        "profit",
+        "rnd"
+       ],
+       "length": 7,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 1.161111,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 5
+      },
+      {
+       "cycle": [
+        "compete",
+        "revenue",
+        "profit",
+        "rnd"
+       ],
+       "length": 4,
+       "kind": "R",
+       "neg_edges": 0,
+       "importance": 1.027778,
+       "tier": "supporting",
+       "declared_match": "R2",
+       "shared_nodes": 4
+      },
+      {
+       "cycle": [
+        "demand",
+        "pressure",
+        "invest",
+        "profit",
+        "revenue"
+       ],
+       "length": 5,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 0.972222,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 5
+      }
+     ]
+    }
+   },
+   "orchestration": {
+    "budget": {
+     "total": 12,
+     "per_source": 2,
+     "exhausted": false
+    },
+    "source_records": [
+     {
+      "source": "symmetric",
+      "outcome": "not_triggered",
+      "detail": "core n=10, edges m=12 (need exactly 4 core nodes / 5 edges)",
+      "candidates": 0
+     },
+     {
+      "source": "bowtie-vertex",
+      "outcome": "not_triggered",
+      "detail": "6 simple loops enumerated (need exactly 2)",
+      "candidates": 0
+     },
+     {
+      "source": "spine-wing",
+      "outcome": "not_triggered",
+      "detail": "no hub-pair candidate: no directed edge whose endpoints share 3..4 common neighbors",
+      "candidates": 0
+     },
+     {
+      "source": "comb-bilateral",
+      "outcome": "not_triggered",
+      "detail": "no bilateral-hub pair: no two non-adjacent nodes with identical source-only neighborhoods (|S| >= 3)",
+      "candidates": 0
+     },
+     {
+      "source": "column-chain",
+      "outcome": "not_triggered",
+      "detail": "longest simple loop k=9 (need 3..4)",
+      "candidates": 0
+     },
+     {
+      "source": "ring-cycle",
+      "outcome": "generated",
+      "detail": "emitted 1, kept 1 (per-source budget 2)",
+      "candidates": 1
+     },
+     {
+      "source": "radial",
+      "outcome": "not_triggered",
+      "detail": "hub_deg=3 < 6",
+      "candidates": 0
+     },
+     {
+      "source": "planarized",
+      "outcome": "disabled_by_rule",
+      "detail": "preregistered topology rule (node cap / loop model status)",
+      "candidates": 0
+     },
+     {
+      "source": "layered-v082",
+      "outcome": "generated",
+      "detail": "emitted 1, kept 1 (per-source budget 2)",
+      "candidates": 1
+     }
+    ],
+    "candidates": [
+     {
+      "candidate_id": "ring-cycle:000",
+      "source": "ring-cycle",
+      "node_positions": {
+       "capacity": [
+        238,
+        62
+       ],
+       "compete": [
+        156,
+        524
+       ],
+       "delivery": [
+        390,
+        118
+       ],
+       "demand": [
+        444,
+        418
+       ],
+       "invest": [
+        86,
+        118
+       ],
+       "pressure": [
+        302,
+        224
+       ],
+       "profit": [
+        4,
+        258
+       ],
+       "revenue": [
+        320,
+        524
+       ],
+       "rnd": [
+        32,
+        420
+       ],
+       "satisfy": [
+        472,
+        258
+       ]
+      },
+      "metadata": {
+       "internal_filter": "none",
+       "engine": "ring-construct",
+       "detector_reason": "loop-dominated (trigger=cover), main ring k=9, chord crossings=0",
+       "trigger": "cover"
+      },
+      "generation_cost": 10,
+      "structural_signature": "4e6733a7be08ae8c"
+     },
+     {
+      "candidate_id": "layered-v082:001",
+      "source": "layered-v082",
+      "node_positions": {
+       "capacity": [
+        334,
+        70
+       ],
+       "compete": [
+        252,
+        532
+       ],
+       "delivery": [
+        486,
+        126
+       ],
+       "demand": [
+        540,
+        426
+       ],
+       "invest": [
+        182,
+        126
+       ],
+       "pressure": [
+        398,
+        232
+       ],
+       "profit": [
+        100,
+        266
+       ],
+       "revenue": [
+        416,
+        532
+       ],
+       "rnd": [
+        128,
+        428
+       ],
+       "satisfy": [
+        568,
+        266
+       ]
+      },
+      "metadata": {
+       "internal_filter": "none",
+       "engine": "incumbent-auto-v2",
+       "position_engine": "ring-construct",
+       "planarization_mode": null
+      },
+      "generation_cost": 34,
+      "structural_signature": "cecff10a20d0232f"
+     }
+    ]
+   },
+   "selection": {
+    "op_budget": {
+     "total": 208,
+     "consumed": 24,
+     "per_routed_edge": 1,
+     "granularity": "per-candidate"
+    },
+    "evaluated": 2,
+    "hard_pass": 2,
+    "reports": [
+     {
+      "candidate_id": "layered-v082:001",
+      "source": "layered-v082",
+      "structural_signature": "cecff10a20d0232f",
+      "routed": true,
+      "budget_exhausted": false,
+      "crossings": 0,
+      "press_count": 0,
+      "clearance_violations": 0,
+      "min_clear": 52.6,
+      "min_card_gap": 56.0,
+      "mutual_min_dist": null,
+      "edge_length_cv": 0.362961,
+      "center_offset_norm": 0.009005,
+      "hard_pass": true,
+      "hard_failures": []
+     },
+     {
+      "candidate_id": "ring-cycle:000",
+      "source": "ring-cycle",
+      "structural_signature": "4e6733a7be08ae8c",
+      "routed": true,
+      "budget_exhausted": false,
+      "crossings": 0,
+      "press_count": 0,
+      "clearance_violations": 0,
+      "min_clear": 52.6,
+      "min_card_gap": 56.0,
+      "mutual_min_dist": null,
+      "edge_length_cv": 0.362961,
+      "center_offset_norm": 0.009005,
+      "hard_pass": true,
+      "hard_failures": []
+     }
+    ],
+    "ranked_ids": [
+     "ring-cycle:000",
+     "layered-v082:001"
+    ]
+   },
+   "delivery": {
+    "mode": "candidate",
+    "candidate_id": "ring-cycle:000",
+    "guard_caliber": "delivered-certificate-metrics",
+    "incumbent_guard_tuple": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0.062,
+     -57.3,
+     -55.7
+    ],
+    "incumbent_delivered_metrics": {
+     "crossings": 0,
+     "box_press_1px": 0,
+     "edge_box_min_clear": 55.7,
+     "min_card_gap": 57.3,
+     "spacing_cv": 0.062,
+     "visual_crossings": 0,
+     "anchor_violations": 0,
+     "anchor_standard_violations": 0,
+     "line_line_coincident_pairs": 0
+    },
+    "delivered_metrics": {
+     "crossings": 0,
+     "box_press_1px": 0,
+     "edge_box_min_clear": 55.7,
+     "min_card_gap": 57.3,
+     "spacing_cv": 0.062,
+     "visual_crossings": 0,
+     "anchor_violations": 0,
+     "anchor_standard_violations": 0,
+     "line_line_coincident_pairs": 0
+    },
+    "attempts": [
+     {
+      "candidate_id": "ring-cycle:000",
+      "outcome": "delivered",
+      "guard_tuple": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0.062,
+       -57.3,
+       -55.7
+      ],
+      "delivered_metrics": {
+       "crossings": 0,
+       "box_press_1px": 0,
+       "edge_box_min_clear": 55.7,
+       "min_card_gap": 57.3,
+       "spacing_cv": 0.062,
+       "visual_crossings": 0,
+       "anchor_violations": 0,
+       "anchor_standard_violations": 0,
+       "line_line_coincident_pairs": 0
+      },
+      "incumbent_guard_tuple": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0.062,
+       -57.3,
+       -55.7
+      ]
+     }
+    ]
+   },
+   "candidate_contract_keys": [
+    "candidate_id",
+    "source",
+    "node_positions",
+    "metadata",
+    "generation_cost",
+    "structural_signature"
+   ]
+  }
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

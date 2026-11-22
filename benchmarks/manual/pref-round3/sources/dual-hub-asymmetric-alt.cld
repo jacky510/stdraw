@@ -1,0 +1,27 @@
+# preference round-3 new topology source · asymmetric dual-hub
+# 8 nodes / 8 edges: two hubs joined by an edge, strongly asymmetric fan
+# degrees (h1: 6 touching edges, h2: 3) plus one reinforcing loop h1-m3-h2
+# (differs from comb-supply-demand: hubs do NOT share their neighborhoods)
+graph "双枢纽不对称辐射"
+
+var w2 "成本压力"
+var w1 "履约速度"
+var m4 "服务能力"
+var m3 "品类宽度"
+var m2 "流量规模"
+var m1 "商家生态"
+var h2 "物流网络"
+var h1 "平台运营"
+
+m3 -> + h2 @loops R1
+w2 -> + h2
+h2 -> + w1
+h1 -> + m4
+h1 -> + m3 @loops R1
+m2 -> + h1
+m1 -> + h1
+h2 -> + h1 @loops R1,R2
+h1 -> + h2 @loops R2
+
+loop R2 "运营物流互促环" "R" [h1, h2]
+loop R1 "品类物流协同环" "R" [h1, m3, h2]

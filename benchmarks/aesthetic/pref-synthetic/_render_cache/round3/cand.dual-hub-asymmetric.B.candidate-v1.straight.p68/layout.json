@@ -1,0 +1,977 @@
+{
+ "viewBox": [
+  0,
+  0,
+  480,
+  368
+ ],
+ "nodes": {
+  "w2": {
+   "x": 384,
+   "y": 92,
+   "w": 96
+  },
+  "w1": {
+   "x": 120,
+   "y": 228,
+   "w": 96
+  },
+  "m4": {
+   "x": 144,
+   "y": 296,
+   "w": 96
+  },
+  "m3": {
+   "x": 264,
+   "y": 296,
+   "w": 96
+  },
+  "m2": {
+   "x": 120,
+   "y": 92,
+   "w": 96
+  },
+  "m1": {
+   "x": 240,
+   "y": 92,
+   "w": 96
+  },
+  "h2": {
+   "x": 288,
+   "y": 160,
+   "w": 96
+  },
+  "h1": {
+   "x": 240,
+   "y": 228,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "m3",
+   "b": "h2",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      309.0,
+      277.0
+     ],
+     [
+      312.9,
+      273.2
+     ],
+     [
+      316.5,
+      269.3
+     ],
+     [
+      319.9,
+      265.4
+     ],
+     [
+      323.1,
+      261.5
+     ],
+     [
+      326.0,
+      257.6
+     ],
+     [
+      328.6,
+      253.6
+     ],
+     [
+      331.0,
+      249.6
+     ],
+     [
+      333.1,
+      245.6
+     ],
+     [
+      335.0,
+      241.6
+     ],
+     [
+      336.6,
+      237.6
+     ],
+     [
+      338.0,
+      233.6
+     ],
+     [
+      339.1,
+      229.5
+     ],
+     [
+      340.0,
+      225.4
+     ],
+     [
+      340.6,
+      221.3
+     ],
+     [
+      341.0,
+      217.1
+     ],
+     [
+      341.1,
+      213.0
+     ],
+     [
+      341.0,
+      208.8
+     ],
+     [
+      340.6,
+      204.6
+     ],
+     [
+      340.0,
+      200.4
+     ],
+     [
+      339.1,
+      196.2
+     ],
+     [
+      337.9,
+      191.9
+     ],
+     [
+      336.5,
+      187.6
+     ],
+     [
+      334.9,
+      183.3
+     ],
+     [
+      333.0,
+      179.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     357.2,
+     231.0
+    ]
+   },
+   "anchors": {
+    "a": [
+     309.0,
+     277.0
+    ],
+    "b": [
+     333.0,
+     179.0
+    ]
+   },
+   "arrow": [
+    333.0,
+    179.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "w2",
+   "b": "h2",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "vg",
+    "points": [
+     [
+      373.4,
+      111.0
+     ],
+     [
+      333.0,
+      141.0
+     ]
+    ],
+    "path_d": "M 373.4 111.0 L 333.0 141.0",
+    "via": [
+     [
+      373.4,
+      111.0
+     ],
+     [
+      333.0,
+      141.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     373.38,
+     111.0
+    ],
+    "b": [
+     333.0,
+     141.0
+    ]
+   },
+   "arrow": [
+    333.0,
+    141.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "h2",
+   "b": "w1",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "poly",
+    "points": [
+     [
+      312,
+      138.0
+     ],
+     [
+      312,
+      51.5
+     ],
+     [
+      53.5,
+      51.5
+     ],
+     [
+      53.5,
+      194.0
+     ],
+     [
+      148.6,
+      197.0
+     ],
+     [
+      130.6,
+      209.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     312,
+     138.0
+    ],
+    "b": [
+     130.62,
+     209.0
+    ]
+   },
+   "arrow": [
+    130.6,
+    209.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "h1",
+   "b": "m4",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      195.0,
+      247.0
+     ],
+     [
+      168.0,
+      274.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     195.0,
+     247.0
+    ],
+    "b": [
+     168.0,
+     274.0
+    ]
+   },
+   "arrow": [
+    168.0,
+    274.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "h1",
+   "b": "m3",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      250.6,
+      247.0
+     ],
+     [
+      253.4,
+      277.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     250.62,
+     247.0
+    ],
+    "b": [
+     253.38,
+     277.0
+    ]
+   },
+   "arrow": [
+    253.4,
+    277.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "m2",
+   "b": "h1",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      130.6,
+      111.0
+     ],
+     [
+      195.0,
+      209.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     130.62,
+     111.0
+    ],
+    "b": [
+     195.0,
+     209.0
+    ]
+   },
+   "arrow": [
+    195.0,
+    209.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "m1",
+   "b": "h1",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "vg",
+    "points": [
+     [
+      229.4,
+      111.0
+     ],
+     [
+      225.2,
+      116.7
+     ],
+     [
+      224.9,
+      117.3
+     ],
+     [
+      224.6,
+      117.8
+     ],
+     [
+      224.3,
+      118.4
+     ],
+     [
+      224.0,
+      119.0
+     ],
+     [
+      223.7,
+      119.6
+     ],
+     [
+      223.5,
+      120.2
+     ],
+     [
+      223.3,
+      120.8
+     ],
+     [
+      223.1,
+      121.4
+     ],
+     [
+      222.9,
+      122.0
+     ],
+     [
+      222.8,
+      122.6
+     ],
+     [
+      222.7,
+      123.2
+     ],
+     [
+      222.6,
+      123.9
+     ],
+     [
+      222.5,
+      124.5
+     ],
+     [
+      222.5,
+      125.1
+     ],
+     [
+      222.5,
+      125.8
+     ],
+     [
+      222.5,
+      194.9
+     ],
+     [
+      222.5,
+      195.5
+     ],
+     [
+      222.6,
+      196.1
+     ],
+     [
+      222.7,
+      196.8
+     ],
+     [
+      222.8,
+      197.4
+     ],
+     [
+      222.9,
+      198.0
+     ],
+     [
+      223.1,
+      198.6
+     ],
+     [
+      223.3,
+      199.2
+     ],
+     [
+      223.5,
+      199.8
+     ],
+     [
+      223.7,
+      200.4
+     ],
+     [
+      224.0,
+      201.0
+     ],
+     [
+      224.3,
+      201.6
+     ],
+     [
+      224.6,
+      202.2
+     ],
+     [
+      224.9,
+      202.7
+     ],
+     [
+      225.2,
+      203.3
+     ],
+     [
+      225.6,
+      203.8
+     ],
+     [
+      229.4,
+      209.0
+     ]
+    ],
+    "path_d": "M 229.4 111.0 L 225.6 116.2 A 16.3 16.3 0 0 0 222.5 125.8 L 222.5 194.2 A 16.3 16.3 0 0 0 225.6 203.8 L 229.4 209.0",
+    "via": [
+     [
+      229.4,
+      111.0
+     ],
+     [
+      222.5,
+      120.5
+     ],
+     [
+      222.5,
+      199.5
+     ],
+     [
+      229.4,
+      209.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     229.38,
+     111.0
+    ],
+    "b": [
+     229.38,
+     209.0
+    ]
+   },
+   "arrow": [
+    229.4,
+    209.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "h2",
+   "b": "h1",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      298.6,
+      179.0
+     ],
+     [
+      285.0,
+      209.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     298.62,
+     179.0
+    ],
+    "b": [
+     285.0,
+     209.0
+    ]
+   },
+   "arrow": [
+    285.0,
+    209.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "h1",
+   "b": "h2",
+   "polarity": "+",
+   "loop_kinds": [
+    "R"
+   ],
+   "loop_color": "#c2410c",
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      250.6,
+      209.0
+     ],
+     [
+      277.4,
+      179.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     250.62,
+     209.0
+    ],
+    "b": [
+     277.38,
+     179.0
+    ]
+   },
+   "arrow": [
+    277.4,
+    179.0
+   ],
+   "route_cross_edges": 0
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 4,
+  "rowY": [
+   92,
+   160,
+   228,
+   296
+  ],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "manual",
+  "mode_decision_trace": {
+   "engine": "manual",
+   "placement": null,
+   "manual": true,
+   "rules": [],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": false,
+    "detail": "manual layout: the auto mode chain did not run; routing hard gates still apply, graded honestly"
+   }
+  },
+  "from_layout": {
+   "source": "candidate-v1/layered-v082:000",
+   "manual_viewBox": [
+    0,
+    0,
+    476,
+    362
+   ],
+   "snapped_to_2px": []
+  },
+  "clearance": 16,
+  "router_cross_pairs": 0,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px",
+  "recipe_requested": "candidate-v1",
+  "candidate_pool": {
+   "analysis": {
+    "n_nodes": 8,
+    "n_edges": 9,
+    "max_degree": 5,
+    "core_nodes": 8,
+    "isolated_nodes": 0,
+    "loop_model": {
+     "status": "ok",
+     "reason": null,
+     "enumerated_total": 12,
+     "loop_count": 1,
+     "primary_loop": [
+      "h1",
+      "h2",
+      "m3"
+     ],
+     "loops": [
+      {
+       "cycle": [
+        "h1",
+        "h2",
+        "m3"
+       ],
+       "length": 3,
+       "kind": "R",
+       "neg_edges": 0,
+       "importance": 0.725,
+       "tier": "primary",
+       "declared_match": "R1",
+       "shared_nodes": 0
+      }
+     ]
+    }
+   },
+   "orchestration": {
+    "budget": {
+     "total": 12,
+     "per_source": 2,
+     "exhausted": false
+    },
+    "source_records": [
+     {
+      "source": "symmetric",
+      "outcome": "not_triggered",
+      "detail": "core n=8, edges m=9 (need exactly 4 core nodes / 5 edges)",
+      "candidates": 0
+     },
+     {
+      "source": "bowtie-vertex",
+      "outcome": "not_triggered",
+      "detail": "1 simple loops enumerated (need exactly 2)",
+      "candidates": 0
+     },
+     {
+      "source": "spine-wing",
+      "outcome": "not_triggered",
+      "detail": "no hub-pair candidate: no directed edge whose endpoints share 3..4 common neighbors",
+      "candidates": 0
+     },
+     {
+      "source": "comb-bilateral",
+      "outcome": "not_triggered",
+      "detail": "no bilateral-hub pair: no two non-adjacent nodes with identical source-only neighborhoods (|S| >= 3)",
+      "candidates": 0
+     },
+     {
+      "source": "column-chain",
+      "outcome": "failed",
+      "detail": "InfeasibleColumn: no feasible extrapolation tier for the closing arc",
+      "candidates": 0
+     },
+     {
+      "source": "ring-cycle",
+      "outcome": "not_triggered",
+      "detail": "not loop-dominated: main-ring coverage < n-2 and non-bridge edge ratio 0.38 < 0.9",
+      "candidates": 0
+     },
+     {
+      "source": "radial",
+      "outcome": "not_triggered",
+      "detail": "hub_deg=5 < 6",
+      "candidates": 0
+     },
+     {
+      "source": "planarized",
+      "outcome": "disabled_by_rule",
+      "detail": "preregistered topology rule (node cap / loop model status)",
+      "candidates": 0
+     },
+     {
+      "source": "layered-v082",
+      "outcome": "generated",
+      "detail": "emitted 1, kept 1 (per-source budget 2)",
+      "candidates": 1
+     }
+    ],
+    "candidates": [
+     {
+      "candidate_id": "layered-v082:000",
+      "source": "layered-v082",
+      "node_positions": {
+       "h1": [
+        240,
+        228
+       ],
+       "h2": [
+        288,
+        160
+       ],
+       "m1": [
+        240,
+        92
+       ],
+       "m2": [
+        120,
+        92
+       ],
+       "m3": [
+        264,
+        296
+       ],
+       "m4": [
+        144,
+        296
+       ],
+       "w1": [
+        120,
+        228
+       ],
+       "w2": [
+        384,
+        92
+       ]
+      },
+      "metadata": {
+       "internal_filter": "none",
+       "engine": "incumbent-auto-v2",
+       "position_engine": "cp-sat",
+       "planarization_mode": null
+      },
+      "generation_cost": 26,
+      "structural_signature": "9caf1f64309771f9"
+     }
+    ]
+   },
+   "selection": {
+    "op_budget": {
+     "total": 172,
+     "consumed": 9,
+     "per_routed_edge": 1,
+     "granularity": "per-candidate"
+    },
+    "evaluated": 1,
+    "hard_pass": 1,
+    "reports": [
+     {
+      "candidate_id": "layered-v082:000",
+      "source": "layered-v082",
+      "structural_signature": "9caf1f64309771f9",
+      "routed": true,
+      "budget_exhausted": false,
+      "crossings": 0,
+      "press_count": 0,
+      "clearance_violations": 0,
+      "min_clear": 17.1,
+      "min_card_gap": 24,
+      "mutual_min_dist": 9.914,
+      "edge_length_cv": 0.308048,
+      "center_offset_norm": 0.078629,
+      "hard_pass": true,
+      "hard_failures": []
+     }
+    ],
+    "ranked_ids": [
+     "layered-v082:000"
+    ]
+   },
+   "delivery": {
+    "mode": "candidate",
+    "candidate_id": "layered-v082:000",
+    "guard_caliber": "delivered-certificate-metrics",
+    "incumbent_guard_tuple": [
+     0,
+     0,
+     0,
+     0,
+     2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0.222,
+     -24.0,
+     -17.0
+    ],
+    "incumbent_delivered_metrics": {
+     "crossings": 0,
+     "box_press_1px": 0,
+     "edge_box_min_clear": 17.0,
+     "min_card_gap": 24.0,
+     "spacing_cv": 0.222,
+     "visual_crossings": 0,
+     "anchor_violations": 0,
+     "anchor_standard_violations": 2,
+     "line_line_coincident_pairs": 0
+    },
+    "delivered_metrics": {
+     "crossings": 0,
+     "box_press_1px": 0,
+     "edge_box_min_clear": 17.0,
+     "min_card_gap": 24.0,
+     "spacing_cv": 0.222,
+     "visual_crossings": 0,
+     "anchor_violations": 0,
+     "anchor_standard_violations": 2,
+     "line_line_coincident_pairs": 0
+    },
+    "attempts": [
+     {
+      "candidate_id": "layered-v082:000",
+      "outcome": "delivered",
+      "guard_tuple": [
+       0,
+       0,
+       0,
+       0,
+       2,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0.222,
+       -24.0,
+       -17.0
+      ],
+      "delivered_metrics": {
+       "crossings": 0,
+       "box_press_1px": 0,
+       "edge_box_min_clear": 17.0,
+       "min_card_gap": 24.0,
+       "spacing_cv": 0.222,
+       "visual_crossings": 0,
+       "anchor_violations": 0,
+       "anchor_standard_violations": 2,
+       "line_line_coincident_pairs": 0
+      },
+      "incumbent_guard_tuple": [
+       0,
+       0,
+       0,
+       0,
+       2,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0.222,
+       -24.0,
+       -17.0
+      ]
+     }
+    ]
+   },
+   "candidate_contract_keys": [
+    "candidate_id",
+    "source",
+    "node_positions",
+    "metadata",
+    "generation_cost",
+    "structural_signature"
+   ]
+  }
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

@@ -1,0 +1,31 @@
+# preference round-3 new topology source · pure nested ring variant
+# inner ring shares exactly ONE node with the outer ring (the existing
+# nested-capacity / brand-flywheel anchors share a path segment instead)
+# 10 nodes / 11 edges: outer 7-cycle (R) + inner 4-cycle through node b (B)
+graph "嵌套双环共享单节点"
+
+var z "错误率"
+var y "疲劳积累"
+var x "加班强度"
+var g "口碑推荐"
+var f "客户满意"
+var e "交付速度"
+var d "生产产能"
+var c "产能投资"
+var b "销售收入"
+var a "市场需求"
+
+z -> - b @loops R2
+y -> + z @loops R2
+x -> + y @loops R2
+b -> + x @loops R2
+g -> + a @loops R1
+f -> + g @loops R1
+e -> + f @loops R1
+d -> + e @loops R1
+c -> + d @loops R1
+b -> + c @loops R1
+a -> + b @loops R1
+
+loop R2 "疲劳负担环" "B" [b, x, y, z]
+loop R1 "增长飞轮环" "R" [a, b, c, d, e, f, g]

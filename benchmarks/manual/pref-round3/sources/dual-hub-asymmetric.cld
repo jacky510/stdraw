@@ -1,28 +1,27 @@
-# round-3 new topology: 双枢纽非对称：供给-需求双中心 (dual-hub-asymmetric)
-graph "双枢纽非对称：供给-需求双中心"
+# preference round-3 new topology source · asymmetric dual-hub
+# 8 nodes / 8 edges: two hubs joined by an edge, strongly asymmetric fan
+# degrees (h1: 6 touching edges, h2: 3) plus one reinforcing loop h1-m3-h2
+# (differs from comb-supply-demand: hubs do NOT share their neighborhoods)
+graph "双枢纽不对称辐射"
 
-var supply "供给能力"
-var demand "需求热度"
-var price "市场价格"
-var inventory "库存水位"
-var leadtime "交付周期"
-var expansion "扩产决策"
-var marketing "营销投入"
-var substitute "替代品吸引力"
-var margin "利润空间"
+var h1 "平台运营"
+var h2 "物流网络"
+var m1 "商家生态"
+var m2 "流量规模"
+var m3 "品类宽度"
+var m4 "服务能力"
+var w1 "履约速度"
+var w2 "成本压力"
 
-demand -> + price
-price -> + margin
-margin -> + expansion
-expansion -> + supply
-supply -> - price
-demand -> - inventory
-inventory -> - price
-supply -> - leadtime
-leadtime -> - demand
-marketing -> + demand
-margin -> - marketing
-substitute -> - demand
+h1 -> + h2 @loops R2
+h2 -> + h1 @loops R1,R2
+m1 -> + h1
+m2 -> + h1
+h1 -> + m3 @loops R1
+h1 -> + m4
+h2 -> + w1
+w2 -> + h2
+m3 -> + h2 @loops R1
 
-loop B1 "价格调节环" "B" [demand, price, margin, expansion, supply]
-loop R1 "营销需求环" "R" [margin, marketing, demand, price]
+loop R1 "品类物流协同环" "R" [h1, m3, h2]
+loop R2 "运营物流互促环" "R" [h1, h2]
