@@ -1,0 +1,4388 @@
+{
+  "schema": "stdraw.pref-ranking-final/1",
+  "generation": {
+    "determinism": "double-run byte-identical (evidence dir)",
+    "solver": "converged BT solver only (duplicate-column merge + damped full-Hessian Newton, gradient gate < 1e-6 asserted on EVERY fit); the pre-convergence artifact readings are not reproducible by design",
+    "stratification": "S_all = 25 merged decided pairs (mixed picture caliber); S_r2 = 12 byte-faithful round-2 pairs only; S_r1 = 13 round-1 pairs only; each stratum trains on its own pairs (same-caliber training) under LOSO by topology",
+    "synthetic_arms": "M1s/M2s listed side by side, NEVER merged into the headline; different dose family (diagnosis card's cumulative L1-L4 caliber)"
+  },
+  "data": {
+    "round1": {
+      "n_answered": 30,
+      "n_first_round": 24,
+      "n_decided": 13,
+      "n_both_good": 7,
+      "n_both_bad": 6,
+      "n_retest": 6,
+      "picture_caliber": "28/30 re-routed renders (old)"
+    },
+    "round2": {
+      "n_answered": 20,
+      "n_new": 17,
+      "n_decided": 12,
+      "n_both_good": 4,
+      "n_both_bad": 4,
+      "n_retest": 3,
+      "picture_caliber": "byte-faithful slim_doc (new)"
+    },
+    "merged": {
+      "n_decided": 25,
+      "n_both_good": 11,
+      "n_both_bad": 10,
+      "cross_session_overlap_keys": [
+        "brand-flywheel|g4c1|g4c3",
+        "classic-cld-growth-and-burden|g5c1|g5c2",
+        "comb-supply-demand|g3c0|g3c2"
+      ],
+      "overlap_note": "the 3 cross-session overlap keys are tie-type in round 1 (both good), so the 25 decided pairs are disjoint"
+    },
+    "noise_baselines": {
+      "within_session": 0.8333,
+      "within_rows": [
+        {
+          "pair_key": "coupled-underinvestment|g1c0|g1c1",
+          "first_winner": "g1c0",
+          "retest_winner": "g1c0",
+          "agree": true
+        },
+        {
+          "pair_key": "coupled-underinvestment|g1c0|g1c3",
+          "first_winner": "g1c0",
+          "retest_winner": "g1c0",
+          "agree": true
+        },
+        {
+          "pair_key": "nonplanar-credit|g2c1|g2c3",
+          "first_winner": "both_bad",
+          "retest_winner": "both_bad",
+          "agree": true
+        },
+        {
+          "pair_key": "comb-supply-demand|g3c0|g3c2",
+          "first_winner": "both",
+          "retest_winner": "g3c0",
+          "agree": false
+        },
+        {
+          "pair_key": "brand-flywheel|g4c2|g4c3",
+          "first_winner": "both_bad",
+          "retest_winner": "both_bad",
+          "agree": true
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+          "first_winner": "g5c1",
+          "retest_winner": "g5c1",
+          "agree": true
+        }
+      ],
+      "cross_session": 0.6667,
+      "cross_rows": [
+        {
+          "pair_key": "comb-supply-demand|g3c0|g3c2",
+          "first_winner": "both",
+          "retest_winner": "g3c0",
+          "agree": false
+        },
+        {
+          "pair_key": "classic-cld-growth-and-burden|g5c1|g5c2",
+          "first_winner": "both",
+          "retest_winner": "both",
+          "agree": true
+        },
+        {
+          "pair_key": "brand-flywheel|g4c1|g4c3",
+          "first_winner": "both",
+          "retest_winner": "both",
+          "agree": true
+        }
+      ],
+      "signal_gate": 0.6667,
+      "gate_note": "an arm counts as a signal only above the cross-session baseline 66.7% (stricter than in-session 83.3%)"
+    },
+    "jacky_time_on_task": {
+      "r1_total_minutes": 2.5,
+      "r2_total_minutes": 1.5,
+      "r1_median_s_per_q": 2.7,
+      "r2_median_s_per_q": 4.0
+    },
+    "topology_groups": {
+      "多环耦合": [
+        "coupled-underinvestment"
+      ],
+      "嵌套环": [
+        "brand-flywheel",
+        "classic-cld-growth-and-burden"
+      ],
+      "梳状": [
+        "comb-supply-demand"
+      ],
+      "非平面族": [
+        "nonplanar-credit"
+      ]
+    }
+  },
+  "stratified_results": {
+    "S_all": {
+      "M0": {
+        "arm": "M0",
+        "pooled": {
+          "correct": 10,
+          "n": 25,
+          "acc": 0.4,
+          "ci95": [
+            0.4,
+            0.234,
+            0.5926
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 20,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.35,
+            "test_acc": 0.6,
+            "n_test": 5,
+            "test_correct": 3,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c1",
+                "session": "r1",
+                "signed_margin": 17.5
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c3",
+                "session": "r1",
+                "signed_margin": 17.5
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c2",
+                "session": "r1",
+                "signed_margin": 17.5
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c1",
+                "session": "r2",
+                "signed_margin": -17.5
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 14,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.7143,
+            "test_acc": 0.0,
+            "n_test": 11,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c2",
+                "session": "r1",
+                "signed_margin": -35.1
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c1",
+                "session": "r1",
+                "signed_margin": -35.1
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c4",
+                "session": "r1",
+                "signed_margin": -58.6
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c3",
+                "session": "r1",
+                "signed_margin": -35.1
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+                "session": "r1",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c2",
+                "session": "r2",
+                "signed_margin": -58.6
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3",
+                "session": "r2",
+                "signed_margin": -58.6
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c2",
+                "session": "r2",
+                "signed_margin": -35.1
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|classic-cld-manual-layout-L2|g5c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c3",
+                "session": "r2",
+                "signed_margin": -35.1
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c1",
+                "session": "r2",
+                "signed_margin": -35.1
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 20,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.35,
+            "test_acc": 0.6,
+            "n_test": 5,
+            "test_correct": 3,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c1",
+                "session": "r1",
+                "signed_margin": 52.4
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c3",
+                "session": "r1",
+                "signed_margin": 52.4
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c1",
+                "session": "r2",
+                "signed_margin": -52.4
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c2",
+                "session": "r2",
+                "signed_margin": 52.4
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 21,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.2857,
+            "test_acc": 1.0,
+            "n_test": 4,
+            "test_correct": 4,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c1",
+                "session": "r1",
+                "signed_margin": 77.0
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c3",
+                "session": "r1",
+                "signed_margin": 77.0
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c2",
+                "session": "r1",
+                "signed_margin": 77.0
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|nonplanar-credit-manual-layout-L4",
+                "session": "r2",
+                "signed_margin": 78.5
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c0",
+            "g1c1",
+            "g1c2",
+            "g1c3"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c1",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c0",
+            "g3c1",
+            "g3c2",
+            "g3c3"
+          ],
+          "nonplanar-credit": [
+            "g2c0",
+            "g2c1",
+            "g2c2",
+            "g2c3"
+          ]
+        },
+        "train_margin_abs_min": 0.0
+      },
+      "M1": {
+        "arm": "M1",
+        "pooled": {
+          "correct": 3,
+          "n": 25,
+          "acc": 0.12,
+          "ci95": [
+            0.12,
+            0.0417,
+            0.2996
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 20,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.7,
+            "test_acc": 0.2,
+            "n_test": 5,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c1",
+                "session": "r1",
+                "signed_margin": -0.08674
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c3",
+                "session": "r1",
+                "signed_margin": -0.08674
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c2",
+                "session": "r1",
+                "signed_margin": -0.08674
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c1",
+                "session": "r2",
+                "signed_margin": 0.08674
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 14,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.7143,
+            "test_acc": 0.0,
+            "n_test": 11,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c2",
+                "session": "r1",
+                "signed_margin": -1.082823
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c1",
+                "session": "r1",
+                "signed_margin": -1.082823
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c4",
+                "session": "r1",
+                "signed_margin": -1.228587
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c3",
+                "session": "r1",
+                "signed_margin": -1.082823
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+                "session": "r1",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c2",
+                "session": "r2",
+                "signed_margin": -1.228587
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3",
+                "session": "r2",
+                "signed_margin": -1.228587
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c2",
+                "session": "r2",
+                "signed_margin": -1.082823
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|classic-cld-manual-layout-L2|g5c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c3",
+                "session": "r2",
+                "signed_margin": -1.082823
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c1",
+                "session": "r2",
+                "signed_margin": -1.082823
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 20,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.7,
+            "test_acc": 0.2,
+            "n_test": 5,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c1",
+                "session": "r1",
+                "signed_margin": -1.100569
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c3",
+                "session": "r1",
+                "signed_margin": -1.100569
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c1",
+                "session": "r2",
+                "signed_margin": 1.100569
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c2",
+                "session": "r2",
+                "signed_margin": -1.100569
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 21,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.7143,
+            "test_acc": 0.25,
+            "n_test": 4,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c1",
+                "session": "r1",
+                "signed_margin": -9.305541
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c3",
+                "session": "r1",
+                "signed_margin": -9.305541
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c2",
+                "session": "r1",
+                "signed_margin": -9.305541
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|nonplanar-credit-manual-layout-L4",
+                "session": "r2",
+                "signed_margin": 4.975955
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c1",
+            "g1c2",
+            "g1c3",
+            "g1c0"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c1",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c1",
+            "g3c2",
+            "g3c3",
+            "g3c0"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.0
+      },
+      "M2": {
+        "arm": "M2",
+        "pooled": {
+          "correct": 7,
+          "n": 25,
+          "acc": 0.28,
+          "ci95": [
+            0.28,
+            0.1428,
+            0.4758
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 20,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.65,
+            "test_acc": 0.2,
+            "n_test": 5,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c1",
+                "session": "r1",
+                "signed_margin": -1.202412
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c3",
+                "session": "r1",
+                "signed_margin": -1.202412
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c2",
+                "session": "r1",
+                "signed_margin": -1.202412
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c1",
+                "session": "r2",
+                "signed_margin": 0.099094
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c0",
+                "session": "r2",
+                "signed_margin": -1.103318
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 14,
+            "n_train_synthetic": 0,
+            "train_acc_human": 1.0,
+            "test_acc": 0.3636,
+            "n_test": 11,
+            "test_correct": 4,
+            "test_pair_margins": [
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c2",
+                "session": "r1",
+                "signed_margin": -1.038868
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c1",
+                "session": "r1",
+                "signed_margin": -1.038868
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c4",
+                "session": "r1",
+                "signed_margin": -2.815875
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c3",
+                "session": "r1",
+                "signed_margin": -1.038868
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+                "session": "r1",
+                "signed_margin": -0.634358
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c2",
+                "session": "r2",
+                "signed_margin": -2.815875
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3",
+                "session": "r2",
+                "signed_margin": -2.815875
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c2",
+                "session": "r2",
+                "signed_margin": 1.57854
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|classic-cld-manual-layout-L2|g5c0",
+                "session": "r2",
+                "signed_margin": 1.23
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c3",
+                "session": "r2",
+                "signed_margin": 1.57854
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c1",
+                "session": "r2",
+                "signed_margin": 1.57854
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 20,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.95,
+            "test_acc": 0.4,
+            "n_test": 5,
+            "test_correct": 2,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c1",
+                "session": "r1",
+                "signed_margin": -3.493239
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c3",
+                "session": "r1",
+                "signed_margin": -3.493239
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c0",
+                "session": "r2",
+                "signed_margin": 1.933114
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c1",
+                "session": "r2",
+                "signed_margin": 5.426353
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c2",
+                "session": "r2",
+                "signed_margin": -3.493239
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 21,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.9524,
+            "test_acc": 0.0,
+            "n_test": 4,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c1",
+                "session": "r1",
+                "signed_margin": -14.102171
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c3",
+                "session": "r1",
+                "signed_margin": -14.102171
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c2",
+                "session": "r1",
+                "signed_margin": -14.102171
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|nonplanar-credit-manual-layout-L4",
+                "session": "r2",
+                "signed_margin": -1.57079
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c1",
+            "g1c2",
+            "g1c3",
+            "g1c0"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c1",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c1",
+            "g3c2",
+            "g3c3",
+            "g3c0"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.036555
+      },
+      "M1s": {
+        "arm": "M1s",
+        "pooled": {
+          "correct": 3,
+          "n": 25,
+          "acc": 0.12,
+          "ci95": [
+            0.12,
+            0.0417,
+            0.2996
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 20,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.7,
+            "test_acc": 0.2,
+            "n_test": 5,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c1",
+                "session": "r1",
+                "signed_margin": -0.156878
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c3",
+                "session": "r1",
+                "signed_margin": -0.156878
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c2",
+                "session": "r1",
+                "signed_margin": -0.156878
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c1",
+                "session": "r2",
+                "signed_margin": 0.156878
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 14,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.7143,
+            "test_acc": 0.0,
+            "n_test": 11,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c2",
+                "session": "r1",
+                "signed_margin": -1.548797
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c1",
+                "session": "r1",
+                "signed_margin": -1.548797
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c4",
+                "session": "r1",
+                "signed_margin": -1.406594
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c3",
+                "session": "r1",
+                "signed_margin": -1.548797
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+                "session": "r1",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c2",
+                "session": "r2",
+                "signed_margin": -1.406594
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3",
+                "session": "r2",
+                "signed_margin": -1.406594
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c2",
+                "session": "r2",
+                "signed_margin": -1.548797
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|classic-cld-manual-layout-L2|g5c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c3",
+                "session": "r2",
+                "signed_margin": -1.548797
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c1",
+                "session": "r2",
+                "signed_margin": -1.548797
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 20,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.7,
+            "test_acc": 0.2,
+            "n_test": 5,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c1",
+                "session": "r1",
+                "signed_margin": -1.683895
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c3",
+                "session": "r1",
+                "signed_margin": -1.683895
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c1",
+                "session": "r2",
+                "signed_margin": 1.683895
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c2",
+                "session": "r2",
+                "signed_margin": -1.683895
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 21,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.7143,
+            "test_acc": 0.25,
+            "n_test": 4,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c1",
+                "session": "r1",
+                "signed_margin": -16.707307
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c3",
+                "session": "r1",
+                "signed_margin": -16.707307
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c2",
+                "session": "r1",
+                "signed_margin": -16.707307
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|nonplanar-credit-manual-layout-L4",
+                "session": "r2",
+                "signed_margin": 5.022844
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c1",
+            "g1c2",
+            "g1c3",
+            "g1c0"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c1",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c1",
+            "g3c2",
+            "g3c3",
+            "g3c0"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.0
+      },
+      "M2s": {
+        "arm": "M2s",
+        "pooled": {
+          "correct": 9,
+          "n": 25,
+          "acc": 0.36,
+          "ci95": [
+            0.36,
+            0.2025,
+            0.5548
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 20,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.65,
+            "test_acc": 0.4,
+            "n_test": 5,
+            "test_correct": 2,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c1",
+                "session": "r1",
+                "signed_margin": -0.527642
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c3",
+                "session": "r1",
+                "signed_margin": -0.527642
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c2",
+                "session": "r1",
+                "signed_margin": -0.527642
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c1",
+                "session": "r2",
+                "signed_margin": 2.258061
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c0",
+                "session": "r2",
+                "signed_margin": 1.73042
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 14,
+            "n_train_synthetic": 30,
+            "train_acc_human": 1.0,
+            "test_acc": 0.3636,
+            "n_test": 11,
+            "test_correct": 4,
+            "test_pair_margins": [
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c2",
+                "session": "r1",
+                "signed_margin": -1.13872
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c1",
+                "session": "r1",
+                "signed_margin": -1.13872
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c4",
+                "session": "r1",
+                "signed_margin": -4.598647
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c3",
+                "session": "r1",
+                "signed_margin": -1.13872
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+                "session": "r1",
+                "signed_margin": -1.03442
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c2",
+                "session": "r2",
+                "signed_margin": -4.598647
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3",
+                "session": "r2",
+                "signed_margin": -4.598647
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c2",
+                "session": "r2",
+                "signed_margin": 3.487461
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|classic-cld-manual-layout-L2|g5c0",
+                "session": "r2",
+                "signed_margin": 1.973826
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c3",
+                "session": "r2",
+                "signed_margin": 3.487461
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c1",
+                "session": "r2",
+                "signed_margin": 3.487461
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 20,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.95,
+            "test_acc": 0.4,
+            "n_test": 5,
+            "test_correct": 2,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c1",
+                "session": "r1",
+                "signed_margin": -5.590571
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c3",
+                "session": "r1",
+                "signed_margin": -5.590571
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c0",
+                "session": "r2",
+                "signed_margin": 3.651664
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c1",
+                "session": "r2",
+                "signed_margin": 9.242235
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c2",
+                "session": "r2",
+                "signed_margin": -5.590571
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 21,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.9524,
+            "test_acc": 0.25,
+            "n_test": 4,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c1",
+                "session": "r1",
+                "signed_margin": -20.309568
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c3",
+                "session": "r1",
+                "signed_margin": -20.309568
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c2",
+                "session": "r1",
+                "signed_margin": -20.309568
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|nonplanar-credit-manual-layout-L4",
+                "session": "r2",
+                "signed_margin": 0.448912
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c1",
+            "g1c2",
+            "g1c3",
+            "g1c0"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c1",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c1",
+            "g3c2",
+            "g3c3",
+            "g3c0"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.364924
+      }
+    },
+    "S_r2": {
+      "M0": {
+        "arm": "M0",
+        "pooled": {
+          "correct": 2,
+          "n": 12,
+          "acc": 0.1667,
+          "ci95": [
+            0.1667,
+            0.047,
+            0.448
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.2,
+            "test_acc": 0.0,
+            "n_test": 2,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c1",
+                "session": "r2",
+                "signed_margin": -17.5
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 6,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.3333,
+            "test_acc": 0.0,
+            "n_test": 6,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c2",
+                "session": "r2",
+                "signed_margin": -58.6
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3",
+                "session": "r2",
+                "signed_margin": -58.6
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c2",
+                "session": "r2",
+                "signed_margin": -35.1
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|classic-cld-manual-layout-L2|g5c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c3",
+                "session": "r2",
+                "signed_margin": -35.1
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c1",
+                "session": "r2",
+                "signed_margin": -35.1
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 9,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.1111,
+            "test_acc": 0.3333,
+            "n_test": 3,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c1",
+                "session": "r2",
+                "signed_margin": -52.4
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c2",
+                "session": "r2",
+                "signed_margin": 52.4
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 11,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.0909,
+            "test_acc": 1.0,
+            "n_test": 1,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|nonplanar-credit-manual-layout-L4",
+                "session": "r2",
+                "signed_margin": 78.5
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c0",
+            "g1c1",
+            "g1c2",
+            "g1c3"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c1",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c0",
+            "g3c1",
+            "g3c2",
+            "g3c3"
+          ],
+          "nonplanar-credit": [
+            "g2c0",
+            "g2c1",
+            "g2c2",
+            "g2c3"
+          ]
+        },
+        "train_margin_abs_min": 0.0
+      },
+      "M1": {
+        "arm": "M1",
+        "pooled": {
+          "correct": 5,
+          "n": 12,
+          "acc": 0.4167,
+          "ci95": [
+            0.4167,
+            0.1933,
+            0.6805
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.7,
+            "test_acc": 0.5,
+            "n_test": 2,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c1",
+                "session": "r2",
+                "signed_margin": 0.187692
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 6,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.5,
+            "test_acc": 0.3333,
+            "n_test": 6,
+            "test_correct": 2,
+            "test_pair_margins": [
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c2",
+                "session": "r2",
+                "signed_margin": 0.166013
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3",
+                "session": "r2",
+                "signed_margin": 0.166013
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c2",
+                "session": "r2",
+                "signed_margin": -0.347586
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|classic-cld-manual-layout-L2|g5c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c3",
+                "session": "r2",
+                "signed_margin": -0.347586
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c1",
+                "session": "r2",
+                "signed_margin": -0.347586
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 9,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.7778,
+            "test_acc": 0.3333,
+            "n_test": 3,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c1",
+                "session": "r2",
+                "signed_margin": 1.557008
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c2",
+                "session": "r2",
+                "signed_margin": -1.557008
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 11,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.6364,
+            "test_acc": 1.0,
+            "n_test": 1,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|nonplanar-credit-manual-layout-L4",
+                "session": "r2",
+                "signed_margin": 4.617023
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c1",
+            "g1c2",
+            "g1c3",
+            "g1c0"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c2",
+            "g5c3",
+            "g5c4",
+            "g5c0",
+            "g5c1"
+          ],
+          "comb-supply-demand": [
+            "g3c1",
+            "g3c2",
+            "g3c3",
+            "g3c0"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.0
+      },
+      "M2": {
+        "arm": "M2",
+        "pooled": {
+          "correct": 8,
+          "n": 12,
+          "acc": 0.6667,
+          "ci95": [
+            0.6667,
+            0.3906,
+            0.8619
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.9,
+            "test_acc": 1.0,
+            "n_test": 2,
+            "test_correct": 2,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c1",
+                "session": "r2",
+                "signed_margin": 1.24687
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c0",
+                "session": "r2",
+                "signed_margin": 0.486358
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 6,
+            "n_train_synthetic": 0,
+            "train_acc_human": 1.0,
+            "test_acc": 0.6667,
+            "n_test": 6,
+            "test_correct": 4,
+            "test_pair_margins": [
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c2",
+                "session": "r2",
+                "signed_margin": -0.317265
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3",
+                "session": "r2",
+                "signed_margin": -0.317265
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c2",
+                "session": "r2",
+                "signed_margin": 3.015314
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|classic-cld-manual-layout-L2|g5c0",
+                "session": "r2",
+                "signed_margin": 1.062102
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c3",
+                "session": "r2",
+                "signed_margin": 3.015314
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c1",
+                "session": "r2",
+                "signed_margin": 3.015314
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 9,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.8889,
+            "test_acc": 0.6667,
+            "n_test": 3,
+            "test_correct": 2,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c0",
+                "session": "r2",
+                "signed_margin": 0.995648
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c1",
+                "session": "r2",
+                "signed_margin": 2.303479
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c2",
+                "session": "r2",
+                "signed_margin": -1.30783
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 11,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.9091,
+            "test_acc": 0.0,
+            "n_test": 1,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|nonplanar-credit-manual-layout-L4",
+                "session": "r2",
+                "signed_margin": -1.059415
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c1",
+            "g1c2",
+            "g1c3",
+            "g1c0"
+          ],
+          "brand-flywheel": [
+            "g4c1",
+            "g4c2",
+            "g4c3",
+            "g4c0"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c2",
+            "g5c3",
+            "g5c4",
+            "g5c1"
+          ],
+          "comb-supply-demand": [
+            "g3c1",
+            "g3c2",
+            "g3c3",
+            "g3c0"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.127435
+      },
+      "M1s": {
+        "arm": "M1s",
+        "pooled": {
+          "correct": 5,
+          "n": 12,
+          "acc": 0.4167,
+          "ci95": [
+            0.4167,
+            0.1933,
+            0.6805
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.7,
+            "test_acc": 0.5,
+            "n_test": 2,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c1",
+                "session": "r2",
+                "signed_margin": 0.19128
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 6,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.5,
+            "test_acc": 0.3333,
+            "n_test": 6,
+            "test_correct": 2,
+            "test_pair_margins": [
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c2",
+                "session": "r2",
+                "signed_margin": 0.414479
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3",
+                "session": "r2",
+                "signed_margin": 0.414479
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c2",
+                "session": "r2",
+                "signed_margin": -0.600095
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|classic-cld-manual-layout-L2|g5c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c3",
+                "session": "r2",
+                "signed_margin": -0.600095
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c1",
+                "session": "r2",
+                "signed_margin": -0.600095
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 9,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.7778,
+            "test_acc": 0.3333,
+            "n_test": 3,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c0",
+                "session": "r2",
+                "signed_margin": 0.0
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c1",
+                "session": "r2",
+                "signed_margin": 3.194053
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c2",
+                "session": "r2",
+                "signed_margin": -3.194053
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 11,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.6364,
+            "test_acc": 1.0,
+            "n_test": 1,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|nonplanar-credit-manual-layout-L4",
+                "session": "r2",
+                "signed_margin": 4.409308
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c1",
+            "g1c2",
+            "g1c3",
+            "g1c0"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c2",
+            "g5c3",
+            "g5c4",
+            "g5c0",
+            "g5c1"
+          ],
+          "comb-supply-demand": [
+            "g3c1",
+            "g3c2",
+            "g3c3",
+            "g3c0"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.0
+      },
+      "M2s": {
+        "arm": "M2s",
+        "pooled": {
+          "correct": 9,
+          "n": 12,
+          "acc": 0.75,
+          "ci95": [
+            0.75,
+            0.4677,
+            0.9111
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 30,
+            "train_acc_human": 1.0,
+            "test_acc": 1.0,
+            "n_test": 2,
+            "test_correct": 2,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c1",
+                "session": "r2",
+                "signed_margin": 3.910869
+              },
+              {
+                "pair_key": "coupled-underinvestment|coupled-underinvestment-manual-layout-L2|g1c0",
+                "session": "r2",
+                "signed_margin": 3.347802
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 6,
+            "n_train_synthetic": 30,
+            "train_acc_human": 1.0,
+            "test_acc": 0.6667,
+            "n_test": 6,
+            "test_correct": 4,
+            "test_pair_margins": [
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c2",
+                "session": "r2",
+                "signed_margin": -1.699602
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3",
+                "session": "r2",
+                "signed_margin": -1.699602
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c2",
+                "session": "r2",
+                "signed_margin": 6.049638
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|classic-cld-manual-layout-L2|g5c0",
+                "session": "r2",
+                "signed_margin": 1.867134
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c3",
+                "session": "r2",
+                "signed_margin": 6.049638
+              },
+              {
+                "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c1",
+                "session": "r2",
+                "signed_margin": 6.049638
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 9,
+            "n_train_synthetic": 30,
+            "train_acc_human": 1.0,
+            "test_acc": 0.6667,
+            "n_test": 3,
+            "test_correct": 2,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c0",
+                "session": "r2",
+                "signed_margin": 3.119659
+              },
+              {
+                "pair_key": "comb-supply-demand|comb-supply-demand-manual-layout-L4|g3c1",
+                "session": "r2",
+                "signed_margin": 5.957047
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c2",
+                "session": "r2",
+                "signed_margin": -2.837388
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 11,
+            "n_train_synthetic": 30,
+            "train_acc_human": 1.0,
+            "test_acc": 1.0,
+            "n_test": 1,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|nonplanar-credit-manual-layout-L4",
+                "session": "r2",
+                "signed_margin": 0.554857
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c1",
+            "g1c2",
+            "g1c3",
+            "g1c0"
+          ],
+          "brand-flywheel": [
+            "g4c1",
+            "g4c2",
+            "g4c3",
+            "g4c0"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c1",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c1",
+            "g3c2",
+            "g3c3",
+            "g3c0"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.300555
+      }
+    },
+    "S_r1": {
+      "M0": {
+        "arm": "M0",
+        "pooled": {
+          "correct": 8,
+          "n": 13,
+          "acc": 0.6154,
+          "ci95": [
+            0.6154,
+            0.3552,
+            0.8229
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.5,
+            "test_acc": 1.0,
+            "n_test": 3,
+            "test_correct": 3,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c1",
+                "session": "r1",
+                "signed_margin": 17.5
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c3",
+                "session": "r1",
+                "signed_margin": 17.5
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c2",
+                "session": "r1",
+                "signed_margin": 17.5
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 8,
+            "n_train_synthetic": 0,
+            "train_acc_human": 1.0,
+            "test_acc": 0.0,
+            "n_test": 5,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c2",
+                "session": "r1",
+                "signed_margin": -35.1
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c1",
+                "session": "r1",
+                "signed_margin": -35.1
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c4",
+                "session": "r1",
+                "signed_margin": -58.6
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c3",
+                "session": "r1",
+                "signed_margin": -35.1
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+                "session": "r1",
+                "signed_margin": 0.0
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 11,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.5455,
+            "test_acc": 1.0,
+            "n_test": 2,
+            "test_correct": 2,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c1",
+                "session": "r1",
+                "signed_margin": 52.4
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c3",
+                "session": "r1",
+                "signed_margin": 52.4
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.5,
+            "test_acc": 1.0,
+            "n_test": 3,
+            "test_correct": 3,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c1",
+                "session": "r1",
+                "signed_margin": 77.0
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c3",
+                "session": "r1",
+                "signed_margin": 77.0
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c2",
+                "session": "r1",
+                "signed_margin": 77.0
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c0",
+            "g1c1",
+            "g1c2",
+            "g1c3"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c1",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c0",
+            "g3c1",
+            "g3c2",
+            "g3c3"
+          ],
+          "nonplanar-credit": [
+            "g2c0",
+            "g2c1",
+            "g2c2",
+            "g2c3"
+          ]
+        },
+        "train_margin_abs_min": 0.0
+      },
+      "M1": {
+        "arm": "M1",
+        "pooled": {
+          "correct": 5,
+          "n": 13,
+          "acc": 0.3846,
+          "ci95": [
+            0.3846,
+            0.1771,
+            0.6448
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.8,
+            "test_acc": 1.0,
+            "n_test": 3,
+            "test_correct": 3,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c1",
+                "session": "r1",
+                "signed_margin": 0.230883
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c3",
+                "session": "r1",
+                "signed_margin": 0.230883
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c2",
+                "session": "r1",
+                "signed_margin": 0.230883
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 8,
+            "n_train_synthetic": 0,
+            "train_acc_human": 1.0,
+            "test_acc": 0.0,
+            "n_test": 5,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c2",
+                "session": "r1",
+                "signed_margin": -0.69811
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c1",
+                "session": "r1",
+                "signed_margin": -0.69811
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c4",
+                "session": "r1",
+                "signed_margin": -2.060848
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c3",
+                "session": "r1",
+                "signed_margin": -0.69811
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+                "session": "r1",
+                "signed_margin": 0.0
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 11,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.8182,
+            "test_acc": 1.0,
+            "n_test": 2,
+            "test_correct": 2,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c1",
+                "session": "r1",
+                "signed_margin": 0.412871
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c3",
+                "session": "r1",
+                "signed_margin": 0.412871
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 0,
+            "train_acc_human": 0.8,
+            "test_acc": 0.0,
+            "n_test": 3,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c1",
+                "session": "r1",
+                "signed_margin": -6.405205
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c3",
+                "session": "r1",
+                "signed_margin": -6.405205
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c2",
+                "session": "r1",
+                "signed_margin": -6.405205
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c0",
+            "g1c1",
+            "g1c2",
+            "g1c3"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c1",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c0",
+            "g3c1",
+            "g3c2",
+            "g3c3"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.0
+      },
+      "M2": {
+        "arm": "M2",
+        "pooled": {
+          "correct": 1,
+          "n": 13,
+          "acc": 0.0769,
+          "ci95": [
+            0.0769,
+            0.0137,
+            0.3331
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 0,
+            "train_acc_human": 1.0,
+            "test_acc": 0.0,
+            "n_test": 3,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c1",
+                "session": "r1",
+                "signed_margin": -1.080167
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c3",
+                "session": "r1",
+                "signed_margin": -1.080167
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c2",
+                "session": "r1",
+                "signed_margin": -1.080167
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 8,
+            "n_train_synthetic": 0,
+            "train_acc_human": 1.0,
+            "test_acc": 0.2,
+            "n_test": 5,
+            "test_correct": 1,
+            "test_pair_margins": [
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c2",
+                "session": "r1",
+                "signed_margin": -1.813808
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c1",
+                "session": "r1",
+                "signed_margin": -1.813808
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c4",
+                "session": "r1",
+                "signed_margin": -1.759992
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c3",
+                "session": "r1",
+                "signed_margin": -1.813808
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+                "session": "r1",
+                "signed_margin": 0.06768
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 11,
+            "n_train_synthetic": 0,
+            "train_acc_human": 1.0,
+            "test_acc": 0.0,
+            "n_test": 2,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c1",
+                "session": "r1",
+                "signed_margin": -2.798186
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c3",
+                "session": "r1",
+                "signed_margin": -2.798186
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 0,
+            "train_acc_human": 1.0,
+            "test_acc": 0.0,
+            "n_test": 3,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c1",
+                "session": "r1",
+                "signed_margin": -11.955942
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c3",
+                "session": "r1",
+                "signed_margin": -11.955942
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c2",
+                "session": "r1",
+                "signed_margin": -11.955942
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c1",
+            "g1c2",
+            "g1c3",
+            "g1c0"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c1",
+            "g5c0",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c1",
+            "g3c2",
+            "g3c3",
+            "g3c0"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.054949
+      },
+      "M1s": {
+        "arm": "M1s",
+        "pooled": {
+          "correct": 3,
+          "n": 13,
+          "acc": 0.2308,
+          "ci95": [
+            0.2308,
+            0.0818,
+            0.5026
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.8,
+            "test_acc": 1.0,
+            "n_test": 3,
+            "test_correct": 3,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c1",
+                "session": "r1",
+                "signed_margin": 0.146749
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c3",
+                "session": "r1",
+                "signed_margin": 0.146749
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c2",
+                "session": "r1",
+                "signed_margin": 0.146749
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 8,
+            "n_train_synthetic": 30,
+            "train_acc_human": 1.0,
+            "test_acc": 0.0,
+            "n_test": 5,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c2",
+                "session": "r1",
+                "signed_margin": -1.860786
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c1",
+                "session": "r1",
+                "signed_margin": -1.860786
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c4",
+                "session": "r1",
+                "signed_margin": -3.321004
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c3",
+                "session": "r1",
+                "signed_margin": -1.860786
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+                "session": "r1",
+                "signed_margin": 0.0
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 11,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.6364,
+            "test_acc": 0.0,
+            "n_test": 2,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c1",
+                "session": "r1",
+                "signed_margin": -0.276795
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c3",
+                "session": "r1",
+                "signed_margin": -0.276795
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.9,
+            "test_acc": 0.0,
+            "n_test": 3,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c1",
+                "session": "r1",
+                "signed_margin": -17.465654
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c3",
+                "session": "r1",
+                "signed_margin": -17.465654
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c2",
+                "session": "r1",
+                "signed_margin": -17.465654
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c0",
+            "g1c1",
+            "g1c2",
+            "g1c3"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c1",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c1",
+            "g3c2",
+            "g3c3",
+            "g3c0"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.0
+      },
+      "M2s": {
+        "arm": "M2s",
+        "pooled": {
+          "correct": 0,
+          "n": 13,
+          "acc": 0.0,
+          "ci95": [
+            0.0,
+            0.0,
+            0.2281
+          ]
+        },
+        "per_fold": [
+          {
+            "held_out_topology": "多环耦合",
+            "test_graphs": [
+              "coupled-underinvestment"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.6,
+            "test_acc": 0.0,
+            "n_test": 3,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c1",
+                "session": "r1",
+                "signed_margin": -0.098844
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c3",
+                "session": "r1",
+                "signed_margin": -0.098844
+              },
+              {
+                "pair_key": "coupled-underinvestment|g1c0|g1c2",
+                "session": "r1",
+                "signed_margin": -0.098844
+              }
+            ]
+          },
+          {
+            "held_out_topology": "嵌套环",
+            "test_graphs": [
+              "brand-flywheel",
+              "classic-cld-growth-and-burden"
+            ],
+            "n_train_human": 8,
+            "n_train_synthetic": 30,
+            "train_acc_human": 1.0,
+            "test_acc": 0.0,
+            "n_test": 5,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c2",
+                "session": "r1",
+                "signed_margin": -1.314238
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c1",
+                "session": "r1",
+                "signed_margin": -1.314238
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c4",
+                "session": "r1",
+                "signed_margin": -4.806537
+              },
+              {
+                "pair_key": "brand-flywheel|g4c0|g4c3",
+                "session": "r1",
+                "signed_margin": -1.314238
+              },
+              {
+                "pair_key": "classic-cld-growth-and-burden|g5c0|g5c1",
+                "session": "r1",
+                "signed_margin": -0.879414
+              }
+            ]
+          },
+          {
+            "held_out_topology": "梳状",
+            "test_graphs": [
+              "comb-supply-demand"
+            ],
+            "n_train_human": 11,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.9091,
+            "test_acc": 0.0,
+            "n_test": 2,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c1",
+                "session": "r1",
+                "signed_margin": -5.30663
+              },
+              {
+                "pair_key": "comb-supply-demand|g3c0|g3c3",
+                "session": "r1",
+                "signed_margin": -5.30663
+              }
+            ]
+          },
+          {
+            "held_out_topology": "非平面族",
+            "test_graphs": [
+              "nonplanar-credit"
+            ],
+            "n_train_human": 10,
+            "n_train_synthetic": 30,
+            "train_acc_human": 0.9,
+            "test_acc": 0.0,
+            "n_test": 3,
+            "test_correct": 0,
+            "test_pair_margins": [
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c1",
+                "session": "r1",
+                "signed_margin": -19.93882
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c3",
+                "session": "r1",
+                "signed_margin": -19.93882
+              },
+              {
+                "pair_key": "nonplanar-credit|g2c0|g2c2",
+                "session": "r1",
+                "signed_margin": -19.93882
+              }
+            ]
+          }
+        ],
+        "rankings": {
+          "coupled-underinvestment": [
+            "g1c1",
+            "g1c2",
+            "g1c3",
+            "g1c0"
+          ],
+          "brand-flywheel": [
+            "g4c0",
+            "g4c1",
+            "g4c2",
+            "g4c3"
+          ],
+          "classic-cld-growth-and-burden": [
+            "g5c0",
+            "g5c1",
+            "g5c2",
+            "g5c3",
+            "g5c4"
+          ],
+          "comb-supply-demand": [
+            "g3c1",
+            "g3c2",
+            "g3c3",
+            "g3c0"
+          ],
+          "nonplanar-credit": [
+            "g2c1",
+            "g2c2",
+            "g2c3",
+            "g2c0"
+          ]
+        },
+        "train_margin_abs_min": 0.035635
+      }
+    }
+  },
+  "signal_classification": {
+    "S_all": {
+      "M0": {
+        "acc": 0.4,
+        "ci95": [
+          0.4,
+          0.234,
+          0.5926
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      },
+      "M1": {
+        "acc": 0.12,
+        "ci95": [
+          0.12,
+          0.0417,
+          0.2996
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      },
+      "M2": {
+        "acc": 0.28,
+        "ci95": [
+          0.28,
+          0.1428,
+          0.4758
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      },
+      "M1s": {
+        "acc": 0.12,
+        "ci95": [
+          0.12,
+          0.0417,
+          0.2996
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      },
+      "M2s": {
+        "acc": 0.36,
+        "ci95": [
+          0.36,
+          0.2025,
+          0.5548
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      }
+    },
+    "S_r2": {
+      "M0": {
+        "acc": 0.1667,
+        "ci95": [
+          0.1667,
+          0.047,
+          0.448
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      },
+      "M1": {
+        "acc": 0.4167,
+        "ci95": [
+          0.4167,
+          0.1933,
+          0.6805
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      },
+      "M2": {
+        "acc": 0.6667,
+        "ci95": [
+          0.6667,
+          0.3906,
+          0.8619
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "at the gate (equal to 2/3, not above)"
+      },
+      "M1s": {
+        "acc": 0.4167,
+        "ci95": [
+          0.4167,
+          0.1933,
+          0.6805
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      },
+      "M2s": {
+        "acc": 0.75,
+        "ci95": [
+          0.75,
+          0.4677,
+          0.9111
+        ],
+        "above_cross_baseline": true,
+        "above_within_baseline": false,
+        "verdict": "signal"
+      }
+    },
+    "S_r1": {
+      "M0": {
+        "acc": 0.6154,
+        "ci95": [
+          0.6154,
+          0.3552,
+          0.8229
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      },
+      "M1": {
+        "acc": 0.3846,
+        "ci95": [
+          0.3846,
+          0.1771,
+          0.6448
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      },
+      "M2": {
+        "acc": 0.0769,
+        "ci95": [
+          0.0769,
+          0.0137,
+          0.3331
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      },
+      "M1s": {
+        "acc": 0.2308,
+        "ci95": [
+          0.2308,
+          0.0818,
+          0.5026
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      },
+      "M2s": {
+        "acc": 0.0,
+        "ci95": [
+          0.0,
+          0.0,
+          0.2281
+        ],
+        "above_cross_baseline": false,
+        "above_within_baseline": false,
+        "verdict": "no signal"
+      }
+    }
+  },
+  "edge_dimension_increment": {
+    "S_all": {
+      "M1_acc": 0.12,
+      "M2_acc": 0.28,
+      "delta_pp": 16.0,
+      "M1_ci95": [
+        0.12,
+        0.0417,
+        0.2996
+      ],
+      "M2_ci95": [
+        0.28,
+        0.1428,
+        0.4758
+      ],
+      "ci95_overlap": true,
+      "verdict": "no increment demonstrated (CIs overlap, n insufficient - one more round needed)"
+    },
+    "S_r2": {
+      "M1_acc": 0.4167,
+      "M2_acc": 0.6667,
+      "delta_pp": 25.0,
+      "M1_ci95": [
+        0.4167,
+        0.1933,
+        0.6805
+      ],
+      "M2_ci95": [
+        0.6667,
+        0.3906,
+        0.8619
+      ],
+      "ci95_overlap": true,
+      "verdict": "no increment demonstrated (CIs overlap, n insufficient - one more round needed)"
+    },
+    "S_r1": {
+      "M1_acc": 0.3846,
+      "M2_acc": 0.0769,
+      "delta_pp": -30.8,
+      "M1_ci95": [
+        0.3846,
+        0.1771,
+        0.6448
+      ],
+      "M2_ci95": [
+        0.0769,
+        0.0137,
+        0.3331
+      ],
+      "ci95_overlap": true,
+      "verdict": "no increment demonstrated (CIs overlap, n insufficient - one more round needed)"
+    }
+  },
+  "round_divergence_check": {
+    "M0": {
+      "S_r1_acc": 0.6154,
+      "S_r2_acc": 0.1667,
+      "same_direction_vs_coinflip": false,
+      "delta_pp": -44.9
+    },
+    "M1": {
+      "S_r1_acc": 0.3846,
+      "S_r2_acc": 0.4167,
+      "same_direction_vs_coinflip": true,
+      "delta_pp": 3.2
+    },
+    "M2": {
+      "S_r1_acc": 0.0769,
+      "S_r2_acc": 0.6667,
+      "same_direction_vs_coinflip": false,
+      "delta_pp": 59.0
+    },
+    "M1s": {
+      "S_r1_acc": 0.2308,
+      "S_r2_acc": 0.4167,
+      "same_direction_vs_coinflip": true,
+      "delta_pp": 18.6
+    },
+    "M2s": {
+      "S_r1_acc": 0.0,
+      "S_r2_acc": 0.75,
+      "same_direction_vs_coinflip": false,
+      "delta_pp": 75.0
+    }
+  },
+  "top1": {
+    "S_all": {
+      "M0": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c0",
+            "match": true
+          },
+          "coupled-underinvestment": {
+            "jacky_top": "g1c0",
+            "model_top": "g1c0",
+            "match": true
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c0",
+            "match": true
+          }
+        },
+        "hits": 3,
+        "usable_graphs": 3,
+        "rate": 1.0
+      },
+      "M1": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c1",
+            "match": false
+          },
+          "coupled-underinvestment": {
+            "jacky_top": "g1c0",
+            "model_top": "g1c1",
+            "match": false
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 0,
+        "usable_graphs": 3,
+        "rate": 0.0
+      },
+      "M2": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c1",
+            "match": false
+          },
+          "coupled-underinvestment": {
+            "jacky_top": "g1c0",
+            "model_top": "g1c1",
+            "match": false
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 0,
+        "usable_graphs": 3,
+        "rate": 0.0
+      },
+      "M1s": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c1",
+            "match": false
+          },
+          "coupled-underinvestment": {
+            "jacky_top": "g1c0",
+            "model_top": "g1c1",
+            "match": false
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 0,
+        "usable_graphs": 3,
+        "rate": 0.0
+      },
+      "M2s": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c1",
+            "match": false
+          },
+          "coupled-underinvestment": {
+            "jacky_top": "g1c0",
+            "model_top": "g1c1",
+            "match": false
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 0,
+        "usable_graphs": 3,
+        "rate": 0.0
+      }
+    },
+    "S_r2": {
+      "M0": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c0",
+            "match": true
+          },
+          "coupled-underinvestment": {
+            "jacky_top": null,
+            "model_top": "g1c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c0",
+            "match": true
+          }
+        },
+        "hits": 2,
+        "usable_graphs": 2,
+        "rate": 1.0
+      },
+      "M1": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c2",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c1",
+            "match": false
+          },
+          "coupled-underinvestment": {
+            "jacky_top": null,
+            "model_top": "g1c1",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 0,
+        "usable_graphs": 2,
+        "rate": 0.0
+      },
+      "M2": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c1",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c1",
+            "match": false
+          },
+          "coupled-underinvestment": {
+            "jacky_top": null,
+            "model_top": "g1c1",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 0,
+        "usable_graphs": 2,
+        "rate": 0.0
+      },
+      "M1s": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c2",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c1",
+            "match": false
+          },
+          "coupled-underinvestment": {
+            "jacky_top": null,
+            "model_top": "g1c1",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 0,
+        "usable_graphs": 2,
+        "rate": 0.0
+      },
+      "M2s": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c1",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c1",
+            "match": false
+          },
+          "coupled-underinvestment": {
+            "jacky_top": null,
+            "model_top": "g1c1",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 0,
+        "usable_graphs": 2,
+        "rate": 0.0
+      }
+    },
+    "S_r1": {
+      "M0": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c0",
+            "match": true
+          },
+          "coupled-underinvestment": {
+            "jacky_top": "g1c0",
+            "model_top": "g1c0",
+            "match": true
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c0",
+            "match": true
+          }
+        },
+        "hits": 3,
+        "usable_graphs": 3,
+        "rate": 1.0
+      },
+      "M1": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c0",
+            "match": true
+          },
+          "coupled-underinvestment": {
+            "jacky_top": "g1c0",
+            "model_top": "g1c0",
+            "match": true
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 2,
+        "usable_graphs": 3,
+        "rate": 0.6667
+      },
+      "M2": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c1",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c1",
+            "match": false
+          },
+          "coupled-underinvestment": {
+            "jacky_top": "g1c0",
+            "model_top": "g1c1",
+            "match": false
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 0,
+        "usable_graphs": 3,
+        "rate": 0.0
+      },
+      "M1s": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c1",
+            "match": false
+          },
+          "coupled-underinvestment": {
+            "jacky_top": "g1c0",
+            "model_top": "g1c0",
+            "match": true
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 1,
+        "usable_graphs": 3,
+        "rate": 0.3333
+      },
+      "M2s": {
+        "per_graph": {
+          "brand-flywheel": {
+            "jacky_top": null,
+            "model_top": "g4c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "classic-cld-growth-and-burden": {
+            "jacky_top": null,
+            "model_top": "g5c0",
+            "match": null,
+            "note": "jacky plurality tie"
+          },
+          "comb-supply-demand": {
+            "jacky_top": "g3c0",
+            "model_top": "g3c1",
+            "match": false
+          },
+          "coupled-underinvestment": {
+            "jacky_top": "g1c0",
+            "model_top": "g1c1",
+            "match": false
+          },
+          "nonplanar-credit": {
+            "jacky_top": "g2c0",
+            "model_top": "g2c1",
+            "match": false
+          }
+        },
+        "hits": 0,
+        "usable_graphs": 3,
+        "rate": 0.0
+      }
+    }
+  },
+  "jacky_top1": {
+    "S_all": {
+      "brand-flywheel": {
+        "win_counts": {
+          "g4c2": 2,
+          "g4c1": 2,
+          "g4c3": 2
+        },
+        "unique": false,
+        "top": null
+      },
+      "classic-cld-growth-and-burden": {
+        "win_counts": {
+          "g5c4": 1,
+          "g5c1": 1,
+          "g5c2": 1,
+          "g5c3": 1,
+          "g5c0": 1
+        },
+        "unique": false,
+        "top": null
+      },
+      "comb-supply-demand": {
+        "win_counts": {
+          "g3c0": 4,
+          "g3c1": 1
+        },
+        "unique": true,
+        "top": "g3c0"
+      },
+      "coupled-underinvestment": {
+        "win_counts": {
+          "g1c0": 4,
+          "g1c1": 1
+        },
+        "unique": true,
+        "top": "g1c0"
+      },
+      "nonplanar-credit": {
+        "win_counts": {
+          "g2c0": 4
+        },
+        "unique": true,
+        "top": "g2c0"
+      }
+    },
+    "S_r2": {
+      "brand-flywheel": {
+        "win_counts": {
+          "g4c2": 1,
+          "g4c3": 1,
+          "g4c1": 1
+        },
+        "unique": false,
+        "top": null
+      },
+      "classic-cld-growth-and-burden": {
+        "win_counts": {
+          "g5c2": 1,
+          "g5c3": 1,
+          "g5c0": 1
+        },
+        "unique": false,
+        "top": null
+      },
+      "comb-supply-demand": {
+        "win_counts": {
+          "g3c0": 2,
+          "g3c1": 1
+        },
+        "unique": true,
+        "top": "g3c0"
+      },
+      "coupled-underinvestment": {
+        "win_counts": {
+          "g1c1": 1,
+          "g1c0": 1
+        },
+        "unique": false,
+        "top": null
+      },
+      "nonplanar-credit": {
+        "win_counts": {
+          "g2c0": 1
+        },
+        "unique": true,
+        "top": "g2c0"
+      }
+    },
+    "S_r1": {
+      "brand-flywheel": {
+        "win_counts": {
+          "g4c2": 1,
+          "g4c1": 1,
+          "g4c3": 1
+        },
+        "unique": false,
+        "top": null
+      },
+      "classic-cld-growth-and-burden": {
+        "win_counts": {
+          "g5c4": 1,
+          "g5c1": 1
+        },
+        "unique": false,
+        "top": null
+      },
+      "comb-supply-demand": {
+        "win_counts": {
+          "g3c0": 2
+        },
+        "unique": true,
+        "top": "g3c0"
+      },
+      "coupled-underinvestment": {
+        "win_counts": {
+          "g1c0": 3
+        },
+        "unique": true,
+        "top": "g1c0"
+      },
+      "nonplanar-credit": {
+        "win_counts": {
+          "g2c0": 3
+        },
+        "unique": true,
+        "top": "g2c0"
+      }
+    }
+  },
+  "train_holdout_gap": {
+    "S_all": {
+      "M1": 58.7,
+      "M2": 60.8,
+      "M1s": 58.7,
+      "M2s": 52.8
+    },
+    "S_r2": {
+      "M1": 23.7,
+      "M2": 25.8,
+      "M1s": 23.7,
+      "M2s": 25.0
+    },
+    "S_r1": {
+      "M1": 47.0,
+      "M2": 92.3,
+      "M1s": 60.3,
+      "M2s": 85.2
+    }
+  },
+  "epsilon_calibration": {
+    "definition": "full-data calibration model per arm (trained on all 25 decided pairs; synthetic added only for the s-arms); tie margin = |model score difference (M0) or BT logit (BT arms)| over the 11 both-good pairs; epsilon initial value = P75 of that distribution (P75 caliber).  The earlier epsilon0 caliber = max over tie pairs (conservative); both are reported.  Relation to the v1.3.1 review draft section 14: the feature caliber descends from its Appendix A 21-feature union, and its small-graph degeneracy risk list (gate-pinned / collapsed features) bounds what a tie margin can express - the P75 value is an INITIAL calibration constant, not a validated threshold.",
+    "per_arm": {
+      "M0": {
+        "both_good_abs_margins": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          52.4,
+          58.6,
+          58.6,
+          58.6,
+          58.6
+        ],
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75_initial": 58.6,
+        "max_epsilon0_legacy": 58.6
+      },
+      "M1": {
+        "both_good_abs_margins": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.041619,
+          0.137687,
+          0.137687,
+          0.137687,
+          0.137687
+        ],
+        "fit_convergence": {
+          "grad_norm_final": 1.9220824809821973e-08,
+          "objective_final": 13.467732821248275,
+          "iters_used": 50,
+          "optimum_reference": "the BT objective is convex in w (logistic loss + L2 ridge), so the asserted first-order gate ||grad|| < 1e-6 certifies a GLOBAL optimum; final objective value reported alongside"
+        },
+        "weights": {
+          "avg_edge_length": 0.982673,
+          "bend_total_curvature": -0.534694,
+          "crossing_count": -1.023507,
+          "alignment_max_coverage": -0.023954
+        },
+        "merged_duplicate_columns": [],
+        "decided_abs_margin_min": 0.0,
+        "decided_abs_margin_p25": 0.015913,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75_initial": 0.137687,
+        "max_epsilon0_legacy": 0.137687
+      },
+      "M2": {
+        "both_good_abs_margins": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.295067,
+          0.295067,
+          0.295067,
+          0.295067,
+          0.305921
+        ],
+        "fit_convergence": {
+          "grad_norm_final": 2.192866134798486e-15,
+          "objective_final": 14.463537981829957,
+          "iters_used": 6,
+          "optimum_reference": "the BT objective is convex in w (logistic loss + L2 ridge), so the asserted first-order gate ||grad|| < 1e-6 certifies a GLOBAL optimum; final objective value reported alongside"
+        },
+        "weights": {
+          "anchor_orient_dev_mean": -0.719037,
+          "avg_edge_length": -0.463957,
+          "bend_total_curvature": -0.716319,
+          "hub_degree": 0.0,
+          "mirror_axis_err": -0.194894,
+          "nonloop_straight_rate": -0.335119,
+          "alignment_max_coverage": 0.047246,
+          "alignment_max_coverage_tight": 0.554482
+        },
+        "merged_duplicate_columns": [
+          {
+            "merged_into": "mirror_axis_err",
+            "dropped": "symmetry_axis_err_px"
+          }
+        ],
+        "decided_abs_margin_min": 0.097671,
+        "decided_abs_margin_p25": 0.305921,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75_initial": 0.295067,
+        "max_epsilon0_legacy": 0.305921
+      },
+      "M1s": {
+        "both_good_abs_margins": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.002984,
+          0.002984,
+          0.002984,
+          0.002984,
+          0.178572
+        ],
+        "fit_convergence": {
+          "grad_norm_final": 1.0407543540052021e-12,
+          "objective_final": 30.967391313437187,
+          "iters_used": 7,
+          "optimum_reference": "the BT objective is convex in w (logistic loss + L2 ridge), so the asserted first-order gate ||grad|| < 1e-6 certifies a GLOBAL optimum; final objective value reported alongside"
+        },
+        "weights": {
+          "avg_edge_length": 0.42166,
+          "bend_total_curvature": -0.340664,
+          "crossing_count": -1.831537,
+          "alignment_max_coverage": -0.069746
+        },
+        "merged_duplicate_columns": [],
+        "decided_abs_margin_min": 0.0,
+        "decided_abs_margin_p25": 0.002984,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75_initial": 0.002984,
+        "max_epsilon0_legacy": 0.178572
+      },
+      "M2s": {
+        "both_good_abs_margins": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.164992,
+          0.164992,
+          0.164992,
+          0.164992,
+          0.342505
+        ],
+        "fit_convergence": {
+          "grad_norm_final": 2.2359799986552376e-15,
+          "objective_final": 28.00986559941149,
+          "iters_used": 7,
+          "optimum_reference": "the BT objective is convex in w (logistic loss + L2 ridge), so the asserted first-order gate ||grad|| < 1e-6 certifies a GLOBAL optimum; final objective value reported alongside"
+        },
+        "weights": {
+          "anchor_orient_dev_mean": -0.785459,
+          "avg_edge_length": -1.00259,
+          "bend_total_curvature": -0.98546,
+          "hub_degree": 0.0,
+          "mirror_axis_err": -0.248361,
+          "nonloop_straight_rate": -0.623334,
+          "alignment_max_coverage": -0.037971,
+          "alignment_max_coverage_tight": 0.717838
+        },
+        "merged_duplicate_columns": [
+          {
+            "merged_into": "mirror_axis_err",
+            "dropped": "symmetry_axis_err_px"
+          }
+        ],
+        "decided_abs_margin_min": 0.216555,
+        "decided_abs_margin_p25": 0.622018,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75_initial": 0.164992,
+        "max_epsilon0_legacy": 0.342505
+      }
+    }
+  },
+  "round3_recommendation": {
+    "observed_decision_yield": {
+      "round1": 0.542,
+      "round2": 0.706,
+      "pooled": 0.61
+    },
+    "chatgpt_budget": {
+      "definition_note": "the 150~250 external-review budget read two ways: total ANSWERED questions vs total strict DECIDED pairs",
+      "as_answered_questions": [
+        {
+          "budget": 150,
+          "answered_so_far": 50,
+          "still_needed": 100,
+          "extra_decided": 61,
+          "sessions_of_20q": 5.0
+        },
+        {
+          "budget": 250,
+          "answered_so_far": 50,
+          "still_needed": 200,
+          "extra_decided": 122,
+          "sessions_of_20q": 10.0
+        }
+      ],
+      "as_decided_pairs": [
+        {
+          "budget": 150,
+          "decided_so_far": 25,
+          "still_needed": 125,
+          "new_questions": 205,
+          "sessions_of_20q": 10.0
+        },
+        {
+          "budget": 250,
+          "decided_so_far": 25,
+          "still_needed": 225,
+          "new_questions": 369,
+          "sessions_of_20q": 18.0
+        }
+      ]
+    },
+    "ci_roadmap": "Wilson half-width at p=0.7: n=50 -> 12.3pp, n=80 -> 9.9pp, n=100 -> 8.8pp.  An incremental verdict (M2 vs M1) needs roughly n=80~100 decided pairs in the SAME picture caliber before its CI can separate; at the pooled 61% decision yield that is about 130~165 new questions = 7~8 sessions of 20 questions.",
+    "recommendation": "Round 3 = 20~24 adaptive questions with the round-2 tool, ALL rendered byte-faithful (this experiment shows the old re-routed caliber REVERSES the M2 direction, so mixing calibers again would poison the increment verdict).  Composition: M2-vs-M1 uncertain pairs first (edge-dimension increment is the open question), both-good pairs kept mixed in (epsilon calibration has only 11 samples), 3~4 cross-session retests to grow the stricter noise baseline.  jacky time per session: recorded click time was 1.5~2.5 min (median 2.7~4.0 s/question); budget 5 min with overhead.  Milestone: after ~4 sessions (~80 new answered, ~50 new decided in byte-faithful caliber) re-run this experiment; escalate to the full 150~250-pair budget only if the byte-faithful stratum keeps its direction."
+  },
+  "both_bad_pool_warning": [
+    {
+      "pair_key": "nonplanar-credit|g2c1|g2c3",
+      "graph": "nonplanar-credit",
+      "session": "r1",
+      "is_retest_answer": false,
+      "a": {
+        "cid": "g2c1",
+        "recipe": "draft",
+        "source": "archived-draft",
+        "grade": "uncertified"
+      },
+      "b": {
+        "cid": "g2c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "uncertified"
+      }
+    },
+    {
+      "pair_key": "coupled-underinvestment|g1c1|g1c3",
+      "graph": "coupled-underinvestment",
+      "session": "r1",
+      "is_retest_answer": false,
+      "a": {
+        "cid": "g1c1",
+        "recipe": "draft",
+        "source": "archived-draft",
+        "grade": "best"
+      },
+      "b": {
+        "cid": "g1c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "best"
+      }
+    },
+    {
+      "pair_key": "brand-flywheel|g4c2|g4c3",
+      "graph": "brand-flywheel",
+      "session": "r1",
+      "is_retest_answer": false,
+      "a": {
+        "cid": "g4c2",
+        "recipe": "auto",
+        "source": "fresh-cli",
+        "grade": "best"
+      },
+      "b": {
+        "cid": "g4c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "best"
+      }
+    },
+    {
+      "pair_key": "nonplanar-credit|g2c2|g2c3",
+      "graph": "nonplanar-credit",
+      "session": "r1",
+      "is_retest_answer": false,
+      "a": {
+        "cid": "g2c2",
+        "recipe": "auto",
+        "source": "fresh-cli",
+        "grade": "uncertified"
+      },
+      "b": {
+        "cid": "g2c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "uncertified"
+      }
+    },
+    {
+      "pair_key": "nonplanar-credit|g2c1|g2c3",
+      "graph": "nonplanar-credit",
+      "session": "r1",
+      "is_retest_answer": true,
+      "a": {
+        "cid": "g2c1",
+        "recipe": "draft",
+        "source": "archived-draft",
+        "grade": "uncertified"
+      },
+      "b": {
+        "cid": "g2c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "uncertified"
+      }
+    },
+    {
+      "pair_key": "brand-flywheel|g4c2|g4c3",
+      "graph": "brand-flywheel",
+      "session": "r1",
+      "is_retest_answer": true,
+      "a": {
+        "cid": "g4c2",
+        "recipe": "auto",
+        "source": "fresh-cli",
+        "grade": "best"
+      },
+      "b": {
+        "cid": "g4c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "best"
+      }
+    },
+    {
+      "pair_key": "brand-flywheel|brand-flywheel-manual-layout-L4|g4c0",
+      "graph": "brand-flywheel",
+      "session": "r2",
+      "is_retest_answer": false,
+      "a": {
+        "cid": "g4c0",
+        "recipe": "manual",
+        "source": "human",
+        "grade": "best"
+      },
+      "b": {
+        "cid": "brand-flywheel-manual-layout-L4",
+        "recipe": "deep-L4",
+        "source": "synthetic-perturbation",
+        "grade": "-"
+      }
+    },
+    {
+      "pair_key": "nonplanar-credit|g2c3|nonplanar-credit-manual-layout-L4",
+      "graph": "nonplanar-credit",
+      "session": "r2",
+      "is_retest_answer": false,
+      "a": {
+        "cid": "g2c3",
+        "recipe": "auto-arc",
+        "source": "fresh-cli",
+        "grade": "uncertified"
+      },
+      "b": {
+        "cid": "nonplanar-credit-manual-layout-L4",
+        "recipe": "deep-L4",
+        "source": "synthetic-perturbation",
+        "grade": "-"
+      }
+    },
+    {
+      "pair_key": "nonplanar-credit|g2c1|nonplanar-credit-manual-layout-L4",
+      "graph": "nonplanar-credit",
+      "session": "r2",
+      "is_retest_answer": false,
+      "a": {
+        "cid": "g2c1",
+        "recipe": "draft",
+        "source": "archived-draft",
+        "grade": "uncertified"
+      },
+      "b": {
+        "cid": "nonplanar-credit-manual-layout-L4",
+        "recipe": "deep-L4",
+        "source": "synthetic-perturbation",
+        "grade": "-"
+      }
+    },
+    {
+      "pair_key": "nonplanar-credit|g2c2|nonplanar-credit-manual-layout-L4",
+      "graph": "nonplanar-credit",
+      "session": "r2",
+      "is_retest_answer": false,
+      "a": {
+        "cid": "g2c2",
+        "recipe": "auto",
+        "source": "fresh-cli",
+        "grade": "uncertified"
+      },
+      "b": {
+        "cid": "nonplanar-credit-manual-layout-L4",
+        "recipe": "deep-L4",
+        "source": "synthetic-perturbation",
+        "grade": "-"
+      }
+    }
+  ],
+  "sanity_flip_leg": {
+    "definition": "training labels deterministically half-flipped (LCG seed 20261121) on S_all; holdout pairs keep jacky's real labels; a healthy evaluator reads neither 0% nor 100%",
+    "M1": {
+      "correct": 19,
+      "n": 25,
+      "acc": 0.76,
+      "ci95": [
+        0.76,
+        0.5657,
+        0.885
+      ]
+    },
+    "M2": {
+      "correct": 19,
+      "n": 25,
+      "acc": 0.76,
+      "ci95": [
+        0.76,
+        0.5657,
+        0.885
+      ]
+    }
+  },
+  "discriminator_non_regression": {
+    "readings_recomputed": {
+      "legacy_kept_set_reproduction": {
+        "ring": 1.0,
+        "hub": 1.0,
+        "global": 0.995833
+      },
+      "committed_kept_set_backfilled": {
+        "ring": 1.0,
+        "hub": 1.0,
+        "global": 0.997222
+      },
+      "backfilled_drop_nonloop_straight_rate": {
+        "ring": 0.986928,
+        "hub": 1.0,
+        "global": 0.981944
+      },
+      "backfilled_drop_both_format_artifacts": {
+        "ring": 0.947712,
+        "hub": 1.0,
+        "global": 0.886111
+      }
+    },
+    "committed_table": {
+      "legacy_kept_set_reproduction": {
+        "ring": 1.0,
+        "hub": 1.0,
+        "global": 0.995833
+      },
+      "committed_kept_set_backfilled": {
+        "ring": 1.0,
+        "hub": 1.0,
+        "global": 0.997222
+      },
+      "backfilled_drop_nonloop_straight_rate": {
+        "ring": 0.986928,
+        "hub": 1.0,
+        "global": 0.981944
+      },
+      "backfilled_drop_both_format_artifacts": {
+        "ring": 0.947712,
+        "hub": 1.0,
+        "global": 0.886111
+      }
+    },
+    "all_rows_match_committed": true,
+    "sha_pinned_unchanged": true,
+    "sha_pinned_files": [
+      "benchmarks/aesthetic/model-v2.json",
+      "benchmarks/aesthetic/model-v3-alpha.json",
+      "benchmarks/aesthetic/lasso-path-v3-alpha.json",
+      "benchmarks/aesthetic/calibration-report-v2.json",
+      "benchmarks/aesthetic/calibration-report-v3-beta.json",
+      "stdraw/aesthetic_score.py",
+      "stdraw/aesthetic_score_v3.py"
+    ]
+  }
+}
