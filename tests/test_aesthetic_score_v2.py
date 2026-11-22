@@ -17,6 +17,7 @@ Acceptance caliber (card: scorer-v2 recalibration):
 import hashlib
 import json
 import os
+import subprocess
 import sys
 
 import pytest
@@ -37,13 +38,24 @@ def _load(path):
 
 
 def _negatives_agg():
+    """(count, aggregate sha256) over the negative corpus, hashed from the
+    committed git blobs instead of working-tree files.  Blob bytes are LF
+    and platform-independent; a Windows checkout (core.autocrlf=true)
+    rewrites them CRLF on disk, so a constant hashed from a working tree
+    only matches that platform's checkout and can never match CI (LF)."""
+    out = subprocess.run(
+        ["git", "-C", ROOT, "ls-tree", "-r", "HEAD", "--", NEG_DIR],
+        stdout=subprocess.PIPE, check=True).stdout.decode("utf-8")
     h = hashlib.sha256()
-    base = sorted(os.path.join(dp, f)
-                  for dp, _, fs in os.walk(NEG_DIR) for f in fs if f.endswith(".json"))
-    for p in base:
-        with open(p, "rb") as fh:
-            h.update(fh.read())
-    return len(base), h.hexdigest()
+    files = []
+    for line in out.splitlines():
+        meta, path = line.split("\t", 1)
+        blob = subprocess.run(
+            ["git", "-C", ROOT, "cat-file", "blob", meta.split()[2]],
+            stdout=subprocess.PIPE, check=True).stdout
+        files.append((path, blob))
+        h.update(blob)
+    return files, h.hexdigest()
 
 
 def _require_artifacts():
@@ -154,10 +166,21 @@ def test_headline_metrics_rederived_against_v1_snapshot():
 
 
 def test_negatives_bytes_untouched():
-    n, agg = _negatives_agg()
-    assert n == 40
-    # committed-tree reference; drift here means negatives were rewritten
-    assert agg == "fb41eb96b815303eff0aadbc90222ba1209e7dac601fff710384b30157128e9e"
+    files, agg = _negatives_agg()
+    assert len(files) == 40
+    # committed-tree reference (LF blob bytes, platform-independent); drift
+    # means negatives were rewritten.  The pre-fix constant fb41eb96... was
+    # hashed from a CRLF Windows working tree and only matched local
+    # checkouts, which is why CI (LF) went red while local runs stayed green.
+    assert agg == "7cfd39afdee541b69cabe0a9bc999881114508a8bd988a89cba965644926efec"
+    # local copies must carry the same content (EOL-normalised: autocrlf may
+    # write CRLF locally) - catches uncommitted corpus edits on any platform
+    local = sorted(os.path.join(dp, f) for dp, _, fs in os.walk(NEG_DIR)
+                   for f in fs if f.endswith(".json"))
+    assert len(local) == len(files), "untracked corpus files appeared"
+    for path, blob in files:
+        with open(os.path.join(ROOT, path), "rb") as fh:
+            assert fh.read().replace(b"\r\n", b"\n") == blob, path
 
 
 def test_edge_style_analysis_present_with_gate_note():
