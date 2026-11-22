@@ -1,0 +1,18 @@
+# Classic system-dynamics archetype: Debt Spiral (public-domain macro-finance textbook model)
+graph "Debt Spiral"
+
+var debt "Total Debt"
+var interest "Interest Expense"
+var deficit "Budget Gap"
+var credit "Credit Rating"
+var rate "Financing Cost"
+
+debt -> + interest @loops R1
+interest -> + deficit @loops R1,R2
+deficit -> + debt @loops R1,R2
+debt -> - credit @loops R2
+credit -> - rate @loops R2
+rate -> + interest @loops R2
+
+loop R1 "interest snowball" "R" [debt, interest, deficit]
+loop R2 "credit deterioration" "R" [debt, credit, rate, interest, deficit]
