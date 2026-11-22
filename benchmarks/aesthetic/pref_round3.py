@@ -34,7 +34,7 @@ import pref_round2 as pr2  # noqa: E402 (viewer template + schema reuse)
 PY = sys.executable
 SESSION_ID = "2026-11-22-round3"
 SESSION_DIR = REPO / "benchmarks" / "manual" / "pairwise" / ("session-" + SESSION_ID)
-DL_DIR = Path("C:/Users/jacky/Downloads/stdraw-pref-round3")
+DL_DIR = Path.home() / "Downloads" / "stdraw-pref-round3"
 SOURCES = REPO / "benchmarks" / "manual" / "pref-round3" / "sources"
 BUILD = pp.BUILD_ROOT / "viewer-round3"
 MODEL_VERSION = "aesthetic-v3-beta"
