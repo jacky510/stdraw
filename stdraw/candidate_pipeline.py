@@ -191,20 +191,66 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
                         edges=edges, adj=adj, dense_hub=dense_hub,
                         analysis=analysis, linestyle=linestyle)
 
+    # ---- incumbent first (the pipeline's quality floor AND the retrieval
+    # baseline). Behavior-identical: the layered-v082 source reuses the
+    # stashed delivery instead of re-running the same function. A pre-run
+    # failure leaves the stash unset -- the layered source then runs the
+    # incumbent itself exactly as before, and retrieval is skipped with an
+    # explicit record (never a crash and never a silent skip).
+    incumbent_v4 = ctx.ops.get("incumbent_v4")
+    if incumbent_v4 is None:
+        try:
+            incumbent_v4 = _auto_layout(graph, cfg, linestyle)
+            ctx.ops["incumbent_v4"] = incumbent_v4
+        except Exception:
+            incumbent_v4 = None
+
+    # ---- anchors-as-prior retrieval (S1): family gate (shared detect_*
+    # analyzers) + in-family single-source feature distance on the frozen
+    # baseline delivery. The library is DATA (only-add sidecar); absence or
+    # a non-hit degrades to an EXPLICIT provenance record -- anchor_hit=null
+    # with a reason (proposal section 1.1: silence is the forbidden mode).
+    from . import anchor_prior, anchor_seed
+    if incumbent_v4 is not None:
+        library = anchor_prior.load_library()
+        retrieval = anchor_prior.retrieve(graph, edges, incumbent_v4, library)
+    else:
+        retrieval = {"anchor_hit": None, "reason": "baseline-unavailable",
+                     "family": None}
+    provenance_anchor = {k: v for k, v in sorted(retrieval.items())}
+    seed = None
+    if retrieval.get("anchor_hit"):
+        a = library["anchors"][retrieval["anchor_hit"]]
+        anchor_adj = anchor_seed._adjacency(
+            [tuple(e) for e in a["graph_edges"]])
+        seed = {
+            "mode": retrieval["mode"],
+            "anchor_key": retrieval["anchor_hit"],
+            "family": retrieval["family"],
+            "distance": retrieval["distance"],
+            "nodes": {k: (int(p["x"]), int(p["y"]))
+                      for k, p in sorted(a["nodes"].items())},
+            "anchor_adj": anchor_adj,
+            "matched_roles": len(anchor_seed._match_nodes(adj, anchor_adj)),
+        }
+    ctx.ops["anchor_seed"] = seed
+
     # ---- orchestrate generation (topology/budget rules only) ----
     orch = Orchestrator()
     orch_result = orch.run(ctx)
-    # the incumbent v4 (materialized by the layered-v082 source) is reused
-    # as the fallback delivery; re-run deterministically if absent.
-    incumbent_v4 = ctx.ops.get("incumbent_v4")
+    # the incumbent v4 (materialized above, reused by the layered-v082
+    # source) is the fallback delivery.
     if incumbent_v4 is None:
-        incumbent_v4 = _auto_layout(graph, cfg, linestyle)
+        incumbent_v4 = ctx.ops.get("incumbent_v4")
+        if incumbent_v4 is None:
+            incumbent_v4 = _auto_layout(graph, cfg, linestyle)
     incumbent_pl_mode = ((incumbent_v4.get("meta") or {})
                          .get("planarization") or {}).get("mode")
 
     provenance = {
         "analysis": analysis.to_dict(),
         "orchestration": orch_result.to_dict(),
+        "anchor_retrieval": provenance_anchor,
         "selection": {},
         "delivery": "pending",
     }

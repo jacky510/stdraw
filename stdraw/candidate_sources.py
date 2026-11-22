@@ -179,10 +179,16 @@ def _run_layered_incumbent(ctx):
     the layered construction (which would drift), the incumbent pipeline
     itself is the generator. Its delivered coordinates are floor-guaranteed:
     the incumbent path is exactly what v0.8.2 ships.
-    """
-    from .layout_auto import layout as _auto_layout
-    v4 = _auto_layout(ctx.graph, ctx.cfg, ctx.linestyle)
-    ctx.ops["incumbent_v4"] = v4          # pipeline reuses the delivery
+
+    The pipeline may pre-run the incumbent (anchors-as-prior retrieval reads
+    the baseline delivery BEFORE orchestration); when ctx.ops already
+    carries it, it is reused verbatim -- same function, same inputs, one
+    run."""
+    v4 = ctx.ops.get("incumbent_v4")
+    if v4 is None:
+        from .layout_auto import layout as _auto_layout
+        v4 = _auto_layout(ctx.graph, ctx.cfg, ctx.linestyle)
+        ctx.ops["incumbent_v4"] = v4          # pipeline reuses the delivery
     planarization = (v4.get("meta") or {}).get("planarization") or {}
     nodes = sorted(ctx.graph.node_ids())
     pos = {v: v4["nodes"][v]["x"] for v in nodes}
@@ -197,6 +203,41 @@ def _run_layered_incumbent(ctx):
     # cost proxy: deterministic construction-effort units = nodes + edges +
     # delivered edges (full pipeline ran once); never wall-clock.
     cost = len(nodes) + len(ctx.edges) + len(v4.get("edges") or ())
+    return pos, y, meta, cost
+
+
+def _run_anchor_replay(ctx):
+    """Case A: same-graph hit -- the anchor's stored coordinates as a
+    candidate (the pipeline delivers candidates through the manual-path
+    replay channel, i.e. the --from-layout machinery)."""
+    seed = ctx.ops.get("anchor_seed") or {}
+    if seed.get("mode") != "anchor-replay":
+        raise SourceUnavailable("no same-graph anchor hit")
+    pos, y = {}, {}
+    for v, (x, yv) in sorted(seed["nodes"].items()):
+        pos[v], y[v] = int(x), int(yv)
+    meta = {"engine": "anchor-replay", "anchor": seed["anchor_key"],
+            "anchor_family": seed.get("family"),
+            "anchor_distance": seed.get("distance")}
+    cost = len(pos)
+    return pos, y, meta, cost
+
+
+def _run_anchor_seeded(ctx):
+    """Case B: same-family hit -- WL-role shape transfer from the hit
+    anchor's layout (stdraw.anchor_seed; construction only, zero scoring)."""
+    seed = ctx.ops.get("anchor_seed") or {}
+    if seed.get("mode") != "anchor-seeded":
+        raise SourceUnavailable("no same-family anchor hit")
+    from .anchor_seed import transplant
+    positions = transplant(seed["nodes"], ctx.adj, seed["anchor_adj"])
+    pos = {v: p[0] for v, p in positions.items()}
+    y = {v: p[1] for v, p in positions.items()}
+    meta = {"engine": "anchor-seeded", "anchor": seed["anchor_key"],
+            "anchor_family": seed.get("family"),
+            "anchor_distance": seed.get("distance"),
+            "matched_roles": seed.get("matched_roles")}
+    cost = len(pos)
     return pos, y, meta, cost
 
 
@@ -217,11 +258,17 @@ TEMPLATE_SOURCES = [
 # incumbent (preregistered).
 EXTRA_SOURCES = ["planarized"]
 
+# Anchors-as-prior sources (S1): armed only by a retrieval hit stashed in
+# ctx.ops (preregistered topology/feature rule, never candidate quality).
+# Same source contract as every template: emit the construction, no
+# internal ranking, no metric imports.
+ANCHOR_SOURCES = ["anchor-replay", "anchor-seeded"]
+
 # Preregistered source order: templates first (plan section 7 priority order
-# mirrored), then the planarization source, the layered incumbent last as
-# the budget-reserved fallback.
+# mirrored), then the planarization source, then the anchor-prior sources,
+# the layered incumbent last as the budget-reserved fallback.
 SOURCE_ORDER = ([name for name, _ in TEMPLATE_SOURCES] + EXTRA_SOURCES
-                + ["layered-v082"])
+                + ANCHOR_SOURCES + ["layered-v082"])
 
 
 def template_enabled(source: str, ctx: SourceContext) -> bool:
@@ -237,6 +284,9 @@ def template_enabled(source: str, ctx: SourceContext) -> bool:
     its metadata)."""
     if source == "layered-v082":
         return True
+    if source in ANCHOR_SOURCES:
+        seed = ctx.ops.get("anchor_seed") or {}
+        return seed.get("mode") == source
     if ctx.analysis.n_nodes > TEMPLATE_NODE_CAP:
         return False
     if source == "ring-cycle":
@@ -257,6 +307,16 @@ def generate_from_source(source: str, ctx: SourceContext,
     nodes = sorted(ctx.graph.node_ids())
     if source == "layered-v082":
         pos, y, meta, cost = _run_layered_incumbent(ctx)
+        return [_candidate(source, seq, pos, y, nodes, meta, cost)]
+    if source in ANCHOR_SOURCES:
+        fn = _run_anchor_replay if source == "anchor-replay" \
+            else _run_anchor_seeded
+        try:
+            pos, y, meta, cost = fn(ctx)
+        except SourceUnavailable:
+            raise
+        except Exception as e:
+            raise SourceConstructionError(f"{type(e).__name__}: {e}") from e
         return [_candidate(source, seq, pos, y, nodes, meta, cost)]
     if source == "planarized":
         try:

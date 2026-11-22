@@ -1,0 +1,4868 @@
+{
+  "anchors": {
+    "bowtie-wage-price": {
+      "family": "bowtie",
+      "family_label": "领结",
+      "family_trace": {
+        "_detect_bowtie_vertex": true
+      },
+      "graph": "bowtie-wage-price",
+      "graph_edges": [
+        [
+          "buying",
+          "sales"
+        ],
+        [
+          "cost",
+          "cpi"
+        ],
+        [
+          "cpi",
+          "living"
+        ],
+        [
+          "living",
+          "wage"
+        ],
+        [
+          "profit",
+          "raise"
+        ],
+        [
+          "raise",
+          "wage"
+        ],
+        [
+          "sales",
+          "profit"
+        ],
+        [
+          "wage",
+          "buying"
+        ],
+        [
+          "wage",
+          "cost"
+        ]
+      ],
+      "graph_nodes": [
+        "buying",
+        "cost",
+        "cpi",
+        "living",
+        "profit",
+        "raise",
+        "sales",
+        "wage"
+      ],
+      "graph_source": "benchmarks\\manual\\jacky-batch2\\sources\\bowtie-wage-price.cld",
+      "nodes": {
+        "buying": {
+          "x": 545,
+          "y": 378
+        },
+        "cost": {
+          "x": 529,
+          "y": 161
+        },
+        "cpi": {
+          "x": 387,
+          "y": 65
+        },
+        "living": {
+          "x": 235,
+          "y": 160
+        },
+        "profit": {
+          "x": 303,
+          "y": 523
+        },
+        "raise": {
+          "x": 226,
+          "y": 387
+        },
+        "sales": {
+          "x": 464,
+          "y": 520
+        },
+        "wage": {
+          "x": 374,
+          "y": 270
+        }
+      },
+      "path": "benchmarks\\manual\\jacky-batch2\\exports\\bowtie-wage-price-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 67.391520307,
+        "aspect_deviation": 0.085657371,
+        "automorphism_residual": 0.07727279651084548,
+        "avg_edge_length": 0.18531895894585204,
+        "bend_soft_margin": 0.08077724125935862,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.10968661,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.577350269,
+        "edge_length_cv": 0.080788173,
+        "hub_centroid_px": 0.0409569100146316,
+        "hub_centroid_ratio": 0.04095691,
+        "hub_degree": 4.0,
+        "hub_neighbor_centrality_ratio": 0.210389698,
+        "layout_n_nodes": 8.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 1.294109163,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.16403175741987633,
+        "min_spacing_ratio": 0.164031757,
+        "mirror_axis_err": 0.07727279651084548,
+        "node_spacing_cv": 0.048646125,
+        "symmetry_axis_err_px": 0.07727279651084548,
+        "visual_centroid_px": 0.02437317015631118,
+        "visual_centroid_ratio": 0.02437317,
+        "voronoi_area_cv": 0.302992468
+      },
+      "viewBox": [
+        0,
+        0,
+        720,
+        624
+      ]
+    },
+    "brand-flywheel": {
+      "family": "ring",
+      "family_label": "嵌套环",
+      "family_trace": {
+        "_detect_ring": true
+      },
+      "graph": "brand-flywheel",
+      "graph_edges": [
+        [
+          "ad_effect",
+          "awareness"
+        ],
+        [
+          "ad_spend",
+          "ad_effect"
+        ],
+        [
+          "awareness",
+          "ad_effect"
+        ],
+        [
+          "awareness",
+          "sales"
+        ],
+        [
+          "budget",
+          "ad_spend"
+        ],
+        [
+          "sales",
+          "budget"
+        ],
+        [
+          "sales",
+          "wom"
+        ],
+        [
+          "wom",
+          "awareness"
+        ]
+      ],
+      "graph_nodes": [
+        "ad_effect",
+        "ad_spend",
+        "awareness",
+        "budget",
+        "sales",
+        "wom"
+      ],
+      "graph_source": "benchmarks\\corpus\\classic\\brand-flywheel.cld",
+      "nodes": {
+        "ad_effect": {
+          "x": 244,
+          "y": 70
+        },
+        "ad_spend": {
+          "x": 392,
+          "y": 156
+        },
+        "awareness": {
+          "x": 76,
+          "y": 148
+        },
+        "budget": {
+          "x": 393,
+          "y": 311
+        },
+        "sales": {
+          "x": 245,
+          "y": 405
+        },
+        "wom": {
+          "x": 75,
+          "y": 308
+        }
+      },
+      "path": "benchmarks\\manual\\brand-flywheel-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 0.0,
+        "aspect_deviation": 0.208443272,
+        "automorphism_residual": null,
+        "avg_edge_length": 0.2803622190653065,
+        "bend_soft_margin": 0.003170836168564135,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.157786885,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": 0.15430335,
+        "edge_length_cv": 0.237151915,
+        "hub_centroid_px": 0.26662090485271733,
+        "hub_centroid_ratio": 0.266620905,
+        "hub_degree": 4.0,
+        "hub_neighbor_centrality_ratio": 1.110607795,
+        "layout_n_nodes": 6.0,
+        "loop_compactness_mean": 0.819100521,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": 0.277724893,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 1.98439345,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.2264464652831459,
+        "min_spacing_ratio": 0.226446465,
+        "mirror_axis_err": null,
+        "node_spacing_cv": 0.047874751,
+        "symmetry_axis_err_px": null,
+        "visual_centroid_px": 0.013955366486750933,
+        "visual_centroid_ratio": 0.013955366,
+        "voronoi_area_cv": 0.054330123
+      },
+      "viewBox": [
+        0,
+        0,
+        488,
+        480
+      ]
+    },
+    "classic-cld": {
+      "family": "ring",
+      "family_label": "嵌套环",
+      "family_trace": {
+        "_detect_ring": true
+      },
+      "graph": "classic-cld-growth-and-burden",
+      "graph_edges": [
+        [
+          "adopters",
+          "crowding"
+        ],
+        [
+          "adopters",
+          "potential"
+        ],
+        [
+          "adopters",
+          "word"
+        ],
+        [
+          "crowding",
+          "fundamental"
+        ],
+        [
+          "crowding",
+          "quickfix"
+        ],
+        [
+          "crowding",
+          "rate"
+        ],
+        [
+          "fundamental",
+          "crowding"
+        ],
+        [
+          "potential",
+          "rate"
+        ],
+        [
+          "quickfix",
+          "crowding"
+        ],
+        [
+          "quickfix",
+          "sideeffect"
+        ],
+        [
+          "rate",
+          "adopters"
+        ],
+        [
+          "sideeffect",
+          "crowding"
+        ],
+        [
+          "word",
+          "rate"
+        ]
+      ],
+      "graph_nodes": [
+        "adopters",
+        "crowding",
+        "fundamental",
+        "potential",
+        "quickfix",
+        "rate",
+        "sideeffect",
+        "word"
+      ],
+      "graph_source": "benchmarks\\corpus\\classic\\classic-cld-growth-and-burden.cld",
+      "nodes": {
+        "adopters": {
+          "x": 413,
+          "y": 214
+        },
+        "crowding": {
+          "x": 547,
+          "y": 369
+        },
+        "fundamental": {
+          "x": 594,
+          "y": 533
+        },
+        "potential": {
+          "x": 112,
+          "y": 368
+        },
+        "quickfix": {
+          "x": 741,
+          "y": 289
+        },
+        "rate": {
+          "x": 412,
+          "y": 535
+        },
+        "sideeffect": {
+          "x": 747,
+          "y": 453
+        },
+        "word": {
+          "x": 308,
+          "y": 368
+        }
+      },
+      "path": "benchmarks\\manual\\classic-cld-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 0.0,
+        "aspect_deviation": 1.123287671,
+        "automorphism_residual": 8.389977862528138,
+        "avg_edge_length": 0.19799456683396002,
+        "bend_soft_margin": 0.016119123733027353,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.075750123,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.536349916,
+        "edge_length_cv": 0.270737257,
+        "hub_centroid_px": 0.05812557425702028,
+        "hub_centroid_ratio": 0.058125574,
+        "hub_degree": 7.0,
+        "hub_neighbor_centrality_ratio": 0.48294243,
+        "layout_n_nodes": 8.0,
+        "loop_compactness_mean": 0.425190537,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": 0.30317324,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 2.092195863,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.1433649430185084,
+        "min_spacing_ratio": 0.143364943,
+        "mirror_axis_err": 46.061203595031834,
+        "node_spacing_cv": 0.062167129,
+        "symmetry_axis_err_px": 46.061203595031834,
+        "visual_centroid_px": 0.05009140538883048,
+        "visual_centroid_ratio": 0.050091405,
+        "voronoi_area_cv": 0.395514376
+      },
+      "viewBox": [
+        0,
+        0,
+        856,
+        760
+      ]
+    },
+    "comb-supply-demand": {
+      "family": "comb",
+      "family_label": "梳状",
+      "family_trace": {
+        "_detect_comb": true
+      },
+      "graph": "comb-supply-demand",
+      "graph_edges": [
+        [
+          "cons",
+          "hub1"
+        ],
+        [
+          "cons",
+          "hub2"
+        ],
+        [
+          "exp",
+          "hub1"
+        ],
+        [
+          "exp",
+          "hub2"
+        ],
+        [
+          "funding",
+          "inv"
+        ],
+        [
+          "fx",
+          "exp"
+        ],
+        [
+          "income",
+          "cons"
+        ],
+        [
+          "inv",
+          "hub1"
+        ],
+        [
+          "inv",
+          "hub2"
+        ]
+      ],
+      "graph_nodes": [
+        "cons",
+        "exp",
+        "funding",
+        "fx",
+        "hub1",
+        "hub2",
+        "income",
+        "inv"
+      ],
+      "graph_source": "benchmarks\\manual\\jacky-batch2\\sources\\comb-supply-demand.cld",
+      "nodes": {
+        "cons": {
+          "x": 332,
+          "y": 172
+        },
+        "exp": {
+          "x": 333,
+          "y": 424
+        },
+        "funding": {
+          "x": 332,
+          "y": 252
+        },
+        "fx": {
+          "x": 332,
+          "y": 511
+        },
+        "hub1": {
+          "x": 102,
+          "y": 325
+        },
+        "hub2": {
+          "x": 557,
+          "y": 326
+        },
+        "income": {
+          "x": 332,
+          "y": 92
+        },
+        "inv": {
+          "x": 332,
+          "y": 326
+        }
+      },
+      "path": "benchmarks\\manual\\jacky-batch2\\exports\\comb-supply-demand-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 22.949479998,
+        "aspect_deviation": 0.285097192,
+        "automorphism_residual": 0.006836250438991692,
+        "avg_edge_length": 0.22424340266032705,
+        "bend_soft_margin": -0.008897763477514115,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.134146341,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": 0.056343617,
+        "edge_length_cv": 0.421741519,
+        "hub_centroid_px": 0.15246182165718433,
+        "hub_centroid_ratio": 0.152461822,
+        "hub_degree": 3.0,
+        "hub_neighbor_centrality_ratio": 1.022455587,
+        "layout_n_nodes": 8.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 3.732984283,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.08579538591915616,
+        "min_spacing_ratio": 0.085795386,
+        "mirror_axis_err": 0.006836250438991692,
+        "node_spacing_cv": 0.545588009,
+        "symmetry_axis_err_px": 0.006836250438991692,
+        "visual_centroid_px": 0.027546357879295717,
+        "visual_centroid_ratio": 0.027546358,
+        "voronoi_area_cv": 0.603732604
+      },
+      "viewBox": [
+        0,
+        0,
+        656,
+        560
+      ]
+    },
+    "coupled-underinvestment": {
+      "family": "ring",
+      "family_label": "多环耦合",
+      "family_trace": {
+        "_detect_ring": true
+      },
+      "graph": "coupled-underinvestment",
+      "graph_edges": [
+        [
+          "capacity",
+          "delivery"
+        ],
+        [
+          "compete",
+          "revenue"
+        ],
+        [
+          "delivery",
+          "satisfy"
+        ],
+        [
+          "demand",
+          "pressure"
+        ],
+        [
+          "demand",
+          "revenue"
+        ],
+        [
+          "invest",
+          "capacity"
+        ],
+        [
+          "pressure",
+          "invest"
+        ],
+        [
+          "profit",
+          "invest"
+        ],
+        [
+          "profit",
+          "rnd"
+        ],
+        [
+          "revenue",
+          "profit"
+        ],
+        [
+          "rnd",
+          "compete"
+        ],
+        [
+          "satisfy",
+          "demand"
+        ]
+      ],
+      "graph_nodes": [
+        "capacity",
+        "compete",
+        "delivery",
+        "demand",
+        "invest",
+        "pressure",
+        "profit",
+        "revenue",
+        "rnd",
+        "satisfy"
+      ],
+      "graph_source": "benchmarks\\manual\\jacky-batch2\\sources\\coupled-underinvestment.cld",
+      "nodes": {
+        "capacity": {
+          "x": 184,
+          "y": 123
+        },
+        "compete": {
+          "x": 432,
+          "y": 464
+        },
+        "delivery": {
+          "x": 343,
+          "y": 56
+        },
+        "demand": {
+          "x": 566,
+          "y": 247
+        },
+        "invest": {
+          "x": 106,
+          "y": 243
+        },
+        "pressure": {
+          "x": 338,
+          "y": 242
+        },
+        "profit": {
+          "x": 143,
+          "y": 366
+        },
+        "revenue": {
+          "x": 527,
+          "y": 360
+        },
+        "rnd": {
+          "x": 278,
+          "y": 469
+        },
+        "satisfy": {
+          "x": 504,
+          "y": 118
+        }
+      },
+      "path": "benchmarks\\manual\\jacky-batch2\\exports\\coupled-underinvestment-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 38.237464016,
+        "aspect_deviation": 0.312910284,
+        "automorphism_residual": 0.23516587028878583,
+        "avg_edge_length": 0.2024084391800817,
+        "bend_soft_margin": 0.07038918832187852,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.152777778,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": 0.142133811,
+        "edge_length_cv": 0.381380524,
+        "hub_centroid_px": 0.24971015154839996,
+        "hub_centroid_ratio": 0.249710152,
+        "hub_degree": 3.0,
+        "hub_neighbor_centrality_ratio": 1.142298836,
+        "layout_n_nodes": 10.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 3.212684796,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.13269341649264696,
+        "min_spacing_ratio": 0.132693416,
+        "mirror_axis_err": 0.23516587028878583,
+        "node_spacing_cv": 0.145683811,
+        "symmetry_axis_err_px": 0.23516587028878583,
+        "visual_centroid_px": 0.03528853685738802,
+        "visual_centroid_ratio": 0.035288537,
+        "voronoi_area_cv": 0.198844685
+      },
+      "viewBox": [
+        0,
+        0,
+        672,
+        600
+      ]
+    },
+    "epidemic-feedback-manual-layout-human": {
+      "family": "ring",
+      "family_label": null,
+      "family_trace": {
+        "_detect_ring": true
+      },
+      "graph": "epidemic-feedback",
+      "graph_edges": [
+        [
+          "bed_capacity",
+          "fatality"
+        ],
+        [
+          "bed_capacity",
+          "hospital_load"
+        ],
+        [
+          "contact_rate",
+          "new_infections"
+        ],
+        [
+          "fatality",
+          "public_concern"
+        ],
+        [
+          "hospital_load",
+          "fatality"
+        ],
+        [
+          "infected",
+          "hospital_load"
+        ],
+        [
+          "infected",
+          "new_infections"
+        ],
+        [
+          "infected",
+          "recovered"
+        ],
+        [
+          "infected",
+          "susceptible"
+        ],
+        [
+          "new_infections",
+          "infected"
+        ],
+        [
+          "npi",
+          "contact_rate"
+        ],
+        [
+          "public_concern",
+          "bed_capacity"
+        ],
+        [
+          "public_concern",
+          "npi"
+        ],
+        [
+          "susceptible",
+          "new_infections"
+        ]
+      ],
+      "graph_nodes": [
+        "bed_capacity",
+        "contact_rate",
+        "fatality",
+        "hospital_load",
+        "infected",
+        "new_infections",
+        "npi",
+        "public_concern",
+        "recovered",
+        "susceptible"
+      ],
+      "graph_source": "tests\\data\\epidemic-feedback.cld",
+      "nodes": {
+        "bed_capacity": {
+          "w": 96,
+          "x": 340,
+          "y": 252
+        },
+        "contact_rate": {
+          "w": 96,
+          "x": 128,
+          "y": 430
+        },
+        "fatality": {
+          "w": 96,
+          "x": 490,
+          "y": 126
+        },
+        "hospital_load": {
+          "w": 96,
+          "x": 572,
+          "y": 268
+        },
+        "infected": {
+          "w": 96,
+          "x": 544,
+          "y": 430
+        },
+        "new_infections": {
+          "w": 96,
+          "x": 254,
+          "y": 536
+        },
+        "npi": {
+          "w": 96,
+          "x": 100,
+          "y": 268
+        },
+        "public_concern": {
+          "w": 96,
+          "x": 182,
+          "y": 126
+        },
+        "recovered": {
+          "w": 110,
+          "x": 424,
+          "y": 360
+        },
+        "susceptible": {
+          "w": 110,
+          "x": 418,
+          "y": 536
+        }
+      },
+      "path": "benchmarks\\aesthetic\\pref-synthetic\\candidates\\epidemic-feedback-manual-layout-human.json",
+      "scalars": {
+        "alignment_max_coverage": 0.921052632,
+        "angular_resolution_min": 0.0,
+        "aspect_deviation": 0.251101322,
+        "automorphism_residual": 8.163997721580952,
+        "avg_edge_length": 0.21616081625717756,
+        "bend_soft_margin": -0.017018965440026998,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.09882875,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.107700688,
+        "edge_length_cv": 0.290862888,
+        "hub_centroid_px": 0.2316366190186041,
+        "hub_centroid_ratio": 0.231636619,
+        "hub_degree": 5.0,
+        "hub_neighbor_centrality_ratio": 2.581955417,
+        "layout_n_nodes": 10.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 2.22254114,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.14553454616508743,
+        "min_spacing_ratio": 0.145534546,
+        "mirror_axis_err": 84.69768513600276,
+        "node_spacing_cv": 0.077945811,
+        "symmetry_axis_err_px": 84.69768513600276,
+        "visual_centroid_px": 0.021767070625204214,
+        "visual_centroid_ratio": 0.021767071,
+        "voronoi_area_cv": 0.235057354
+      },
+      "viewBox": [
+        0,
+        0,
+        696,
+        632
+      ]
+    },
+    "fan-d12": {
+      "family": "fan",
+      "family_label": null,
+      "family_trace": {
+        "_detect_radial": true
+      },
+      "graph": "fan-d12",
+      "graph_edges": [
+        [
+          "HUB",
+          "L00"
+        ],
+        [
+          "HUB",
+          "L01"
+        ],
+        [
+          "HUB",
+          "L02"
+        ],
+        [
+          "HUB",
+          "L03"
+        ],
+        [
+          "HUB",
+          "L04"
+        ],
+        [
+          "HUB",
+          "L05"
+        ],
+        [
+          "HUB",
+          "L06"
+        ],
+        [
+          "HUB",
+          "L07"
+        ],
+        [
+          "HUB",
+          "L08"
+        ],
+        [
+          "HUB",
+          "L09"
+        ],
+        [
+          "HUB",
+          "L10"
+        ]
+      ],
+      "graph_nodes": [
+        "HUB",
+        "L00",
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "L06",
+        "L07",
+        "L08",
+        "L09",
+        "L10"
+      ],
+      "graph_source": "synthesized HUB+11 spokes",
+      "nodes": {
+        "HUB": {
+          "x": 825,
+          "y": 230
+        },
+        "L00": {
+          "x": 824,
+          "y": 51
+        },
+        "L01": {
+          "x": 580,
+          "y": 221
+        },
+        "L02": {
+          "x": 958,
+          "y": 387
+        },
+        "L03": {
+          "x": 958,
+          "y": 73
+        },
+        "L04": {
+          "x": 1097,
+          "y": 227
+        },
+        "L05": {
+          "x": 701,
+          "y": 384
+        },
+        "L06": {
+          "x": 691,
+          "y": 71
+        },
+        "L07": {
+          "x": 604,
+          "y": 320
+        },
+        "L08": {
+          "x": 1056,
+          "y": 134
+        },
+        "L09": {
+          "x": 828,
+          "y": 415
+        },
+        "L10": {
+          "x": 1062,
+          "y": 327
+        },
+        "L11": {
+          "x": 608,
+          "y": 127
+        }
+      },
+      "path": "benchmarks\\manual\\fan-d12-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 0.891891892,
+        "angular_resolution_min": 21.935095956,
+        "aspect_deviation": 0.610294118,
+        "automorphism_residual": 3.5687045444619567,
+        "avg_edge_length": 0.1391985741204878,
+        "bend_soft_margin": 0.009867050269108753,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.10051999,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.46291005,
+        "edge_length_cv": 0.129732095,
+        "hub_centroid_px": 0.0033919137558948314,
+        "hub_centroid_ratio": 0.003391914,
+        "hub_degree": 12.0,
+        "hub_neighbor_centrality_ratio": 0.311608652,
+        "layout_n_nodes": 13.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 1.519621782,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.06105347122338727,
+        "min_spacing_ratio": 0.061053471,
+        "mirror_axis_err": 35.05617594910809,
+        "node_spacing_cv": 0.188104217,
+        "symmetry_axis_err_px": 35.05617594910809,
+        "visual_centroid_px": 0.04793813722620821,
+        "visual_centroid_ratio": 0.047938137,
+        "voronoi_area_cv": 0.732319647
+      },
+      "viewBox": [
+        0,
+        0,
+        1520,
+        520
+      ]
+    },
+    "fan-d17": {
+      "family": "fan",
+      "family_label": null,
+      "family_trace": {
+        "_detect_radial": true
+      },
+      "graph": "fan-d17",
+      "graph_edges": [
+        [
+          "HUB",
+          "L00"
+        ],
+        [
+          "HUB",
+          "L01"
+        ],
+        [
+          "HUB",
+          "L02"
+        ],
+        [
+          "HUB",
+          "L03"
+        ],
+        [
+          "HUB",
+          "L04"
+        ],
+        [
+          "HUB",
+          "L05"
+        ],
+        [
+          "HUB",
+          "L06"
+        ],
+        [
+          "HUB",
+          "L07"
+        ],
+        [
+          "HUB",
+          "L08"
+        ],
+        [
+          "HUB",
+          "L09"
+        ],
+        [
+          "HUB",
+          "L10"
+        ],
+        [
+          "HUB",
+          "L11"
+        ],
+        [
+          "HUB",
+          "L12"
+        ],
+        [
+          "HUB",
+          "L13"
+        ],
+        [
+          "HUB",
+          "L14"
+        ],
+        [
+          "HUB",
+          "L15"
+        ]
+      ],
+      "graph_nodes": [
+        "HUB",
+        "L00",
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "L06",
+        "L07",
+        "L08",
+        "L09",
+        "L10",
+        "L11",
+        "L12",
+        "L13",
+        "L14",
+        "L15"
+      ],
+      "graph_source": "synthesized HUB+16 spokes",
+      "nodes": {
+        "HUB": {
+          "x": 1108,
+          "y": 387
+        },
+        "L00": {
+          "x": 1406,
+          "y": 310
+        },
+        "L01": {
+          "x": 805,
+          "y": 387
+        },
+        "L02": {
+          "x": 1418,
+          "y": 388
+        },
+        "L03": {
+          "x": 829,
+          "y": 306
+        },
+        "L04": {
+          "x": 1404,
+          "y": 478
+        },
+        "L05": {
+          "x": 856,
+          "y": 226
+        },
+        "L06": {
+          "x": 1331,
+          "y": 549
+        },
+        "L07": {
+          "x": 927,
+          "y": 169
+        },
+        "L08": {
+          "x": 1230,
+          "y": 601
+        },
+        "L09": {
+          "x": 1046,
+          "y": 128
+        },
+        "L10": {
+          "x": 1108,
+          "y": 626
+        },
+        "L11": {
+          "x": 1178,
+          "y": 128
+        },
+        "L12": {
+          "x": 986,
+          "y": 600
+        },
+        "L13": {
+          "x": 1280,
+          "y": 177
+        },
+        "L14": {
+          "x": 884,
+          "y": 556
+        },
+        "L15": {
+          "x": 1362,
+          "y": 237
+        },
+        "L16": {
+          "x": 813,
+          "y": 477
+        }
+      },
+      "path": "benchmarks\\manual\\fan-d17-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 14.672561961,
+        "aspect_deviation": 0.389298893,
+        "automorphism_residual": 0.5043342520499574,
+        "avg_edge_length": 0.12413467060541418,
+        "bend_soft_margin": 0.003133513852055584,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.062854346,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.397359707,
+        "edge_length_cv": 0.081170292,
+        "hub_centroid_px": 0.005801980392366425,
+        "hub_centroid_ratio": 0.00580198,
+        "hub_degree": 17.0,
+        "hub_neighbor_centrality_ratio": 0.189382294,
+        "layout_n_nodes": 18.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 1.297077878,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.03469662880854091,
+        "min_spacing_ratio": 0.034696629,
+        "mirror_axis_err": 49.302570949565414,
+        "node_spacing_cv": 0.334523232,
+        "symmetry_axis_err_px": 49.302570949565414,
+        "visual_centroid_px": 0.027466033157343136,
+        "visual_centroid_ratio": 0.027466033,
+        "voronoi_area_cv": 0.699845808
+      },
+      "viewBox": [
+        0,
+        0,
+        2120,
+        824
+      ]
+    },
+    "i05": {
+      "family": "ring",
+      "family_label": null,
+      "family_trace": {
+        "_detect_ring": true
+      },
+      "graph": "random-n10-i05",
+      "graph_edges": [
+        [
+          "N00",
+          "N04"
+        ],
+        [
+          "N00",
+          "N05"
+        ],
+        [
+          "N00",
+          "N08"
+        ],
+        [
+          "N01",
+          "N02"
+        ],
+        [
+          "N01",
+          "N03"
+        ],
+        [
+          "N01",
+          "N07"
+        ],
+        [
+          "N02",
+          "N04"
+        ],
+        [
+          "N02",
+          "N07"
+        ],
+        [
+          "N03",
+          "N04"
+        ],
+        [
+          "N03",
+          "N06"
+        ],
+        [
+          "N03",
+          "N08"
+        ],
+        [
+          "N04",
+          "N06"
+        ],
+        [
+          "N05",
+          "N07"
+        ],
+        [
+          "N06",
+          "N08"
+        ],
+        [
+          "N06",
+          "N09"
+        ],
+        [
+          "N07",
+          "N08"
+        ]
+      ],
+      "graph_nodes": [
+        "N00",
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09"
+      ],
+      "graph_source": "benchmarks\\corpus\\random\\random-n10-i05.cld",
+      "nodes": {
+        "N00": {
+          "x": 149,
+          "y": 290
+        },
+        "N01": {
+          "x": 665,
+          "y": 408
+        },
+        "N02": {
+          "x": 834,
+          "y": 403
+        },
+        "N03": {
+          "x": 512,
+          "y": 408
+        },
+        "N04": {
+          "x": 512,
+          "y": 530
+        },
+        "N05": {
+          "x": 518,
+          "y": 172
+        },
+        "N06": {
+          "x": 353,
+          "y": 405
+        },
+        "N07": {
+          "x": 833,
+          "y": 290
+        },
+        "N08": {
+          "x": 509,
+          "y": 290
+        },
+        "N09": {
+          "x": 269,
+          "y": 344
+        }
+      },
+      "path": "benchmarks\\manual\\user-2026-11-20\\i05.json",
+      "scalars": {
+        "alignment_max_coverage": 0.952380952,
+        "angular_resolution_min": 4.702173387,
+        "aspect_deviation": 1.052238806,
+        "automorphism_residual": null,
+        "avg_edge_length": 0.19868481925695602,
+        "bend_soft_margin": -0.01364210777843961,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.093756088,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.41303706,
+        "edge_length_cv": 0.465721934,
+        "hub_centroid_px": 0.04613328665624381,
+        "hub_centroid_ratio": 0.046133287,
+        "hub_degree": 4.0,
+        "hub_neighbor_centrality_ratio": 0.812480857,
+        "layout_n_nodes": 10.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 4.19184776,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.08851368773660752,
+        "min_spacing_ratio": 0.088513688,
+        "mirror_axis_err": null,
+        "node_spacing_cv": 0.114064962,
+        "symmetry_axis_err_px": null,
+        "visual_centroid_px": 0.03735616968088807,
+        "visual_centroid_ratio": 0.03735617,
+        "voronoi_area_cv": 0.470042126
+      },
+      "viewBox": [
+        0,
+        0,
+        944,
+        696
+      ]
+    },
+    "i11-a": {
+      "family": "ring",
+      "family_label": null,
+      "family_trace": {
+        "_detect_ring": true
+      },
+      "graph": "random-n10-i11",
+      "graph_edges": [
+        [
+          "N00",
+          "N01"
+        ],
+        [
+          "N00",
+          "N02"
+        ],
+        [
+          "N00",
+          "N04"
+        ],
+        [
+          "N00",
+          "N05"
+        ],
+        [
+          "N00",
+          "N07"
+        ],
+        [
+          "N00",
+          "N08"
+        ],
+        [
+          "N00",
+          "N09"
+        ],
+        [
+          "N01",
+          "N04"
+        ],
+        [
+          "N01",
+          "N07"
+        ],
+        [
+          "N01",
+          "N08"
+        ],
+        [
+          "N02",
+          "N03"
+        ],
+        [
+          "N02",
+          "N04"
+        ],
+        [
+          "N03",
+          "N04"
+        ],
+        [
+          "N04",
+          "N06"
+        ],
+        [
+          "N04",
+          "N07"
+        ],
+        [
+          "N05",
+          "N09"
+        ]
+      ],
+      "graph_nodes": [
+        "N00",
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09"
+      ],
+      "graph_source": "benchmarks\\corpus\\random\\random-n10-i11.cld",
+      "nodes": {
+        "N00": {
+          "x": 449,
+          "y": 573
+        },
+        "N01": {
+          "x": 721,
+          "y": 690
+        },
+        "N02": {
+          "x": 318,
+          "y": 658
+        },
+        "N03": {
+          "x": 199,
+          "y": 755
+        },
+        "N04": {
+          "x": 445,
+          "y": 758
+        },
+        "N05": {
+          "x": 257,
+          "y": 573
+        },
+        "N06": {
+          "x": 449,
+          "y": 875
+        },
+        "N07": {
+          "x": 528,
+          "y": 673
+        },
+        "N08": {
+          "x": 527,
+          "y": 431
+        },
+        "N09": {
+          "x": 352,
+          "y": 430
+        }
+      },
+      "path": "benchmarks\\manual\\user-2026-11-20\\i11-a.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 18.241028496,
+        "aspect_deviation": 0.353783231,
+        "automorphism_residual": 3.527213443514529,
+        "avg_edge_length": 0.11450692881600906,
+        "bend_soft_margin": -0.0031808889132804163,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.046905458,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.627332327,
+        "edge_length_cv": 0.320360465,
+        "hub_centroid_px": 0.04358678970202233,
+        "hub_centroid_ratio": 0.04358679,
+        "hub_degree": 7.0,
+        "hub_neighbor_centrality_ratio": 0.595596612,
+        "layout_n_nodes": 10.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 2.764197539,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.06260231422865399,
+        "min_spacing_ratio": 0.062602314,
+        "mirror_axis_err": 41.01496662760023,
+        "node_spacing_cv": 0.214402152,
+        "symmetry_axis_err_px": 41.01496662760023,
+        "visual_centroid_px": 0.04179111990399853,
+        "visual_centroid_ratio": 0.04179112,
+        "voronoi_area_cv": 0.813126809
+      },
+      "viewBox": [
+        0,
+        0,
+        960,
+        1368
+      ]
+    },
+    "i11-b": {
+      "family": "ring",
+      "family_label": null,
+      "family_trace": {
+        "_detect_ring": true
+      },
+      "graph": "random-n10-i11",
+      "graph_edges": [
+        [
+          "N00",
+          "N01"
+        ],
+        [
+          "N00",
+          "N02"
+        ],
+        [
+          "N00",
+          "N04"
+        ],
+        [
+          "N00",
+          "N05"
+        ],
+        [
+          "N00",
+          "N07"
+        ],
+        [
+          "N00",
+          "N08"
+        ],
+        [
+          "N00",
+          "N09"
+        ],
+        [
+          "N01",
+          "N04"
+        ],
+        [
+          "N01",
+          "N07"
+        ],
+        [
+          "N01",
+          "N08"
+        ],
+        [
+          "N02",
+          "N03"
+        ],
+        [
+          "N02",
+          "N04"
+        ],
+        [
+          "N03",
+          "N04"
+        ],
+        [
+          "N04",
+          "N06"
+        ],
+        [
+          "N04",
+          "N07"
+        ],
+        [
+          "N05",
+          "N09"
+        ]
+      ],
+      "graph_nodes": [
+        "N00",
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09"
+      ],
+      "graph_source": "benchmarks\\corpus\\random\\random-n10-i11.cld",
+      "nodes": {
+        "N00": {
+          "x": 399,
+          "y": 590
+        },
+        "N01": {
+          "x": 692,
+          "y": 812
+        },
+        "N02": {
+          "x": 256,
+          "y": 700
+        },
+        "N03": {
+          "x": 122,
+          "y": 810
+        },
+        "N04": {
+          "x": 399,
+          "y": 811
+        },
+        "N05": {
+          "x": 200,
+          "y": 434
+        },
+        "N06": {
+          "x": 401,
+          "y": 953
+        },
+        "N07": {
+          "x": 488,
+          "y": 730
+        },
+        "N08": {
+          "x": 692,
+          "y": 591
+        },
+        "N09": {
+          "x": 401,
+          "y": 436
+        }
+      },
+      "path": "benchmarks\\manual\\user-2026-11-20\\i11-b.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 15.252258646,
+        "aspect_deviation": 0.261101243,
+        "automorphism_residual": 4.8353484150507064,
+        "avg_edge_length": 0.12952285565289387,
+        "bend_soft_margin": -0.009573762484941382,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.046905458,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.733978822,
+        "edge_length_cv": 0.295565628,
+        "hub_centroid_px": 0.05797270040405687,
+        "hub_centroid_ratio": 0.0579727,
+        "hub_degree": 7.0,
+        "hub_neighbor_centrality_ratio": 0.442589653,
+        "layout_n_nodes": 10.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 3.054685037,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.07200736813974945,
+        "min_spacing_ratio": 0.072007368,
+        "mirror_axis_err": 63.02565233981265,
+        "node_spacing_cv": 0.208461733,
+        "symmetry_axis_err_px": 63.02565233981265,
+        "visual_centroid_px": 0.04490608253591533,
+        "visual_centroid_ratio": 0.044906083,
+        "voronoi_area_cv": 0.647658883
+      },
+      "viewBox": [
+        0,
+        0,
+        960,
+        1368
+      ]
+    },
+    "nested-capacity": {
+      "family": "ring",
+      "family_label": "嵌套环",
+      "family_trace": {
+        "_detect_ring": true
+      },
+      "graph": "nested-capacity",
+      "graph_edges": [
+        [
+          "bargaining",
+          "rev"
+        ],
+        [
+          "capacity",
+          "delivery"
+        ],
+        [
+          "capacity",
+          "rev"
+        ],
+        [
+          "coverage",
+          "customers"
+        ],
+        [
+          "customers",
+          "bargaining"
+        ],
+        [
+          "delivery",
+          "coverage"
+        ],
+        [
+          "invest",
+          "capacity"
+        ],
+        [
+          "profit",
+          "invest"
+        ],
+        [
+          "rev",
+          "profit"
+        ]
+      ],
+      "graph_nodes": [
+        "bargaining",
+        "capacity",
+        "coverage",
+        "customers",
+        "delivery",
+        "invest",
+        "profit",
+        "rev"
+      ],
+      "graph_source": "benchmarks\\manual\\jacky-batch2\\sources\\nested-capacity.cld",
+      "nodes": {
+        "bargaining": {
+          "x": 472,
+          "y": 206
+        },
+        "capacity": {
+          "x": 129,
+          "y": 342
+        },
+        "coverage": {
+          "x": 205,
+          "y": 110
+        },
+        "customers": {
+          "x": 398,
+          "y": 108
+        },
+        "delivery": {
+          "x": 121,
+          "y": 206
+        },
+        "invest": {
+          "x": 217,
+          "y": 439
+        },
+        "profit": {
+          "x": 401,
+          "y": 437
+        },
+        "rev": {
+          "x": 475,
+          "y": 340
+        }
+      },
+      "path": "benchmarks\\manual\\jacky-batch2\\exports\\nested-capacity-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 48.116352211,
+        "aspect_deviation": 0.317333333,
+        "automorphism_residual": 0.06785529367118735,
+        "avg_edge_length": 0.2053249283784134,
+        "bend_soft_margin": 0.07181933590474729,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.150980392,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.377964473,
+        "edge_length_cv": 0.410161932,
+        "hub_centroid_px": 0.230029156949044,
+        "hub_centroid_ratio": 0.230029157,
+        "hub_degree": 3.0,
+        "hub_neighbor_centrality_ratio": 0.985672266,
+        "layout_n_nodes": 8.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 2.836017684,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.15064117202355495,
+        "min_spacing_ratio": 0.150641172,
+        "mirror_axis_err": 0.06785529367118735,
+        "node_spacing_cv": 0.02898944,
+        "symmetry_axis_err_px": 0.06785529367118735,
+        "visual_centroid_px": 0.003338890727513038,
+        "visual_centroid_ratio": 0.003338891,
+        "voronoi_area_cv": 0.060886475
+      },
+      "viewBox": [
+        0,
+        0,
+        600,
+        544
+      ]
+    },
+    "nested-learning": {
+      "family": "ring",
+      "family_label": "嵌套环",
+      "family_trace": {
+        "_detect_ring": true
+      },
+      "graph": "nested-learning",
+      "graph_edges": [
+        [
+          "budget",
+          "lrn"
+        ],
+        [
+          "lrn",
+          "skill"
+        ],
+        [
+          "motive",
+          "lrn"
+        ],
+        [
+          "orgcap",
+          "result"
+        ],
+        [
+          "perf",
+          "motive"
+        ],
+        [
+          "perf",
+          "share"
+        ],
+        [
+          "result",
+          "budget"
+        ],
+        [
+          "share",
+          "orgcap"
+        ],
+        [
+          "skill",
+          "perf"
+        ]
+      ],
+      "graph_nodes": [
+        "budget",
+        "lrn",
+        "motive",
+        "orgcap",
+        "perf",
+        "result",
+        "share",
+        "skill"
+      ],
+      "graph_source": "benchmarks\\manual\\jacky-batch2\\sources\\nested-learning.cld",
+      "nodes": {
+        "budget": {
+          "x": 468,
+          "y": 210
+        },
+        "lrn": {
+          "x": 443,
+          "y": 329
+        },
+        "motive": {
+          "x": 287,
+          "y": 266
+        },
+        "orgcap": {
+          "x": 194,
+          "y": 89
+        },
+        "perf": {
+          "x": 137,
+          "y": 336
+        },
+        "result": {
+          "x": 373,
+          "y": 88
+        },
+        "share": {
+          "x": 89,
+          "y": 214
+        },
+        "skill": {
+          "x": 291,
+          "y": 407
+        }
+      },
+      "path": "benchmarks\\manual\\jacky-batch2\\exports\\nested-learning-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 49.156114975,
+        "aspect_deviation": 0.429752066,
+        "automorphism_residual": 0.07506236491759738,
+        "avg_edge_length": 0.20832690091362455,
+        "bend_soft_margin": 0.07518305888268606,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.172143975,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.251976315,
+        "edge_length_cv": 0.115195993,
+        "hub_centroid_px": 0.23699875959773323,
+        "hub_centroid_ratio": 0.23699876,
+        "hub_degree": 3.0,
+        "hub_neighbor_centrality_ratio": 1.11643652,
+        "layout_n_nodes": 8.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 1.472090321,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.16013009763591812,
+        "min_spacing_ratio": 0.160130098,
+        "mirror_axis_err": 0.07506236491759738,
+        "node_spacing_cv": 0.101242071,
+        "symmetry_axis_err_px": 0.07506236491759738,
+        "visual_centroid_px": 0.012781454326958375,
+        "visual_centroid_ratio": 0.012781454,
+        "voronoi_area_cv": 0.149249178
+      },
+      "viewBox": [
+        0,
+        0,
+        568,
+        504
+      ]
+    },
+    "nonplanar-credit": {
+      "family": "nonplanar",
+      "family_label": "非平面族",
+      "family_trace": {
+        "nonplanar": true
+      },
+      "graph": "nonplanar-credit",
+      "graph_edges": [
+        [
+          "credit",
+          "inv"
+        ],
+        [
+          "credit",
+          "ir"
+        ],
+        [
+          "credit",
+          "lever"
+        ],
+        [
+          "fund",
+          "inv"
+        ],
+        [
+          "ir",
+          "fund"
+        ],
+        [
+          "ir",
+          "val"
+        ],
+        [
+          "lever",
+          "val"
+        ],
+        [
+          "ms",
+          "credit"
+        ],
+        [
+          "ms",
+          "ir"
+        ],
+        [
+          "ms",
+          "trans"
+        ],
+        [
+          "ms",
+          "val"
+        ],
+        [
+          "trans",
+          "inv"
+        ],
+        [
+          "val",
+          "wealth"
+        ],
+        [
+          "wealth",
+          "inv"
+        ]
+      ],
+      "graph_nodes": [
+        "credit",
+        "fund",
+        "inv",
+        "ir",
+        "lever",
+        "ms",
+        "trans",
+        "val",
+        "wealth"
+      ],
+      "graph_source": "benchmarks\\manual\\jacky-batch2\\sources\\nonplanar-credit.cld",
+      "nodes": {
+        "credit": {
+          "x": 438,
+          "y": 343
+        },
+        "fund": {
+          "x": 222,
+          "y": 416
+        },
+        "inv": {
+          "x": 308,
+          "y": 492
+        },
+        "ir": {
+          "x": 127,
+          "y": 342
+        },
+        "lever": {
+          "x": 350,
+          "y": 174
+        },
+        "ms": {
+          "x": 50,
+          "y": 72
+        },
+        "trans": {
+          "x": 56,
+          "y": 491
+        },
+        "val": {
+          "x": 195,
+          "y": 178
+        },
+        "wealth": {
+          "x": 305,
+          "y": 272
+        }
+      },
+      "path": "benchmarks\\manual\\jacky-batch2\\exports\\nonplanar-credit-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 1.235578603,
+        "aspect_deviation": 0.137931034,
+        "automorphism_residual": 33.51008071549333,
+        "avg_edge_length": 0.3112249031665593,
+        "bend_soft_margin": -0.021540271507146953,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.202868852,
+        "crossing_count": 2.0,
+        "degree_canvas_spearman": 0.173205081,
+        "edge_length_cv": 0.448781312,
+        "hub_centroid_px": 0.2865691297819385,
+        "hub_centroid_ratio": 0.28656913,
+        "hub_degree": 4.0,
+        "hub_neighbor_centrality_ratio": 1.209777968,
+        "layout_n_nodes": 9.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 4.123667183,
+        "min_crossing_angle": 36.410785403,
+        "min_spacing_px": 0.14517852367069406,
+        "min_spacing_ratio": 0.145178524,
+        "mirror_axis_err": 89.18991146917193,
+        "node_spacing_cv": 0.188389926,
+        "symmetry_axis_err_px": 89.18991146917193,
+        "visual_centroid_px": 0.0445314467783274,
+        "visual_centroid_ratio": 0.044531447,
+        "voronoi_area_cv": 0.276578498
+      },
+      "viewBox": [
+        0,
+        0,
+        488,
+        560
+      ]
+    },
+    "nonplanar-inventory": {
+      "family": "nonplanar",
+      "family_label": "非平面族",
+      "family_trace": {
+        "nonplanar": true
+      },
+      "graph": "nonplanar-inventory",
+      "graph_edges": [
+        [
+          "appr",
+          "cap"
+        ],
+        [
+          "cons",
+          "appr"
+        ],
+        [
+          "cons",
+          "heat"
+        ],
+        [
+          "cons",
+          "replen"
+        ],
+        [
+          "exp",
+          "cap"
+        ],
+        [
+          "exp",
+          "cpi"
+        ],
+        [
+          "exp",
+          "stk"
+        ],
+        [
+          "heat",
+          "cpi"
+        ],
+        [
+          "inv",
+          "cap"
+        ],
+        [
+          "inv",
+          "cpi"
+        ],
+        [
+          "inv",
+          "stk"
+        ],
+        [
+          "replen",
+          "stk"
+        ]
+      ],
+      "graph_nodes": [
+        "appr",
+        "cap",
+        "cons",
+        "cpi",
+        "exp",
+        "heat",
+        "inv",
+        "replen",
+        "stk"
+      ],
+      "graph_source": "benchmarks\\manual\\jacky-batch2\\sources\\nonplanar-inventory.cld",
+      "nodes": {
+        "appr": {
+          "x": 465,
+          "y": 391
+        },
+        "cap": {
+          "x": 464,
+          "y": 515
+        },
+        "cons": {
+          "x": 697,
+          "y": 265
+        },
+        "cpi": {
+          "x": 697,
+          "y": 507
+        },
+        "exp": {
+          "x": 690,
+          "y": 755
+        },
+        "heat": {
+          "x": 697,
+          "y": 383
+        },
+        "inv": {
+          "x": 697,
+          "y": 631
+        },
+        "replen": {
+          "x": 907,
+          "y": 391
+        },
+        "stk": {
+          "x": 904,
+          "y": 513
+        }
+      },
+      "path": "benchmarks\\manual\\jacky-batch2\\exports\\nonplanar-inventory-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 1.616790311,
+        "aspect_deviation": 0.0917603,
+        "automorphism_residual": 0.05052560633645166,
+        "avg_edge_length": 0.08100364219109255,
+        "bend_soft_margin": -0.006170958689704851,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.022170608,
+        "crossing_count": 1.0,
+        "degree_canvas_spearman": -0.091287093,
+        "edge_length_cv": 0.374909382,
+        "hub_centroid_px": 0.0883499016210797,
+        "hub_centroid_ratio": 0.088349902,
+        "hub_degree": 3.0,
+        "hub_neighbor_centrality_ratio": 0.995061291,
+        "layout_n_nodes": 9.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 2.793732469,
+        "min_crossing_angle": 65.150185393,
+        "min_spacing_px": 0.04551082033657328,
+        "min_spacing_ratio": 0.04551082,
+        "mirror_axis_err": 0.05052560633645166,
+        "node_spacing_cv": 0.019715734,
+        "symmetry_axis_err_px": 0.05052560633645166,
+        "visual_centroid_px": 0.19096029758041175,
+        "visual_centroid_ratio": 0.190960298,
+        "voronoi_area_cv": 0.989883119
+      },
+      "viewBox": [
+        0,
+        0,
+        2368,
+        1056
+      ]
+    },
+    "random-n10-i00": {
+      "family": "hub",
+      "family_label": null,
+      "family_trace": {
+        "_detect_spine_wing": true
+      },
+      "graph": "random-n10-i00",
+      "graph_edges": [
+        [
+          "N00",
+          "N03"
+        ],
+        [
+          "N00",
+          "N06"
+        ],
+        [
+          "N00",
+          "N07"
+        ],
+        [
+          "N01",
+          "N04"
+        ],
+        [
+          "N02",
+          "N06"
+        ],
+        [
+          "N02",
+          "N08"
+        ],
+        [
+          "N03",
+          "N08"
+        ],
+        [
+          "N04",
+          "N05"
+        ],
+        [
+          "N04",
+          "N07"
+        ],
+        [
+          "N04",
+          "N08"
+        ],
+        [
+          "N06",
+          "N07"
+        ],
+        [
+          "N06",
+          "N08"
+        ],
+        [
+          "N06",
+          "N09"
+        ],
+        [
+          "N07",
+          "N08"
+        ],
+        [
+          "N07",
+          "N09"
+        ],
+        [
+          "N08",
+          "N09"
+        ]
+      ],
+      "graph_nodes": [
+        "N00",
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09"
+      ],
+      "graph_source": "benchmarks\\corpus\\random\\random-n10-i00.cld",
+      "nodes": {
+        "N00": {
+          "x": 290,
+          "y": 493
+        },
+        "N01": {
+          "x": 510,
+          "y": 64
+        },
+        "N02": {
+          "x": 199,
+          "y": 290
+        },
+        "N03": {
+          "x": 64,
+          "y": 291
+        },
+        "N04": {
+          "x": 285,
+          "y": 60
+        },
+        "N05": {
+          "x": 60,
+          "y": 59
+        },
+        "N06": {
+          "x": 288,
+          "y": 379
+        },
+        "N07": {
+          "x": 518,
+          "y": 290
+        },
+        "N08": {
+          "x": 286,
+          "y": 186
+        },
+        "N09": {
+          "x": 361,
+          "y": 285
+        }
+      },
+      "path": "benchmarks\\manual\\random-n10-i00-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 20.483216283,
+        "aspect_deviation": 0.251046025,
+        "automorphism_residual": 52.230482291186725,
+        "avg_edge_length": 0.2600769482719638,
+        "bend_soft_margin": -0.015801428983948047,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.204682165,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.56445967,
+        "edge_length_cv": 0.357216302,
+        "hub_centroid_px": 0.0692453218668543,
+        "hub_centroid_ratio": 0.069245322,
+        "hub_degree": 6.0,
+        "hub_neighbor_centrality_ratio": 0.257751013,
+        "layout_n_nodes": 10.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 2.871464381,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.1470236078250385,
+        "min_spacing_ratio": 0.147023608,
+        "mirror_axis_err": 60.00600915649347,
+        "node_spacing_cv": 0.279593686,
+        "symmetry_axis_err_px": 60.00600915649347,
+        "visual_centroid_px": 0.03145121185666363,
+        "visual_centroid_ratio": 0.031451212,
+        "voronoi_area_cv": 0.238788284
+      },
+      "viewBox": [
+        0,
+        0,
+        568,
+        528
+      ]
+    },
+    "random-n10-i05": {
+      "family": "ring",
+      "family_label": null,
+      "family_trace": {
+        "_detect_ring": true
+      },
+      "graph": "random-n10-i05",
+      "graph_edges": [
+        [
+          "N00",
+          "N04"
+        ],
+        [
+          "N00",
+          "N05"
+        ],
+        [
+          "N00",
+          "N08"
+        ],
+        [
+          "N01",
+          "N02"
+        ],
+        [
+          "N01",
+          "N03"
+        ],
+        [
+          "N01",
+          "N07"
+        ],
+        [
+          "N02",
+          "N04"
+        ],
+        [
+          "N02",
+          "N07"
+        ],
+        [
+          "N03",
+          "N04"
+        ],
+        [
+          "N03",
+          "N06"
+        ],
+        [
+          "N03",
+          "N08"
+        ],
+        [
+          "N04",
+          "N06"
+        ],
+        [
+          "N05",
+          "N07"
+        ],
+        [
+          "N06",
+          "N08"
+        ],
+        [
+          "N06",
+          "N09"
+        ],
+        [
+          "N07",
+          "N08"
+        ]
+      ],
+      "graph_nodes": [
+        "N00",
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09"
+      ],
+      "graph_source": "benchmarks\\corpus\\random\\random-n10-i05.cld",
+      "nodes": {
+        "N00": {
+          "x": 273,
+          "y": 144
+        },
+        "N01": {
+          "x": 475,
+          "y": 439
+        },
+        "N02": {
+          "x": 381,
+          "y": 349
+        },
+        "N03": {
+          "x": 57,
+          "y": 446
+        },
+        "N04": {
+          "x": 276,
+          "y": 242
+        },
+        "N05": {
+          "x": 375,
+          "y": 81
+        },
+        "N06": {
+          "x": 130,
+          "y": 306
+        },
+        "N07": {
+          "x": 473,
+          "y": 24
+        },
+        "N08": {
+          "x": 50,
+          "y": 24
+        },
+        "N09": {
+          "x": 158,
+          "y": 146
+        }
+      },
+      "path": "benchmarks\\manual\\random-n10-i05-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 14.88768323,
+        "aspect_deviation": 0.212446352,
+        "automorphism_residual": null,
+        "avg_edge_length": 0.3358903276746313,
+        "bend_soft_margin": -0.02175455737730224,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.223980528,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": 0.190128171,
+        "edge_length_cv": 0.489842178,
+        "hub_centroid_px": 0.417332852531499,
+        "hub_centroid_ratio": 0.417332853,
+        "hub_degree": 4.0,
+        "hub_neighbor_centrality_ratio": 1.401306241,
+        "layout_n_nodes": 10.0,
+        "loop_compactness_mean": null,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": null,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 4.314305516,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.133309082676262,
+        "min_spacing_ratio": 0.133309083,
+        "mirror_axis_err": null,
+        "node_spacing_cv": 0.182103343,
+        "symmetry_axis_err_px": null,
+        "visual_centroid_px": 0.048823906142076344,
+        "visual_centroid_ratio": 0.048823906,
+        "voronoi_area_cv": 0.341026164
+      },
+      "viewBox": [
+        0,
+        0,
+        528,
+        512
+      ]
+    },
+    "retest-classic-cld": {
+      "family": "ring",
+      "family_label": "嵌套环",
+      "family_trace": {
+        "_detect_ring": true
+      },
+      "graph": "classic-cld-growth-and-burden",
+      "graph_edges": [
+        [
+          "adopters",
+          "crowding"
+        ],
+        [
+          "adopters",
+          "potential"
+        ],
+        [
+          "adopters",
+          "word"
+        ],
+        [
+          "crowding",
+          "fundamental"
+        ],
+        [
+          "crowding",
+          "quickfix"
+        ],
+        [
+          "crowding",
+          "rate"
+        ],
+        [
+          "fundamental",
+          "crowding"
+        ],
+        [
+          "potential",
+          "rate"
+        ],
+        [
+          "quickfix",
+          "crowding"
+        ],
+        [
+          "quickfix",
+          "sideeffect"
+        ],
+        [
+          "rate",
+          "adopters"
+        ],
+        [
+          "sideeffect",
+          "crowding"
+        ],
+        [
+          "word",
+          "rate"
+        ]
+      ],
+      "graph_nodes": [
+        "adopters",
+        "crowding",
+        "fundamental",
+        "potential",
+        "quickfix",
+        "rate",
+        "sideeffect",
+        "word"
+      ],
+      "graph_source": "benchmarks\\corpus\\classic\\classic-cld-growth-and-burden.cld",
+      "nodes": {
+        "adopters": {
+          "x": 384,
+          "y": 72
+        },
+        "crowding": {
+          "x": 516,
+          "y": 232
+        },
+        "fundamental": {
+          "x": 540,
+          "y": 392
+        },
+        "potential": {
+          "x": 114,
+          "y": 232
+        },
+        "quickfix": {
+          "x": 672,
+          "y": 152
+        },
+        "rate": {
+          "x": 384,
+          "y": 392
+        },
+        "sideeffect": {
+          "x": 672,
+          "y": 312
+        },
+        "word": {
+          "x": 252,
+          "y": 232
+        }
+      },
+      "path": "benchmarks\\manual\\jacky-batch2\\exports\\retest-classic-cld-manual-layout.json",
+      "scalars": {
+        "alignment_max_coverage": 1.0,
+        "angular_resolution_min": 0.0,
+        "aspect_deviation": 0.917582418,
+        "automorphism_residual": 5.148016865091965,
+        "avg_edge_length": 0.23180455656818696,
+        "bend_soft_margin": -0.00028097423962746655,
+        "bend_total_curvature": 0.0,
+        "canvas_fill_rate": 0.132521552,
+        "crossing_count": 0.0,
+        "degree_canvas_spearman": -0.575163946,
+        "edge_length_cv": 0.272003263,
+        "hub_centroid_px": 0.08314727378708972,
+        "hub_centroid_ratio": 0.083147274,
+        "hub_degree": 7.0,
+        "hub_neighbor_centrality_ratio": 0.498858411,
+        "layout_n_nodes": 8.0,
+        "loop_compactness_mean": 0.491487892,
+        "loop_edge_crossings": 0.0,
+        "loop_edge_length_cv": 0.279827907,
+        "loop_foreign_nodes": 0.0,
+        "loop_overlap_area": 0.0,
+        "loop_self_intersections": 0.0,
+        "max_min_edge_ratio": 2.0,
+        "min_crossing_angle": null,
+        "min_spacing_px": 0.14921788014759318,
+        "min_spacing_ratio": 0.14921788,
+        "mirror_axis_err": 51.061232861978105,
+        "node_spacing_cv": 0.127697953,
+        "symmetry_axis_err_px": 51.061232861978105,
+        "visual_centroid_px": 0.05005635223278136,
+        "visual_centroid_ratio": 0.050056352,
+        "voronoi_area_cv": 0.352891649
+      },
+      "viewBox": [
+        0,
+        0,
+        800,
+        464
+      ]
+    }
+  },
+  "caliber": "normalized",
+  "note": "anchors-as-prior retrieval sidecar (data, only-add): 18 hand anchors + the pool-side epidemic anchor; feature rows from the single-source extractor at normalized caliber; threshold auto-derived from same-family anchor-pair distances vs anchor-vs-negatives distances. Regenerate by re-running the build script; anchors are never edited in place.",
+  "retrieval": {
+    "calibration": {
+      "hit_p50": 1.207537,
+      "hit_p75": 1.467004,
+      "hit_p90": 1.6684184,
+      "hit_p95": 1.702473,
+      "not_hit_min": 0.273064,
+      "not_hit_p10": 0.7775121,
+      "not_hit_p25": 0.92720875,
+      "separated": false,
+      "should_hit_distribution": [
+        {
+          "a": "fan-d12",
+          "b": "fan-d17",
+          "distance": 0.798597,
+          "family": "fan"
+        },
+        {
+          "a": "nonplanar-credit",
+          "b": "nonplanar-inventory",
+          "distance": 2.205091,
+          "family": "nonplanar"
+        },
+        {
+          "a": "epidemic-feedback-manual-layout-human",
+          "b": "brand-flywheel",
+          "distance": 0.864648,
+          "family": "ring"
+        },
+        {
+          "a": "epidemic-feedback-manual-layout-human",
+          "b": "classic-cld",
+          "distance": 1.207537,
+          "family": "ring"
+        },
+        {
+          "a": "epidemic-feedback-manual-layout-human",
+          "b": "coupled-underinvestment",
+          "distance": 0.949731,
+          "family": "ring"
+        },
+        {
+          "a": "epidemic-feedback-manual-layout-human",
+          "b": "nested-capacity",
+          "distance": 1.087896,
+          "family": "ring"
+        },
+        {
+          "a": "epidemic-feedback-manual-layout-human",
+          "b": "nested-learning",
+          "distance": 1.109798,
+          "family": "ring"
+        },
+        {
+          "a": "epidemic-feedback-manual-layout-human",
+          "b": "retest-classic-cld",
+          "distance": 1.08907,
+          "family": "ring"
+        },
+        {
+          "a": "epidemic-feedback-manual-layout-human",
+          "b": "random-n10-i05",
+          "distance": 1.131778,
+          "family": "ring"
+        },
+        {
+          "a": "epidemic-feedback-manual-layout-human",
+          "b": "i05",
+          "distance": 1.21477,
+          "family": "ring"
+        },
+        {
+          "a": "epidemic-feedback-manual-layout-human",
+          "b": "i11-a",
+          "distance": 1.241034,
+          "family": "ring"
+        },
+        {
+          "a": "epidemic-feedback-manual-layout-human",
+          "b": "i11-b",
+          "distance": 1.143619,
+          "family": "ring"
+        },
+        {
+          "a": "brand-flywheel",
+          "b": "classic-cld",
+          "distance": 1.425098,
+          "family": "ring"
+        },
+        {
+          "a": "brand-flywheel",
+          "b": "coupled-underinvestment",
+          "distance": 1.188665,
+          "family": "ring"
+        },
+        {
+          "a": "brand-flywheel",
+          "b": "nested-capacity",
+          "distance": 0.990722,
+          "family": "ring"
+        },
+        {
+          "a": "brand-flywheel",
+          "b": "nested-learning",
+          "distance": 0.937709,
+          "family": "ring"
+        },
+        {
+          "a": "brand-flywheel",
+          "b": "retest-classic-cld",
+          "distance": 1.221535,
+          "family": "ring"
+        },
+        {
+          "a": "brand-flywheel",
+          "b": "random-n10-i05",
+          "distance": 1.366339,
+          "family": "ring"
+        },
+        {
+          "a": "brand-flywheel",
+          "b": "i05",
+          "distance": 1.687838,
+          "family": "ring"
+        },
+        {
+          "a": "brand-flywheel",
+          "b": "i11-a",
+          "distance": 1.696384,
+          "family": "ring"
+        },
+        {
+          "a": "brand-flywheel",
+          "b": "i11-b",
+          "distance": 1.634222,
+          "family": "ring"
+        },
+        {
+          "a": "classic-cld",
+          "b": "coupled-underinvestment",
+          "distance": 1.382935,
+          "family": "ring"
+        },
+        {
+          "a": "classic-cld",
+          "b": "nested-capacity",
+          "distance": 1.510972,
+          "family": "ring"
+        },
+        {
+          "a": "classic-cld",
+          "b": "nested-learning",
+          "distance": 1.467004,
+          "family": "ring"
+        },
+        {
+          "a": "classic-cld",
+          "b": "retest-classic-cld",
+          "distance": 0.295327,
+          "family": "ring"
+        },
+        {
+          "a": "classic-cld",
+          "b": "random-n10-i05",
+          "distance": 1.655472,
+          "family": "ring"
+        },
+        {
+          "a": "classic-cld",
+          "b": "i05",
+          "distance": 0.792497,
+          "family": "ring"
+        },
+        {
+          "a": "classic-cld",
+          "b": "i11-a",
+          "distance": 1.064987,
+          "family": "ring"
+        },
+        {
+          "a": "classic-cld",
+          "b": "i11-b",
+          "distance": 1.005274,
+          "family": "ring"
+        },
+        {
+          "a": "coupled-underinvestment",
+          "b": "nested-capacity",
+          "distance": 0.53438,
+          "family": "ring"
+        },
+        {
+          "a": "coupled-underinvestment",
+          "b": "nested-learning",
+          "distance": 0.688184,
+          "family": "ring"
+        },
+        {
+          "a": "coupled-underinvestment",
+          "b": "retest-classic-cld",
+          "distance": 1.269317,
+          "family": "ring"
+        },
+        {
+          "a": "coupled-underinvestment",
+          "b": "random-n10-i05",
+          "distance": 1.015453,
+          "family": "ring"
+        },
+        {
+          "a": "coupled-underinvestment",
+          "b": "i05",
+          "distance": 1.186769,
+          "family": "ring"
+        },
+        {
+          "a": "coupled-underinvestment",
+          "b": "i11-a",
+          "distance": 1.180656,
+          "family": "ring"
+        },
+        {
+          "a": "coupled-underinvestment",
+          "b": "i11-b",
+          "distance": 1.165636,
+          "family": "ring"
+        },
+        {
+          "a": "nested-capacity",
+          "b": "nested-learning",
+          "distance": 0.465917,
+          "family": "ring"
+        },
+        {
+          "a": "nested-capacity",
+          "b": "retest-classic-cld",
+          "distance": 1.439391,
+          "family": "ring"
+        },
+        {
+          "a": "nested-capacity",
+          "b": "random-n10-i05",
+          "distance": 1.514387,
+          "family": "ring"
+        },
+        {
+          "a": "nested-capacity",
+          "b": "i05",
+          "distance": 1.585276,
+          "family": "ring"
+        },
+        {
+          "a": "nested-capacity",
+          "b": "i11-a",
+          "distance": 1.59343,
+          "family": "ring"
+        },
+        {
+          "a": "nested-capacity",
+          "b": "i11-b",
+          "distance": 1.609427,
+          "family": "ring"
+        },
+        {
+          "a": "nested-learning",
+          "b": "retest-classic-cld",
+          "distance": 1.336635,
+          "family": "ring"
+        },
+        {
+          "a": "nested-learning",
+          "b": "random-n10-i05",
+          "distance": 1.65186,
+          "family": "ring"
+        },
+        {
+          "a": "nested-learning",
+          "b": "i05",
+          "distance": 1.725509,
+          "family": "ring"
+        },
+        {
+          "a": "nested-learning",
+          "b": "i11-a",
+          "distance": 1.696714,
+          "family": "ring"
+        },
+        {
+          "a": "nested-learning",
+          "b": "i11-b",
+          "distance": 1.725845,
+          "family": "ring"
+        },
+        {
+          "a": "retest-classic-cld",
+          "b": "random-n10-i05",
+          "distance": 1.395773,
+          "family": "ring"
+        },
+        {
+          "a": "retest-classic-cld",
+          "b": "i05",
+          "distance": 0.844862,
+          "family": "ring"
+        },
+        {
+          "a": "retest-classic-cld",
+          "b": "i11-a",
+          "distance": 1.036987,
+          "family": "ring"
+        },
+        {
+          "a": "retest-classic-cld",
+          "b": "i11-b",
+          "distance": 0.980876,
+          "family": "ring"
+        },
+        {
+          "a": "random-n10-i05",
+          "b": "i05",
+          "distance": 1.249562,
+          "family": "ring"
+        },
+        {
+          "a": "random-n10-i05",
+          "b": "i11-a",
+          "distance": 1.428746,
+          "family": "ring"
+        },
+        {
+          "a": "random-n10-i05",
+          "b": "i11-b",
+          "distance": 1.275813,
+          "family": "ring"
+        },
+        {
+          "a": "i05",
+          "b": "i11-a",
+          "distance": 0.915206,
+          "family": "ring"
+        },
+        {
+          "a": "i05",
+          "b": "i11-b",
+          "distance": 0.894002,
+          "family": "ring"
+        },
+        {
+          "a": "i11-a",
+          "b": "i11-b",
+          "distance": 0.211169,
+          "family": "ring"
+        }
+      ],
+      "should_not_hit_distribution": [
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 2.165591,
+          "negative": "arms-race"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 1.067267,
+          "negative": "brand-flywheel"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 2.134268,
+          "negative": "bullwhip"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 1.309101,
+          "negative": "classic-cld-growth-and-burden"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 1.331188,
+          "negative": "debt-spiral"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.745931,
+          "negative": "fishing-collapse"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 1.107241,
+          "negative": "induced-demand"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 1.502409,
+          "negative": "limits-to-growth"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.916935,
+          "negative": "population-logistic"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.650111,
+          "negative": "random-n10-i01"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.670177,
+          "negative": "random-n10-i02"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.689352,
+          "negative": "random-n10-i03"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.769432,
+          "negative": "random-n10-i04"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.761764,
+          "negative": "random-n10-i05"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 1.112848,
+          "negative": "random-n10-i06"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.790643,
+          "negative": "random-n10-i07"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.480084,
+          "negative": "random-n10-i08"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 1.213988,
+          "negative": "random-n10-i11"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 1.10518,
+          "negative": "random-n10-i12"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.778595,
+          "negative": "random-n10-i13"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.840497,
+          "negative": "random-n10-i14"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.527785,
+          "negative": "random-n10-i15"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.842499,
+          "negative": "random-n10-i17"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.630436,
+          "negative": "random-n10-i18"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.988266,
+          "negative": "renewable-resource"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.89495,
+          "negative": "soil-erosion"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 0.851324,
+          "negative": "success-to-the-successful"
+        },
+        {
+          "anchor": "epidemic-feedback-manual-layout-human",
+          "distance": 2.355013,
+          "negative": "tragedy-of-the-commons"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 1.534473,
+          "negative": "arms-race"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.359174,
+          "negative": "brand-flywheel"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 2.515464,
+          "negative": "bullwhip"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 1.463057,
+          "negative": "classic-cld-growth-and-burden"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.740548,
+          "negative": "debt-spiral"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.633163,
+          "negative": "fishing-collapse"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.554043,
+          "negative": "induced-demand"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 1.596387,
+          "negative": "limits-to-growth"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.788147,
+          "negative": "population-logistic"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.884002,
+          "negative": "random-n10-i01"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.730604,
+          "negative": "random-n10-i02"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.886047,
+          "negative": "random-n10-i03"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 1.031345,
+          "negative": "random-n10-i04"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 1.010456,
+          "negative": "random-n10-i05"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 1.390113,
+          "negative": "random-n10-i06"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 1.089959,
+          "negative": "random-n10-i07"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.901876,
+          "negative": "random-n10-i08"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 1.579574,
+          "negative": "random-n10-i11"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 1.337708,
+          "negative": "random-n10-i12"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.81695,
+          "negative": "random-n10-i13"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 1.124529,
+          "negative": "random-n10-i14"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.920446,
+          "negative": "random-n10-i15"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.830794,
+          "negative": "random-n10-i17"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.790999,
+          "negative": "random-n10-i18"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.91379,
+          "negative": "renewable-resource"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.595489,
+          "negative": "soil-erosion"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 0.601923,
+          "negative": "success-to-the-successful"
+        },
+        {
+          "anchor": "brand-flywheel",
+          "distance": 2.741323,
+          "negative": "tragedy-of-the-commons"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 2.577641,
+          "negative": "arms-race"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.529516,
+          "negative": "brand-flywheel"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 2.248931,
+          "negative": "bullwhip"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 0.46218,
+          "negative": "classic-cld-growth-and-burden"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.70665,
+          "negative": "debt-spiral"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.231952,
+          "negative": "fishing-collapse"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.461901,
+          "negative": "induced-demand"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.462381,
+          "negative": "limits-to-growth"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.062321,
+          "negative": "population-logistic"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.099103,
+          "negative": "random-n10-i01"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.383232,
+          "negative": "random-n10-i02"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.42616,
+          "negative": "random-n10-i03"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.183454,
+          "negative": "random-n10-i04"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.163768,
+          "negative": "random-n10-i05"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.06713,
+          "negative": "random-n10-i06"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.200382,
+          "negative": "random-n10-i07"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.516174,
+          "negative": "random-n10-i08"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 2.059856,
+          "negative": "random-n10-i11"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 0.985812,
+          "negative": "random-n10-i12"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.484195,
+          "negative": "random-n10-i13"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 0.825383,
+          "negative": "random-n10-i14"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.431899,
+          "negative": "random-n10-i15"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.52442,
+          "negative": "random-n10-i17"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.316604,
+          "negative": "random-n10-i18"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 0.878277,
+          "negative": "renewable-resource"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.415365,
+          "negative": "soil-erosion"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 1.218084,
+          "negative": "success-to-the-successful"
+        },
+        {
+          "anchor": "classic-cld",
+          "distance": 2.630809,
+          "negative": "tragedy-of-the-commons"
+        },
+        {
+          "anchor": "bowtie-wage-price",
+          "distance": 1.160558,
+          "negative": "eroding-goals"
+        },
+        {
+          "anchor": "bowtie-wage-price",
+          "distance": 1.430487,
+          "negative": "fixes-that-fail"
+        },
+        {
+          "anchor": "bowtie-wage-price",
+          "distance": 1.639092,
+          "negative": "learning-flywheel"
+        },
+        {
+          "anchor": "bowtie-wage-price",
+          "distance": 1.305119,
+          "negative": "shifting-the-burden"
+        },
+        {
+          "anchor": "bowtie-wage-price",
+          "distance": 1.20785,
+          "negative": "wage-price-spiral"
+        },
+        {
+          "anchor": "comb-supply-demand",
+          "distance": 0.815846,
+          "negative": "burnout-attrition"
+        },
+        {
+          "anchor": "comb-supply-demand",
+          "distance": 1.855617,
+          "negative": "urban-migration"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 1.945752,
+          "negative": "arms-race"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 1.35747,
+          "negative": "brand-flywheel"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 2.349111,
+          "negative": "bullwhip"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 1.504872,
+          "negative": "classic-cld-growth-and-burden"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 1.05984,
+          "negative": "debt-spiral"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.943766,
+          "negative": "fishing-collapse"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 1.231261,
+          "negative": "induced-demand"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 1.492573,
+          "negative": "limits-to-growth"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 1.111333,
+          "negative": "population-logistic"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.832677,
+          "negative": "random-n10-i01"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.75681,
+          "negative": "random-n10-i02"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.976515,
+          "negative": "random-n10-i03"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.852771,
+          "negative": "random-n10-i04"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.716495,
+          "negative": "random-n10-i05"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.972808,
+          "negative": "random-n10-i06"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.697005,
+          "negative": "random-n10-i07"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.867342,
+          "negative": "random-n10-i08"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 1.613791,
+          "negative": "random-n10-i11"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.913739,
+          "negative": "random-n10-i12"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.915907,
+          "negative": "random-n10-i13"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.842921,
+          "negative": "random-n10-i14"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.856413,
+          "negative": "random-n10-i15"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.949512,
+          "negative": "random-n10-i17"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.743776,
+          "negative": "random-n10-i18"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 1.036407,
+          "negative": "renewable-resource"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 1.161035,
+          "negative": "soil-erosion"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 0.952339,
+          "negative": "success-to-the-successful"
+        },
+        {
+          "anchor": "coupled-underinvestment",
+          "distance": 2.597539,
+          "negative": "tragedy-of-the-commons"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.559439,
+          "negative": "arms-race"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.047155,
+          "negative": "brand-flywheel"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 2.644137,
+          "negative": "bullwhip"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.674946,
+          "negative": "classic-cld-growth-and-burden"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.001474,
+          "negative": "debt-spiral"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.111224,
+          "negative": "fishing-collapse"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.176863,
+          "negative": "induced-demand"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.789419,
+          "negative": "limits-to-growth"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.320166,
+          "negative": "population-logistic"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 0.956509,
+          "negative": "random-n10-i01"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 0.717562,
+          "negative": "random-n10-i02"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.158575,
+          "negative": "random-n10-i03"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.033906,
+          "negative": "random-n10-i04"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.04227,
+          "negative": "random-n10-i05"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.431065,
+          "negative": "random-n10-i06"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.058603,
+          "negative": "random-n10-i07"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 0.928776,
+          "negative": "random-n10-i08"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.754679,
+          "negative": "random-n10-i11"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.344767,
+          "negative": "random-n10-i12"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 0.819944,
+          "negative": "random-n10-i13"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.213912,
+          "negative": "random-n10-i14"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.094883,
+          "negative": "random-n10-i15"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 0.796325,
+          "negative": "random-n10-i17"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 0.835172,
+          "negative": "random-n10-i18"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.178024,
+          "negative": "renewable-resource"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.11009,
+          "negative": "soil-erosion"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 1.137103,
+          "negative": "success-to-the-successful"
+        },
+        {
+          "anchor": "nested-capacity",
+          "distance": 2.892565,
+          "negative": "tragedy-of-the-commons"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.39194,
+          "negative": "arms-race"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.046915,
+          "negative": "brand-flywheel"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 2.840076,
+          "negative": "bullwhip"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.57219,
+          "negative": "classic-cld-growth-and-burden"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 0.917178,
+          "negative": "debt-spiral"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.157584,
+          "negative": "fishing-collapse"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.125364,
+          "negative": "induced-demand"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.983539,
+          "negative": "limits-to-growth"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.246123,
+          "negative": "population-logistic"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.158612,
+          "negative": "random-n10-i01"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 0.97343,
+          "negative": "random-n10-i02"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.287448,
+          "negative": "random-n10-i03"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.251016,
+          "negative": "random-n10-i04"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.191731,
+          "negative": "random-n10-i05"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.619764,
+          "negative": "random-n10-i06"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.281054,
+          "negative": "random-n10-i07"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.153325,
+          "negative": "random-n10-i08"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.984555,
+          "negative": "random-n10-i11"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.437734,
+          "negative": "random-n10-i12"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.101699,
+          "negative": "random-n10-i13"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.294377,
+          "negative": "random-n10-i14"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.313791,
+          "negative": "random-n10-i15"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.135025,
+          "negative": "random-n10-i17"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.04814,
+          "negative": "random-n10-i18"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.307259,
+          "negative": "renewable-resource"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 0.839583,
+          "negative": "soil-erosion"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 1.194456,
+          "negative": "success-to-the-successful"
+        },
+        {
+          "anchor": "nested-learning",
+          "distance": 3.088504,
+          "negative": "tragedy-of-the-commons"
+        },
+        {
+          "anchor": "nonplanar-credit",
+          "distance": 1.441892,
+          "negative": "random-n10-i09"
+        },
+        {
+          "anchor": "nonplanar-credit",
+          "distance": 3.261609,
+          "negative": "random-n10-i10"
+        },
+        {
+          "anchor": "nonplanar-credit",
+          "distance": 3.294118,
+          "negative": "random-n10-i16"
+        },
+        {
+          "anchor": "nonplanar-credit",
+          "distance": 1.461044,
+          "negative": "random-n10-i19"
+        },
+        {
+          "anchor": "nonplanar-inventory",
+          "distance": 2.646551,
+          "negative": "random-n10-i09"
+        },
+        {
+          "anchor": "nonplanar-inventory",
+          "distance": 3.548669,
+          "negative": "random-n10-i10"
+        },
+        {
+          "anchor": "nonplanar-inventory",
+          "distance": 3.118245,
+          "negative": "random-n10-i16"
+        },
+        {
+          "anchor": "nonplanar-inventory",
+          "distance": 2.701395,
+          "negative": "random-n10-i19"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 2.54213,
+          "negative": "arms-race"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.434816,
+          "negative": "brand-flywheel"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 2.259284,
+          "negative": "bullwhip"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 0.273064,
+          "negative": "classic-cld-growth-and-burden"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.62298,
+          "negative": "debt-spiral"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.033418,
+          "negative": "fishing-collapse"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.367978,
+          "negative": "induced-demand"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.406491,
+          "negative": "limits-to-growth"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 0.777048,
+          "negative": "population-logistic"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 0.962759,
+          "negative": "random-n10-i01"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.239431,
+          "negative": "random-n10-i02"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.269858,
+          "negative": "random-n10-i03"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 0.976493,
+          "negative": "random-n10-i04"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 0.983008,
+          "negative": "random-n10-i05"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 0.855879,
+          "negative": "random-n10-i06"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.016924,
+          "negative": "random-n10-i07"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.383347,
+          "negative": "random-n10-i08"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.926415,
+          "negative": "random-n10-i11"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 0.753851,
+          "negative": "random-n10-i12"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.372203,
+          "negative": "random-n10-i13"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 0.673636,
+          "negative": "random-n10-i14"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.281564,
+          "negative": "random-n10-i15"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.432498,
+          "negative": "random-n10-i17"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.193853,
+          "negative": "random-n10-i18"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 0.819263,
+          "negative": "renewable-resource"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.287131,
+          "negative": "soil-erosion"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 1.064361,
+          "negative": "success-to-the-successful"
+        },
+        {
+          "anchor": "retest-classic-cld",
+          "distance": 2.567678,
+          "negative": "tragedy-of-the-commons"
+        },
+        {
+          "anchor": "random-n10-i00",
+          "distance": 0.699768,
+          "negative": "random-n10-i00"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 2.696622,
+          "negative": "arms-race"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.704858,
+          "negative": "brand-flywheel"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 2.371356,
+          "negative": "bullwhip"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.656331,
+          "negative": "classic-cld-growth-and-burden"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.736727,
+          "negative": "debt-spiral"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.091214,
+          "negative": "fishing-collapse"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.604799,
+          "negative": "induced-demand"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.516067,
+          "negative": "limits-to-growth"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.232319,
+          "negative": "population-logistic"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.057247,
+          "negative": "random-n10-i01"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.010807,
+          "negative": "random-n10-i02"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 0.993703,
+          "negative": "random-n10-i03"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.082853,
+          "negative": "random-n10-i04"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.00772,
+          "negative": "random-n10-i05"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 0.999191,
+          "negative": "random-n10-i06"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 0.838007,
+          "negative": "random-n10-i07"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.019413,
+          "negative": "random-n10-i08"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.394953,
+          "negative": "random-n10-i11"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 0.85336,
+          "negative": "random-n10-i12"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.067784,
+          "negative": "random-n10-i13"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 0.978918,
+          "negative": "random-n10-i14"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 0.834035,
+          "negative": "random-n10-i15"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.10277,
+          "negative": "random-n10-i17"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 0.922507,
+          "negative": "random-n10-i18"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.235556,
+          "negative": "renewable-resource"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.408018,
+          "negative": "soil-erosion"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 1.129005,
+          "negative": "success-to-the-successful"
+        },
+        {
+          "anchor": "random-n10-i05",
+          "distance": 2.598739,
+          "negative": "tragedy-of-the-commons"
+        },
+        {
+          "anchor": "i05",
+          "distance": 2.899274,
+          "negative": "arms-race"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.863658,
+          "negative": "brand-flywheel"
+        },
+        {
+          "anchor": "i05",
+          "distance": 2.185689,
+          "negative": "bullwhip"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.034648,
+          "negative": "classic-cld-growth-and-burden"
+        },
+        {
+          "anchor": "i05",
+          "distance": 2.007804,
+          "negative": "debt-spiral"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.358002,
+          "negative": "fishing-collapse"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.796044,
+          "negative": "induced-demand"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.376798,
+          "negative": "limits-to-growth"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.344238,
+          "negative": "population-logistic"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.047184,
+          "negative": "random-n10-i01"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.225938,
+          "negative": "random-n10-i02"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.307503,
+          "negative": "random-n10-i03"
+        },
+        {
+          "anchor": "i05",
+          "distance": 0.796397,
+          "negative": "random-n10-i04"
+        },
+        {
+          "anchor": "i05",
+          "distance": 0.865913,
+          "negative": "random-n10-i05"
+        },
+        {
+          "anchor": "i05",
+          "distance": 0.98265,
+          "negative": "random-n10-i06"
+        },
+        {
+          "anchor": "i05",
+          "distance": 0.678603,
+          "negative": "random-n10-i07"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.311337,
+          "negative": "random-n10-i08"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.613089,
+          "negative": "random-n10-i11"
+        },
+        {
+          "anchor": "i05",
+          "distance": 0.640108,
+          "negative": "random-n10-i12"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.275618,
+          "negative": "random-n10-i13"
+        },
+        {
+          "anchor": "i05",
+          "distance": 0.914132,
+          "negative": "random-n10-i14"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.1869,
+          "negative": "random-n10-i15"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.337858,
+          "negative": "random-n10-i17"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.217361,
+          "negative": "random-n10-i18"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.265223,
+          "negative": "renewable-resource"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.692864,
+          "negative": "soil-erosion"
+        },
+        {
+          "anchor": "i05",
+          "distance": 1.346701,
+          "negative": "success-to-the-successful"
+        },
+        {
+          "anchor": "i05",
+          "distance": 2.51291,
+          "negative": "tragedy-of-the-commons"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 2.792357,
+          "negative": "arms-race"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.872204,
+          "negative": "brand-flywheel"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.954301,
+          "negative": "bullwhip"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.214266,
+          "negative": "classic-cld-growth-and-burden"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.921366,
+          "negative": "debt-spiral"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.213375,
+          "negative": "fishing-collapse"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.804589,
+          "negative": "induced-demand"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.085316,
+          "negative": "limits-to-growth"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.157265,
+          "negative": "population-logistic"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.007299,
+          "negative": "random-n10-i01"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.252631,
+          "negative": "random-n10-i02"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.131915,
+          "negative": "random-n10-i03"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 0.834999,
+          "negative": "random-n10-i04"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 0.867713,
+          "negative": "random-n10-i05"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 0.81723,
+          "negative": "random-n10-i06"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 0.909774,
+          "negative": "random-n10-i07"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.388714,
+          "negative": "random-n10-i08"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.562564,
+          "negative": "random-n10-i11"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 0.896859,
+          "negative": "random-n10-i12"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.345414,
+          "negative": "random-n10-i13"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 0.644044,
+          "negative": "random-n10-i14"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.344184,
+          "negative": "random-n10-i15"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.415939,
+          "negative": "random-n10-i17"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.207053,
+          "negative": "random-n10-i18"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.247441,
+          "negative": "renewable-resource"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.591898,
+          "negative": "soil-erosion"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 1.245736,
+          "negative": "success-to-the-successful"
+        },
+        {
+          "anchor": "i11-a",
+          "distance": 2.2625,
+          "negative": "tragedy-of-the-commons"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 2.751164,
+          "negative": "arms-race"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.810042,
+          "negative": "brand-flywheel"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.92058,
+          "negative": "bullwhip"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.160456,
+          "negative": "classic-cld-growth-and-burden"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.880173,
+          "negative": "debt-spiral"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.136447,
+          "negative": "fishing-collapse"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.742428,
+          "negative": "induced-demand"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.020847,
+          "negative": "limits-to-growth"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.101587,
+          "negative": "population-logistic"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 0.932,
+          "negative": "random-n10-i01"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.1983,
+          "negative": "random-n10-i02"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.062386,
+          "negative": "random-n10-i03"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 0.7597,
+          "negative": "random-n10-i04"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 0.792414,
+          "negative": "random-n10-i05"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 0.68497,
+          "negative": "random-n10-i06"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 0.842007,
+          "negative": "random-n10-i07"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.334383,
+          "negative": "random-n10-i08"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.508773,
+          "negative": "random-n10-i11"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 0.891451,
+          "negative": "random-n10-i12"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.287689,
+          "negative": "random-n10-i13"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 0.540617,
+          "negative": "random-n10-i14"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.268885,
+          "negative": "random-n10-i15"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.358214,
+          "negative": "random-n10-i17"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.171807,
+          "negative": "random-n10-i18"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.166508,
+          "negative": "renewable-resource"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.536221,
+          "negative": "soil-erosion"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 1.203699,
+          "negative": "success-to-the-successful"
+        },
+        {
+          "anchor": "i11-b",
+          "distance": 2.22012,
+          "negative": "tragedy-of-the-commons"
+        }
+      ],
+      "threshold_rule": "midpoint(hit_p90, not_p10) when separated; hit_p95 with separated=false otherwise"
+    },
+    "excluded_keys": [
+      "automorphism_residual",
+      "bend_total_curvature",
+      "degree_canvas_spearman",
+      "loop_compactness_mean",
+      "loop_edge_crossings",
+      "loop_edge_length_cv",
+      "loop_foreign_nodes",
+      "loop_overlap_area",
+      "loop_self_intersections",
+      "min_crossing_angle",
+      "mirror_axis_err",
+      "symmetry_axis_err_px"
+    ],
+    "exclusion_rule": "keys null on any anchor or any negative, or constant across the anchor library (zero information)",
+    "feature_keys": [
+      "alignment_max_coverage",
+      "angular_resolution_min",
+      "aspect_deviation",
+      "avg_edge_length",
+      "bend_soft_margin",
+      "canvas_fill_rate",
+      "crossing_count",
+      "edge_length_cv",
+      "hub_centroid_px",
+      "hub_centroid_ratio",
+      "hub_degree",
+      "hub_neighbor_centrality_ratio",
+      "layout_n_nodes",
+      "max_min_edge_ratio",
+      "min_spacing_px",
+      "min_spacing_ratio",
+      "node_spacing_cv",
+      "visual_centroid_px",
+      "visual_centroid_ratio",
+      "voronoi_area_cv"
+    ],
+    "hit_threshold": 1.702473,
+    "key_centers": {
+      "alignment_max_coverage": 1.0,
+      "angular_resolution_min": 15.069970938,
+      "aspect_deviation": 0.299003738,
+      "avg_edge_length": 0.20386668377924755,
+      "bend_soft_margin": -0.0017309315764539414,
+      "canvas_fill_rate": 0.121104081,
+      "crossing_count": 0.0,
+      "edge_length_cv": 0.3079630465,
+      "hub_centroid_px": 0.08574858770408471,
+      "hub_centroid_ratio": 0.08574858799999999,
+      "hub_degree": 4.0,
+      "hub_neighbor_centrality_ratio": 0.8990765615,
+      "layout_n_nodes": 9.5,
+      "max_min_edge_ratio": 2.778965004,
+      "min_spacing_px": 0.1383370128473852,
+      "min_spacing_ratio": 0.138337013,
+      "node_spacing_cv": 0.136690882,
+      "visual_centroid_px": 0.03632235326913805,
+      "visual_centroid_ratio": 0.0363223535,
+      "voronoi_area_cv": 0.3469589065
+    },
+    "key_scales": {
+      "alignment_max_coverage": 0.0,
+      "angular_resolution_min": 15.837659345811714,
+      "aspect_deviation": 0.14643625092661225,
+      "avg_edge_length": 0.0586994794398763,
+      "bend_soft_margin": 0.020149093270654377,
+      "canvas_fill_rate": 0.05654780874722015,
+      "crossing_count": 0.0,
+      "edge_length_cv": 0.11669260896960708,
+      "hub_centroid_px": 0.13829880234229347,
+      "hub_centroid_ratio": 0.1382988024462565,
+      "hub_degree": 2.7798369162342476,
+      "hub_neighbor_centrality_ratio": 0.49095736953298735,
+      "layout_n_nodes": 1.4825796886582654,
+      "max_min_edge_ratio": 0.8783467522238697,
+      "min_spacing_px": 0.054273491091440626,
+      "min_spacing_ratio": 0.054273491104521863,
+      "node_spacing_cv": 0.10180280337286879,
+      "visual_centroid_px": 0.016333385950382372,
+      "visual_centroid_ratio": 0.016333386026686436,
+      "voronoi_area_cv": 0.2970253719421793
+    },
+    "min_evaluable_key_share": 0.5,
+    "scale_rule": "median center, IQR/1.349 scale, library self",
+    "weights": "equal (preregistered starting point)"
+  },
+  "schema": "stdraw.anchor-library/1"
+}
