@@ -215,6 +215,7 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
         library = anchor_prior.load_library()
         retrieval = anchor_prior.retrieve(graph, edges, incumbent_v4, library)
     else:
+        library = None
         retrieval = {"anchor_hit": None, "reason": "baseline-unavailable",
                      "family": None}
     provenance_anchor = {k: v for k, v in sorted(retrieval.items())}
@@ -362,8 +363,6 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
         if best_v4 is not None:
             reason = ("delivery pre/post metric consistency check failed; "
                       "fail-closed to the incumbent")
-        elif m0_record.get("active") and not ranked:
-            reason = "every shortlisted candidate was eliminated by the M0 gate"
         elif delivery_log and all(
                 a.get("outcome") == "delivery_error" for a in delivery_log):
             reason = "every candidate delivery raised an error"
@@ -374,6 +373,8 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
         elif reports and all(r.budget_exhausted for r in reports):
             reason = ("routing op budget exhausted before any candidate "
                       "was evaluated")
+        elif m0_record.get("active") and not ranked:
+            reason = "every shortlisted candidate was eliminated by the M0 gate"
         else:
             reason = "no candidate delivery passed the not-worse guard"
         provenance["delivery"] = {
