@@ -1,0 +1,898 @@
+{
+  "ladder_reports": {
+    "new": {
+      "chain-ring-hybrid": [
+        {
+          "cid": "r3n2g0c0",
+          "gap": 24.0,
+          "grade": "best",
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "cid": "r3n2g0c1",
+          "gap": 36.0,
+          "grade": "best",
+          "pitch": 80,
+          "recipe": "ortho",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "min_card_gap": 12.0,
+          "pitch": 56,
+          "recipe": "candidate-v1",
+          "src": "A",
+          "status": "gate-rejected"
+        },
+        {
+          "cid": "r3n2g0c2",
+          "gap": 24.0,
+          "grade": "best",
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "B",
+          "status": "candidate"
+        },
+        {
+          "cid": "r3n2g0c3",
+          "gap": 36.0,
+          "grade": "best",
+          "pitch": 80,
+          "recipe": "ortho",
+          "src": "B",
+          "status": "candidate"
+        },
+        {
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "pitch": 68,
+          "recipe": "candidate-v1",
+          "src": "B",
+          "status": "duplicate-of-existing"
+        }
+      ],
+      "dual-hub-asymmetric": [
+        {
+          "cid": "r3n3g0c0",
+          "gap": 24.0,
+          "grade": "best",
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "cid": "r3n3g0c1",
+          "gap": 36.0,
+          "grade": "best",
+          "pitch": 80,
+          "recipe": "ortho",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "min_card_gap": 12.0,
+          "pitch": 56,
+          "recipe": "candidate-v1",
+          "src": "A",
+          "status": "gate-rejected"
+        },
+        {
+          "cid": "r3n3g0c2",
+          "gap": 24.0,
+          "grade": "uncertified",
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "B",
+          "status": "candidate"
+        },
+        {
+          "cid": "r3n3g0c3",
+          "gap": 36.0,
+          "grade": "uncertified",
+          "pitch": 80,
+          "recipe": "ortho",
+          "src": "B",
+          "status": "candidate"
+        },
+        {
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "pitch": 68,
+          "recipe": "candidate-v1",
+          "src": "B",
+          "status": "duplicate-of-existing"
+        }
+      ],
+      "nested-ring-shared-node": [
+        {
+          "cid": "r3n1g0c0",
+          "gap": 26.0,
+          "grade": "best",
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "cid": "r3n1g0c1",
+          "gap": 36.0,
+          "grade": "best",
+          "pitch": 80,
+          "recipe": "ortho",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "pitch": 56,
+          "recipe": "candidate-v1",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "cid": "r3n1g0c2",
+          "gap": 26.0,
+          "grade": "best",
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "B",
+          "status": "candidate"
+        },
+        {
+          "cid": "r3n1g0c3",
+          "gap": 36.0,
+          "grade": "best",
+          "pitch": 80,
+          "recipe": "ortho",
+          "src": "B",
+          "status": "candidate"
+        },
+        {
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "pitch": 68,
+          "recipe": "candidate-v1",
+          "src": "B",
+          "status": "duplicate-of-existing"
+        }
+      ]
+    },
+    "old": {
+      "brand-flywheel": [
+        {
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "cid": "r3e4g0c0",
+          "gap": 36.0,
+          "grade": "best",
+          "pitch": 80,
+          "recipe": "ortho",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "pitch": 56,
+          "recipe": "candidate-v1",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "pitch": 72,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        }
+      ],
+      "classic-cld-growth-and-burden": [
+        {
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "cid": "r3e5g0c0",
+          "gap": 36.0,
+          "grade": "best",
+          "pitch": 80,
+          "recipe": "ortho",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "cid": "r3e5g0c1",
+          "gap": 35.0,
+          "grade": "best",
+          "pitch": 56,
+          "recipe": "candidate-v1",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "pitch": 72,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        }
+      ],
+      "comb-supply-demand": [
+        {
+          "cid": "r3e3g0c0",
+          "gap": 24.0,
+          "grade": "best",
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "cid": "r3e3g0c1",
+          "gap": 36.0,
+          "grade": "best",
+          "pitch": 80,
+          "recipe": "ortho",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "min_card_gap": 12.0,
+          "pitch": 56,
+          "recipe": "candidate-v1",
+          "src": "A",
+          "status": "gate-rejected"
+        },
+        {
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "cid": "r3e3g0c2",
+          "gap": 28.0,
+          "grade": "best",
+          "pitch": 72,
+          "recipe": "auto",
+          "src": "A",
+          "status": "candidate"
+        }
+      ],
+      "coupled-underinvestment": [
+        {
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "cid": "r3e1g0c0",
+          "gap": 36.0,
+          "grade": "best",
+          "pitch": 80,
+          "recipe": "ortho",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "pitch": 56,
+          "recipe": "candidate-v1",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "pitch": 72,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        }
+      ],
+      "nonplanar-credit": [
+        {
+          "cid": "r3e2g0c0",
+          "gap": 24.0,
+          "grade": "uncertified",
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "detail": "nar layer inapplicable; degrade to the 3D layer or use the uniform placement forms\n      honest degradation: skipping the 2D certificate (a replaceable layout-layer implementation is M1+)\n[6/6] done.\n",
+          "pitch": 80,
+          "recipe": "ortho",
+          "src": "A",
+          "status": "cli-failed"
+        },
+        {
+          "cid": "r3e2g0c1",
+          "gap": 18.0,
+          "grade": "uncertified",
+          "pitch": 56,
+          "recipe": "candidate-v1",
+          "src": "A",
+          "status": "candidate"
+        },
+        {
+          "pitch": 68,
+          "recipe": "auto",
+          "src": "A",
+          "status": "duplicate-of-existing"
+        },
+        {
+          "cid": "r3e2g0c2",
+          "gap": 28.0,
+          "grade": "uncertified",
+          "pitch": 72,
+          "recipe": "auto",
+          "src": "A",
+          "status": "candidate"
+        }
+      ]
+    }
+  },
+  "lcg_seed": 20261123,
+  "model_version": "aesthetic-v2",
+  "n_anchor": 9,
+  "n_disagree": 11,
+  "n_newtopo": 14,
+  "n_retest": 3,
+  "n_total": 37,
+  "note": "round-3 selection - new topology engine pools (hard gate), widened old-graph pools, anchor-vs-engine pairs, offline-arm disagreement pairs, cross-session retests; ZERO dose pairs (perturbation ladder not loaded); preference data and source labels stored separately",
+  "offline_scoring": {
+    "arms": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "caliber": "committed model files + BT refit on committed pool-pool decided labels; selection ranking only, committed analysis artifacts untouched",
+    "n_decided_pool_labels": 15
+  },
+  "per_graph_newtopo": {
+    "chain-ring-hybrid": 5,
+    "dual-hub-asymmetric": 4,
+    "nested-ring-shared-node": 5
+  },
+  "questions": [
+    {
+      "a": "g4c1",
+      "b": "g4c3",
+      "graph": "brand-flywheel",
+      "kind": "retest",
+      "pair_key": "brand-flywheel|g4c1|g4c3",
+      "principles": {
+        "asked_in_round1_too": true,
+        "cross_session_retest_of_round2_tie": true,
+        "note": "third observation grows the cross-session noise baseline"
+      },
+      "qid": "q01"
+    },
+    {
+      "a": "r3n1g0c0",
+      "b": "r3n1g0c2",
+      "graph": "nested-ring-shared-node",
+      "kind": "newtopo",
+      "pair_key": "nested-ring-shared-node|r3n1g0c0|r3n1g0c2",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q02"
+    },
+    {
+      "a": "r3n2g0c2",
+      "b": "r3n2g0c3",
+      "graph": "chain-ring-hybrid",
+      "kind": "newtopo",
+      "pair_key": "chain-ring-hybrid|r3n2g0c2|r3n2g0c3",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q03"
+    },
+    {
+      "a": "g5c0",
+      "b": "r3e5g0c1",
+      "graph": "classic-cld-growth-and-burden",
+      "kind": "anchor",
+      "pair_key": "classic-cld-growth-and-burden|g5c0|r3e5g0c1",
+      "principles": {
+        "engine_is_extension": true,
+        "human_anchor_vs_engine_same_graph": true
+      },
+      "qid": "q04"
+    },
+    {
+      "a": "r3n2g0c0",
+      "b": "r3n2g0c2",
+      "graph": "chain-ring-hybrid",
+      "kind": "newtopo",
+      "pair_key": "chain-ring-hybrid|r3n2g0c0|r3n2g0c2",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q05"
+    },
+    {
+      "a": "r3n3g0c0",
+      "b": "r3n3g0c1",
+      "graph": "dual-hub-asymmetric",
+      "kind": "newtopo",
+      "pair_key": "dual-hub-asymmetric|r3n3g0c0|r3n3g0c1",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q06"
+    },
+    {
+      "a": "r3n2g0c1",
+      "b": "r3n2g0c3",
+      "graph": "chain-ring-hybrid",
+      "kind": "newtopo",
+      "pair_key": "chain-ring-hybrid|r3n2g0c1|r3n2g0c3",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q07"
+    },
+    {
+      "a": "g4c2",
+      "b": "r3e4g0c0",
+      "graph": "brand-flywheel",
+      "kind": "disagree",
+      "pair_key": "brand-flywheel|g4c2|r3e4g0c0",
+      "principles": {
+        "arm_votes_M0_M1_M2": [
+          2,
+          1
+        ],
+        "halves": 0,
+        "scoring_caliber": "offline refit of committed arms on the 25 committed decided labels; selection-only",
+        "split": 1.0
+      },
+      "qid": "q08"
+    },
+    {
+      "a": "r3n3g0c1",
+      "b": "r3n3g0c3",
+      "graph": "dual-hub-asymmetric",
+      "kind": "newtopo",
+      "pair_key": "dual-hub-asymmetric|r3n3g0c1|r3n3g0c3",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q09"
+    },
+    {
+      "a": "r3n3g0c0",
+      "b": "r3n3g0c2",
+      "graph": "dual-hub-asymmetric",
+      "kind": "newtopo",
+      "pair_key": "dual-hub-asymmetric|r3n3g0c0|r3n3g0c2",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q10"
+    },
+    {
+      "a": "g1c0",
+      "b": "r3e1g0c0",
+      "graph": "coupled-underinvestment",
+      "kind": "anchor",
+      "pair_key": "coupled-underinvestment|g1c0|r3e1g0c0",
+      "principles": {
+        "engine_is_extension": true,
+        "human_anchor_vs_engine_same_graph": true
+      },
+      "qid": "q11"
+    },
+    {
+      "a": "g5c2",
+      "b": "r3e5g0c1",
+      "graph": "classic-cld-growth-and-burden",
+      "kind": "disagree",
+      "pair_key": "classic-cld-growth-and-burden|g5c2|r3e5g0c1",
+      "principles": {
+        "arm_votes_M0_M1_M2": [
+          2,
+          1
+        ],
+        "halves": 0,
+        "scoring_caliber": "offline refit of committed arms on the 25 committed decided labels; selection-only",
+        "split": 1.0
+      },
+      "qid": "q12"
+    },
+    {
+      "a": "r3e3g0c0",
+      "b": "r3e3g0c1",
+      "graph": "comb-supply-demand",
+      "kind": "disagree",
+      "pair_key": "comb-supply-demand|r3e3g0c0|r3e3g0c1",
+      "principles": {
+        "arm_votes_M0_M1_M2": [
+          2,
+          1
+        ],
+        "halves": 0,
+        "scoring_caliber": "offline refit of committed arms on the 25 committed decided labels; selection-only",
+        "split": 1.0
+      },
+      "qid": "q13"
+    },
+    {
+      "a": "g5c4",
+      "b": "r3e5g0c1",
+      "graph": "classic-cld-growth-and-burden",
+      "kind": "disagree",
+      "pair_key": "classic-cld-growth-and-burden|g5c4|r3e5g0c1",
+      "principles": {
+        "arm_votes_M0_M1_M2": [
+          2,
+          1
+        ],
+        "halves": 0,
+        "scoring_caliber": "offline refit of committed arms on the 25 committed decided labels; selection-only",
+        "split": 1.0
+      },
+      "qid": "q14"
+    },
+    {
+      "a": "g4c1",
+      "b": "r3e4g0c0",
+      "graph": "brand-flywheel",
+      "kind": "disagree",
+      "pair_key": "brand-flywheel|g4c1|r3e4g0c0",
+      "principles": {
+        "arm_votes_M0_M1_M2": [
+          2,
+          1
+        ],
+        "halves": 0,
+        "scoring_caliber": "offline refit of committed arms on the 25 committed decided labels; selection-only",
+        "split": 1.0
+      },
+      "qid": "q15"
+    },
+    {
+      "a": "g4c3",
+      "b": "r3e4g0c0",
+      "graph": "brand-flywheel",
+      "kind": "disagree",
+      "pair_key": "brand-flywheel|g4c3|r3e4g0c0",
+      "principles": {
+        "arm_votes_M0_M1_M2": [
+          2,
+          1
+        ],
+        "halves": 0,
+        "scoring_caliber": "offline refit of committed arms on the 25 committed decided labels; selection-only",
+        "split": 1.0
+      },
+      "qid": "q16"
+    },
+    {
+      "a": "r3n2g0c0",
+      "b": "r3n2g0c3",
+      "graph": "chain-ring-hybrid",
+      "kind": "newtopo",
+      "pair_key": "chain-ring-hybrid|r3n2g0c0|r3n2g0c3",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q17"
+    },
+    {
+      "a": "g3c0",
+      "b": "r3e3g0c0",
+      "graph": "comb-supply-demand",
+      "kind": "anchor",
+      "pair_key": "comb-supply-demand|g3c0|r3e3g0c0",
+      "principles": {
+        "engine_is_extension": true,
+        "human_anchor_vs_engine_same_graph": true
+      },
+      "qid": "q18"
+    },
+    {
+      "a": "r3n3g0c2",
+      "b": "r3n3g0c3",
+      "graph": "dual-hub-asymmetric",
+      "kind": "newtopo",
+      "pair_key": "dual-hub-asymmetric|r3n3g0c2|r3n3g0c3",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q19"
+    },
+    {
+      "a": "g2c0",
+      "b": "r3e2g0c0",
+      "graph": "nonplanar-credit",
+      "kind": "anchor",
+      "pair_key": "nonplanar-credit|g2c0|r3e2g0c0",
+      "principles": {
+        "engine_is_extension": true,
+        "human_anchor_vs_engine_same_graph": true
+      },
+      "qid": "q20"
+    },
+    {
+      "a": "g3c0",
+      "b": "r3e3g0c2",
+      "graph": "comb-supply-demand",
+      "kind": "anchor",
+      "pair_key": "comb-supply-demand|g3c0|r3e3g0c2",
+      "principles": {
+        "engine_is_extension": true,
+        "human_anchor_vs_engine_same_graph": true
+      },
+      "qid": "q21"
+    },
+    {
+      "a": "g5c0",
+      "b": "r3e5g0c0",
+      "graph": "classic-cld-growth-and-burden",
+      "kind": "anchor",
+      "pair_key": "classic-cld-growth-and-burden|g5c0|r3e5g0c0",
+      "principles": {
+        "engine_is_extension": true,
+        "human_anchor_vs_engine_same_graph": true
+      },
+      "qid": "q22"
+    },
+    {
+      "a": "r3n1g0c1",
+      "b": "r3n1g0c3",
+      "graph": "nested-ring-shared-node",
+      "kind": "newtopo",
+      "pair_key": "nested-ring-shared-node|r3n1g0c1|r3n1g0c3",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q23"
+    },
+    {
+      "a": "r3n2g0c0",
+      "b": "r3n2g0c1",
+      "graph": "chain-ring-hybrid",
+      "kind": "newtopo",
+      "pair_key": "chain-ring-hybrid|r3n2g0c0|r3n2g0c1",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q24"
+    },
+    {
+      "a": "g5c1",
+      "b": "r3e5g0c0",
+      "graph": "classic-cld-growth-and-burden",
+      "kind": "anchor",
+      "pair_key": "classic-cld-growth-and-burden|g5c1|r3e5g0c0",
+      "principles": {
+        "engine_is_extension": true,
+        "human_anchor_vs_engine_same_graph": true
+      },
+      "qid": "q25"
+    },
+    {
+      "a": "g5c1",
+      "b": "g5c4",
+      "graph": "classic-cld-growth-and-burden",
+      "kind": "retest",
+      "pair_key": "classic-cld-growth-and-burden|g5c1|g5c4",
+      "principles": {
+        "asked_in_round1_too": false,
+        "cross_session_retest_of_round2_tie": true,
+        "note": "round-2-only tie re-asked cross-session"
+      },
+      "qid": "q26"
+    },
+    {
+      "a": "g1c1",
+      "b": "g1c2",
+      "graph": "coupled-underinvestment",
+      "kind": "disagree",
+      "pair_key": "coupled-underinvestment|g1c1|g1c2",
+      "principles": {
+        "arm_votes_M0_M1_M2": [
+          0,
+          0
+        ],
+        "halves": 3,
+        "scoring_caliber": "offline refit of committed arms on the 25 committed decided labels; selection-only",
+        "split": 0.5
+      },
+      "qid": "q27"
+    },
+    {
+      "a": "g5c3",
+      "b": "r3e5g0c1",
+      "graph": "classic-cld-growth-and-burden",
+      "kind": "disagree",
+      "pair_key": "classic-cld-growth-and-burden|g5c3|r3e5g0c1",
+      "principles": {
+        "arm_votes_M0_M1_M2": [
+          2,
+          1
+        ],
+        "halves": 0,
+        "scoring_caliber": "offline refit of committed arms on the 25 committed decided labels; selection-only",
+        "split": 1.0
+      },
+      "qid": "q28"
+    },
+    {
+      "a": "g3c0",
+      "b": "r3e3g0c1",
+      "graph": "comb-supply-demand",
+      "kind": "anchor",
+      "pair_key": "comb-supply-demand|g3c0|r3e3g0c1",
+      "principles": {
+        "engine_is_extension": true,
+        "human_anchor_vs_engine_same_graph": true
+      },
+      "qid": "q29"
+    },
+    {
+      "a": "g4c0",
+      "b": "r3e4g0c0",
+      "graph": "brand-flywheel",
+      "kind": "anchor",
+      "pair_key": "brand-flywheel|g4c0|r3e4g0c0",
+      "principles": {
+        "engine_is_extension": true,
+        "human_anchor_vs_engine_same_graph": true
+      },
+      "qid": "q30"
+    },
+    {
+      "a": "r3n1g0c0",
+      "b": "r3n1g0c3",
+      "graph": "nested-ring-shared-node",
+      "kind": "newtopo",
+      "pair_key": "nested-ring-shared-node|r3n1g0c0|r3n1g0c3",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q31"
+    },
+    {
+      "a": "g3c1",
+      "b": "g3c2",
+      "graph": "comb-supply-demand",
+      "kind": "disagree",
+      "pair_key": "comb-supply-demand|g3c1|g3c2",
+      "principles": {
+        "arm_votes_M0_M1_M2": [
+          0,
+          0
+        ],
+        "halves": 3,
+        "scoring_caliber": "offline refit of committed arms on the 25 committed decided labels; selection-only",
+        "split": 0.5
+      },
+      "qid": "q32"
+    },
+    {
+      "a": "g2c1",
+      "b": "r3e2g0c2",
+      "graph": "nonplanar-credit",
+      "kind": "disagree",
+      "pair_key": "nonplanar-credit|g2c1|r3e2g0c2",
+      "principles": {
+        "arm_votes_M0_M1_M2": [
+          1,
+          2
+        ],
+        "halves": 0,
+        "scoring_caliber": "offline refit of committed arms on the 25 committed decided labels; selection-only",
+        "split": 1.0
+      },
+      "qid": "q33"
+    },
+    {
+      "a": "g5c1",
+      "b": "g5c3",
+      "graph": "classic-cld-growth-and-burden",
+      "kind": "retest",
+      "pair_key": "classic-cld-growth-and-burden|g5c1|g5c3",
+      "principles": {
+        "asked_in_round1_too": false,
+        "cross_session_retest_of_round2_tie": true,
+        "note": "round-2-only tie re-asked cross-session"
+      },
+      "qid": "q34"
+    },
+    {
+      "a": "g2c1",
+      "b": "r3e2g0c0",
+      "graph": "nonplanar-credit",
+      "kind": "disagree",
+      "pair_key": "nonplanar-credit|g2c1|r3e2g0c0",
+      "principles": {
+        "arm_votes_M0_M1_M2": [
+          1,
+          2
+        ],
+        "halves": 0,
+        "scoring_caliber": "offline refit of committed arms on the 25 committed decided labels; selection-only",
+        "split": 1.0
+      },
+      "qid": "q35"
+    },
+    {
+      "a": "r3n1g0c2",
+      "b": "r3n1g0c3",
+      "graph": "nested-ring-shared-node",
+      "kind": "newtopo",
+      "pair_key": "nested-ring-shared-node|r3n1g0c2|r3n1g0c3",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q36"
+    },
+    {
+      "a": "r3n1g0c0",
+      "b": "r3n1g0c1",
+      "graph": "nested-ring-shared-node",
+      "kind": "newtopo",
+      "pair_key": "nested-ring-shared-node|r3n1g0c0|r3n1g0c1",
+      "principles": {
+        "engine_ladder_gate_passing": true,
+        "new_topology_pool_pairs": true
+      },
+      "qid": "q37"
+    }
+  ],
+  "schema": "stdraw.pref-round3.selection/1",
+  "session": "2026-11-22-round3"
+}

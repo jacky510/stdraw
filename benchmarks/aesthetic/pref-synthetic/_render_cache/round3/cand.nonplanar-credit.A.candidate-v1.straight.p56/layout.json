@@ -1,0 +1,1903 @@
+{
+ "viewBox": [
+  0,
+  0,
+  888,
+  584
+ ],
+ "nodes": {
+  "ms": {
+   "x": 156,
+   "y": 262,
+   "w": 96
+  },
+  "ir": {
+   "x": 226,
+   "y": 200,
+   "w": 96
+  },
+  "credit": {
+   "x": 450,
+   "y": 448,
+   "w": 96
+  },
+  "val": {
+   "x": 226,
+   "y": 138,
+   "w": 96
+  },
+  "inv": {
+   "x": 792,
+   "y": 262,
+   "w": 96
+  },
+  "trans": {
+   "x": 474,
+   "y": 386,
+   "w": 108
+  },
+  "fund": {
+   "x": 498,
+   "y": 324,
+   "w": 96
+  },
+  "lever": {
+   "x": 110,
+   "y": 76,
+   "w": 96
+  },
+  "wealth": {
+   "x": 520,
+   "y": 200,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "ms",
+   "b": "ir",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      201.0,
+      243.0
+     ],
+     [
+      215.4,
+      219.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     201.0,
+     243.0
+    ],
+    "b": [
+     215.38,
+     219.0
+    ]
+   },
+   "arrow": [
+    215.4,
+    219.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "ms",
+   "b": "credit",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      166.6,
+      281.0
+     ],
+     [
+      405.0,
+      443.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     166.62,
+     281.0
+    ],
+    "b": [
+     405.0,
+     443.516
+    ]
+   },
+   "arrow": [
+    405.0,
+    443.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "ms",
+   "b": "val",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "poly",
+    "points": [
+     [
+      111.0,
+      262.0
+     ],
+     [
+      92.5,
+      262.0
+     ],
+     [
+      92.5,
+      138.0
+     ],
+     [
+      181.0,
+      138.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     111.0,
+     262.0
+    ],
+    "b": [
+     181.0,
+     138.0
+    ]
+   },
+   "arrow": [
+    181.0,
+    138.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "ms",
+   "b": "trans",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      201.0,
+      266.5
+     ],
+     [
+      423.0,
+      381.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     201.0,
+     266.484
+    ],
+    "b": [
+     423.0,
+     381.516
+    ]
+   },
+   "arrow": [
+    423.0,
+    381.5
+   ],
+   "route_cross_edges": 1
+  },
+  {
+   "a": "trans",
+   "b": "inv",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      525.0,
+      381.5
+     ],
+     [
+      747.0,
+      266.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     525.0,
+     381.516
+    ],
+    "b": [
+     747.0,
+     266.484
+    ]
+   },
+   "arrow": [
+    747.0,
+    266.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "ir",
+   "b": "val",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      226.0,
+      181.0
+     ],
+     [
+      226.0,
+      157.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     226.0,
+     181.0
+    ],
+    "b": [
+     226.0,
+     157.0
+    ]
+   },
+   "arrow": [
+    226.0,
+    157.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "ir",
+   "b": "fund",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      271.0,
+      204.5
+     ],
+     [
+      453.0,
+      319.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     271.0,
+     204.484
+    ],
+    "b": [
+     453.0,
+     319.516
+    ]
+   },
+   "arrow": [
+    453.0,
+    319.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "fund",
+   "b": "inv",
+   "polarity": "-",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      543.0,
+      319.5
+     ],
+     [
+      747.0,
+      262.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     543.0,
+     319.516
+    ],
+    "b": [
+     747.0,
+     262.0
+    ]
+   },
+   "arrow": [
+    747.0,
+    262.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "credit",
+   "b": "lever",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "poly",
+    "points": [
+     [
+      405.0,
+      448.0
+     ],
+     [
+      46.5,
+      448.0
+     ],
+     [
+      46.5,
+      76.0
+     ],
+     [
+      65.0,
+      76.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     405.0,
+     448.0
+    ],
+    "b": [
+     65.0,
+     76.0
+    ]
+   },
+   "arrow": [
+    65.0,
+    76.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "lever",
+   "b": "val",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      155.0,
+      95.0
+     ],
+     [
+      181.0,
+      119.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     155.0,
+     95.0
+    ],
+    "b": [
+     181.0,
+     119.0
+    ]
+   },
+   "arrow": [
+    181.0,
+    119.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "credit",
+   "b": "inv",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "arc",
+    "points": [
+     [
+      495.0,
+      429.0
+     ],
+     [
+      514.1,
+      437.3
+     ],
+     [
+      532.6,
+      444.4
+     ],
+     [
+      550.4,
+      450.1
+     ],
+     [
+      567.7,
+      454.7
+     ],
+     [
+      584.3,
+      458.0
+     ],
+     [
+      600.2,
+      460.0
+     ],
+     [
+      615.6,
+      460.7
+     ],
+     [
+      630.3,
+      460.2
+     ],
+     [
+      644.4,
+      458.5
+     ],
+     [
+      657.9,
+      455.4
+     ],
+     [
+      670.8,
+      451.2
+     ],
+     [
+      683.0,
+      445.6
+     ],
+     [
+      694.7,
+      438.8
+     ],
+     [
+      705.7,
+      430.8
+     ],
+     [
+      716.0,
+      421.5
+     ],
+     [
+      725.8,
+      410.9
+     ],
+     [
+      734.9,
+      399.1
+     ],
+     [
+      743.4,
+      386.0
+     ],
+     [
+      751.3,
+      371.6
+     ],
+     [
+      758.6,
+      356.0
+     ],
+     [
+      765.2,
+      339.1
+     ],
+     [
+      771.2,
+      321.0
+     ],
+     [
+      776.6,
+      301.6
+     ],
+     [
+      781.4,
+      281.0
+     ]
+    ],
+    "arc": true,
+    "ctrl": [
+     727.9,
+     536.2
+    ]
+   },
+   "anchors": {
+    "a": [
+     495.0,
+     429.0
+    ],
+    "b": [
+     781.38,
+     281.0
+    ]
+   },
+   "arrow": [
+    781.4,
+    281.0
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "val",
+   "b": "wealth",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      271.0,
+      142.5
+     ],
+     [
+      475.0,
+      195.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     271.0,
+     142.484
+    ],
+    "b": [
+     475.0,
+     195.516
+    ]
+   },
+   "arrow": [
+    475.0,
+    195.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "wealth",
+   "b": "inv",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      565.0,
+      204.5
+     ],
+     [
+      747.0,
+      257.5
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     565.0,
+     204.484
+    ],
+    "b": [
+     747.0,
+     257.516
+    ]
+   },
+   "arrow": [
+    747.0,
+    257.5
+   ],
+   "route_cross_edges": 0
+  },
+  {
+   "a": "credit",
+   "b": "ir",
+   "polarity": "+",
+   "loop_kinds": [],
+   "loop_color": null,
+   "route": {
+    "kind": "line",
+    "points": [
+     [
+      405.0,
+      429.0
+     ],
+     [
+      236.6,
+      219.0
+     ]
+    ]
+   },
+   "anchors": {
+    "a": [
+     405.0,
+     429.0
+    ],
+    "b": [
+     236.62,
+     219.0
+    ]
+   },
+   "arrow": [
+    236.6,
+    219.0
+   ],
+   "route_cross_edges": 1
+  }
+ ],
+ "bars": {},
+ "meta": {
+  "rows": 7,
+  "rowY": [
+   76,
+   138,
+   200,
+   262,
+   324,
+   386,
+   448
+  ],
+  "pitch": null,
+  "deg0": [],
+  "cardH": 44,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "recipe": "auto-v2",
+  "line_style": "straight",
+  "position_engine": "manual",
+  "mode_decision_trace": {
+   "engine": "manual",
+   "placement": null,
+   "manual": true,
+   "rules": [],
+   "fallback": {
+    "used": false,
+    "reason": null
+   },
+   "legacy_band_exemption": {
+    "triggered": false,
+    "detail": "manual layout: the auto mode chain did not run; routing hard gates still apply, graded honestly"
+   }
+  },
+  "from_layout": {
+   "source": "candidate-v1/planarized:002",
+   "manual_viewBox": [
+    0,
+    0,
+    860,
+    514
+   ],
+   "snapped_to_2px": []
+  },
+  "clearance": 16,
+  "router_cross_pairs": 1,
+  "anchor_snap_deferred": null,
+  "edge_rules": null,
+  "solver_available": true,
+  "routing_math": "visibility-graph Dijkstra shortest path (clearance-inflated obstacles) + tangent-arc fillet smoothing (G1, clearance-verified); crossing dual-caliber: router theory vs Liang-Barsky delivered geometry",
+  "method": "layered + crossing-minimization (CP-SAT if available) with straight/arc first-class routing and visibility-graph detour; hard gates: box-over-line=0, edge-box clearance>=16px",
+  "recipe_requested": "candidate-v1",
+  "candidate_pool": {
+   "analysis": {
+    "n_nodes": 9,
+    "n_edges": 14,
+    "max_degree": 4,
+    "core_nodes": 9,
+    "isolated_nodes": 0,
+    "loop_model": {
+     "status": "ok",
+     "reason": null,
+     "enumerated_total": 420,
+     "loop_count": 37,
+     "primary_loop": [
+      "credit",
+      "fund",
+      "inv",
+      "ir",
+      "lever",
+      "ms",
+      "trans",
+      "val"
+     ],
+     "loops": [
+      {
+       "cycle": [
+        "credit",
+        "ir",
+        "fund",
+        "inv",
+        "trans",
+        "ms",
+        "val",
+        "lever"
+       ],
+       "length": 8,
+       "kind": "R",
+       "neg_edges": 2,
+       "importance": 1.171429,
+       "tier": "primary",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "ir",
+        "ms",
+        "trans",
+        "inv",
+        "wealth",
+        "val",
+        "lever"
+       ],
+       "length": 8,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 1.171429,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "lever",
+        "val",
+        "ir",
+        "fund",
+        "inv",
+        "trans",
+        "ms"
+       ],
+       "length": 8,
+       "kind": "B",
+       "neg_edges": 3,
+       "importance": 1.171429,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "lever",
+        "val",
+        "wealth",
+        "inv",
+        "fund",
+        "ir",
+        "ms"
+       ],
+       "length": 8,
+       "kind": "B",
+       "neg_edges": 3,
+       "importance": 1.171429,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "fund",
+        "ir",
+        "ms",
+        "val",
+        "lever"
+       ],
+       "length": 7,
+       "kind": "B",
+       "neg_edges": 3,
+       "importance": 1.0875,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "trans",
+        "ms",
+        "ir",
+        "val",
+        "lever"
+       ],
+       "length": 7,
+       "kind": "R",
+       "neg_edges": 2,
+       "importance": 1.0875,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "ir",
+        "fund",
+        "inv",
+        "wealth",
+        "val",
+        "lever"
+       ],
+       "length": 7,
+       "kind": "R",
+       "neg_edges": 2,
+       "importance": 1.0875,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "ir",
+        "fund",
+        "inv",
+        "wealth",
+        "val",
+        "ms"
+       ],
+       "length": 7,
+       "kind": "R",
+       "neg_edges": 2,
+       "importance": 1.0875,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "ir",
+        "val",
+        "wealth",
+        "inv",
+        "trans",
+        "ms"
+       ],
+       "length": 7,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 1.0875,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "lever",
+        "val",
+        "wealth",
+        "inv",
+        "trans",
+        "ms"
+       ],
+       "length": 7,
+       "kind": "R",
+       "neg_edges": 0,
+       "importance": 1.0875,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "fund",
+        "ir",
+        "val",
+        "lever"
+       ],
+       "length": 6,
+       "kind": "B",
+       "neg_edges": 3,
+       "importance": 1.003571,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "fund",
+        "ir",
+        "val",
+        "ms"
+       ],
+       "length": 6,
+       "kind": "B",
+       "neg_edges": 3,
+       "importance": 1.003571,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "trans",
+        "ms",
+        "val",
+        "ir"
+       ],
+       "length": 6,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 1.003571,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "trans",
+        "ms",
+        "val",
+        "lever"
+       ],
+       "length": 6,
+       "kind": "R",
+       "neg_edges": 0,
+       "importance": 1.003571,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "wealth",
+        "val",
+        "ir",
+        "ms"
+       ],
+       "length": 6,
+       "kind": "R",
+       "neg_edges": 2,
+       "importance": 1.003571,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "wealth",
+        "val",
+        "ms",
+        "ir"
+       ],
+       "length": 6,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 1.003571,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "ir",
+        "fund",
+        "inv",
+        "trans",
+        "ms"
+       ],
+       "length": 6,
+       "kind": "R",
+       "neg_edges": 2,
+       "importance": 1.003571,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "fund",
+        "inv",
+        "trans",
+        "ms",
+        "val",
+        "ir"
+       ],
+       "length": 6,
+       "kind": "B",
+       "neg_edges": 3,
+       "importance": 1.003571,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "fund",
+        "inv",
+        "wealth",
+        "val",
+        "ms",
+        "ir"
+       ],
+       "length": 6,
+       "kind": "B",
+       "neg_edges": 3,
+       "importance": 1.003571,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "inv",
+        "trans",
+        "ms",
+        "ir",
+        "val",
+        "wealth"
+       ],
+       "length": 6,
+       "kind": "R",
+       "neg_edges": 2,
+       "importance": 1.003571,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "fund",
+        "ir",
+        "ms"
+       ],
+       "length": 5,
+       "kind": "B",
+       "neg_edges": 3,
+       "importance": 0.919643,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "trans",
+        "ms",
+        "ir"
+       ],
+       "length": 5,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 0.919643,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "wealth",
+        "val",
+        "ir"
+       ],
+       "length": 5,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 0.919643,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "wealth",
+        "val",
+        "lever"
+       ],
+       "length": 5,
+       "kind": "R",
+       "neg_edges": 0,
+       "importance": 0.919643,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "wealth",
+        "val",
+        "ms"
+       ],
+       "length": 5,
+       "kind": "R",
+       "neg_edges": 0,
+       "importance": 0.919643,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "ir",
+        "ms",
+        "val",
+        "lever"
+       ],
+       "length": 5,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 0.919643,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "lever",
+        "val",
+        "ir",
+        "ms"
+       ],
+       "length": 5,
+       "kind": "R",
+       "neg_edges": 2,
+       "importance": 0.919643,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "fund",
+        "inv",
+        "trans",
+        "ms",
+        "ir"
+       ],
+       "length": 5,
+       "kind": "B",
+       "neg_edges": 3,
+       "importance": 0.919643,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "fund",
+        "inv",
+        "wealth",
+        "val",
+        "ir"
+       ],
+       "length": 5,
+       "kind": "B",
+       "neg_edges": 3,
+       "importance": 0.919643,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "inv",
+        "trans",
+        "ms",
+        "val",
+        "wealth"
+       ],
+       "length": 5,
+       "kind": "R",
+       "neg_edges": 0,
+       "importance": 0.919643,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "fund",
+        "ir"
+       ],
+       "length": 4,
+       "kind": "R",
+       "neg_edges": 2,
+       "importance": 0.835714,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "inv",
+        "trans",
+        "ms"
+       ],
+       "length": 4,
+       "kind": "R",
+       "neg_edges": 0,
+       "importance": 0.835714,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "ir",
+        "val",
+        "lever"
+       ],
+       "length": 4,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 0.835714,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "ir",
+        "val",
+        "ms"
+       ],
+       "length": 4,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 0.835714,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "lever",
+        "val",
+        "ms"
+       ],
+       "length": 4,
+       "kind": "R",
+       "neg_edges": 0,
+       "importance": 0.835714,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "credit",
+        "ir",
+        "ms"
+       ],
+       "length": 3,
+       "kind": "B",
+       "neg_edges": 1,
+       "importance": 0.751786,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      },
+      {
+       "cycle": [
+        "ir",
+        "ms",
+        "val"
+       ],
+       "length": 3,
+       "kind": "R",
+       "neg_edges": 2,
+       "importance": 0.751786,
+       "tier": "supporting",
+       "declared_match": null,
+       "shared_nodes": 36
+      }
+     ]
+    }
+   },
+   "orchestration": {
+    "budget": {
+     "total": 12,
+     "per_source": 2,
+     "exhausted": false
+    },
+    "source_records": [
+     {
+      "source": "symmetric",
+      "outcome": "not_triggered",
+      "detail": "core n=9, edges m=14 (need exactly 4 core nodes / 5 edges)",
+      "candidates": 0
+     },
+     {
+      "source": "bowtie-vertex",
+      "outcome": "not_triggered",
+      "detail": "37 simple loops enumerated (need exactly 2)",
+      "candidates": 0
+     },
+     {
+      "source": "spine-wing",
+      "outcome": "not_triggered",
+      "detail": "no hub-pair candidate: no directed edge whose endpoints share 3..4 common neighbors",
+      "candidates": 0
+     },
+     {
+      "source": "comb-bilateral",
+      "outcome": "not_triggered",
+      "detail": "no bilateral-hub pair: no two non-adjacent nodes with identical source-only neighborhoods (|S| >= 3)",
+      "candidates": 0
+     },
+     {
+      "source": "column-chain",
+      "outcome": "not_triggered",
+      "detail": "longest simple loop k=8 (need 3..4)",
+      "candidates": 0
+     },
+     {
+      "source": "ring-cycle",
+      "outcome": "generated",
+      "detail": "emitted 1, kept 1 (per-source budget 2)",
+      "candidates": 1
+     },
+     {
+      "source": "radial",
+      "outcome": "not_triggered",
+      "detail": "hub_deg=4 < 6",
+      "candidates": 0
+     },
+     {
+      "source": "planarized",
+      "outcome": "generated",
+      "detail": "emitted 5, kept 2 (per-source budget 2)",
+      "candidates": 2
+     },
+     {
+      "source": "layered-v082",
+      "outcome": "generated",
+      "detail": "emitted 1, kept 1 (per-source budget 2)",
+      "candidates": 1
+     }
+    ],
+    "candidates": [
+     {
+      "candidate_id": "ring-cycle:000",
+      "source": "ring-cycle",
+      "node_positions": {
+       "credit": [
+        212,
+        62
+       ],
+       "fund": [
+        424,
+        274
+       ],
+       "inv": [
+        362,
+        424
+       ],
+       "ir": [
+        362,
+        124
+       ],
+       "lever": [
+        62,
+        124
+       ],
+       "ms": [
+        62,
+        424
+       ],
+       "trans": [
+        212,
+        486
+       ],
+       "val": [
+        0,
+        274
+       ],
+       "wealth": [
+        178,
+        356
+       ]
+      },
+      "metadata": {
+       "internal_filter": "none",
+       "engine": "ring-construct",
+       "detector_reason": "loop-dominated (trigger=cover), main ring k=8, chord crossings=3",
+       "trigger": "cover"
+      },
+      "generation_cost": 9,
+      "structural_signature": "c5f1f706df53c3be"
+     },
+     {
+      "candidate_id": "planarized:001",
+      "source": "planarized",
+      "node_positions": {
+       "credit": [
+        108,
+        76
+       ],
+       "fund": [
+        294,
+        200
+       ],
+       "inv": [
+        364,
+        324
+       ],
+       "ir": [
+        496,
+        138
+       ],
+       "lever": [
+        108,
+        138
+       ],
+       "ms": [
+        426,
+        448
+       ],
+       "trans": [
+        590,
+        262
+       ],
+       "val": [
+        202,
+        386
+       ],
+       "wealth": [
+        294,
+        262
+       ]
+      },
+      "metadata": {
+       "engine": "planarized-visibility",
+       "variant": "A",
+       "deleted_edges": [
+        [
+         "credit",
+         "inv"
+        ]
+       ],
+       "deletion_set_index": 0,
+       "reinsert_crossings": 1,
+       "j_cross": 1,
+       "constructions_enumerated": 12,
+       "deletion_sets_capped": true,
+       "st_per_set_capped": true,
+       "primary_loop_protected": [
+        [
+         "credit",
+         "fund"
+        ],
+        [
+         "credit",
+         "val"
+        ],
+        [
+         "fund",
+         "inv"
+        ],
+        [
+         "inv",
+         "ir"
+        ],
+        [
+         "ir",
+         "lever"
+        ],
+        [
+         "lever",
+         "ms"
+        ],
+        [
+         "ms",
+         "trans"
+        ],
+        [
+         "trans",
+         "val"
+        ]
+       ],
+       "internal_filter": "none",
+       "variant_b_same_construction": true
+      },
+      "generation_cost": 37,
+      "structural_signature": "c62df6f2e811c739"
+     },
+     {
+      "candidate_id": "planarized:002",
+      "source": "planarized",
+      "node_positions": {
+       "credit": [
+        426,
+        448
+       ],
+       "fund": [
+        474,
+        324
+       ],
+       "inv": [
+        768,
+        262
+       ],
+       "ir": [
+        202,
+        200
+       ],
+       "lever": [
+        86,
+        76
+       ],
+       "ms": [
+        132,
+        262
+       ],
+       "trans": [
+        450,
+        386
+       ],
+       "val": [
+        202,
+        138
+       ],
+       "wealth": [
+        496,
+        200
+       ]
+      },
+      "metadata": {
+       "engine": "planarized-visibility",
+       "variant": "A",
+       "deleted_edges": [
+        [
+         "credit",
+         "ir"
+        ]
+       ],
+       "deletion_set_index": 1,
+       "reinsert_crossings": 1,
+       "j_cross": 2,
+       "constructions_enumerated": 12,
+       "deletion_sets_capped": true,
+       "st_per_set_capped": true,
+       "primary_loop_protected": [
+        [
+         "credit",
+         "fund"
+        ],
+        [
+         "credit",
+         "val"
+        ],
+        [
+         "fund",
+         "inv"
+        ],
+        [
+         "inv",
+         "ir"
+        ],
+        [
+         "ir",
+         "lever"
+        ],
+        [
+         "lever",
+         "ms"
+        ],
+        [
+         "ms",
+         "trans"
+        ],
+        [
+         "trans",
+         "val"
+        ]
+       ],
+       "internal_filter": "none"
+      },
+      "generation_cost": 37,
+      "structural_signature": "b71b2632c1b92e88"
+     },
+     {
+      "candidate_id": "layered-v082:003",
+      "source": "layered-v082",
+      "node_positions": {
+       "credit": [
+        312,
+        148
+       ],
+       "fund": [
+        192,
+        260
+       ],
+       "inv": [
+        240,
+        372
+       ],
+       "ir": [
+        192,
+        204
+       ],
+       "lever": [
+        360,
+        204
+       ],
+       "ms": [
+        264,
+        92
+       ],
+       "trans": [
+        120,
+        148
+       ],
+       "val": [
+        360,
+        260
+       ],
+       "wealth": [
+        336,
+        316
+       ]
+      },
+      "metadata": {
+       "internal_filter": "none",
+       "engine": "incumbent-auto-v2",
+       "position_engine": "cp-sat",
+       "planarization_mode": "L2"
+      },
+      "generation_cost": 37,
+      "structural_signature": "deca84aa0ea399bd"
+     }
+    ]
+   },
+   "selection": {
+    "op_budget": {
+     "total": 232,
+     "consumed": 56,
+     "per_routed_edge": 1,
+     "granularity": "per-candidate"
+    },
+    "evaluated": 4,
+    "hard_pass": 3,
+    "reports": [
+     {
+      "candidate_id": "layered-v082:003",
+      "source": "layered-v082",
+      "structural_signature": "deca84aa0ea399bd",
+      "routed": true,
+      "budget_exhausted": false,
+      "crossings": 1,
+      "press_count": 0,
+      "clearance_violations": 0,
+      "min_clear": 16.0,
+      "min_card_gap": 12,
+      "mutual_min_dist": null,
+      "edge_length_cv": 0.482124,
+      "center_offset_norm": 0.078103,
+      "hard_pass": false,
+      "hard_failures": [
+       "card_gap_lt_16"
+      ]
+     },
+     {
+      "candidate_id": "planarized:001",
+      "source": "planarized",
+      "structural_signature": "c62df6f2e811c739",
+      "routed": true,
+      "budget_exhausted": false,
+      "crossings": 5,
+      "press_count": 0,
+      "clearance_violations": 0,
+      "min_clear": 17.5,
+      "min_card_gap": 18,
+      "mutual_min_dist": null,
+      "edge_length_cv": 0.459866,
+      "center_offset_norm": 0.053562,
+      "hard_pass": true,
+      "hard_failures": []
+     },
+     {
+      "candidate_id": "planarized:002",
+      "source": "planarized",
+      "structural_signature": "b71b2632c1b92e88",
+      "routed": true,
+      "budget_exhausted": false,
+      "crossings": 1,
+      "press_count": 0,
+      "clearance_violations": 0,
+      "min_clear": 17.0,
+      "min_card_gap": 18,
+      "mutual_min_dist": null,
+      "edge_length_cv": 0.434364,
+      "center_offset_norm": 0.085556,
+      "hard_pass": true,
+      "hard_failures": []
+     },
+     {
+      "candidate_id": "ring-cycle:000",
+      "source": "ring-cycle",
+      "structural_signature": "c5f1f706df53c3be",
+      "routed": true,
+      "budget_exhausted": false,
+      "crossings": 5,
+      "press_count": 0,
+      "clearance_violations": 0,
+      "min_clear": 21.3,
+      "min_card_gap": 24,
+      "mutual_min_dist": null,
+      "edge_length_cv": 0.447587,
+      "center_offset_norm": 0.01893,
+      "hard_pass": true,
+      "hard_failures": []
+     }
+    ],
+    "ranked_ids": [
+     "planarized:002",
+     "ring-cycle:000",
+     "planarized:001"
+    ]
+   },
+   "delivery": {
+    "mode": "candidate",
+    "candidate_id": "planarized:002",
+    "guard_caliber": "delivered-certificate-metrics",
+    "incumbent_guard_tuple": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0,
+     6,
+     0,
+     1,
+     0.26,
+     -12.0,
+     -17.3
+    ],
+    "incumbent_delivered_metrics": {
+     "crossings": 1,
+     "box_press_1px": 0,
+     "edge_box_min_clear": 17.3,
+     "min_card_gap": 12.0,
+     "spacing_cv": 0.26,
+     "visual_crossings": 1,
+     "anchor_violations": 0,
+     "anchor_standard_violations": 0,
+     "line_line_coincident_pairs": 0
+    },
+    "delivered_metrics": {
+     "crossings": 1,
+     "box_press_1px": 0,
+     "edge_box_min_clear": 21.0,
+     "min_card_gap": 18.0,
+     "spacing_cv": 0.627,
+     "visual_crossings": 1,
+     "anchor_violations": 0,
+     "anchor_standard_violations": 0,
+     "line_line_coincident_pairs": 0
+    },
+    "attempts": [
+     {
+      "candidate_id": "planarized:002",
+      "outcome": "delivered",
+      "guard_tuple": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       1,
+       0.627,
+       -18.0,
+       -21.0
+      ],
+      "delivered_metrics": {
+       "crossings": 1,
+       "box_press_1px": 0,
+       "edge_box_min_clear": 21.0,
+       "min_card_gap": 18.0,
+       "spacing_cv": 0.627,
+       "visual_crossings": 1,
+       "anchor_violations": 0,
+       "anchor_standard_violations": 0,
+       "line_line_coincident_pairs": 0
+      },
+      "incumbent_guard_tuple": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       6,
+       0,
+       1,
+       0.26,
+       -12.0,
+       -17.3
+      ]
+     }
+    ],
+    "incumbent_planarization_mode": "L2"
+   },
+   "candidate_contract_keys": [
+    "candidate_id",
+    "source",
+    "node_positions",
+    "metadata",
+    "generation_cost",
+    "structural_signature"
+   ]
+  }
+ },
+ "delivery": "stdraw-cli",
+ "interactive": true,
+ "engine_version": "0.8.2"
+}

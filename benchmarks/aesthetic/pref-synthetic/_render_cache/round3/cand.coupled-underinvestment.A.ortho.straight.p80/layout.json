@@ -1,0 +1,281 @@
+{
+ "viewBox": [
+  0,
+  0,
+  752,
+  440
+ ],
+ "nodes": {
+  "demand": {
+   "x": 254,
+   "y": 156,
+   "w": 96
+  },
+  "revenue": {
+   "x": 78,
+   "y": 76,
+   "w": 96
+  },
+  "profit": {
+   "x": 382,
+   "y": 396,
+   "w": 96
+  },
+  "invest": {
+   "x": 596,
+   "y": 76,
+   "w": 96
+  },
+  "capacity": {
+   "x": 456,
+   "y": 156,
+   "w": 96
+  },
+  "delivery": {
+   "x": 432,
+   "y": 76,
+   "w": 96
+  },
+  "satisfy": {
+   "x": 406,
+   "y": 236,
+   "w": 96
+  },
+  "pressure": {
+   "x": 306,
+   "y": 316,
+   "w": 96
+  },
+  "rnd": {
+   "x": 76,
+   "y": 236,
+   "w": 96
+  },
+  "compete": {
+   "x": 90,
+   "y": 156,
+   "w": 96
+  }
+ },
+ "edges": [
+  {
+   "a": "demand",
+   "b": "revenue",
+   "x": 116,
+   "y1": 156,
+   "y2": 76,
+   "arrow": [
+    116,
+    102,
+    -1
+   ]
+  },
+  {
+   "a": "revenue",
+   "b": "profit",
+   "x": 40,
+   "y1": 76,
+   "y2": 396,
+   "arrow": [
+    40,
+    387,
+    1
+   ]
+  },
+  {
+   "a": "profit",
+   "b": "invest",
+   "x": 724,
+   "y1": 396,
+   "y2": 76,
+   "arrow": [
+    724,
+    85,
+    -1
+   ]
+  },
+  {
+   "a": "profit",
+   "b": "rnd",
+   "x": 64,
+   "y1": 396,
+   "y2": 236,
+   "arrow": [
+    64,
+    262,
+    -1
+   ]
+  },
+  {
+   "a": "rnd",
+   "b": "compete",
+   "x": 90,
+   "y1": 236,
+   "y2": 156,
+   "arrow": [
+    90,
+    182,
+    -1
+   ]
+  },
+  {
+   "a": "compete",
+   "b": "revenue",
+   "x": 90,
+   "y1": 156,
+   "y2": 76,
+   "arrow": [
+    90,
+    102,
+    -1
+   ]
+  },
+  {
+   "a": "invest",
+   "b": "capacity",
+   "x": 470,
+   "y1": 76,
+   "y2": 156,
+   "arrow": [
+    470,
+    130,
+    1
+   ]
+  },
+  {
+   "a": "capacity",
+   "b": "delivery",
+   "x": 444,
+   "y1": 156,
+   "y2": 76,
+   "arrow": [
+    444,
+    102,
+    -1
+   ]
+  },
+  {
+   "a": "delivery",
+   "b": "satisfy",
+   "x": 420,
+   "y1": 76,
+   "y2": 236,
+   "arrow": [
+    420,
+    210,
+    1
+   ]
+  },
+  {
+   "a": "satisfy",
+   "b": "demand",
+   "x": 394,
+   "y1": 236,
+   "y2": 156,
+   "arrow": [
+    394,
+    165,
+    -1
+   ]
+  },
+  {
+   "a": "demand",
+   "b": "pressure",
+   "x": 116,
+   "y1": 156,
+   "y2": 316,
+   "arrow": [
+    116,
+    307,
+    1
+   ]
+  },
+  {
+   "a": "pressure",
+   "b": "invest",
+   "x": 496,
+   "y1": 316,
+   "y2": 76,
+   "arrow": [
+    496,
+    85,
+    -1
+   ]
+  }
+ ],
+ "bars": {
+  "demand": [
+   112,
+   398
+  ],
+  "revenue": [
+   36,
+   120
+  ],
+  "profit": [
+   36,
+   728
+  ],
+  "invest": [
+   466,
+   728
+  ],
+  "capacity": [
+   440,
+   474
+  ],
+  "delivery": [
+   416,
+   448
+  ],
+  "satisfy": [
+   390,
+   424
+  ],
+  "pressure": [
+   112,
+   500
+  ],
+  "rnd": [
+   60,
+   94
+  ]
+ },
+ "meta": {
+  "rows": 5,
+  "rowY": [
+   76,
+   156,
+   236,
+   316,
+   396
+  ],
+  "pitch": 80,
+  "deg0": [],
+  "cols": [
+   40,
+   64,
+   90,
+   116,
+   394,
+   420,
+   444,
+   470,
+   496,
+   724
+  ],
+  "cardH": 42,
+  "fs": [
+   12.5,
+   14.0
+  ],
+  "st": [
+   "revenue",
+   "profit"
+  ],
+  "down": 4,
+  "n": 10,
+  "m": 12,
+  "method": "visibility-representation (Rosenstiehl-Tarjan) 0-crossing guaranteed; wires strictly vertical; compact packing (occlusion allowed under cards)"
+ }
+}

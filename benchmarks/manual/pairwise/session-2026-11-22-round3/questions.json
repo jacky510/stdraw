@@ -1,0 +1,345 @@
+{
+  "schema": "stdraw.pairwise.questions/1",
+  "session": "2026-11-22-round3",
+  "lcg_seed": 20261123,
+  "model_version": "aesthetic-v2",
+  "n_newtopo": 14,
+  "n_disagree": 11,
+  "n_anchor": 9,
+  "n_retest": 3,
+  "questions": [
+    {
+      "qid": "q01",
+      "graph": "brand-flywheel",
+      "candidate_a": "g4c1",
+      "candidate_b": "g4c3",
+      "left_is_a": false,
+      "is_retest": true,
+      "pair_key": "brand-flywheel|g4c1|g4c3"
+    },
+    {
+      "qid": "q02",
+      "graph": "nested-ring-shared-node",
+      "candidate_a": "r3n1g0c0",
+      "candidate_b": "r3n1g0c2",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "nested-ring-shared-node|r3n1g0c0|r3n1g0c2"
+    },
+    {
+      "qid": "q03",
+      "graph": "chain-ring-hybrid",
+      "candidate_a": "r3n2g0c2",
+      "candidate_b": "r3n2g0c3",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "chain-ring-hybrid|r3n2g0c2|r3n2g0c3"
+    },
+    {
+      "qid": "q04",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c0",
+      "candidate_b": "r3e5g0c1",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "classic-cld-growth-and-burden|g5c0|r3e5g0c1"
+    },
+    {
+      "qid": "q05",
+      "graph": "chain-ring-hybrid",
+      "candidate_a": "r3n2g0c0",
+      "candidate_b": "r3n2g0c2",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "chain-ring-hybrid|r3n2g0c0|r3n2g0c2"
+    },
+    {
+      "qid": "q06",
+      "graph": "dual-hub-asymmetric",
+      "candidate_a": "r3n3g0c0",
+      "candidate_b": "r3n3g0c1",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "dual-hub-asymmetric|r3n3g0c0|r3n3g0c1"
+    },
+    {
+      "qid": "q07",
+      "graph": "chain-ring-hybrid",
+      "candidate_a": "r3n2g0c1",
+      "candidate_b": "r3n2g0c3",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "chain-ring-hybrid|r3n2g0c1|r3n2g0c3"
+    },
+    {
+      "qid": "q08",
+      "graph": "brand-flywheel",
+      "candidate_a": "g4c2",
+      "candidate_b": "r3e4g0c0",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "brand-flywheel|g4c2|r3e4g0c0"
+    },
+    {
+      "qid": "q09",
+      "graph": "dual-hub-asymmetric",
+      "candidate_a": "r3n3g0c1",
+      "candidate_b": "r3n3g0c3",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "dual-hub-asymmetric|r3n3g0c1|r3n3g0c3"
+    },
+    {
+      "qid": "q10",
+      "graph": "dual-hub-asymmetric",
+      "candidate_a": "r3n3g0c0",
+      "candidate_b": "r3n3g0c2",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "dual-hub-asymmetric|r3n3g0c0|r3n3g0c2"
+    },
+    {
+      "qid": "q11",
+      "graph": "coupled-underinvestment",
+      "candidate_a": "g1c0",
+      "candidate_b": "r3e1g0c0",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "coupled-underinvestment|g1c0|r3e1g0c0"
+    },
+    {
+      "qid": "q12",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c2",
+      "candidate_b": "r3e5g0c1",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "classic-cld-growth-and-burden|g5c2|r3e5g0c1"
+    },
+    {
+      "qid": "q13",
+      "graph": "comb-supply-demand",
+      "candidate_a": "r3e3g0c0",
+      "candidate_b": "r3e3g0c1",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "comb-supply-demand|r3e3g0c0|r3e3g0c1"
+    },
+    {
+      "qid": "q14",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c4",
+      "candidate_b": "r3e5g0c1",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "classic-cld-growth-and-burden|g5c4|r3e5g0c1"
+    },
+    {
+      "qid": "q15",
+      "graph": "brand-flywheel",
+      "candidate_a": "g4c1",
+      "candidate_b": "r3e4g0c0",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "brand-flywheel|g4c1|r3e4g0c0"
+    },
+    {
+      "qid": "q16",
+      "graph": "brand-flywheel",
+      "candidate_a": "g4c3",
+      "candidate_b": "r3e4g0c0",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "brand-flywheel|g4c3|r3e4g0c0"
+    },
+    {
+      "qid": "q17",
+      "graph": "chain-ring-hybrid",
+      "candidate_a": "r3n2g0c0",
+      "candidate_b": "r3n2g0c3",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "chain-ring-hybrid|r3n2g0c0|r3n2g0c3"
+    },
+    {
+      "qid": "q18",
+      "graph": "comb-supply-demand",
+      "candidate_a": "g3c0",
+      "candidate_b": "r3e3g0c0",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "comb-supply-demand|g3c0|r3e3g0c0"
+    },
+    {
+      "qid": "q19",
+      "graph": "dual-hub-asymmetric",
+      "candidate_a": "r3n3g0c2",
+      "candidate_b": "r3n3g0c3",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "dual-hub-asymmetric|r3n3g0c2|r3n3g0c3"
+    },
+    {
+      "qid": "q20",
+      "graph": "nonplanar-credit",
+      "candidate_a": "g2c0",
+      "candidate_b": "r3e2g0c0",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "nonplanar-credit|g2c0|r3e2g0c0"
+    },
+    {
+      "qid": "q21",
+      "graph": "comb-supply-demand",
+      "candidate_a": "g3c0",
+      "candidate_b": "r3e3g0c2",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "comb-supply-demand|g3c0|r3e3g0c2"
+    },
+    {
+      "qid": "q22",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c0",
+      "candidate_b": "r3e5g0c0",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "classic-cld-growth-and-burden|g5c0|r3e5g0c0"
+    },
+    {
+      "qid": "q23",
+      "graph": "nested-ring-shared-node",
+      "candidate_a": "r3n1g0c1",
+      "candidate_b": "r3n1g0c3",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "nested-ring-shared-node|r3n1g0c1|r3n1g0c3"
+    },
+    {
+      "qid": "q24",
+      "graph": "chain-ring-hybrid",
+      "candidate_a": "r3n2g0c0",
+      "candidate_b": "r3n2g0c1",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "chain-ring-hybrid|r3n2g0c0|r3n2g0c1"
+    },
+    {
+      "qid": "q25",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c1",
+      "candidate_b": "r3e5g0c0",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "classic-cld-growth-and-burden|g5c1|r3e5g0c0"
+    },
+    {
+      "qid": "q26",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c1",
+      "candidate_b": "g5c4",
+      "left_is_a": true,
+      "is_retest": true,
+      "pair_key": "classic-cld-growth-and-burden|g5c1|g5c4"
+    },
+    {
+      "qid": "q27",
+      "graph": "coupled-underinvestment",
+      "candidate_a": "g1c1",
+      "candidate_b": "g1c2",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "coupled-underinvestment|g1c1|g1c2"
+    },
+    {
+      "qid": "q28",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c3",
+      "candidate_b": "r3e5g0c1",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "classic-cld-growth-and-burden|g5c3|r3e5g0c1"
+    },
+    {
+      "qid": "q29",
+      "graph": "comb-supply-demand",
+      "candidate_a": "g3c0",
+      "candidate_b": "r3e3g0c1",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "comb-supply-demand|g3c0|r3e3g0c1"
+    },
+    {
+      "qid": "q30",
+      "graph": "brand-flywheel",
+      "candidate_a": "g4c0",
+      "candidate_b": "r3e4g0c0",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "brand-flywheel|g4c0|r3e4g0c0"
+    },
+    {
+      "qid": "q31",
+      "graph": "nested-ring-shared-node",
+      "candidate_a": "r3n1g0c0",
+      "candidate_b": "r3n1g0c3",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "nested-ring-shared-node|r3n1g0c0|r3n1g0c3"
+    },
+    {
+      "qid": "q32",
+      "graph": "comb-supply-demand",
+      "candidate_a": "g3c1",
+      "candidate_b": "g3c2",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "comb-supply-demand|g3c1|g3c2"
+    },
+    {
+      "qid": "q33",
+      "graph": "nonplanar-credit",
+      "candidate_a": "g2c1",
+      "candidate_b": "r3e2g0c2",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "nonplanar-credit|g2c1|r3e2g0c2"
+    },
+    {
+      "qid": "q34",
+      "graph": "classic-cld-growth-and-burden",
+      "candidate_a": "g5c1",
+      "candidate_b": "g5c3",
+      "left_is_a": true,
+      "is_retest": true,
+      "pair_key": "classic-cld-growth-and-burden|g5c1|g5c3"
+    },
+    {
+      "qid": "q35",
+      "graph": "nonplanar-credit",
+      "candidate_a": "g2c1",
+      "candidate_b": "r3e2g0c0",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "nonplanar-credit|g2c1|r3e2g0c0"
+    },
+    {
+      "qid": "q36",
+      "graph": "nested-ring-shared-node",
+      "candidate_a": "r3n1g0c2",
+      "candidate_b": "r3n1g0c3",
+      "left_is_a": true,
+      "is_retest": false,
+      "pair_key": "nested-ring-shared-node|r3n1g0c2|r3n1g0c3"
+    },
+    {
+      "qid": "q37",
+      "graph": "nested-ring-shared-node",
+      "candidate_a": "r3n1g0c0",
+      "candidate_b": "r3n1g0c1",
+      "left_is_a": false,
+      "is_retest": false,
+      "pair_key": "nested-ring-shared-node|r3n1g0c0|r3n1g0c1"
+    }
+  ]
+}
