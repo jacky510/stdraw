@@ -1,6 +1,6 @@
 # Round-3 pairwise session provenance (2026-11-22)
 
-- Built by aiengineerbot worker (t_3f10f23d): script `benchmarks/aesthetic/pref_round3.py`
+- Built by aiengineerbot worker (round-3 annotation-tool card): script `benchmarks/aesthetic/pref_round3.py`
   (this branch's version), 3 new topology sources (`benchmarks/manual/pref-round3/sources/`,
   base + alt each), candidate docs in `pref-synthetic/_render_cache/round3/cand.*/layout.json`
   (recipe x pitch ladder, hard gate min-card-gap >= 16). Worker delivered the self-contained
