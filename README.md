@@ -52,11 +52,11 @@ All images are real renderings produced by the current engine (v0.8.2) from the 
 
 <table>
   <tr>
-    <td><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D auto-v2 layout, edges colored by sign (+ vermilion / − drafting blue, all solid)" width="420"/></a></td>
+    <td><a href="../demos/debt-spiral-2d.html"><img src="docs/gallery/debt-spiral-2d.png" alt="debt spiral CLD 2D auto-v2 ring layout, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
     <td><a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout, polarity tubes + cone arrowheads" width="420"/></a></td>
   </tr>
   <tr>
-    <td><strong>2D · auto-v2 spine-wing layout</strong> (classic-cld-growth-and-burden, 8n/13e, vertical spine + midline wing band + mirrored right wing, 0 crossings; edges colored by sign: + vermilion / − drafting blue, all solid)</td>
+    <td><strong>2D · auto-v2 ring layout</strong> (debt-spiral, 5n/6e, a textbook debt-spiral feedback loop drawn as a clean ring — 0 crossings, gap 75.6 px; edges colored by sign: + vermilion / − drafting blue, all solid)</td>
     <td><strong>3D · sphere arrangement</strong> (rotate freely; projection crossings solved by the camera; two-color polarity tubes + cone arrowheads on every edge)</td>
   </tr>
   <tr>
