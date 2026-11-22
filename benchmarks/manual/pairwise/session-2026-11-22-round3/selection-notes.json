@@ -1,0 +1,206 @@
+[
+  {
+    "qid": "q01",
+    "kind": "new_topo",
+    "graph": "chain-loop-mix",
+    "pair_key": "chain-loop-mix|chain-loop-mix-chain-loop-mix|chain-loop-mix-chain-loop-mix-perm1"
+  },
+  {
+    "qid": "q02",
+    "kind": "new_topo",
+    "graph": "chain-loop-mix",
+    "pair_key": "chain-loop-mix|chain-loop-mix-chain-loop-mix|chain-loop-mix-chain-loop-mix-perm2"
+  },
+  {
+    "qid": "q03",
+    "kind": "new_topo",
+    "graph": "chain-loop-mix",
+    "pair_key": "chain-loop-mix|chain-loop-mix-chain-loop-mix|chain-loop-mix-chain-loop-mix-perm4"
+  },
+  {
+    "qid": "q04",
+    "kind": "new_topo",
+    "graph": "chain-loop-mix",
+    "pair_key": "chain-loop-mix|chain-loop-mix-chain-loop-mix-perm1|chain-loop-mix-chain-loop-mix-perm2"
+  },
+  {
+    "qid": "q05",
+    "kind": "new_topo",
+    "graph": "chain-loop-mix",
+    "pair_key": "chain-loop-mix|chain-loop-mix-chain-loop-mix-perm1|chain-loop-mix-chain-loop-mix-perm4"
+  },
+  {
+    "qid": "q06",
+    "kind": "new_topo",
+    "graph": "chain-loop-mix",
+    "pair_key": "chain-loop-mix|chain-loop-mix-chain-loop-mix-perm2|chain-loop-mix-chain-loop-mix-perm4"
+  },
+  {
+    "qid": "q07",
+    "kind": "new_topo",
+    "graph": "figure-eight",
+    "pair_key": "figure-eight|figure-eight-figure-eight|figure-eight-figure-eight-perm1"
+  },
+  {
+    "qid": "q08",
+    "kind": "new_topo",
+    "graph": "figure-eight",
+    "pair_key": "figure-eight|figure-eight-figure-eight|figure-eight-figure-eight-perm2"
+  },
+  {
+    "qid": "q09",
+    "kind": "new_topo",
+    "graph": "figure-eight",
+    "pair_key": "figure-eight|figure-eight-figure-eight|figure-eight-figure-eight-perm4"
+  },
+  {
+    "qid": "q10",
+    "kind": "new_topo",
+    "graph": "figure-eight",
+    "pair_key": "figure-eight|figure-eight-figure-eight-perm1|figure-eight-figure-eight-perm2"
+  },
+  {
+    "qid": "q11",
+    "kind": "new_topo",
+    "graph": "figure-eight",
+    "pair_key": "figure-eight|figure-eight-figure-eight-perm1|figure-eight-figure-eight-perm4"
+  },
+  {
+    "qid": "q12",
+    "kind": "new_topo",
+    "graph": "figure-eight",
+    "pair_key": "figure-eight|figure-eight-figure-eight-perm2|figure-eight-figure-eight-perm4"
+  },
+  {
+    "qid": "q13",
+    "kind": "new_topo",
+    "graph": "dual-hub-asymmetric",
+    "pair_key": "dual-hub-asymmetric|dual-hub-asymmetric-dual-hub-asymmetric|dual-hub-asymmetric-dual-hub-asymmetric-perm1"
+  },
+  {
+    "qid": "q14",
+    "kind": "new_topo",
+    "graph": "dual-hub-asymmetric",
+    "pair_key": "dual-hub-asymmetric|dual-hub-asymmetric-dual-hub-asymmetric|dual-hub-asymmetric-dual-hub-asymmetric-perm2"
+  },
+  {
+    "qid": "q15",
+    "kind": "new_topo",
+    "graph": "dual-hub-asymmetric",
+    "pair_key": "dual-hub-asymmetric|dual-hub-asymmetric-dual-hub-asymmetric|dual-hub-asymmetric-dual-hub-asymmetric-perm3"
+  },
+  {
+    "qid": "q16",
+    "kind": "new_topo",
+    "graph": "dual-hub-asymmetric",
+    "pair_key": "dual-hub-asymmetric|dual-hub-asymmetric-dual-hub-asymmetric|dual-hub-asymmetric-dual-hub-asymmetric-perm4"
+  },
+  {
+    "qid": "q17",
+    "kind": "new_topo",
+    "graph": "dual-hub-asymmetric",
+    "pair_key": "dual-hub-asymmetric|dual-hub-asymmetric-dual-hub-asymmetric-perm1|dual-hub-asymmetric-dual-hub-asymmetric-perm2"
+  },
+  {
+    "qid": "q18",
+    "kind": "new_topo",
+    "graph": "dual-hub-asymmetric",
+    "pair_key": "dual-hub-asymmetric|dual-hub-asymmetric-dual-hub-asymmetric-perm1|dual-hub-asymmetric-dual-hub-asymmetric-perm3"
+  },
+  {
+    "qid": "q19",
+    "kind": "disagree",
+    "graph": "brand-flywheel",
+    "pair_key": "brand-flywheel|g4c1|g4c2"
+  },
+  {
+    "qid": "q20",
+    "kind": "disagree",
+    "graph": "classic-cld-growth-and-burden",
+    "pair_key": "classic-cld-growth-and-burden|g5c2|g5c4"
+  },
+  {
+    "qid": "q21",
+    "kind": "disagree",
+    "graph": "classic-cld-growth-and-burden",
+    "pair_key": "classic-cld-growth-and-burden|g5c3|g5c4"
+  },
+  {
+    "qid": "q22",
+    "kind": "disagree",
+    "graph": "comb-supply-demand",
+    "pair_key": "comb-supply-demand|g3c1|g3c2"
+  },
+  {
+    "qid": "q23",
+    "kind": "disagree",
+    "graph": "coupled-underinvestment",
+    "pair_key": "coupled-underinvestment|g1c1|g1c2"
+  },
+  {
+    "qid": "q24",
+    "kind": "disagree",
+    "graph": "nonplanar-credit",
+    "pair_key": "nonplanar-credit|g2c1|g2c2"
+  },
+  {
+    "qid": "q25",
+    "kind": "anchor_engine",
+    "graph": "comb-supply-demand",
+    "pair_key": "comb-supply-demand|anchor-comb-supply-demand|g3c0"
+  },
+  {
+    "qid": "q26",
+    "kind": "anchor_engine",
+    "graph": "comb-supply-demand",
+    "pair_key": "comb-supply-demand|anchor-comb-supply-demand|g3c1"
+  },
+  {
+    "qid": "q27",
+    "kind": "anchor_engine",
+    "graph": "comb-supply-demand",
+    "pair_key": "comb-supply-demand|anchor-comb-supply-demand|g3c2"
+  },
+  {
+    "qid": "q28",
+    "kind": "anchor_engine",
+    "graph": "nonplanar-credit",
+    "pair_key": "nonplanar-credit|anchor-nonplanar-credit|g2c0"
+  },
+  {
+    "qid": "q29",
+    "kind": "anchor_engine",
+    "graph": "nonplanar-credit",
+    "pair_key": "nonplanar-credit|anchor-nonplanar-credit|g2c1"
+  },
+  {
+    "qid": "q30",
+    "kind": "anchor_engine",
+    "graph": "nonplanar-credit",
+    "pair_key": "nonplanar-credit|anchor-nonplanar-credit|g2c2"
+  },
+  {
+    "qid": "q31",
+    "kind": "anchor_engine",
+    "graph": "coupled-underinvestment",
+    "pair_key": "coupled-underinvestment|anchor-coupled-underinvestment|g1c0"
+  },
+  {
+    "qid": "q32",
+    "kind": "anchor_engine",
+    "graph": "coupled-underinvestment",
+    "pair_key": "coupled-underinvestment|anchor-coupled-underinvestment|g1c1"
+  },
+  {
+    "qid": "q33",
+    "kind": "anchor_engine",
+    "graph": "coupled-underinvestment",
+    "pair_key": "coupled-underinvestment|anchor-coupled-underinvestment|g1c2"
+  },
+  {
+    "qid": "q34",
+    "kind": "retest",
+    "graph": "classic-cld-growth-and-burden",
+    "pair_key": "classic-cld-growth-and-burden|g5c0|g5c3"
+  }
+]

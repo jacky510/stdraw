@@ -1,0 +1,20 @@
+# round-3 new topology: 双环共点：绩效-士气八字环 (figure-eight)
+graph "双环共点：绩效-士气八字环"
+
+var output "短期产出"
+var morale "团队士气"
+var quality "交付质量"
+var rework "返工量"
+var pressure "交付压力"
+var overtime "加班强度"
+
+output -> - pressure
+pressure -> - morale
+morale -> - rework
+rework -> + pressure
+quality -> + morale
+pressure -> + overtime
+overtime -> + output
+
+loop B1 "压力消化环" "B" [pressure, overtime, output]
+loop R1 "士气侵蚀环" "R" [pressure, morale, rework]

@@ -1,0 +1,22 @@
+# round-3 new topology: 链环混合：广告-口碑增长 (chain-loop-mix)
+graph "链环混合：广告-口碑增长"
+
+var wom "口碑推荐"
+var repeat "复购率"
+var trust "信任积累"
+var churn "客户流失"
+var ads "广告投放"
+var aware "品牌认知"
+var newcust "新客流量"
+
+churn -> - trust
+newcust -> - churn
+trust -> - churn
+aware -> + trust
+wom -> + newcust
+newcust -> + wom
+aware -> + newcust
+ads -> + aware
+
+loop R1 "口碑推荐环" "R" [newcust, wom]
+loop R2 "信任流失环" "R" [trust, churn]

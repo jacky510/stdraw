@@ -1,0 +1,28 @@
+# round-3 new topology: 双枢纽非对称：供给-需求双中心 (dual-hub-asymmetric)
+graph "双枢纽非对称：供给-需求双中心"
+
+var leadtime "交付周期"
+var expansion "扩产决策"
+var marketing "营销投入"
+var substitute "替代品吸引力"
+var margin "利润空间"
+var supply "供给能力"
+var demand "需求热度"
+var price "市场价格"
+var inventory "库存水位"
+
+supply -> - price
+demand -> - inventory
+inventory -> - price
+supply -> - leadtime
+leadtime -> - demand
+marketing -> + demand
+margin -> - marketing
+substitute -> - demand
+demand -> + price
+price -> + margin
+margin -> + expansion
+expansion -> + supply
+
+loop B1 "价格调节环" "B" [demand, price, margin, expansion, supply]
+loop R1 "营销需求环" "R" [margin, marketing, demand, price]
