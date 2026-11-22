@@ -269,7 +269,16 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
     # ---- routing-in-the-loop + three-tier selection ----
     reports = route_and_evaluate(candidates, ctx)
     shortlist = pareto_and_diversity(reports)
-    ranked = rank_candidates(shortlist)
+    # ---- S3 ranking replacement (isolated layer): M0 quality gate +
+    # anchor-similarity ordering when the committed model resolves; the
+    # previous placeholder heuristic otherwise (explicit provenance record,
+    # never a silent swap).  Stage-1 viability and Stage-2 Pareto/diversity
+    # are untouched; the not-worse delivery guard below is untouched.
+    from . import m0_gate as _m0
+    from .candidate_rank_m0 import rank_candidates_m0
+    m0 = _m0.load_model()
+    ranked, m0_record = rank_candidates_m0(shortlist, ctx, m0, library,
+                                           retrieval)
     total_ops = (ROUTING_OP_BUDGET_CANDIDATES * max(1, len(edges))
                  + ROUTING_OP_MARGIN_OPS)
     consumed_ops = sum(len(edges) for r in reports if r.routed)
@@ -288,6 +297,7 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
         "reports": [r.to_dict() for r in sorted(
             reports, key=lambda r: r.cand.candidate_id)],
         "ranked_ids": [r.cand.candidate_id for r in ranked],
+        "m0_ranking": m0_record,
     }
 
     incumbent_tup, incumbent_metrics = _cert_guard(incumbent_v4, cfg)
@@ -352,6 +362,8 @@ def layout(graph, config=None, linestyle: str = "straight", manual: dict = None)
         if best_v4 is not None:
             reason = ("delivery pre/post metric consistency check failed; "
                       "fail-closed to the incumbent")
+        elif m0_record.get("active") and not ranked:
+            reason = "every shortlisted candidate was eliminated by the M0 gate"
         elif delivery_log and all(
                 a.get("outcome") == "delivery_error" for a in delivery_log):
             reason = "every candidate delivery raised an error"
