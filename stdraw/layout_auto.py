@@ -99,6 +99,12 @@ class AutoConfig:
     target_w: int = 1280
     target_h: int = 680
     aspect_min: float = 1.5
+    # anchors-as-prior S2: deterministic mirror-symmetry post-pass at the
+    # END of stage 2 (routing).  DEFAULT OFF -- with the flag off, layout()
+    # never enters symmetrize.apply_mirror_symmetry, so every byte-pinned
+    # consumer (gate A, frozen baselines, STDRAW_PIN) is constructively
+    # unaffected.  Opt in via CLI --mirror-symmetry.
+    mirror_symmetry: bool = False
 
 
 def _cycle_break(nodes, edges):
@@ -3001,9 +3007,22 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     # deterministic repair chain, anchor snap
     routes, router, router_pairs, er_report, _snap_deferred = \
         _layout_optimize_routes(cfg, graph, manual, edges, cand)
+    # S2 mirror-symmetry post-pass (opt-in; DEFAULT OFF = this branch never
+    # runs and the output is byte-identical to history).  Auto-path only:
+    # manual (--from-layout) coordinates keep user authority over endpoints.
+    mirror_report = None
+    if getattr(cfg, "mirror_symmetry", False) and manual is None:
+        from .symmetrize import apply_mirror_symmetry
+        routes, mirror_report = apply_mirror_symmetry(cfg, cand, routes,
+                                                      router, edges)
+        if router_pairs is not None:
+            router_pairs = router.final_crossing_pairs(routes)
     # stage 3 -- delivery assembly (extracted verbatim; see
     # _layout_assemble_delivery): loop coloring, edges_out, viewBox
     # shift, mode trace, v4 + stamp
-    return _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
-                                     routes, router, router_pairs,
-                                     er_report, _snap_deferred, cand)
+    v4 = _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
+                                   routes, router, router_pairs,
+                                   er_report, _snap_deferred, cand)
+    if mirror_report is not None:
+        v4.setdefault("meta", {})["mirror_symmetry"] = mirror_report
+    return v4
