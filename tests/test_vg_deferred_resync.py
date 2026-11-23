@@ -26,7 +26,6 @@ import pytest
 
 from stdraw.dsl import parse
 from stdraw.layout_auto import _resync_vg_points
-from stdraw.routing import Router
 from stdraw.visibility import dense_geometry
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -140,8 +139,13 @@ def test_dense_deferral_delivers_measured_equals_rendered(tmp_path):
 def test_low_density_revert_resyncs_vg_route(monkeypatch):
     import inspect
     import stdraw.layout_auto as la
-    R = la.Router                  # the class the delivery chain instantiates
-    assert R is Router
+    # Patch the class the chain actually uses, never this module's
+    # import-time reference: the suite's font-env test re-imports the
+    # stdraw package (same-tree self-check), so module-level class
+    # references held by later test files point at a stale class object
+    # and a monkeypatch on them never reaches the delivery chain.
+    R = la.Router
+    assert (R.__module__, R.__name__) == ("stdraw.routing", "Router")
     real_snap = R.anchor_snap
     real_fcp = R.final_crossing_pairs
     probe = {"armed": 0}
