@@ -556,6 +556,13 @@ classic-cld and block random n10**. The landed caliber:
   (null = snapped). Reverted routes skip the post-snap
   `mutual_arrival_flip(enhanced_gates=True)` (the pre-snap flip already ran;
   re-flipping unsnapped routes would perturb the honest pre-snap state).
+- **vg dual-geometry write-back**: among the reverted routes, every `kind=vg`
+  route has its `points` (measured / `edges[].anchors` / check-13 polyline)
+  re-derived from `vg_corners` + `vg_fillets` (the `path_d` render source) --
+  "measure where you draw"; that route's midband endpoint shift is dropped,
+  and routes whose two geometries already agree are untouched byte-for-byte.
+  When the count is > 0 the deferred record carries an extra `vg_resynced` key
+  (`docs/routing-gates.md` section 3 item 7).
 - **ci_checks assertion (B2 random layer)**: a dense graph (E/N >= 1.6) must
   either pass the membership gate (probe kept) or carry a deferred record
   with a non-empty measured reason; a below-threshold graph may never carry

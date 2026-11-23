@@ -66,6 +66,48 @@ def _clone_route(rt):
     return c
 
 
+def _resync_vg_points(routes):
+    """Re-derive ``points`` of every vg route from its own corner/fillet
+    parameters so the measured polyline IS the rendered ``path_d``.
+
+    A vg route carries two geometries: the dense polyline ``points``
+    (certificate metrics, ``edges[].anchors``, geometry check 13) and
+    ``vg_corners`` + ``vg_fillets`` (the rendered ``path_d``).  The inline
+    endpoint-relocation passes (midband / fan) edit ``points[0]`` /
+    ``points[-1]`` in place without writing the corner back, so the two
+    geometries drift apart by exactly that shift.  ``Router.anchor_snap``
+    re-derives ``points`` from the corners whenever it moves a vg
+    endpoint, so a DELIVERED snap aligns the two; when the snap probe is
+    deferred or reverted the pre-snap routes are restored and the
+    mismatch would ship as-is: the certificate then measures a polyline
+    that is not the one drawn (check 13 catches it, 2.4-32 px on the
+    random corpus).
+
+    Resyncing on the restore path makes the measurement follow the
+    rendering ("measure where you draw"): the midband endpoint shift of
+    that route is dropped, the dense polyline IS the rendered path.  A vg
+    route is created with ``points = dense_geometry(corner_pts, fillets)``
+    and only anchor_snap ever edits corners/fillets (always together with
+    points), so routes whose two geometries already agree are untouched
+    (numerically identical -> zero byte effect).  Returns the number of
+    routes whose points were rewritten."""
+    from .visibility import dense_geometry
+    changed = 0
+    for rt in routes.values():
+        if rt.get("kind") != "vg" or rt.get("vg_corners") is None:
+            continue
+        dense = [[px, py] for px, py in
+                 dense_geometry(rt["vg_corners"], rt["vg_fillets"])]
+        old = rt["points"]
+        if (len(dense) == len(old)
+                and all(abs(a[0] - q[0]) < 1e-9 and abs(a[1] - q[1]) < 1e-9
+                        for a, q in zip(dense, old))):
+            continue
+        rt["points"] = dense
+        changed += 1
+    return changed
+
+
 class AutoConfig:
     fs_title: float = 12.5
     fs_value: float = 14.0
@@ -1145,6 +1187,9 @@ def _delivery_chain_probe(nodes_px, edges, cfg):
     if regress:
         routes = pre_routes
         snap = None         # reverted / deferred: the post-snap flip is skipped
+        # same restore path as layout(): the probe's gate evaluation must
+        # score the geometry that would actually be rendered
+        _resync_vg_points(routes)
     if snap is not None:
         routes = router.lens_joint_reassign(routes,
                                             snap.get("lens_pairs", []))
@@ -2595,11 +2640,18 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
         _timing.mark("anchor_snap.gate_eval_post")
         if _regress:
             routes = _pre_routes
+            _vg_resync = _resync_vg_points(routes)
             _snap_deferred = {"density_en": round(_density, 2),
                               "reason": _regress,
                               "moved_before_revert": _snap_report["moved"]}
+            if _vg_resync:
+                # measured = rendered: the pre-snap vg polylines were
+                # re-derived from the corners the path_d is drawn from
+                _snap_deferred["vg_resynced"] = _vg_resync
             print(f"[stdraw] anchor_snap DEFERRED (dense, E/N={_density:.2f}): "
-                  f"{'; '.join(_regress)} -- pre-snap routes kept", file=sys.stderr)
+                  f"{'; '.join(_regress)} -- pre-snap routes kept"
+                  + (f"; {_vg_resync} vg polyline(s) resynced to rendered corners"
+                     if _vg_resync else ""), file=sys.stderr)
         else:
             print(f"[stdraw] anchor_snap: {_snap_report['moved']} endpoints snapped "
                   f"(dense probe, E/N={_density:.2f}, zero gate regressions)",
@@ -2631,9 +2683,12 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
         _timing.mark("anchor_snap.gate_eval_post")
         if _regress:
             routes = _pre_routes
+            _vg_resync = _resync_vg_points(routes)
             _snap_reverted = True
             print(f"[stdraw] anchor_snap REVERTED (E/N={_density:.2f}): "
-                  f"{'; '.join(_regress)} -- pre-snap routes kept", file=sys.stderr)
+                  f"{'; '.join(_regress)} -- pre-snap routes kept"
+                  + (f"; {_vg_resync} vg polyline(s) resynced to rendered corners"
+                     if _vg_resync else ""), file=sys.stderr)
         else:
             if _snap_report["failures"]:
                 print(f"[stdraw] anchor_snap: {_snap_report['moved']} endpoints snapped, "

@@ -511,6 +511,10 @@ coincidence。而 classic 正本 classic-cld（E/N=13/8=1.62）吸附 21 图全�
   `anchor_snap_deferred`（null=已吸附）。回退路由不再跑吸附后的
   `mutual_arrival_flip(enhanced_gates=True)`（吸附前翻转已跑过，避免扰动
   诚实的吸附前状态）。
+- **vg 双几何回写**：回退路由里 kind=vg 的路由，其 `points`（度量 / `edges[].anchors` /
+  check 13 校验折线）由 `vg_corners`+`vg_fillets`（`path_d` 渲染源）重导——「画在哪就量在哪」，
+  该路由的 midband 端点位移随之放弃；两套几何本已一致的路由零字节影响。重导条数 >0 时
+  deferred 记录多带一个 `vg_resynced` 键（`docs/routing-gates.md` §3 第 7 条）。
 - **ci_checks 断言（B2 随机层）**：E/N≥1.6 的图必须「成员门 True（探针保留）
   或带非空 reason 的 deferred 记录」二选一；E/N<1.6 的图不允许出现 deferred
   （低密度图没有降级豁免）；任何 deferred 必须带实测 reason。

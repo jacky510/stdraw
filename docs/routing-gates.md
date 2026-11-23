@@ -54,6 +54,20 @@ layout.json sha256 全同），复跑命令见 §5。
    `_anchors_in_band` 只有 G-LENS-JOINT 查。
 6. **msep 三种**：4.0 固定（多数）、`sep_floor` 改前导出变量（G-ARRIVAL lgcy）、12.0 窄透镜固定
    （G-ARRIVAL enh）、不查改由 sep≥12 独立把门（G-LENS-*）。
+7. **vg 路由端点两套——已统一（方案 b，2026-11-24）**：`route.points`（证书 metrics / `edges[].anchors` /
+   check 13 的校验折线用）vs `route.vg_corners[0]/[-1]`（`path_d` 渲染用）。行内端点改位工序（midband / fan）
+   原地改 `points[0]` 不回写 `vg_corners`/`vg_fillets`；anchor_snap 正常跑时从 corners 重导 `points` 把两者对齐，
+   但 E/N≥1.6 延迟（DEFERRED）或回退（REVERTED）时保留改位前的 pre-snap 路由 → 两套端点不一致原样出货，
+   check 13 `path_d` 偏差（tier-A 13 图，2.4–32px；随机 n20 最大 32px）。
+   **修法**：`layout_auto.py` 新增 `_resync_vg_points(routes)`，DEFERRED / REVERTED 两个分支（含 ring 改位探针
+   `_delivery_chain_probe` 的同一回退路径）在 `routes = _pre_routes` 之后对 vg 路由用
+   `dense_geometry(vg_corners, vg_fillets)` 重导 `points`——度量对齐实际渲染（「画在哪就量在哪」），该路由的
+   midband 端点位移随之放弃；两套几何本已一致的路由数值相同、零字节影响。重导条数 >0 时 deferred 记录多带
+   `vg_resynced` 键。未选 (a)（改位处同步平移 corner）：会改变所有含 vg 且被 midband 改位的图的 snap 起点，
+   影响面超出缺陷图集合。tier-A 双腿 sweep（同机同解释器、cp-sat-layered）：13 图 check 13 清零，
+   其余 44/44 rc=0 图逐字节零漂移，rc=1 图 16 张里仅这 13 张变字节（见 `docs/validation-tiers.md` §0.1）。
+   **残余**：行内改位工序本身仍未回写 corner——非延迟图靠 snap 重导兜底；若日后出现「snap 保留但该 vg 端点未被
+   snap 移动」的不一致（check 13 会抓住），再评估 (a)。
 
 以上差异均有其历史成因注释（ref-scrubbed 各轮），**任何统一都会改变输出字节**，
 本卡不改；是否统一、对哪些图有字节影响，等口径表评审另行开卡。

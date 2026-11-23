@@ -28,6 +28,25 @@
 ②rc≠0 ≠ 没有产物——随机稠密图诚实降级（grade uncertified）时 layout.json
 照常落盘，逐字节门只判「文件存在 + sha」（T4 sweep 既有口径）。
 
+### 0.1 已知边界与已知缺陷（tier-A rc=1 清单；2026-11-24 vg 双几何返修后双腿 sweep 实测）
+
+出处：返修卡 tier-A sweep（`benchmarks/tools/sweep_tiers.py --tier A`，`cp-sat-layered` 口径，Python 3.12 + ortools，
+同机）：基线腿 = main 9cc64e8 原树，返修腿 = 返修分支；rc=0 图按 index 记录的 sha256 逐字节比对，rc=1 图
+（index 不记 sha）按落盘交付物 sha256 比对。
+两腿 rc 分布一致：rc=0 44 图、rc=1 16 图（0.9.0 收尾腿的 random-n20-i18 超时 1 例本轮两腿均 rc=1 落盘，
+890s 踩线级、负载相关，rc 分布以「未超时」口径记）。
+CLI 退出码语义：**rc=1 = `geometry_report.json summary.fail > 0`**（CI 门形态），交付物照常落盘，
+`certificate.json` 的 `grade` 才是质量结论；rc=2 = 输入/配置错误（DSL 校验失败、手工布局不可用、未知立体），
+无交付物。
+
+| 归因（check 编号见 geometry_report.json） | 图数（返修后） | 判定 | 处置 |
+|---|---|---|---|
+| check 1 `crossings<=2` 软目标未达（≥3 交叉） | 16（random-n10-i12 + 15 张 n20） | **已知边界**：n≥10 随机稠密图的 cp-sat 预算内最优 incumbent，局部搜索邻域只有行内平移/相邻交换；交叉是软目标，不得放宽门阈值求绿 | 维持 uncertified 诚实评级；大邻域属 roadmap |
+| check 13 `path_d` 渲染/校验折线偏差 >1.5px | 基线 13 → 返修后 **0** | **已返修**（vg 路由 `points` ↔ `vg_corners` 双几何，anchor_snap 延迟/回退后原样出货；方案 b 见 `docs/routing-gates.md` §3 第 7 条）：返修后 13 图 check 13 清零，rc 仍为 1（其余已知边界） | 13 图证书按再生协议更新；门阈值零改动 |
+| check 3 边-盒净距（15）/ check 2 盒压（6）/ check 4 锚点角（5）/ check 11 交叉双记账（2） | n20 子集 | **已知边界**：与 check 1 同源（稠密随机图的局部搜索邻域限制），返修前后逐图不变 | 维持 |
+
+rc≠0 图不影响 rc=0 图的逐字节门；引用零回归数字时按 rc=0 子集口径。
+
 ## 1. 档位定义（拍板项 D0）
 
 | 档 | 节点域 | 算法 | 验证范围 | 单图耗时目标 |
