@@ -1,0 +1,1063 @@
+{
+  "alignment_checks": 13,
+  "alignment_rate_within_1px": 1.0,
+  "anchor_consistency_evaluable": 19,
+  "anchor_consistency_rate": 1.0,
+  "assertions": {
+    "alignment_100_percent_on_mirrored_subset": true,
+    "gate_clean_stays_gate_clean": true,
+    "golden_anchor_consistency_1_on_evaluable_subset": true,
+    "slot_caliber": "recorded as data, not asserted (dual-caliber discipline: golden = geometric construction, slot = same-ordinal-slot index; they differ on the g1/g2 positions by definition)"
+  },
+  "figures": [
+    {
+      "exceptions": [],
+      "figure": "limits-to-growth",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "examples/limits-to-growth.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "classic-cld-growth-and-burden",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "examples/classic-cld-growth-and-burden.cld"
+    },
+    {
+      "exceptions": [
+        {
+          "master": 1,
+          "reason": "own-box press",
+          "slave": 2
+        }
+      ],
+      "figure": "hdd-wide-tickers",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 5,
+      "mirrored": 4,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 1,
+              "evaluable": 1,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 0,
+              "evaluable": 1,
+              "rate": 0.0
+            }
+          },
+          "master": 3,
+          "master_anchors": {
+            "a": "w-g1",
+            "b": "e-g1"
+          },
+          "points": 2,
+          "slave": 4,
+          "slave_anchors": {
+            "a": "e-g2",
+            "b": null
+          },
+          "worst_dev_px": 0.0
+        },
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 1,
+              "evaluable": 1,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 0,
+              "evaluable": 1,
+              "rate": 0.0
+            }
+          },
+          "master": 5,
+          "master_anchors": {
+            "a": "w-g2",
+            "b": "e"
+          },
+          "points": 2,
+          "slave": 6,
+          "slave_anchors": {
+            "a": "e-g1",
+            "b": null
+          },
+          "worst_dev_px": 0.0
+        },
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 1,
+              "evaluable": 1,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 1,
+              "evaluable": 1,
+              "rate": 1.0
+            }
+          },
+          "master": 7,
+          "master_anchors": {
+            "a": "nw",
+            "b": "e-g2"
+          },
+          "points": 2,
+          "slave": 8,
+          "slave_anchors": {
+            "a": "ne",
+            "b": null
+          },
+          "worst_dev_px": 0.0
+        },
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 1,
+              "evaluable": 1,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 1,
+              "evaluable": 1,
+              "rate": 1.0
+            }
+          },
+          "master": 9,
+          "master_anchors": {
+            "a": "nw",
+            "b": "se"
+          },
+          "points": 2,
+          "slave": 10,
+          "slave_anchors": {
+            "a": "ne",
+            "b": null
+          },
+          "worst_dev_px": 0.0
+        }
+      ],
+      "path": "tests/data/hdd-wide-tickers.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "epidemic-feedback",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "tests/data/epidemic-feedback.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "arms-race",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 2,
+      "mirrored": 2,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 2,
+              "evaluable": 2,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 0,
+              "evaluable": 2,
+              "rate": 0.0
+            }
+          },
+          "master": 1,
+          "master_anchors": {
+            "a": "n-g1",
+            "b": "s-g1"
+          },
+          "points": 2,
+          "slave": 2,
+          "slave_anchors": {
+            "a": "s-g2",
+            "b": "n-g2"
+          },
+          "worst_dev_px": 0.0
+        },
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 2,
+              "evaluable": 2,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 0,
+              "evaluable": 2,
+              "rate": 0.0
+            }
+          },
+          "master": 0,
+          "master_anchors": {
+            "a": "n-g2",
+            "b": "s-g2"
+          },
+          "points": 2,
+          "slave": 3,
+          "slave_anchors": {
+            "a": "s-g1",
+            "b": "n-g1"
+          },
+          "worst_dev_px": 0.0
+        }
+      ],
+      "path": "benchmarks\\corpus\\classic\\arms-race.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "brand-flywheel",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\brand-flywheel.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "bullwhip",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\bullwhip.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "burnout-attrition",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\burnout-attrition.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "classic-cld-growth-and-burden",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\classic-cld-growth-and-burden.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "debt-spiral",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\debt-spiral.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "eroding-goals",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 2,
+      "mirrored": 2,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 2,
+              "evaluable": 2,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 1,
+              "evaluable": 2,
+              "rate": 0.5
+            }
+          },
+          "master": 0,
+          "master_anchors": {
+            "a": "nw",
+            "b": "s-g1"
+          },
+          "points": 2,
+          "slave": 2,
+          "slave_anchors": {
+            "a": "s-g2",
+            "b": "ne"
+          },
+          "worst_dev_px": 0.0
+        },
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 1,
+              "evaluable": 1,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 1,
+              "evaluable": 1,
+              "rate": 1.0
+            }
+          },
+          "master": 3,
+          "master_anchors": {
+            "a": "sw",
+            "b": "n-g2"
+          },
+          "points": 2,
+          "slave": 5,
+          "slave_anchors": {
+            "a": null,
+            "b": "se"
+          },
+          "worst_dev_px": 0.0
+        }
+      ],
+      "path": "benchmarks\\corpus\\classic\\eroding-goals.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "fishing-collapse",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\fishing-collapse.cld"
+    },
+    {
+      "exceptions": [
+        {
+          "master": 3,
+          "reason": "anchor smoothing 61.8/0.8 < 20.0 deg",
+          "slave": 1
+        },
+        {
+          "master": 4,
+          "reason": "anchor smoothing 17.4/50.6 < 20.0 deg",
+          "slave": 2
+        }
+      ],
+      "figure": "fixes-that-fail",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 2,
+      "mirrored": 0,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\fixes-that-fail.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "induced-demand",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\induced-demand.cld"
+    },
+    {
+      "exceptions": [
+        {
+          "master": 3,
+          "reason": "anchor smoothing 59.1/4.8 < 20.0 deg",
+          "slave": 1
+        },
+        {
+          "master": 4,
+          "reason": "anchor smoothing 16.7/51.1 < 20.0 deg",
+          "slave": 2
+        }
+      ],
+      "figure": "learning-flywheel",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 2,
+      "mirrored": 0,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\learning-flywheel.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "limits-to-growth",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\limits-to-growth.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "population-logistic",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\population-logistic.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "renewable-resource",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\renewable-resource.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "shifting-the-burden",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\shifting-the-burden.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "soil-erosion",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\soil-erosion.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "success-to-the-successful",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\success-to-the-successful.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "tragedy-of-the-commons",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\classic\\tragedy-of-the-commons.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "urban-migration",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 2,
+      "mirrored": 2,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 2,
+              "evaluable": 2,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 2,
+              "evaluable": 2,
+              "rate": 1.0
+            }
+          },
+          "master": 4,
+          "master_anchors": {
+            "a": "ne",
+            "b": "sw"
+          },
+          "points": 2,
+          "slave": 6,
+          "slave_anchors": {
+            "a": "nw",
+            "b": "se"
+          },
+          "worst_dev_px": 0.0
+        },
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 2,
+              "evaluable": 2,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 2,
+              "evaluable": 2,
+              "rate": 1.0
+            }
+          },
+          "master": 5,
+          "master_anchors": {
+            "a": "nw",
+            "b": "se"
+          },
+          "points": 2,
+          "slave": 7,
+          "slave_anchors": {
+            "a": "ne",
+            "b": "sw"
+          },
+          "worst_dev_px": 0.0
+        }
+      ],
+      "path": "benchmarks\\corpus\\classic\\urban-migration.cld"
+    },
+    {
+      "exceptions": [
+        {
+          "master": 5,
+          "reason": "mirrored endpoint off-border of prices",
+          "slave": 3
+        }
+      ],
+      "figure": "wage-price-spiral",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 2,
+      "mirrored": 1,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 2,
+              "evaluable": 2,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 1,
+              "evaluable": 2,
+              "rate": 0.5
+            }
+          },
+          "master": 1,
+          "master_anchors": {
+            "a": "s-g2",
+            "b": "ne"
+          },
+          "points": 2,
+          "slave": 2,
+          "slave_anchors": {
+            "a": "nw",
+            "b": "s-g1"
+          },
+          "worst_dev_px": 0.0
+        }
+      ],
+      "path": "benchmarks\\corpus\\classic\\wage-price-spiral.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i00",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i00.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i01",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i01.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i02",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i02.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i03",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i03.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i04",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i04.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i05",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i05.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i06",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i06.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i07",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i07.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i08",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i08.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i09",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i09.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i10",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i10.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i11",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i11.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i12",
+      "geo_fail_off": 2,
+      "geo_fail_on": 2,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i12.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i13",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i13.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i14",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i14.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i15",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i15.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i16",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i16.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i17",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i17.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i18",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i18.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "random-n10-i19",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\corpus\\random\\random-n10-i19.cld"
+    },
+    {
+      "exceptions": [
+        {
+          "master": 4,
+          "reason": "crossings 0->0, coincide 0->0, visual 0->1",
+          "slave": 8
+        }
+      ],
+      "figure": "bowtie-wage-price",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 2,
+      "mirrored": 1,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 1,
+              "evaluable": 1,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 0,
+              "evaluable": 1,
+              "rate": 0.0
+            }
+          },
+          "master": 5,
+          "master_anchors": {
+            "a": "s-g2",
+            "b": "n-g2"
+          },
+          "points": 2,
+          "slave": 7,
+          "slave_anchors": {
+            "a": null,
+            "b": "s-g1"
+          },
+          "worst_dev_px": 0.0
+        }
+      ],
+      "path": "benchmarks\\manual\\jacky-batch2\\sources\\bowtie-wage-price.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "chain-monetary",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\manual\\jacky-batch2\\sources\\chain-monetary.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "chain-supply",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\manual\\jacky-batch2\\sources\\chain-supply.cld"
+    },
+    {
+      "exceptions": [
+        {
+          "master": 0,
+          "reason": "mirrored endpoint off-border of hub2",
+          "slave": 1
+        },
+        {
+          "master": 2,
+          "reason": "mirrored endpoint off-border of hub2",
+          "slave": 3
+        }
+      ],
+      "figure": "comb-supply-demand",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 3,
+      "mirrored": 1,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [
+        {
+          "aligned_within_1px": true,
+          "anchor_consistency": {
+            "golden": {
+              "consistent": 1,
+              "evaluable": 1,
+              "rate": 1.0
+            },
+            "slot": {
+              "consistent": 1,
+              "evaluable": 1,
+              "rate": 1.0
+            }
+          },
+          "master": 4,
+          "master_anchors": {
+            "a": "nw",
+            "b": "s-g1"
+          },
+          "points": 2,
+          "slave": 5,
+          "slave_anchors": {
+            "a": "ne",
+            "b": null
+          },
+          "worst_dev_px": 0.0
+        }
+      ],
+      "path": "benchmarks\\manual\\jacky-batch2\\sources\\comb-supply-demand.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "coupled-underinvestment",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\manual\\jacky-batch2\\sources\\coupled-underinvestment.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "nested-capacity",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\manual\\jacky-batch2\\sources\\nested-capacity.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "nested-learning",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\manual\\jacky-batch2\\sources\\nested-learning.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "nonplanar-credit",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": "no y-preserving involution with a near-vertical fitted axis",
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\manual\\jacky-batch2\\sources\\nonplanar-credit.cld"
+    },
+    {
+      "exceptions": [],
+      "figure": "nonplanar-inventory",
+      "geo_fail_off": 0,
+      "geo_fail_on": 0,
+      "mirror_pairs": 0,
+      "mirrored": 0,
+      "no_sigma_reason": null,
+      "nodes_untouched": true,
+      "pairs": [],
+      "path": "benchmarks\\manual\\jacky-batch2\\sources\\nonplanar-inventory.cld"
+    }
+  ],
+  "figures_with_mirrored_pairs": 7,
+  "mirrored_pairs_total": 13,
+  "schema": "stdraw.mirror-flag-acceptance/1",
+  "sweep_figures": 53
+}
