@@ -120,38 +120,48 @@ def test_dense_deferral_delivers_measured_equals_rendered(tmp_path):
 # --- REVERTED path (low-density branch): same restore path, same resync -------
 # The corpus never degrades naturally at low density (that is why the revert
 # stayed silent), so the probe's own criterion is forced deterministically:
-# Router.final_crossing_pairs reports one pair more after every anchor_snap
-# call than before it, so the low-density branch measures
-# ``post > pre`` right after the snap and MUST take the revert branch on every
-# platform.  (Injecting a geometric regression into the snapped routes and
-# re-measuring it with the engine counter is platform fragile: the wall-time
-# budgeted cp-sat incumbent yields a different layout in CI, where the real
-# chain no longer saw the injected worsening.)  The real snap still runs, so
+# the first crossing account Router.final_crossing_pairs returns after an
+# anchor_snap call is reported far above any pre-snap count, so the
+# low-density branch measures ``post > pre`` right after the real snap and
+# MUST take the revert branch on every platform.  (Injecting a geometric
+# regression into the snapped routes and re-measuring it with the engine
+# counter is platform fragile: the wall-time budgeted cp-sat incumbent
+# yields a different layout in CI, where the probe did not see the injected
+# worsening.)  Only that one account is inflated; every later measurement
+# (certificate, gates) sees the real routes.  The real snap still runs, so
 # the restored pre-snap routes are the genuine chain output, including the
-# vg route whose polyline midband had shifted away from its rendered corners.
-# The dense trigger graph is pushed into the low-density branch by raising
-# the density threshold for the test only.
+# vg route whose polyline midband had shifted away from its rendered
+# corners.  The dense trigger graph is pushed into the low-density branch
+# by raising the density threshold for the test only.
 
 @pytest.mark.skipif(not _has_solver(),
                     reason="random-n10-i12 delivers a shifted vg route only "
                            "under the cp-sat-layered engine caliber")
 def test_low_density_revert_resyncs_vg_route(monkeypatch):
+    import inspect
     import stdraw.layout_auto as la
-    real_snap = Router.anchor_snap
-    real_fcp = Router.final_crossing_pairs
-    snaps = {"n": 0}
+    R = la.Router                  # the class the delivery chain instantiates
+    assert R is Router
+    real_snap = R.anchor_snap
+    real_fcp = R.final_crossing_pairs
+    probe = {"armed": 0}
+    trace = []                     # (kind, caller line) of every patched call
 
-    def growing_fcp(self, out):
-        # probe input forced to worsen by one pair per snap call
-        return real_fcp(self, out) + snaps["n"]
+    def inflated_fcp(self, out):
+        v = real_fcp(self, out)
+        if probe["armed"]:
+            probe["armed"] -= 1
+            v += 1000000
+        return v
 
-    def counting_snap(self, routes, max_sweeps=4):
+    def arming_snap(self, routes, max_sweeps=4):
+        trace.append(("snap", inspect.stack()[1].lineno, len(routes)))
         rep = real_snap(self, routes, max_sweeps)
-        snaps["n"] += 1
+        probe["armed"] = 1
         return rep
 
-    monkeypatch.setattr(Router, "final_crossing_pairs", growing_fcp)
-    monkeypatch.setattr(Router, "anchor_snap", counting_snap)
+    monkeypatch.setattr(R, "anchor_snap", arming_snap)
+    monkeypatch.setattr(R, "final_crossing_pairs", inflated_fcp)
     monkeypatch.setattr(la, "ANCHOR_SNAP_DENSE_E_OVER_N", 99.0)
     err = io.StringIO()
     old = sys.stderr
@@ -162,10 +172,9 @@ def test_low_density_revert_resyncs_vg_route(monkeypatch):
         sys.stderr = old
     text = err.getvalue()
     m = re.search(r"anchor_snap REVERTED \(E/N=[\d.]+\): crossings (\d+)->(\d+)", text)
-    assert m, text[-600:]
-    assert int(m.group(2)) == int(m.group(1)) + 1
-    assert "vg polyline(s) resynced" in text, text[-600:]
-    assert snaps["n"] >= 1
+    assert m, (text[-600:], trace, probe)
+    assert int(m.group(2)) > int(m.group(1))
+    assert "vg polyline(s) resynced" in text, (text[-600:], trace)
     assert v4["meta"].get("anchor_snap_deferred") is None
     vg = [e for e in v4["edges"] if e["route"].get("path_d")]
     assert vg, "expected the trigger graph's vg route"
