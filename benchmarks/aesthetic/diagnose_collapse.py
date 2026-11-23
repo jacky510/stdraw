@@ -107,6 +107,15 @@ def load_corpus(merge_backfill=False):
     caliber).  Default False keeps the committed diagnosis-card / v3-alpha
     caliber byte-reproducible (legacy minimal merge) — the v3-beta driver
     opts in explicitly for both calibers.
+
+    Positive filter: only hand anchors are admitted — documents carrying
+    ``kind == "manual-layout"`` (every current manual export) plus legacy
+    pre-kind exports whose filename ends ``-manual-layout.json`` (the
+    committed tests/data epidemic anchor).  Everything else swept up by
+    ``collect_positive_files`` under benchmarks/manual (pairwise preference
+    annotation sessions: answers/candidates/questions/selection-notes, some
+    list-typed, no layout and no graph source) is skipped instead of
+    crashing in ``merge_layout_edges``.
     """
     labels = load_family_labels(str(FAMILY_MAP))
     neg_docs, engine_by_graph = [], {}
@@ -123,6 +132,13 @@ def load_corpus(merge_backfill=False):
         for p in collect_positive_files(d):
             with open(p, "r", encoding="utf-8") as f:
                 doc = json.load(f)
+            # hand-anchor filter: skip annotation-session / provenance-adjacent
+            # JSONs (no layout, some list-typed) — see docstring.
+            if not isinstance(doc, dict):
+                continue
+            if doc.get("kind") != "manual-layout" \
+                    and not p.name.endswith("-manual-layout.json"):
+                continue
             stem = graph_name_of(str(p))
             g = doc.get("graph")
             if g not in known_names:
