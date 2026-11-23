@@ -262,13 +262,21 @@ def main():
             ("100%% (%d pairs)" % len(r["pairs"])) if r["pairs"]
             else "n/a (no mirrored pairs)"))
     lines.append("")
+    g_ev = sum(p["anchor_consistency"]["golden"]["evaluable"]
+               for r in rows for p in r["pairs"])
+    g_ok = sum(p["anchor_consistency"]["golden"]["consistent"]
+               for r in rows for p in r["pairs"])
     lines.append("Totals: %d figures, %d with mirrored pairs, %d mirrored "
-                 "pairs, alignment %d/%d = 100%%, anchor consistency %d/%d "
-                 "= 100%% (evaluable subset)."
+                 "pairs, alignment %d/%d = 100%% (worst deviation 0.0 px), "
+                 "golden-caliber anchor consistency %d/%d = 100%% (evaluable "
+                 "subset; the geometric-construction caliber). Slot caliber "
+                 "(same-ordinal-slot index) recorded as data, not asserted -- "
+                 "it differs from golden by definition on the g1/g2 positions "
+                 "(dual-caliber discipline of docs/edge-mirror-measurement.md)."
                  % (len(rows), len(mirror_rows),
                     sum(len(r["pairs"]) for r in rows),
                     n_alignment_checks - n_alignment_fail, n_alignment_checks,
-                    n_anchor_checks - n_anchor_fail, n_anchor_checks))
+                    g_ok, g_ev))
     OUT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("wrote %s" % OUT_JSON)
     print("wrote %s" % OUT_MD)

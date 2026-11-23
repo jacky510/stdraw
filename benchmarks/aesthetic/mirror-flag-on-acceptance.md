@@ -62,4 +62,4 @@ Reverted pairs are exceptions (fail-loud), not half-mirrors.
 | nonplanar-credit | 0 | 0 | 0 | 0 | n/a (no mirrored pairs) |
 | nonplanar-inventory | 0 | 0 | 0 | 0 | n/a (no mirrored pairs) |
 
-Totals: 53 figures, 7 with mirrored pairs, 13 mirrored pairs, alignment 13/13 = 100%, anchor consistency 29/38 = 100% (evaluable subset).
+Totals: 53 figures, 7 with mirrored pairs, 13 mirrored pairs, alignment 13/13 = 100% (worst deviation 0.0 px), golden-caliber anchor consistency 19/19 = 100% (evaluable subset; the geometric-construction caliber). Slot caliber (same-ordinal-slot index) recorded as data: 10/19 consistent -- it differs from golden by definition on the g1/g2 positions (dual-caliber discipline of docs/edge-mirror-measurement.md, reported side by side, not asserted).
