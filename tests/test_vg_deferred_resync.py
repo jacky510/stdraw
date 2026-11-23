@@ -126,23 +126,27 @@ def test_dense_deferral_delivers_measured_equals_rendered(tmp_path):
 # the discarded post-snap state).  The dense trigger graph is pushed into the
 # low-density branch by raising the density threshold for the test only.
 
-def _inject_guaranteed_crossing(router, routes):
+def _inject_guaranteed_crossing(router, routes, floor):
     """Straddle a segment of a disjoint edge with one endpoint of route i and
     its neighbour point, so the connecting segment provably crosses it.
 
     The worsening is verified with the engine's own counter
-    (Router.final_crossing_pairs -- exactly what the revert probe measures),
-    not with a naive sign test: on a different platform the cp-sat incumbent
-    (wall-time budgeted) yields a different layout, where a naive +1 can be a
-    pair the engine already counts.  Returns True iff the engine-caliber
-    crossing count really went up (self-verifying fixture)."""
+    (Router.final_crossing_pairs -- exactly what the revert probe measures)
+    against the probe's own baseline: ``floor`` is the pair count the layout
+    took BEFORE anchor_snap ran, so the fixture succeeds iff the probe will
+    really see ``post > pre``.  A naive sign test is not enough: on another
+    platform the wall-time budgeted cp-sat incumbent yields a different
+    layout, where a naive +1 can be a pair the engine already counts.
+    Injections accumulate (each accepted one raises the engine-caliber
+    count) until the floor is exceeded; returns False if no candidate does.
+    """
     import math
     from stdraw.metrics import seg_cross as _engine_cross
 
     def engine_pairs():
         return router.final_crossing_pairs(routes)
 
-    pre = engine_pairs()
+    current = engine_pairs()
     keys = sorted(routes.keys())
     for i in keys:
         pts = routes[i]["points"]
@@ -168,12 +172,17 @@ def _inject_guaranteed_crossing(router, routes):
                     new1 = [q[0] + 3.0 * nx_, q[1] + 3.0 * ny_]
                     old0, old1 = list(pts[p_idx]), list(pts[n_idx])
                     pts[p_idx], pts[n_idx] = new0, new1
-                    if engine_pairs() > pre:
+                    now = engine_pairs()
+                    if now > current:
                         # the fixture's own claim: the engine sees the crossing
                         assert any(_engine_cross(pts[p_idx], pts[n_idx], s2[0], s2[1])
                                    for s2 in zip(jp[:-1], jp[1:]))
-                        return True
-                    pts[p_idx], pts[n_idx] = old0, old1
+                        current = now
+                        if current > floor:
+                            return True
+                        # keep this injection, keep accumulating
+                    else:
+                        pts[p_idx], pts[n_idx] = old0, old1
     return False
 
 
@@ -185,8 +194,12 @@ def test_low_density_revert_resyncs_vg_route(monkeypatch):
     real_snap = Router.anchor_snap
 
     def degrading_snap(self, routes, max_sweeps=4):
+        # the layout counts its pre-snap baseline right before calling
+        # anchor_snap: capture the same number here so the fixture's target
+        # is exactly the probe's revert criterion (post > pre)
+        floor = self.final_crossing_pairs(routes)
         rep = real_snap(self, routes, max_sweeps)
-        assert _inject_guaranteed_crossing(self, routes), "fixture failed to inject a regression"
+        assert _inject_guaranteed_crossing(self, routes, floor),             "fixture failed to inject a measured regression"
         return rep
 
     monkeypatch.setattr(Router, "anchor_snap", degrading_snap)
