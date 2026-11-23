@@ -126,62 +126,54 @@ def test_dense_deferral_delivers_measured_equals_rendered(tmp_path):
 # the discarded post-snap state).  The dense trigger graph is pushed into the
 # low-density branch by raising the density threshold for the test only.
 
-def _seg_cross(p1, p2, p3, p4):
-    def d(a, b, c):
-        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
-    d1, d2 = d(p3, p4, p1), d(p3, p4, p2)
-    d3, d4 = d(p1, p2, p3), d(p1, p2, p4)
-    return ((d1 > 0) != (d2 > 0)) and ((d3 > 0) != (d4 > 0))
-
-
-def _pairs_cross(i_pts, j_pts):
-    return any(_seg_cross(s1[0], s1[1], s2[0], s2[1])
-               for s1 in zip(i_pts[:-1], i_pts[1:])
-               for s2 in zip(j_pts[:-1], j_pts[1:]))
-
-
-def _crossing_pairs(router, routes):
-    idx = sorted(routes.keys())
-    total = 0
-    for x in range(len(idx)):
-        for y in range(x + 1, len(idx)):
-            ia, ib = idx[x], idx[y]
-            ea, eb = router.edges[ia], router.edges[ib]
-            if ea[0] in eb or ea[1] in eb:
-                continue
-            total += 1 if _pairs_cross(routes[ia]["points"], routes[ib]["points"]) else 0
-    return total
-
-
 def _inject_guaranteed_crossing(router, routes):
+    """Straddle a segment of a disjoint edge with one endpoint of route i and
+    its neighbour point, so the connecting segment provably crosses it.
+
+    The worsening is verified with the engine's own counter
+    (Router.final_crossing_pairs -- exactly what the revert probe measures),
+    not with a naive sign test: on a different platform the cp-sat incumbent
+    (wall-time budgeted) yields a different layout, where a naive +1 can be a
+    pair the engine already counts.  Returns True iff the engine-caliber
+    crossing count really went up (self-verifying fixture)."""
     import math
-    pre = _crossing_pairs(router, routes)
+    from stdraw.metrics import seg_cross as _engine_cross
+
+    def engine_pairs():
+        return router.final_crossing_pairs(routes)
+
+    pre = engine_pairs()
     keys = sorted(routes.keys())
     for i in keys:
         pts = routes[i]["points"]
         if len(pts) < 2:
             continue
-        for j in keys:
-            if j == i:
-                continue
-            ei, ej = router.edges[i], router.edges[j]
-            if ei[0] in ej or ei[1] in ej:
-                continue
-            jp = routes[j]["points"]
-            mid = len(jp) // 2 - 1
-            a, b = jp[mid], jp[mid + 1]
-            if math.hypot(b[0] - a[0], b[1] - a[1]) < 8.0:
-                continue
-            nx_, ny_ = -(b[1] - a[1]), (b[0] - a[0])
-            norm = math.hypot(nx_, ny_)
-            nx_, ny_ = nx_ / norm, ny_ / norm
-            q = [(a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0]
-            old0, old1 = list(pts[0]), list(pts[1])
-            pts[0] = [q[0] - 3.0 * nx_, q[1] - 3.0 * ny_]
-            pts[1] = [q[0] + 3.0 * nx_, q[1] + 3.0 * ny_]
-            if _crossing_pairs(router, routes) > pre:
-                return True
-            pts[0], pts[1] = old0, old1
+        for p_idx, n_idx in ((0, 1), (-1, -2)):
+            for j in keys:
+                if j == i:
+                    continue
+                ei, ej = router.edges[i], router.edges[j]
+                if ei[0] in ej or ei[1] in ej:
+                    continue
+                jp = routes[j]["points"]
+                for mid in range(len(jp) - 1):
+                    a, b = jp[mid], jp[mid + 1]
+                    if math.hypot(b[0] - a[0], b[1] - a[1]) < 8.0:
+                        continue
+                    nx_, ny_ = -(b[1] - a[1]), (b[0] - a[0])
+                    norm = math.hypot(nx_, ny_)
+                    nx_, ny_ = nx_ / norm, ny_ / norm
+                    q = [(a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0]
+                    new0 = [q[0] - 3.0 * nx_, q[1] - 3.0 * ny_]
+                    new1 = [q[0] + 3.0 * nx_, q[1] + 3.0 * ny_]
+                    old0, old1 = list(pts[p_idx]), list(pts[n_idx])
+                    pts[p_idx], pts[n_idx] = new0, new1
+                    if engine_pairs() > pre:
+                        # the fixture's own claim: the engine sees the crossing
+                        assert any(_engine_cross(pts[p_idx], pts[n_idx], s2[0], s2[1])
+                                   for s2 in zip(jp[:-1], jp[1:]))
+                        return True
+                    pts[p_idx], pts[n_idx] = old0, old1
     return False
 
 
