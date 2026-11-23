@@ -121,6 +121,11 @@ def main(argv=None):
                          "of the L1-default exact layer.  L1 planarized drawings then keep the "
                          "witness-marked drawing but stay honestly 'uncertified' "
                          "(three_account_consistent cannot pass without the oracle cr UB).")
+    ap.add_argument("--mirror-symmetry", action="store_true",
+                    help="anchors-as-prior S2: deterministic mirror-symmetry post-pass at the end "
+                         "of stage 2 (left-right mirror edge pairs rewritten as exact geometric "
+                         "mirrors x'=2c-x, hard-gate re-run with fail-loud exceptions). DEFAULT "
+                         "OFF -- the flag off output is byte-identical to history")
     ap.add_argument("--from-layout", default=None, metavar="MANUAL_JSON",
                     help="manual layout JSON (the demo-2d.html \"Export layout\" product or a "
                          "layout.json subset: node id->x,y + viewBox). Runs the same routing + "
@@ -241,6 +246,8 @@ def main(argv=None):
                     _v = _v.strip().lower()
                     if _v in ("left", "right"):
                         cfg.hub_side[_k.strip()] = _v
+        if getattr(a, "mirror_symmetry", False):
+            cfg.mirror_symmetry = True
         if a.from_layout:
             # Manual layout: same routing + certificate pipeline; hard-gate
             # caliber unchanged, graded honestly

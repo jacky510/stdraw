@@ -203,9 +203,12 @@ class TestPlanarizedSource(unittest.TestCase):
         self.assertEqual(c1, c2)
 
     def test_in_source_order(self):
-        # preregistered order: templates, planarized, layered incumbent
+        # preregistered order: templates, planarized, anchor-prior (S1),
+        # layered incumbent
         self.assertEqual(SOURCE_ORDER[-1], "layered-v082")
-        self.assertEqual(SOURCE_ORDER[-2], "planarized")
+        self.assertEqual(SOURCE_ORDER[-2], "anchor-seeded")
+        self.assertEqual(SOURCE_ORDER[-3], "anchor-replay")
+        self.assertEqual(SOURCE_ORDER[-4], "planarized")
 
     def test_zero_scoring_static_lint(self):
         import ast
