@@ -5,3 +5,12 @@ out*/
 *.egg-info/
 .pytest_cache/
 .worktrees/
+
+# Untracked-by-convention local artifacts (never committed):
+# per-card raw evidence (docs/edge-mirror-*.md, docs/m1b-planarization-ablation.md
+# cite kanban/evidence/<id>/ as the archive location), the pref-research render cache
+# (benchmarks/aesthetic/pref-synthetic, re-run byproduct) and build products
+# (published via PyPI, not via git).
+kanban/
+benchmarks/aesthetic/pref-synthetic/_render_cache/
+dist/
