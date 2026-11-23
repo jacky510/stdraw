@@ -4,6 +4,41 @@ Notable user-visible changes to **stdraw**. Entries before 0.8.0 are not
 reproduced here; the engineering version history lives in
 [AGENTS.md](AGENTS.md) ("Version" section) — pointer, not a copy.
 
+## 0.9.0 — 2026-11-23
+
+- **anchors-as-prior candidate generation (opt-in)**: hand-drawn anchor
+  layouts can seed candidate generation — family-gated anchor
+  retrieval with feature-distance ranking, a deterministic
+  mirror-symmetry post-pass (`--mirror-symmetry`, default OFF), and
+  M0-gate ordering — delivered through the existing `--from-layout`
+  replay channel. The default auto-v2 path is byte-unchanged (flag off
+  = the post-pass branch never runs).
+- **candidate-v1 recipe (opt-in)**: structure analyzer + template
+  candidate sources + orchestrator + three-tier selection +
+  routing-in-the-loop, delivered through the incumbent pipeline with a
+  not-worse-than-v0.8.2 guard (`stdraw.recipes.run("candidate-v1",
+  ...)`); auto-v2 untouched.
+- **Preference research line (research toolchain + experiment
+  report)**: pairwise annotation toolchain (adaptive question
+  selection across three rounds, byte-faithful rendering), final
+  preference comparisons on 25 pairs and a three-round merge of 62
+  pairs, with the Bradley-Terry fit converged (diagonal-Hessian Newton
+  + duplicate-column merge; earlier M2/M2s readings corrected as
+  unconverged-solver artifacts), out-of-fold anchor-preference control
+  and a both-bad warning list.
+- **Performance**: `layout()` split into verbatim-equivalent stages
+  and polish incremental scoring (the top hotspot, ~97% of stage time;
+  n=10 median first cut ≤ 30 s).
+- **Fixes & hygiene**: `dc.load_corpus` manual-layout filter
+  (kind/filename) — pairwise annotation session JSONs no longer break
+  corpus loading; CI render-baseline sha re-anchor (CRLF-safe
+  .gitattributes byte-pinning); demos freshness repair.
+- No visual-face change: the UI-A theme baseline is untouched and the
+  default render path is byte-identical to 0.8.2 (frozen-baseline byte
+  gate + demo freshness gate re-verified at this closure). Consumer
+  note: byte-pinned consumers (STDRAW_PIN) re-verify their artifacts
+  against this release per their own release discipline.
+
 ## 0.8.2 — 2026-11-17
 
 - **Ring form battery manual-calibrated + reverse-form gate widened to
