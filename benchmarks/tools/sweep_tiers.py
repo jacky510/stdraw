@@ -72,11 +72,20 @@ def engine_caliber():
 
     The child renders run `sys.executable -m stdraw layout ...` — the same
     interpreter as this process — so ortools availability HERE decides
-    whether the layered cp-sat engine or the construct fallback engine
-    produces every recorded result.  Recorded into sweep_index.json so a
+    whether the LAYERED placement path runs the cp-sat engine or falls back
+    to the constructive engine.  Recorded into sweep_index.json so a
     zero-regression table can never again silently compare two different
     engine calibers (blind spot measured on an earlier sweep vs
     the ortools-path visual acceptance run).
+
+    Scope note (mode-based placement, v0.8.2+): only the layered path
+    consults CP-SAT.  A graph dispatched to a constructive mode engine
+    (ring/column/spine/bowtie/sym/comb/radial-construct) or to the
+    planarized path never touches CP-SAT by design, so under the
+    cp-sat-layered caliber the per-graph `position_engine` legitimately
+    reads anything except "construct" — "construct" under cp-sat-layered
+    is the one value that means the cp-sat path was NOT covered for that
+    graph (ortools importable but no feasible placement on either grid).
     """
     try:
         import ortools  # noqa: F401
@@ -103,7 +112,9 @@ def run_leg(tier, legdir, budget, log):
         "mixed_caliber_resume": mixed or bool(prev_meta.get("mixed_caliber_resume")),
         "prev_caliber": prev_meta.get("engine_caliber"),
         "note": ("per-graph engine in rec['engine'] (layout.json meta.position_engine); "
-                 "byte-compare only walks graph keys, _meta is annotation-only"),
+                 "byte-compare only walks graph keys, _meta is annotation-only; "
+                 "mode-based construct engines and planarized are by-design non-CP-SAT "
+                 "paths, only engine=construct under cp-sat-layered is a coverage gap"),
     }
     if mixed:
         print(f"WARNING: leg resumed under caliber {calib} but earlier graphs were "
@@ -120,7 +131,9 @@ def run_leg(tier, legdir, budget, log):
         print(banner)
         log.write(banner + "\n")
     else:
-        print(f"engine caliber: {calib} (layered engine real path covered)")
+        print(f"engine caliber: {calib} (ortools present: the layered path runs CP-SAT; "
+              f"mode-based / planarized graphs never consult it -- per-graph engine "
+              f"in sweep_index rec['engine'])")
     log.write(f"=== sweep tier={tier} start {time.strftime('%F %T')} "
               f"graphs={len(graphs)} caliber={calib} interpreter={sys.executable} "
               f"(resume: {len(index)} already done) ===\n")
@@ -150,9 +163,13 @@ def run_leg(tier, legdir, budget, log):
                                      .get("meta", {}).get("position_engine", "unknown"))
                 except Exception:
                     rec["engine"] = "unknown"
-                if rec["engine"] != "cp-sat" and calib == "cp-sat-layered":
-                    log.write(f"WARN {key}: engine caliber cp-sat-layered expected "
-                              f"but layout delivered position_engine={rec['engine']}\n")
+                # Only the layered path's construct FALLBACK is a coverage gap
+                # under the cp-sat-layered caliber; mode-based / planarized
+                # engines are by-design non-CP-SAT paths (see engine_caliber).
+                if rec["engine"] == "construct" and calib == "cp-sat-layered":
+                    log.write(f"WARN {key}: ortools present (caliber cp-sat-layered) but the "
+                              f"layered path delivered position_engine=construct (cp-sat found "
+                              f"no feasible placement on either grid) -- cp-sat path NOT covered\n")
             for f in sorted(os.listdir(outdir)):
                 fp = os.path.join(outdir, f)
                 if os.path.isfile(fp):
