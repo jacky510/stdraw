@@ -119,72 +119,18 @@ def test_dense_deferral_delivers_measured_equals_rendered(tmp_path):
 
 # --- REVERTED path (low-density branch): same restore path, same resync -------
 # The corpus never degrades naturally at low density (that is why the revert
-# stayed silent), so the degradation is constructed exactly like
-# test_anchor_snap_low_density_revert does: the real snap runs, then a
-# guaranteed +1 crossing is injected into a route so the probe measures a
-# regression and reverts to the pre-snap routes (the injected route is part of
-# the discarded post-snap state).  The dense trigger graph is pushed into the
-# low-density branch by raising the density threshold for the test only.
-
-def _inject_guaranteed_crossing(router, routes, floor):
-    """Straddle a segment of a disjoint edge with one endpoint of route i and
-    its neighbour point, so the connecting segment provably crosses it.
-
-    The worsening is verified with the engine's own counter
-    (Router.final_crossing_pairs -- exactly what the revert probe measures)
-    against the probe's own baseline: ``floor`` is the pair count the layout
-    took BEFORE anchor_snap ran, so the fixture succeeds iff the probe will
-    really see ``post > pre``.  A naive sign test is not enough: on another
-    platform the wall-time budgeted cp-sat incumbent yields a different
-    layout, where a naive +1 can be a pair the engine already counts.
-    Injections accumulate (each accepted one raises the engine-caliber
-    count) until the floor is exceeded; returns False if no candidate does.
-    """
-    import math
-    from stdraw.metrics import seg_cross as _engine_cross
-
-    def engine_pairs():
-        return router.final_crossing_pairs(routes)
-
-    current = engine_pairs()
-    keys = sorted(routes.keys())
-    for i in keys:
-        pts = routes[i]["points"]
-        if len(pts) < 2:
-            continue
-        for p_idx, n_idx in ((0, 1), (-1, -2)):
-            for j in keys:
-                if j == i:
-                    continue
-                ei, ej = router.edges[i], router.edges[j]
-                if ei[0] in ej or ei[1] in ej:
-                    continue
-                jp = routes[j]["points"]
-                for mid in range(len(jp) - 1):
-                    a, b = jp[mid], jp[mid + 1]
-                    if math.hypot(b[0] - a[0], b[1] - a[1]) < 8.0:
-                        continue
-                    nx_, ny_ = -(b[1] - a[1]), (b[0] - a[0])
-                    norm = math.hypot(nx_, ny_)
-                    nx_, ny_ = nx_ / norm, ny_ / norm
-                    q = [(a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0]
-                    new0 = [q[0] - 3.0 * nx_, q[1] - 3.0 * ny_]
-                    new1 = [q[0] + 3.0 * nx_, q[1] + 3.0 * ny_]
-                    old0, old1 = list(pts[p_idx]), list(pts[n_idx])
-                    pts[p_idx], pts[n_idx] = new0, new1
-                    now = engine_pairs()
-                    if now > current:
-                        # the fixture's own claim: the engine sees the crossing
-                        assert any(_engine_cross(pts[p_idx], pts[n_idx], s2[0], s2[1])
-                                   for s2 in zip(jp[:-1], jp[1:]))
-                        current = now
-                        if current > floor:
-                            return True
-                        # keep this injection, keep accumulating
-                    else:
-                        pts[p_idx], pts[n_idx] = old0, old1
-    return False
-
+# stayed silent), so the probe's own criterion is forced deterministically:
+# Router.final_crossing_pairs reports one pair more after every anchor_snap
+# call than before it, so the low-density branch measures
+# ``post > pre`` right after the snap and MUST take the revert branch on every
+# platform.  (Injecting a geometric regression into the snapped routes and
+# re-measuring it with the engine counter is platform fragile: the wall-time
+# budgeted cp-sat incumbent yields a different layout in CI, where the real
+# chain no longer saw the injected worsening.)  The real snap still runs, so
+# the restored pre-snap routes are the genuine chain output, including the
+# vg route whose polyline midband had shifted away from its rendered corners.
+# The dense trigger graph is pushed into the low-density branch by raising
+# the density threshold for the test only.
 
 @pytest.mark.skipif(not _has_solver(),
                     reason="random-n10-i12 delivers a shifted vg route only "
@@ -192,17 +138,20 @@ def _inject_guaranteed_crossing(router, routes, floor):
 def test_low_density_revert_resyncs_vg_route(monkeypatch):
     import stdraw.layout_auto as la
     real_snap = Router.anchor_snap
+    real_fcp = Router.final_crossing_pairs
+    snaps = {"n": 0}
 
-    def degrading_snap(self, routes, max_sweeps=4):
-        # the layout counts its pre-snap baseline right before calling
-        # anchor_snap: capture the same number here so the fixture's target
-        # is exactly the probe's revert criterion (post > pre)
-        floor = self.final_crossing_pairs(routes)
+    def growing_fcp(self, out):
+        # probe input forced to worsen by one pair per snap call
+        return real_fcp(self, out) + snaps["n"]
+
+    def counting_snap(self, routes, max_sweeps=4):
         rep = real_snap(self, routes, max_sweeps)
-        assert _inject_guaranteed_crossing(self, routes, floor),             "fixture failed to inject a measured regression"
+        snaps["n"] += 1
         return rep
 
-    monkeypatch.setattr(Router, "anchor_snap", degrading_snap)
+    monkeypatch.setattr(Router, "final_crossing_pairs", growing_fcp)
+    monkeypatch.setattr(Router, "anchor_snap", counting_snap)
     monkeypatch.setattr(la, "ANCHOR_SNAP_DENSE_E_OVER_N", 99.0)
     err = io.StringIO()
     old = sys.stderr
@@ -212,13 +161,16 @@ def test_low_density_revert_resyncs_vg_route(monkeypatch):
     finally:
         sys.stderr = old
     text = err.getvalue()
-    assert "anchor_snap REVERTED" in text, text[-600:]
+    m = re.search(r"anchor_snap REVERTED \(E/N=[\d.]+\): crossings (\d+)->(\d+)", text)
+    assert m, text[-600:]
+    assert int(m.group(2)) == int(m.group(1)) + 1
     assert "vg polyline(s) resynced" in text, text[-600:]
+    assert snaps["n"] >= 1
     assert v4["meta"].get("anchor_snap_deferred") is None
     vg = [e for e in v4["edges"] if e["route"].get("path_d")]
     assert vg, "expected the trigger graph's vg route"
     for e in vg:
-        m = re.match(r"M (-?[\d.]+) (-?[\d.]+)", e["route"]["path_d"])
-        assert m, e["route"]["path_d"][:40]
-        assert e["route"]["points"][0] == [float(m.group(1)), float(m.group(2))]
+        mm = re.match(r"M (-?[\d.]+) (-?[\d.]+)", e["route"]["path_d"])
+        assert mm, e["route"]["path_d"][:40]
+        assert e["route"]["points"][0] == [float(mm.group(1)), float(mm.group(2))]
         assert e["anchors"]["a"] == e["route"]["points"][0]
