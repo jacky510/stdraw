@@ -451,10 +451,31 @@ will be updated with the integration method.
 
 ## Version
 
-Current **0.8.2** (`stdraw.__version__`, consistent with `pyproject.toml`).
+Current **0.9.0** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
 
+- **v0.9.0 version closure** (85-commit sweep since 0.8.2: preference
+  research toolchain + opt-in candidate generation + performance):
+  (a) opt-in anchors-as-prior candidate generation — family-gated anchor
+  retrieval + feature-distance ranking + deterministic mirror post-pass
+  (`--mirror-symmetry` DEFAULT OFF) + M0-gate ranking, delivered via the
+  `--from-layout` replay channel — and the candidate-v1 recipe (structure
+  analyzer + template sources + orchestrator + three-tier selection +
+  routing-in-the-loop with a not-worse-than-v0.8.2 guard); the auto-v2
+  default path stays byte-unchanged;
+  (b) preference research line closed as a research toolchain +
+  experiment report (three pairwise annotation rounds, adaptive question
+  selection with byte-faithful rendering; final comparisons 25 pairs,
+  three-round merge 62 pairs; BT solver converged — diagonal-Hessian
+  Newton + duplicate-column merge, M2/M2s artifact readings corrected);
+  (c) performance: layout() split into verbatim-equivalent stages +
+  polish incremental scoring (top hotspot ~97%, n10 median <= 30 s first
+  cut);
+  (d) fixes: dc.load_corpus manual-layout filter (pairwise session JSONs
+  no longer break corpus loading), CI render-baseline sha re-anchor,
+  demos freshness repair. No visual-face change: UI-A baseline
+  untouched; default render path byte-identical to 0.8.2.
 - **v0.8.2 version closure** (ring form battery + reverse-form gate
   widening; 42-graph stock-certificate regeneration): ring regularity
   thresholds re-derived from hand-pulled ring truth — the old 0.05 gate
