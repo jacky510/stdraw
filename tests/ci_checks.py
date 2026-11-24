@@ -937,6 +937,16 @@ def main():
                         else:
                             print("OK  certificate freshness: demos/classic-certificate.json "
                                   "byte-identical to the current engine's re-render (ref-scrubbed anti-staleness gate)")
+                    # Loops-audit deliverable under the same criteria (stale after
+                    # the directional R/B parity fix) -- byte-exact pin.
+                    with open(os.path.join(root, "demos", "classic-loops-audit.json"), "rb") as a, \
+                            open(os.path.join(fresh_out, "loops_audit.json"), "rb") as b:
+                        if a.read() != b.read():
+                            failures.append(
+                                "loops-audit freshness: demos/classic-loops-audit.json does not "
+                                "match a re-render by the current engine (deliverable stale -- rerun "
+                                "python -m stdraw layout examples/classic-cld-growth-and-burden.cld "
+                                "--name classic-cld and update demos/classic-loops-audit.json)")
 
             # K. Language policy gate: repo-wide bilingual partition
         mark("I: demo/certificate freshness (1 re-render)")

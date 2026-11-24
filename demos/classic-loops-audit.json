@@ -154,8 +154,8 @@
     "crowding",
     "fundamental"
    ],
-   "kind": "R",
-   "neg_edges": 2,
+   "kind": "B",
+   "neg_edges": 1,
    "matches_declared": "B4"
   },
   {
@@ -163,8 +163,8 @@
     "crowding",
     "quickfix"
    ],
-   "kind": "R",
-   "neg_edges": 2,
+   "kind": "B",
+   "neg_edges": 1,
    "matches_declared": "B3"
   },
   {
@@ -173,8 +173,8 @@
     "quickfix",
     "sideeffect"
    ],
-   "kind": "B",
-   "neg_edges": 1,
+   "kind": "R",
+   "neg_edges": 0,
    "matches_declared": "R2"
   }
  ],
