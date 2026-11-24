@@ -96,7 +96,7 @@ Adding a new banned pattern = one commit updating all three places together:
 ## Branches & release
 
 - Trunk = `main`; after card-level acceptance passes you may push directly (lightweight doc/fix-class); big feature cards complete the sweep zero-drift verification before pushing
-- After pushing, watch the remote CI double job until success; if red, fix before closing the card
+- After pushing, start a background `gh run watch` (notify on complete) and report the conclusion; if the run is red, do NOT push a fix on top — revert the push or hand off to a new card with the failure log
 - Version releases go through a "version closure card": unified bump of version number / badges / the "Version" section of this file + certificate summary cross-check
 - Publishing-face changes must attach publishing-face acceptance evidence (cross-check output / screenshots / certificate gates list)
 
