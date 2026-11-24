@@ -11,7 +11,13 @@ Status: M0 draft (minimal closed loop). Parser: `stdraw/dsl.py`, CLI: `python -m
 
 ## Syntax
 
-Line-oriented; `#` starts a comment; blank lines are ignored.
+Line-oriented; `#` starts a comment **outside quoted fields only** (a `#`
+inside a quoted label is data); blank lines are ignored. Quoted fields
+(graph name / labels / `@value` text) support the escapes `\"` and `\\`;
+`dumps` emits the same escaping, so `parse(dumps(g)) == g` holds for
+arbitrary label text. `validate()` rejects self-loops (`a -> + a`) and
+duplicate directed edges (the same `(a, b)` pair twice; opposite-direction
+mutual pairs remain legal).
 
 ```
 graph "图名"                              # optional, graph name (goes into the certificate)
