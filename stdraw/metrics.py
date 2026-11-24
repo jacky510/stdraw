@@ -325,6 +325,9 @@ def scene_from_auto(v4: dict) -> dict:
             "form_fallback": v4["meta"].get("form_fallback"),
             # edge placement rules v1 pass-through (certificate records it)
             "edge_rules": v4["meta"].get("edge_rules"),
+            # loop-direction arc default pass-through (absent when no
+            # loop-member line is in scope)
+            "loop_arcs": v4["meta"].get("loop_arcs"),
             "line_style": v4["meta"].get("line_style", "straight"),
             "deg0": set(v4["meta"].get("deg0", [])),
             # ring placement caliber: certificate picks metrics per placement mode
@@ -1349,6 +1352,24 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "row_align_note": ("report item: row alignment is no longer a "
                            "veto (hand-pulled samples show row_align delta ~= 0)"),
     }
+    _la = scene.get("loop_arcs")
+    if _la:
+        # loop-direction arc default (report item, not a gate): every
+        # loop-member line that is not a mutual pair should arrive as an arc
+        # bulging away from its loop centroid; the honest count and the
+        # measured fallback reasons ride in the certificate loop_arcs block.
+        reports["loop_edges_arced"] = (_la.get("arced", 0)
+                                       == _la.get("preferred", 0))
+        reports["loop_arcs_note"] = (
+            "report item: %d/%d loop-member lines delivered as loop-side "
+            "arcs, %d by the placement mode's constructed template; "
+            "%d straight/detour fallback(s) and %d opposite-side arc(s) "
+            "with measured reasons in loop_arcs.fallbacks"
+            % (_la.get("arced", 0), _la.get("preferred", 0),
+               _la.get("templated", 0),
+               len(_la.get("fallbacks") or []) - _la.get("opposite_side_arcs", 0)
+               - _la.get("templated", 0),
+               _la.get("opposite_side_arcs", 0)))
 
     if ring_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
@@ -1497,6 +1518,9 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         # when the decision layer ran (auto path); violations recorded,
         # grading untouched (D4-A).
         **({"edge_rules": scene["edge_rules"]} if scene.get("edge_rules") else {}),
+        # loop-direction arc default record (emitted only when the scope has
+        # a loop-member line): honest delivery counts + fallback reasons
+        **({"loop_arcs": scene["loop_arcs"]} if scene.get("loop_arcs") else {}),
         "metrics": metrics,
         "gates": g,
         "gates_passed": f"{g_pass}/{n_gates}",

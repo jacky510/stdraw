@@ -420,6 +420,12 @@ geometrically equivalent (mirror images).
   axis edge straight + side edges all arcs).
 - Column spine closing edges / cross-row chords are constructed as large arcs
   (never in the polyline candidate pool).
+- **Loop-member lines default to an arc on the loop side (2026-11-25)**: a
+  line whose two ends are adjacent nodes of the same declared loop of >= 3
+  nodes (mutual pairs excepted) is tried as loop-side arc -> other-side arc ->
+  straight; straight / polyline fallbacks are recorded with measured reasons
+  in the certificate's `loop_arcs.fallbacks` (a report item, not a gate).
+  Caliber original: `docs/edge-placement-rules-v1.md` section 20.
 
 ## Line-to-box connection-point caliber (tightened 2026-11-06)
 

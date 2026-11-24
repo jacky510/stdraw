@@ -104,3 +104,18 @@ python t4_sweep.py <leg> <abs_out_dir>     # 脚本随卡归档；core 循环 = 
 `docs/layout-modes.md`「透镜链」节）：每个互指对的两条边都是 Q 弧，鼓度 = 二次 Bezier 顶点到弦的
 偏移 / 弦长（有控制点时精确 = 0.5×|ctrl − 弦中点|；无控制点按折线顶点取）≥ `gates.LENS_BULGE_MIN`
 （0.15），且两弧鼓向弦的异侧。`gates.arc_bulge(pts, ctrl=None, flip=False)` 是鼓度与侧别的单一来源。
+
+## §8 回路方向弧线默认的候选序（2026-11-25）
+
+口径正本 `docs/edge-placement-rules-v1.md` §20，本节只登记路由侧的实现约定：
+
+- 作用域 = `layout()` 级 `routing.loop_arc_context(graph.loops)`：放置试验 / polish / 最终路由 / 修复探针里
+  构造的每个 `Router` 读同一份 `loop_arc_sides`（按当前盒中心现算侧别）。**不能只包第一阶段**——
+  最终 Router 在第二阶段才构造，拿不到偏好就会交付直线（实测踩坑）。手工路径与无回路图不进上下文。
+- 候选序（`_candidates_linearc`，成员线且非互指对）：顺向弧（5 元组，规则罚 0）→ 反向弧（`ARC_NEAR_PENALTY` 25）
+  → 直线（`STRAIGHT_FALLBACK_PENALTY` 30，低于折线类型代价 40）。`_candidates` 的 memo 键含 `pref`；
+  5 元组 / 6 元组混排对评分与下界剪枝透明（`cand[5]` 缺省 = 0.0）。互指对与非成员线走 legacy 分支，逐字节不变。
+- 几何项权重照旧主导（压框 4000 / 交叉 40 / 净距 30）：干净的直线（+30）输给干净的顺向弧（+0）；
+  压框或交叉的顺向弧输给干净的反向弧（+25）或干净的直线（+30）。兜底是算出来的，不是阈值放出来的。
+- 证书记录在交付层重算（`routing.loop_arc_audit` 对最终坐标重评顺向弧候选 → 实测原因），
+  不读路由器内部状态；anchor-snap 联合绕行、构造模板几何各带来源标注。

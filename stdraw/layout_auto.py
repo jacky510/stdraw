@@ -22,6 +22,7 @@ import sys
 from collections import defaultdict
 
 from . import textmetrics
+from . import routing as _routing
 from . import timing as _timing
 from .visibility import reset_caches as _reset_route_caches
 from .anchors import ANCHOR_IDS, standard_anchors as _standard_anchors
@@ -2297,7 +2298,8 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
         from . import edgerules as _er
         er_kinds = _er.loop_edge_kinds(getattr(graph, "loops", []), edges)
         er_presets, er_report = _er.assign(nodes_px, edges, er_kinds,
-                                           dense_hub=_dense_hub)
+                                           dense_hub=_dense_hub,
+                                           loop_arcs=getattr(graph, "loops", None))
         # spec §4: hard gates rank above the rules — presets whose fixed
         # chord would make a hard gate unachievable (tangential exit /
         # un-detourable press) fall back to the legacy candidate pool with
@@ -2373,7 +2375,8 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
             from . import edgerules as _er
             _er_alts = _er.alternate_presets(nodes_px, edges, er_kinds,
                                              _er_best[1], _er_inv, _er_round,
-                                             dense_hub=_dense_hub)
+                                             dense_hub=_dense_hub,
+                                             loop_arcs=getattr(graph, "loops", None))
             if _er_alts is None:
                 break
             _r2 = Router(nodes_px, edges, cfg.clearance, cfg.pitch,
@@ -2888,6 +2891,19 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
     _pl_defer = cand["_pl_defer"]
     _dense_hub = cand["_dense_hub"]
     _dense_deg_max = cand["_dense_deg_max"]
+    constructed = cand["constructed"]
+    # loop-direction arc default audit (CLD drawing quality T10): honest
+    # record of which loop-member lines were delivered as loop-side arcs
+    # and, for every other one, the measured fallback reason; rides
+    # layout.json meta + the certificate as "loop_arcs" (key absent when no
+    # loop-member line is in scope -- bytes unchanged).  The manual path
+    # never applied the default, so it is never audited.
+    _loop_arc_rec = _routing.loop_arc_audit(
+        {v: (pos[v], y[v], widths[v], card_h) for v in nodes}, edges,
+        getattr(graph, "loops", None) if manual is None else None,
+        routes, cfg.clearance, cfg.pitch,
+        templated=[i for i, (a, b) in enumerate(edges)
+                   if constructed.get((a, b)) is not None])
     # ref-scrubbed R/B loop coloring: edge -> the set of declared-loop kinds it belongs to (deterministic rules in docs/layout-modes.md):
     # a single loop in a single color (R=amber/B=sky blue); multiple loops of the same color take that color; multiple loops of different
     # colors or no loop -> neutral (rendering layer slate); polarity (+/-) data unchanged.
@@ -3157,6 +3173,10 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
             # edge placement rules v1 certificate block (spec §6): rule
             # violations recorded honestly; v1 does NOT enter the grading.
             "edge_rules": er_report,
+            # loop-direction arc default record (absent when no loop-member
+            # line is in scope): preferred / delivered counts + measured
+            # fallback reasons (certificate copies it, report item only)
+            **({"loop_arcs": _loop_arc_rec} if _loop_arc_rec else {}),
             "solver_available": _has_solver(),
             **pos_meta,
             "routing_math": ("visibility-graph Dijkstra shortest path (clearance-"
@@ -3206,6 +3226,14 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     caliber unchanged, scored honestly). With manual=None (default) the code
     path is byte-for-byte identical to history.
 
+    Loop-direction arc default (CLD drawing quality T10): the automatic
+    path of a graph with declared loops runs inside the loop-arc scope, so
+    every Router of the pipeline -- placement trials, polish worlds, final
+    routing, repair passes -- prefers, for each loop-member line that is
+    not a mutual pair, an arc bulging away from its loop centroid; straight
+    / polyline are scored fallbacks.  A graph without declared loops and
+    the manual path never enter the scope: bytes unchanged.
+
     ref-scrubbed loop-dominant ring placement: with manual=None the deterministic
     trigger detection (ringlayout.detect_ring) runs first;
     a hit whose routing trial passes the gate -> regular-polygon slots for the
@@ -3214,6 +3242,16 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     unchanged).
     """
     cfg = config or AutoConfig()
+    if manual is not None or not getattr(graph, "loops", None):
+        return _layout_pipeline(graph, cfg, linestyle, manual)
+    with _routing.loop_arc_context(graph.loops):
+        return _layout_pipeline(graph, cfg, linestyle, manual)
+
+
+def _layout_pipeline(graph, cfg, linestyle, manual):
+    """The three verbatim-equivalent stages of layout() (see the stage
+    docstrings); split out only so layout() can wrap them in the loop-arc
+    scope without re-indenting the stage calls."""
     edges = tuple((e.a, e.b) for e in graph.edges)
     # Cache lifecycle: module-level route/corner caches must never carry
     # state across layouts (rounded-key aliasing would make batch results

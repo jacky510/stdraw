@@ -11,10 +11,12 @@ Hard-gate geometric accounting (v0.2 quality rework):
 
 All candidates are enumerated in fixed order and picked by fixed scoring -- no RNG, same graph yields same output.
 """
+import contextvars
 import math
 import os
 import sys
 import itertools
+from contextlib import contextmanager
 
 from . import visibility as _vis
 from . import gates as _gates
@@ -42,6 +44,220 @@ def _dbg(msg_fn):
     """
     if os.environ.get("STDRAW_SNAP_DEBUG"):
         print(msg_fn(), file=sys.stderr)
+
+
+# -- loop-direction arc default (CLD drawing quality T10) ------------------
+# Declared loops ride in through a context variable so that EVERY Router
+# built inside the automatic candidate stage (placement trials, polish
+# worlds, final routing and the repair passes) scores the same line-type
+# preference; the manual (--from-layout) path never enters the context and
+# keeps the legacy straight-first caliber (user styles win).
+_LOOP_ARC_CTX = contextvars.ContextVar("stdraw_loop_arcs", default=None)
+
+
+@contextmanager
+def loop_arc_context(loops):
+    """Scope in which Routers apply the loop-direction arc default for the
+    given declared loops (list of Loop objects; None/[] = legacy caliber)."""
+    tok = _LOOP_ARC_CTX.set(list(loops) if loops else None)
+    try:
+        yield
+    finally:
+        _LOOP_ARC_CTX.reset(tok)
+
+
+def loop_arc_sides(centers, edges, loops):
+    """Loop-direction arc default: preferred arc bulge sign per edge.
+
+    centers: {id: (cx, cy)}; edges: [(a, b)] directed; loops: declared loops
+    (objects with a ``nodes`` sequence).  Returns {edge idx: +1 | -1 | 0} in
+    the router quad parameterization of the a->b chord:
+      +1/-1 = bulge AWAY from the centroid of the union of the declared loops
+              the edge belongs to (each loop reads as a closed curved ring);
+       0    = loop member whose loop centroid lies on its chord line (side
+              free, an arc is still preferred over a straight line).
+    Edges that are not loop members, and every mutual pair (a<->b), are
+    absent: non-loop lines stay straight and mutual pairs keep the lens /
+    edge-placement-rules-v1 rule-8 contract unchanged.  Deterministic.
+    """
+    if not loops:
+        return {}
+    eset = set(edges)
+    mutual = set()
+    for a, b in edges:
+        if a < b and (b, a) in eset:
+            mutual.add((a, b))
+    eidx = {}
+    for i, e in enumerate(edges):
+        eidx.setdefault(e, i)
+    union = {}
+    for lp in loops:
+        seq = list(getattr(lp, "nodes", None) or [])
+        if len(seq) < 3:
+            continue
+        ns = set(seq)
+        for u, v in zip(seq, seq[1:] + seq[:1]):
+            i = eidx.get((u, v))
+            if i is None:
+                i = eidx.get((v, u))     # loop declared against the edge direction
+            if i is None or (min(u, v), max(u, v)) in mutual:
+                continue
+            union.setdefault(i, set()).update(ns)
+    out = {}
+    for i in sorted(union):
+        ns = union[i]
+        if not all(v in centers for v in ns):
+            continue
+        a, b = edges[i]
+        ca, cb = centers[a], centers[b]
+        vx, vy = cb[0] - ca[0], cb[1] - ca[1]
+        d = math.hypot(vx, vy) or 1.0
+        ux, uy = -vy / d, vx / d
+        mx, my = (ca[0] + cb[0]) / 2.0, (ca[1] + cb[1]) / 2.0
+        acc = 0.0
+        for v in sorted(ns):
+            acc += (centers[v][0] - mx) * ux + (centers[v][1] - my) * uy
+        s = acc / len(ns)
+        out[i] = 0 if abs(s) < 1e-6 else (-1 if s > 0 else 1)
+    return out
+
+
+def _bulge_sign(pa, pb, ctrl):
+    """+1/-1: side of the pa->pb chord the quad ctrl point sits on (the
+    router arc parameterization sign); 0 for a degenerate chord."""
+    vx, vy = pb[0] - pa[0], pb[1] - pa[1]
+    d = math.hypot(vx, vy)
+    if d < 1e-9:
+        return 0
+    ux, uy = -vy / d, vx / d
+    s = (ctrl[0] - (pa[0] + pb[0]) / 2.0) * ux + \
+        (ctrl[1] - (pa[1] + pb[1]) / 2.0) * uy
+    return 0 if abs(s) < 1e-9 else (1 if s > 0 else -1)
+
+
+def _candidate_defects(info, clearance):
+    """Human-readable defect list of one evaluated candidate (empty = all
+    hard-gate terms clean)."""
+    if info is None:
+        return "rejected (own-box interior / off-border endpoint)"
+    bad = []
+    if info.get("press"):
+        bad.append("presses %d box(es)" % info["press"])
+    if info.get("cross"):
+        bad.append("crosses %d routed line(s)" % info["cross"])
+    mc = info.get("min_clear")
+    if mc is not None and mc < clearance - 1e-6:
+        bad.append("clearance deficit %.1fpx" % (clearance - mc))
+    for end in ("a", "b"):
+        ang = info.get("ang_" + end)
+        if ang is not None and ang < ANCHOR_MIN_DEG:
+            bad.append("%s-end anchor angle %.0f deg" % (end, ang))
+    return "; ".join(bad) if bad else "clean"
+
+
+def loop_arc_audit(nodes, edges, loops, routes, clearance=CLEARANCE, pitch=80,
+                   templated=()):
+    """Honest record of the loop-direction arc default on the DELIVERED
+    routes (certificate ``loop_arcs`` block; report item, not a gate).
+
+    Every loop-member line that is not a mutual pair is expected to be
+    delivered as an arc bulging away from its loop centroid.  For each line
+    that is not, the preferred-side arc (and, when the delivery is a
+    detour, the straight line) is re-scored against the delivered routes
+    of all OTHER lines and its hard-gate defects are recorded verbatim --
+    the fallback reason is measured, never assumed.  ``templated``: edge
+    indices whose geometry a constructed placement engine delivers by its
+    own mode template (the candidate pool is skipped there); they are
+    recorded as template geometry.  Returns None when the scope has no
+    loop-member line (layout.json / certificate bytes then stay
+    unchanged)."""
+    templated = set(templated or ())
+    rtr = Router(nodes, edges, clearance, pitch, loop_arcs=loops)
+    pref = rtr.arc_pref
+    if not pref:
+        return None
+    segs = {}
+    for j, r in routes.items():
+        rpts = (r or {}).get("points") or []
+        if len(rpts) < 2:
+            continue
+        ss = list(zip(rpts[:-1], rpts[1:]))
+        segs[j] = (ss, [(min(p[0], q[0]), min(p[1], q[1]),
+                         max(p[0], q[0]), max(p[1], q[1])) for p, q in ss])
+
+    def _best(i, a, b, test):
+        rs = {j: s for j, s in segs.items() if j != i}
+        bst = None
+        for c in rtr._candidates(a, b, i):
+            if not test(c):
+                continue
+            sc, inf = rtr._evaluate(c, a, b, rs, None, honest=True)
+            if inf is not None and (bst is None or sc < bst[0] - EPS):
+                bst = (sc, inf)
+        return bst[1] if bst else None
+
+    arced, opposite, fallbacks = 0, 0, []
+    templated_n = 0
+    for i in sorted(pref):
+        a, b = edges[i]
+        info = routes.get(i)
+        if not info:
+            continue
+        kind = info.get("kind")
+        pts = info.get("points") or []
+        want = pref[i]
+        sides = (want,) if want else (1, -1)
+        sign = 0
+        if kind == "arc" and len(pts) >= 2:
+            sign = _bulge_sign(pts[0], pts[-1],
+                               info.get("ctrl") or pts[len(pts) // 2])
+        if kind == "arc" and sign in sides:
+            arced += 1
+            continue
+        name = "%s->%s" % (a, b)
+        if i in templated:
+            # constructed placement engine: the mode template (spine / comb
+            # fan / bowtie mirror lines ...) delivers this line's own
+            # geometry and the candidate pool is skipped (edge-placement
+            # rules v1 section 14 exemption) -- template geometry, not a
+            # scored fallback
+            templated_n += 1
+            fallbacks.append({"edge": name,
+                              "delivered": "%s (mode template)" % (kind or "unknown"),
+                              "preferred_arc": ("not scored: delivered by the "
+                                                "placement mode's constructed "
+                                                "template")})
+            continue
+        if kind == "arc":
+            opposite += 1
+            delivered = "arc (opposite side)"
+        elif info.get("joint_detour"):
+            # anchor-snap repair pass: no standard-anchor pair admitted the
+            # line at decision time, the whole edge was re-planned as a
+            # visibility-graph detour (both endpoints on the 16-anchor set)
+            delivered = "%s (anchor-snap joint detour)" % kind
+        else:
+            delivered = kind or "unknown"
+        ia = _best(i, a, b, lambda c: c[0] == "arc"
+                   and _bulge_sign(c[2], c[3], c[4]) in sides)
+        rec = {"edge": name, "delivered": delivered,
+               "preferred_arc": ("no preferred-side arc candidate" if ia is None
+                                 else _candidate_defects(ia, clearance))}
+        if delivered.endswith("joint detour)") and rec["preferred_arc"] == "clean":
+            rec["preferred_arc"] = ("clean against the FINAL routes, but no "
+                                    "standard-anchor pair admitted it at "
+                                    "decision time")
+        if kind not in ("line", "arc"):
+            il = _best(i, a, b, lambda c: c[0] == "line")
+            rec["straight_line"] = (_candidate_defects(il, clearance)
+                                    if il else "no straight candidate")
+        fallbacks.append(rec)
+    return {"rule": ("loop-member lines (not mutual pairs) default to an "
+                     "arc bulging away from the centroid of their declared "
+                     "loops; straight / polyline are scored fallbacks"),
+            "preferred": len(pref), "arced": arced,
+            "opposite_side_arcs": opposite, "templated": templated_n,
+            "fallbacks": fallbacks}
 
 
 def adaptive_arc_k(dist):
@@ -96,7 +312,15 @@ DENSE_SPOKE_STRAIGHT_PENALTY = 120.0
 # non-rule side / straight where a B line wants its golden-point arc.
 # Hard gates (press / crossings) still dominate via their own weights.
 ARC_NEAR_PENALTY = 25.0
-STRAIGHT_ON_B_PENALTY = 60.0
+# Straight line where the rules want an arc (a B line whose golden-point arc
+# is infeasible, or a loop-member line under the loop-direction arc default).
+# Sits BELOW the polyline type cost (40) on purpose: the documented order is
+# arc -> straight -> detour machinery as last resort, and at the previous
+# 60 a clean straight line lost to a clean horizontal-lane polyline
+# (40 + 0.01 x length), turning blocked arcs into flowchart-style right-angle
+# polylines even where a clean straight line existed.
+STRAIGHT_FALLBACK_PENALTY = 30.0
+STRAIGHT_ON_B_PENALTY = STRAIGHT_FALLBACK_PENALTY   # backward-compatible name
 ARRIVAL_TARGET_DEG = 10.0   # ref-scrubbed: mutual-lens arrow-normal target (card-suggested; hard-gating pending owner decision)
 MIN_FROZEN_ANCHOR_SEP = 8.0  # ref-scrubbed: fan slots must clear frozen anchors on the same side by at least this (px)
 REANCHOR_STEP = 4.0         # ref-scrubbed midband_reanchor ladder-clamping step
@@ -450,7 +674,7 @@ class Router:
 
     def __init__(self, nodes: dict, edges: list, clearance=CLEARANCE, pitch=80,
                  quality=False, presets=None, dense_hub=None,
-                 eval_cache=None):
+                 eval_cache=None, loop_arcs=None):
         """nodes: {id: (x,y,w,h)} center + size; edges: [(a,b)] directed.
 
             quality=False (default): the legacy candidate pool, output byte-for-byte identical to v0.4.x;
@@ -467,6 +691,9 @@ class Router:
             inert, legacy bytes preserved).  When set, only THIS box's
             repair groups enter the dense branches (slot grid + controlled
             sharing + relaxed angle floor); leaf boxes are never dense.
+            loop_arcs: declared loops for the loop-direction arc default
+            (None = read the enclosing loop_arc_context; still None outside
+            it = legacy straight-first caliber, bytes preserved).
         """
         self.N = {v: (p[0], p[1], p[2] / 2.0, p[3] / 2.0) for v, p in nodes.items()}
         self.edges = list(edges)
@@ -474,6 +701,14 @@ class Router:
         self.pitch = pitch
         self.quality = quality
         self.presets = dict(presets) if presets else None
+        # loop-direction arc default: {edge idx: +1/-1/0} preferred bulge
+        # sign computed from the CURRENT box centers (the side is a property
+        # of the placement), {} when no loop is in scope.
+        if loop_arcs is None:
+            loop_arcs = _LOOP_ARC_CTX.get()
+        self.arc_pref = (loop_arc_sides({v: n[:2] for v, n in self.N.items()},
+                                        self.edges, loop_arcs)
+                         if loop_arcs else {})
         # dense mode: None = inert (every dense branch skipped, legacy
         # bytes); a node id = dense repair branches active for that box.
         self.dense_hub = dense_hub
@@ -598,61 +833,86 @@ class Router:
         return variants
 
     # -- candidate generation --
-    def _candidates_linearc(self, a, b):
+    def _candidates_linearc(self, a, b, pref=None):
         """Deterministic line/arc candidate prefix: depends only on the two
         endpoint boxes and the mutual-pair flag (anchor variants, adaptive
         curvature ladder).  Returned in CANONICAL form (kind, tuple pts,
-        tuple pa, tuple pb, tuple ctrl-or-None) for exact memoization
-        across polish candidate worlds; _candidates materializes fresh
-        mutable containers from it per call (bitwise-identical values, no
-        shared-mutable aliasing)."""
+        tuple pa, tuple pb, tuple ctrl-or-None[, rule penalty]) for exact
+        memoization across polish candidate worlds; _candidates materializes
+        fresh mutable containers from it per call (bitwise-identical values,
+        no shared-mutable aliasing).
+
+        pref (loop-direction arc default, T10): +1/-1 = loop-side bulge
+        sign, 0 = loop member with a free side, None = legacy caliber
+        (straight first, both arc sides unrated).  Mutual pairs always take
+        the legacy lens logic regardless of pref."""
         out = []
         key = (min(a, b), max(a, b))
         # F1 lens double-arc: both directions of a mutual pair take the same arc side sign (their reference frames are opposite -> geometrically opposite arcs,
         # forming a lens; one arc one arrow per direction, no more double-headed-arrow look)
         mutual_side = 1 if key in self.mutual else None
+        loop_pref = None if mutual_side else pref
         for pa, pb in self._anchor_variants(a, b):
-            out.append(("line", (tuple(pa), tuple(pb)),
-                        tuple(pa), tuple(pb), None))
             vx, vy = pb[0] - pa[0], pb[1] - pa[1]
             dist = math.hypot(vx, vy)
             ux, uy = norm(-vy, vx)
             # ref-scrubbed arc-curvature parameterization: first tier = chord-adaptive k (small bends for short edges,
             # capped for long ones), the ladder kept as a feasibility fallback; order-preserving dedupe, determinism unchanged
             ks = tuple(dict.fromkeys((adaptive_arc_k(dist),) + ARC_KS))
+            if loop_pref is None:
+                out.append(("line", (tuple(pa), tuple(pb)),
+                            tuple(pa), tuple(pb), None))
+            sides = (mutual_side,) if mutual_side else \
+                ((loop_pref, -loop_pref) if loop_pref else (1, -1))
             for k in ks:
-                sides = (mutual_side,) if mutual_side else (1, -1)
                 for s in sides:
                     ctrl = [(pa[0] + pb[0]) / 2 + ux * k * dist * s,
                             (pa[1] + pb[1]) / 2 + uy * k * dist * s]
-                    out.append(("arc",
-                                tuple(tuple(p) for p in quad_points(pa, ctrl, pb)),
-                                tuple(pa), tuple(pb), (ctrl[0], ctrl[1])))
+                    ent = ("arc",
+                           tuple(tuple(p) for p in quad_points(pa, ctrl, pb)),
+                           tuple(pa), tuple(pb), (ctrl[0], ctrl[1]))
+                    if loop_pref is not None and loop_pref and s != loop_pref:
+                        ent = ent + (ARC_NEAR_PENALTY,)
+                    out.append(ent)
+            if loop_pref is not None:
+                out.append(("line", (tuple(pa), tuple(pb)), tuple(pa),
+                            tuple(pb), None, STRAIGHT_FALLBACK_PENALTY))
         return out
 
     @staticmethod
     def _materialize_linearc(canon):
-        kind, pts_c, pa_c, pb_c, ctrl_c = canon
+        kind, pts_c, pa_c, pb_c, ctrl_c = canon[:5]
+        pen = canon[5] if len(canon) > 5 else 0.0
         pa, pb = list(pa_c), list(pb_c)
         if kind == "line":
+            if pen:
+                return ("line", [pa, pb], pa, pb, None, pen)
             return ("line", [pa, pb], pa, pb)
+        if pen:
+            return ("arc", [list(p) for p in pts_c], pa, pb, list(ctrl_c), pen)
         return ("arc", [list(p) for p in pts_c], pa, pb, list(ctrl_c))
 
     def _candidates(self, a, b, idx):
-        """Fixed-order candidates: straight -> arc (left/right x curvature) -> detour channels, x anchor variants."""
+        """Fixed-order candidates: straight -> arc (left/right x curvature) -> detour channels, x anchor variants.
+
+        Loop-direction arc default (T10): for a loop-member edge (not a
+        mutual pair) the prefix order becomes arc on the loop side (penalty
+        0) -> arc on the other side (25) -> straight (30), so straight /
+        polyline are honest fallbacks scored behind the curve."""
         if self.presets and idx in self.presets:
             return self._preset_candidates(a, b, idx)
         ec = self._ecache
+        pref = self.arc_pref.get(idx) if self.arc_pref else None
         if ec is not None:
             pk = (a, b, self.N[a], self.N[b],
-                  (min(a, b), max(a, b)) in self.mutual)
+                  (min(a, b), max(a, b)) in self.mutual, pref)
             prefix = ec.cand_linearc.get(pk)
             if prefix is None:
-                prefix = ec.cand_linearc[pk] = self._candidates_linearc(a, b)
+                prefix = ec.cand_linearc[pk] = self._candidates_linearc(a, b, pref)
             cands = [self._materialize_linearc(c) for c in prefix]
         else:
             cands = [self._materialize_linearc(c)
-                     for c in self._candidates_linearc(a, b)]
+                     for c in self._candidates_linearc(a, b, pref)]
         key = (min(a, b), max(a, b))
         # WS3 visibility-graph shortest-path candidates (mathematically optimal obstacle avoidance): generated only when the straight line is blocked (deterministic)
         # F1: mutual pairs build vg from several tangentially offset anchor sets x two inflation tiers -- mutually opposite shortest
@@ -3653,7 +3913,10 @@ class Router:
                                  "vg_corners": [list(pp) for pp in
                                                 route["corner_pts"]],
                                  "vg_fillets": [dict(f) for f in
-                                                route["fillets"]]}
+                                                route["fillets"]],
+                                 # provenance for the loop-direction arc
+                                 # record: this line was re-planned here
+                                 "joint_detour": True}
                     after = self._edge_stats(i, routes)
                     # T4: unified delivery-gate caliber (docs/routing-gates.md G-SNAP)
                     ok = _gates.edge_gate_check(

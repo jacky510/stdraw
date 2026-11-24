@@ -117,11 +117,12 @@ A→B 和 B→A 两条边同时存在，称为互连对。
 
 | 类型 | 线型 |
 |---|---|
-| R 增强线 | 直线 |
+| R 增强线（非回路成员线） | 直线 |
 | N 中性线 | 直线 |
 | B 平衡线 | 弧线（二次曲线，沿用现有 `adaptive_arc_k` 的弯曲程度） |
+| **回路成员线**（任一极性；2026-11-25 修订，口径见 §20） | **弧线，弯向所属回路的外侧**；直线 / 折线只在顺向弧不可行时兜底，证书如实记录兜底原因 |
 
-**弧线鼓出方向：** 朝远离同一条边上中点那条线的一侧鼓出。中点没有线时，朝远离框中心连线的一侧鼓出。
+**弧线鼓出方向：** 回路成员线朝远离所属回路质心的一侧鼓出（§20）；其余线朝远离同一条边上中点那条线的一侧鼓出。中点没有线时，朝远离框中心连线的一侧鼓出。
 
 ### 规则 4：平衡线在两个黄金点中选哪个
 
@@ -513,3 +514,43 @@ radial 排布接住星型/fan 后，布线层 fan 压力收缩为「HUB 单框�
 枚举预算：dense 栅格化 + radial 形态使 d17-d24 墙钟从 94.6-1275s 级降到
 2.6-58s 级——「门失败重试枚举」的大头被消除，确定性预算机制无需启用
 （`DENSE_*` 常量保留为安全阀，按当前实测不绑定）。d24 < 300s 目标达成。
+
+## 20. 回路方向弧线默认（2026-11-25 落地，规则 3 修订）
+
+**动机**：CLD 的读者按「回路」读图。旧口径「R 线一律直线」在 ring / column 等构造模式下把闭合回路
+画成直角折线链，读起来像流程图而不是因果回路。新口径：**回路成员线默认画成顺回路方向的弧线，
+直线 / 折线只作兜底，证书如实记录兜底原因**。
+
+**规则**
+
+- 成员线判定：线 (u,v) 的两端是某个 **≥3 节点**声明回路的相邻节点（`u→v` 或 `v→u` 均算）；
+  **互指对（A⇄B）不算**——透镜双弧契约（规则 8）优先，几何不动。
+- 弧线侧别：弧背朝**所属回路质心**（节点中心平均）的**外侧**弯，多回路取节点并集；
+  两端节点不全在版面里的线不参与。侧别单一来源 `routing.loop_arc_sides`（+1 / −1）。
+- 候选序（`Router._candidates_linearc`，仅成员线）：顺向弧（规则罚 0）→ 反向弧（`ARC_NEAR_PENALTY` = 25）
+  → 直线（`STRAIGHT_FALLBACK_PENALTY` = 30，低于折线类型代价 40）。几何项（压框 4000 / 交叉 40 /
+  净距 30）权重照旧主导：干净的顺向弧必胜；顺向弧压框或交叉时才让位给反向弧或直线——**没有阈值放宽**。
+- 作用域：**全部自动布局引擎**（`layout()` 级上下文 `routing.loop_arc_context` 包住放置试验 / polish /
+  最终路由 / 修复探针，各阶段口径一致）。构造类引擎（ring / column / comb / spine-wing / symmetric /
+  bowtie-vertex）交付的构造几何不经候选池：已是弧的照常算弧，仍是直线 / 折线的记 `(mode template)`、不评分。
+  `--from-layout` 手工坐标路径与无声明回路的图**不进上下文，输出字节不变**。
+- 规则 3 在分层引擎路径（`cp-sat` / `construct`）的预设同步修订：成员 R 线预设 `style=arc`、
+  `arc_side` = 回路侧别（`edgerules.assign(loop_arcs=…)` / `alternate_presets`）；非成员 R 线仍是直线。
+
+**证书记录**（`certificate.json.loop_arcs`，仅当图含回路成员线时输出；report item，**非硬门**，grade 判定逻辑零改动）
+
+- 计数：`preferred` / `arced`（交付为顺向弧的条数，构造几何不算）/ `opposite_side_arcs` / `templated`。
+- `fallbacks[]`：每条非顺向弧的成员线一条——`edge`、`delivered`（线型 + 来源标注：`(mode template)` /
+  `(anchor-snap joint detour)`）、`preferred_arc` = **对最终交付坐标重评顺向弧候选**得到的实测原因
+  （压了几个框 / 交叉几条已布线 / 净距差几 px / 锚角几度；构造几何记 not scored）；
+  交付为折线时另附 `straight_line` 同类诊断。
+- `reports.loop_edges_arced`（全部成员线都是顺向弧 = true）与 `reports.loop_arcs_note`（人读摘要）。
+  构造直线 / 折线不算弧，所以 `false` 不代表图不合格。
+
+**字节影响**：无回路图、回路全是互指对的图（如 4 节点 limits-to-growth）、手工路径逐字节不变；
+带 ≥3 节点回路的图线型会变（预期语义变更）——A 档冻结基线的重祝福走授权流程，不静默刷。
+
+**实测（金标准集 8 图，全部仍 best、0 失败门）**：ring-cycle 5 图（limits-to-growth 2/2、
+shifting-the-burden 2/2、escalation 4/4、fixes-that-fail 2/2、tragedy-of-the-commons 4/4）成员线
+全部为顺向弧；growth-and-underinvestment（column-chain）4/4；eroding-goals（bowtie-vertex）
+6 条成员线为构造直线，记 `(mode template)`。回归测试 `tests/test_loop_arc_default.py`。

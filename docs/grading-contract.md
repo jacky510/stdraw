@@ -195,3 +195,16 @@ Consequently:
   keeps its pre-lens mode trace byte-for-byte.
 - Byte-neutrality: a figure without declared loops and without `@delay`
   carries no `annotations` key and no `delay` edge key.
+- `loop_arcs` (a report item, not a gate): loop-member lines (both ends
+  adjacent nodes of a declared loop of >= 3 nodes; mutual pairs excepted)
+  default to an arc bulging away from the loop centroid. The record counts
+  `preferred` / `arced` / `opposite_side_arcs` / `templated` and lists every
+  fallback in `fallbacks[]` with a measured reason re-evaluated on the
+  delivered coordinates. `reports.loop_edges_arced` is true only when every
+  member line is a loop-side arc; a placement mode's constructed template
+  geometry never counts as an arc, so `false` is not a quality failure and
+  never touches `grade`. Caliber original: `docs/edge-placement-rules-v1.md`
+  section 20.
+- Byte-neutrality (loop arcs): a figure without declared loops, a figure
+  whose loops are all mutual pairs, and the `--from-layout` manual path
+  carry no `loop_arcs` key and no `loop_edges_arced` report.

@@ -44,7 +44,8 @@ import math
 from collections import defaultdict
 
 from .anchors import ANCHOR_IDS, standard_anchors
-from .routing import (adaptive_arc_k, ARC_NEAR_PENALTY,
+from .routing import (adaptive_arc_k, loop_arc_sides,
+                      ARC_NEAR_PENALTY,
                       STRAIGHT_ON_B_PENALTY, DENSE_GRID_STEP,
                       DENSE_SLOT_SEP_MIN)
 
@@ -280,7 +281,7 @@ def _ename(edges, i):
     return "%s->%s" % (edges[i][0], edges[i][1])
 
 
-def assign(nodes_px, edges, kinds, skip=(), dense_hub=None):
+def assign(nodes_px, edges, kinds, skip=(), dense_hub=None, loop_arcs=None):
     """Edge placement rules v1 decision layer (spec §3/§5).
 
     dense_hub: dense-mode node id or None (default — legacy caliber).
@@ -289,6 +290,10 @@ def assign(nodes_px, edges, kinds, skip=(), dense_hub=None):
     floor); the grid capacity alone hosts >16-edge single boxes, so the
     dense branch does not need slot sharing here (a residual collision
     still records its honest rule-2 violation).
+    loop_arcs: declared loops (loop-direction arc default, rule 3 as
+    amended for loop-member lines): an R line that belongs to a declared
+    loop and is not part of a mutual pair is preset as an arc bulging away
+    from its loop centroid; None = original rule 3 (R straight).
 
     Returns ``(presets, report)``.
       presets: {edge idx: preset dict} — pa/pb endpoint xy, a_anchor /
@@ -457,11 +462,14 @@ def assign(nodes_px, edges, kinds, skip=(), dense_hub=None):
         # non-B takes the midpoint, B takes a golden (rule 8 row 1)
 
     # ---- resolve symbolic goldens (rules 4 + 9, per edge) ----------
+    arc_sides = (loop_arc_sides({v: (p[0], p[1]) for v, p in nodes_px.items()},
+                                edges, loop_arcs) if loop_arcs else {})
     presets = {}
     for i, (a, b) in enumerate(edges):
         if i in skip:
             continue
-        style = lens.get(i, "arc" if kinds[i] == "B" else "line")
+        style = lens.get(i, "arc" if (kinds[i] == "B" or i in arc_sides)
+                         else "line")
         aid_a, aid_b = end_anchor.get((i, "a")), end_anchor.get((i, "b"))
         sd_a, sd_b = end_side.get((i, "a")), end_side.get((i, "b"))
         if aid_a is None or aid_b is None or sd_a is None or sd_b is None:
@@ -474,7 +482,8 @@ def assign(nodes_px, edges, kinds, skip=(), dense_hub=None):
             claim(b, gb, i)
             end_anchor[(i, "a")], end_anchor[(i, "b")] = ga, gb
             aid_a, aid_b = ga, gb
-        presets[i] = _finalize(i, a, b, style, aid_a, aid_b, sd_a, sd_b, ntab)
+        presets[i] = _finalize(i, a, b, style, aid_a, aid_b, sd_a, sd_b,
+                               ntab, arc_sides.get(i))
 
     # rule 8 (D2-A): lens pair bulge directions are mutually exclusive —
     # the midpoint-chord arc bends away from the golden chord's side.
@@ -593,17 +602,23 @@ def _spill_target(v, side, ent, ntab, claimed, sep_min=None):
     return None
 
 
-def _finalize(i, a, b, style, aid_a, aid_b, sd_a, sd_b, ntab):
-    """Build one preset; pick the rule-3 bulge sign (away from the
-    midpoint line)."""
+def _finalize(i, a, b, style, aid_a, aid_b, sd_a, sd_b, ntab, arc_pref=None):
+    """Build one preset; pick the rule-3 bulge sign.
+
+    arc_pref (loop-direction arc default): +1/-1 takes the bulge away from
+    the loop centroid; 0 / None falls back to the original rule 3 sign
+    (away from the midpoint line)."""
     ta, tb = ntab[a], ntab[b]
     pa, pb = list(ta[aid_a]), list(tb[aid_b])
     arc_side = 1
     if style in ("arc", "lens_a", "lens_b"):
-        m1, m2 = ta[sd_a], tb[sd_b]
-        d1 = _line_dist(_arc_vertex(pa, pb, 1), m1, m2)
-        d2 = _line_dist(_arc_vertex(pa, pb, -1), m1, m2)
-        arc_side = 1 if d1 >= d2 else -1
+        if arc_pref in (1, -1):
+            arc_side = arc_pref
+        else:
+            m1, m2 = ta[sd_a], tb[sd_b]
+            d1 = _line_dist(_arc_vertex(pa, pb, 1), m1, m2)
+            d2 = _line_dist(_arc_vertex(pa, pb, -1), m1, m2)
+            arc_side = 1 if d1 >= d2 else -1
     return {"pa": pa, "pb": pb, "a_anchor": aid_a, "b_anchor": aid_b,
             "a_side": sd_a, "b_side": sd_b, "style": style,
             "arc_side": arc_side}
@@ -732,10 +747,12 @@ def validate_presets(nodes_px, edges, presets, clearance, dense_hub=None):
 # ------------------------------------------------------------------
 
 def alternate_presets(nodes_px, edges, kinds, presets, involved, round_no,
-                      dense_hub=None):
+                      dense_hub=None, loop_arcs=None):
     """Deterministic local re-enumeration for edges still involved in
     crossings (spec §5 step 7).  round_no 1/2/3 tries, per involved edge:
       1. mirror the golden pair (other global side, bulge sign flipped);
+         a loop-direction arc on midpoint anchors has no golden mirror, so
+         round 1 flips its bulge side alone (the "near side" of rule 3);
       2. move both ends to a near-side golden of an adjacent side
          (rule 6 spill geometry);
       3. straight between the facing side midpoints (last resort).
@@ -746,6 +763,8 @@ def alternate_presets(nodes_px, edges, kinds, presets, involved, round_no,
     if dense_hub is not None and dense_hub in ntab:
         _extend_dense_grid(ntab[dense_hub])
     hub_sep = DENSE_SLOT_SEP_MIN if dense_hub is not None else None
+    arc_sides = (loop_arc_sides({v: (p[0], p[1]) for v, p in nodes_px.items()},
+                                edges, loop_arcs) if loop_arcs else {})
 
     def _sep_of(v):
         return hub_sep if v == dense_hub else None
@@ -768,6 +787,9 @@ def alternate_presets(nodes_px, edges, kinds, presets, involved, round_no,
                 cand = dict(p, a_anchor=ga2, b_anchor=gb2,
                             pa=list(ta[ga2]), pb=list(tb[gb2]),
                             arc_side=-p["arc_side"])
+            elif p["style"] == "arc" and arc_sides.get(i) in (1, -1) \
+                    and p["a_anchor"] in SIDES and p["b_anchor"] in SIDES:
+                cand = dict(p, arc_side=-p["arc_side"])
         elif round_no == 2:
             ea = _spill_target(a, p["a_side"],
                                _Entry(i, "a", kinds[i], a, b,
