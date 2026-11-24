@@ -13,6 +13,28 @@ reproduced here; the engineering version history lives in
   The CLI is 2D-only; every 2D artifact is byte-identical to 0.9.0
   (26-figure three-way hash sweep: pre-removal `--skip-3d`,
   pre-removal default, post-removal default).
+- **Loop-reading layer (default on)**: every declared loop carries a
+  loop-center label (id + name + direction glyph; polarity stays
+  color-only), loop-member edges of loops with >= 3 nodes default to an
+  arc bending along their loop — straight / detour fallbacks are recorded
+  with measured reasons in `certificate.json` (`loop_arcs.fallbacks`) —
+  and the new `@delay` edge marker draws a double tick at the edge
+  midpoint (the DSL round-trips through `graph.cld`). New hard gates:
+  `loop_labels_clear`, `delay_marks_clear`. The demo page gains a
+  `Loops: on/off` toggle.
+- **lens-chain placement mode**: pure two-loop figures (two mutual pairs
+  sharing a node) place as a lens chain — the 4-node Limits to Growth
+  archetype moved from `uncertified` to `best` (15/15 gates) with both
+  loops closing as lens-shaped double arcs; hard gates `lens_pairs_closed`
+  and `lens_pair_min_sep_ge_12`.
+- **Speed**: routing candidate pruning (exact lower bounds, memoized
+  mutual-pair spacing, bbox gap pre-checks) with byte-identical output —
+  golden archetype set wall time mean 1.63 s -> 0.99 s and max 4.79 s ->
+  2.11 s measured on one Windows machine.
+- Consumer note: render output bytes change (label layer, loop-side arcs,
+  the new certificate gate rows). Byte-pinned consumers (STDRAW_PIN) must
+  regenerate their artifacts and advance the pin per their own release
+  discipline; the live pin is not moved here.
 
 ## 0.9.0 — 2026-11-23
 
