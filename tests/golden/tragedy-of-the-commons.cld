@@ -1,0 +1,23 @@
+# 金标准基模 · 公地悲剧 Tragedy of the Commons
+# 出处：Senge 1990《第五项修炼》第 7 章 / Kim 1998《Systems Archetype Basics》Tragedy of the Commons（公有领域结构）
+# 结构：4 节点 / 6 边 / 3 环（1 增强 + 2 平衡）；个体用量与个体收益成一对双向边
+# 回路人工核对（沿箭头读一遍极性）：
+#   R1 越用越赚：个体用量 +> 个体收益 +> 个体用量 —— 全同向 = 增强（R，个体层面的掠夺动机）
+#   B2 收益摊薄：个体用量 +> 总用量 -> 个体收益 +> 个体用量 —— 一条负向 = 平衡（B，拥挤）
+#   B3 资源枯竭：个体用量 +> 总用量 -> 共享资源 +> 个体收益 +> 个体用量 —— 一条负向 = 平衡（B，带延迟）
+graph "tragedy-of-the-commons"
+var gain "个体收益"
+var usage "个体用量"
+var total "总用量"
+var resource "共享资源"
+
+gain -> + usage @loops R1,B2,B3
+usage -> + gain @loops R1
+usage -> + total @loops B2,B3
+total -> - gain @loops B2
+total -> - resource @loops B3
+resource -> + gain @loops B3
+
+loop R1 "越用越赚" "R" [usage, gain]
+loop B2 "收益摊薄" "B" [usage, total, gain]
+loop B3 "资源枯竭" "B" [usage, total, resource, gain]

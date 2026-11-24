@@ -211,3 +211,86 @@ Z1/Z2 并入 `docs/zcode-upgrade-brief.md` 任务书，启用时再开卡。）
    2×中位边长的可见长线，任何一条都要在交付说明里给出成因
    （机器门 `radial_long_edge_rate_zero` 已把放射族钳到 0，此项兜住
    其他形态档）。
+
+## 10. 金标准基模集（2026-11-24 先行批，8 张；全仓 P1 改动的验收基准）
+
+**定位**：一组小而硬的验收基准——8 张最常用的经典系统基模（每张 3–8 节点，
+守 n≤20 硬限），任何动引擎的改动都必须让这 8 张图「全 best、FAIL=0、字节
+不漂移」。它是 A 档 61 图逐字节全量门的**子集 + 独立快门**（≈2 分钟跑完，
+不重定义 A 档口径、不碰 `tests/baselines/` 冻结基线），用于 P1 改动的
+日常回归；A 档全量腿仍按 §2.1 在卡收口时跑。
+
+**存放**：`tests/golden/<基模>.cld`（8 张源文件）+ `tests/golden/baseline.json`
+（入库基线）。门脚本 `tests/golden_gate.py`，CI 相位 M（checks-corpus 作业，
+需 solver 层）。
+
+**门语义**（任一不满足即红）：
+1. 每张图走完整 CLI 管线（`python -m stdraw layout`）后：`certificate.json`
+   的 `caliber=v2-hardgates`、`grade=best`、全部硬门为真、`crossings=0`、
+   `visual_crossings=0`、`geometry_report.json` 的 `fail=0`、
+   `loops_audit.json` 的 `problems=0`、`deliverable=true`；
+2. 与 `baseline.json` 逐图比对，**漂移即报警**：`certificate.json` /
+   `loops_audit.json` 取原始字节 CRLF→LF 折叠后的 sha256；`layout.json`
+   取去掉 `engine_version` 字段后的规范 JSON sha256（该字段随版本收尾变，
+   其余皆为内容）；`.cld` 源文件本身也钉 sha256——改夹具也是漂移；
+   `grade / placement / gates_passed / crossings / nodes / edges` 任一变化
+   同样报警；
+3. **耗时基线**：逐图墙钟秒记入 `baseline.json` 的 `timing_ref`（平均 +
+   最大 + 记录机平台），每次运行打印对照（供 T12 提速对照）；超过参考值
+   2 倍只打 WARN 不判红——跑机速度不是仓属性；
+4. 无 ortools 的解释器下门**拒绝运行**（基线是 cp-sat 口径，construct 回退
+   口径的渲染不可比，见 §8）。
+
+**重铸基线**（唯一入口）：`python tests/golden_gate.py --update-baseline`，
+只在获批的卡里做（引擎行为有意变更 / 版本收尾 / 夹具有意修订）；脚本先过
+全部硬门再写盘，并打印相对旧基线逐字段的变化清单。非 best 的渲染永不被
+写进基线。
+
+**本地跑法**：`python tests/golden_gate.py`（约 2 分钟）；只跑一张
+`--only escalation`；`--json out.json` 导出度量。
+
+### 10.1 先行批 8 张与 R/B 回路人工核对表
+
+每条回路沿箭头读一遍极性：全同向 = 增强（R），奇数条负向 = 平衡（B）。
+「核对」列是人工读图结论；`loops_audit` 的独立枚举与之一致
+（`problems=0`、`declared=enumerated`，`tests/test_golden_set.py` 守住）。
+
+| 基模（文件） | 节点/边 | 回路 | 极性链 | 核对 |
+|---|---|---|---|---|
+| 增长极限 `limits-to-growth` | 3/4 | R1 增长引擎 | 行动 +> 状态 +> 行动 | R |
+| | | B1 增长制约 | 状态 +> 制约 -> 行动 +> 状态 | B |
+| 舍本逐末（补救恶化）`fixes-that-fail` | 3/4 | B1 症状缓解 | 问题 +> 修复 -> 问题 | B |
+| | | R2 后果反噬 | 问题 +> 修复 +> 后果 +> 问题 | R |
+| 舍本逐末（转嫁负担）`shifting-the-burden` | 4/6 | B1 快速见效 | 问题 +> 症状解 -> 问题 | B |
+| | | B2 根本治理 | 问题 +> 根本解 -> 问题 | B |
+| | | R3 依赖加深 | 问题 +> 症状解 +> 副作用 -> 根本解 -> 问题 | R |
+| 恶性升级 `escalation` | 4/4 | R1 军备升级 | 甲行动 +> 乙威胁 +> 乙行动 +> 甲威胁 +> 甲行动 | R |
+| 富者愈富 `success-to-the-successful` | 4/5 | R1 甲方滚雪球 | 甲资源 +> 甲成功 +> 甲资源 | R |
+| | | R2 乙方滚雪球 | 乙资源 +> 乙成功 +> 乙资源 | R |
+| | | （非环耦合） | 甲资源 -> 乙资源（负向），有限资源池此消彼长 | — |
+| 公地悲剧 `tragedy-of-the-commons` | 4/6 | R1 越用越赚 | 用量 +> 收益 +> 用量 | R |
+| | | B2 收益摊薄 | 用量 +> 总量 -> 收益 +> 用量 | B |
+| | | B3 资源枯竭 | 用量 +> 总量 -> 资源 +> 收益 +> 用量 | B |
+| 目标侵蚀 `eroding-goals` | 5/6 | B1 目标追求 | 差距 +> 行动 +> 状态 -> 差距 | B |
+| | | B2 目标漂移 | 差距 +> 压力 -> 目标 +> 差距 | B |
+| 增长与投资不足 `growth-and-underinvestment` | 6/8 | R1 增长引擎 | 努力 +> 绩效 +> 努力 | R |
+| | | B2 增长受限 | 绩效 +> 制约 -> 绩效 | B |
+| | | B3 产能补齐 | 制约 +> 需求 +> 投资 +> 产能 -> 制约 | B |
+
+结构出处：Senge 1990《第五项修炼》第 7 章 / Braun 2002《The System
+Archetypes》/ Kim 1998《Systems Archetype Basics》（公有领域结构）。
+标签一律纯中文（含中文标点）：`text_width` 取「字体实测」与「解析式」
+的较大者，而解析式给 CJK 字符 1.10×fs、CJK 方块字实测 advance≈1.0×fs
+——解析式恒占优，于是有 pillow（Windows msyh）与无 pillow（Linux CI
+纯解析式）同宽，布局字节跨平台一致——`tests/test_golden_set.py` 守住
+「标签只许 CJK 全角字符」这一前提。
+
+### 10.2 先行批实测（2026-11-24，本机 cp-sat 口径，Python 3.12）
+
+8/8 grade best、11–12/11–12 硬门全过、crossings 0、visual 0、loops 0、
+geometry fail 0；排布形态：ring-cycle ×5、bowtie-vertex ×1、
+column-chain ×1、layered ×1。耗时 avg 2.1s / max 6.2s（success-to-the-
+successful 最慢）。候选而未入批：意外对手 Accidental Adversaries——
+SEI 2010 六节点忠实版 `uncertified`（ring-cycle，visual crossings 3），
+四节点精简版虽 best 但丢了「面向对方的行动」语义，留给后续补齐批次
+（届时须声明 5 条环：两组自利环 + 合作环 + 两条反噬环 + 互害环）。

@@ -1,0 +1,228 @@
+{
+ "_schema": "stdraw-golden-baseline/1",
+ "_meta": {
+  "engine_caliber": "cp-sat-layered",
+  "ortools": "9.15.6755",
+  "engine_version": "0.9.0",
+  "python": "3.12.10",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "recorded": "2026-11-24",
+  "hash_caliber": {
+   "cld": "sha256 of the fixture bytes, CRLF folded to LF",
+   "certificate": "sha256 of certificate.json bytes, CRLF folded to LF",
+   "loops_audit": "sha256 of loops_audit.json bytes, CRLF folded to LF",
+   "layout": "sha256 of layout.json as canonical JSON (sort_keys, compact separators, ensure_ascii=False) minus engine_version"
+  },
+  "timing_caliber": "per-graph wall seconds of `python -m stdraw layout` on the recording machine; reference only, never a gate",
+  "rebless": "only under an approved card: python tests/golden_gate.py --update-baseline"
+ },
+ "timing_ref": {
+  "avg": 1.82,
+  "max": 5.39,
+  "platform": "Windows-11-10.0.26300-SP0",
+  "per_graph": {
+   "eroding-goals": 1.04,
+   "escalation": 0.96,
+   "fixes-that-fail": 1.11,
+   "growth-and-underinvestment": 1.33,
+   "limits-to-growth": 2.02,
+   "shifting-the-burden": 1.41,
+   "success-to-the-successful": 5.39,
+   "tragedy-of-the-commons": 1.27
+  }
+ },
+ "graphs": {
+  "eroding-goals": {
+   "cld": "eroding-goals.cld",
+   "seconds": 1.04,
+   "sha256": {
+    "cld": "c784caa7f3b89233f04d339622b0c13dcf29b69788748caf3d82b0188a677ac5",
+    "certificate": "7d9247af4f011ea084028d80cc1535c341acc262f9821ba0f5a8b1604fea6e76",
+    "loops_audit": "ed451a10da2d72d26130995c1dd7d168298eaa7a2d6966d2574bcd6db56376ed",
+    "layout": "ccf7c34cb513b524239c411fc0efe14533885727fb21e06d5974089803accda1"
+   },
+   "caliber": "v2-hardgates",
+   "grade": "best",
+   "placement": "bowtie-vertex",
+   "gates_passed": "11/11",
+   "crossings": 0,
+   "visual_crossings": 0,
+   "box_press_1px": 0,
+   "edge_box_min_clear": 110.0,
+   "min_card_gap": 95.1,
+   "geometry_fail": 0,
+   "loops_problems": 0,
+   "loops_declared": 2,
+   "nodes": 5,
+   "edges": 6
+  },
+  "escalation": {
+   "cld": "escalation.cld",
+   "seconds": 0.96,
+   "sha256": {
+    "cld": "a78ba0dacc6f665abc9ef9fbbc7e4fe00d89fcba62f59142bcbc2029935a2719",
+    "certificate": "3f3e8d4951526cb715398978afe698f2d531a04549c1d7cb6b45a342c32c8dd5",
+    "loops_audit": "7cbb9c104143a09554bdb7190bac6bdac145b17c46e9fbc797c2a524785ce846",
+    "layout": "7ebca7dd15ff9399d9380d8bbabc022c6ba6a8f0f390ad8cb37f8798643caca5"
+   },
+   "caliber": "v2-hardgates",
+   "grade": "best",
+   "placement": "ring-cycle",
+   "gates_passed": "11/11",
+   "crossings": 0,
+   "visual_crossings": 0,
+   "box_press_1px": 0,
+   "edge_box_min_clear": 152.5,
+   "min_card_gap": 116.4,
+   "geometry_fail": 0,
+   "loops_problems": 0,
+   "loops_declared": 1,
+   "nodes": 4,
+   "edges": 4
+  },
+  "fixes-that-fail": {
+   "cld": "fixes-that-fail.cld",
+   "seconds": 1.11,
+   "sha256": {
+    "cld": "ecd6d76a2751b968ac6e531207fd31e13cf01f9e5cc74187f11bb290eda567f4",
+    "certificate": "0a0a3d583d9d8e05459572082c641d836b675a31c3e8ad52c3af1661c5e60da5",
+    "loops_audit": "a2ebafb9b0c0856b19c158cae5fa6383d14406155b6ba336c3deab6c6082c75c",
+    "layout": "d9e2824e8a9bec04f52ffad2b627355b87af4f6ced1e5fafd6e86e9e1a11d9f0"
+   },
+   "caliber": "v2-hardgates",
+   "grade": "best",
+   "placement": "ring-cycle",
+   "gates_passed": "11/11",
+   "crossings": 0,
+   "visual_crossings": 0,
+   "box_press_1px": 0,
+   "edge_box_min_clear": 172.8,
+   "min_card_gap": 164.0,
+   "geometry_fail": 0,
+   "loops_problems": 0,
+   "loops_declared": 2,
+   "nodes": 3,
+   "edges": 4
+  },
+  "growth-and-underinvestment": {
+   "cld": "growth-and-underinvestment.cld",
+   "seconds": 1.33,
+   "sha256": {
+    "cld": "e0c89ae4cf2c8177760e45be0db9e34ce4745b0395aadbfe95d1d0812493d5f7",
+    "certificate": "71cd636b2331e3aca9cece84d2b4f29dd044fcc6d746ebc0a37625b526226706",
+    "loops_audit": "971651dc619ed422ccd1ebb15bc39ab47af38f9a7540c627103a64cdb54933b9",
+    "layout": "042891430b26effbf0426accdb756e41c690dbc14878a9e27df77955d8f74b6d"
+   },
+   "caliber": "v2-hardgates",
+   "grade": "best",
+   "placement": "column-chain",
+   "gates_passed": "12/12",
+   "crossings": 0,
+   "visual_crossings": 0,
+   "box_press_1px": 0,
+   "edge_box_min_clear": 25.5,
+   "min_card_gap": 36.0,
+   "geometry_fail": 0,
+   "loops_problems": 0,
+   "loops_declared": 3,
+   "nodes": 6,
+   "edges": 8
+  },
+  "limits-to-growth": {
+   "cld": "limits-to-growth.cld",
+   "seconds": 2.02,
+   "sha256": {
+    "cld": "96c4f0d9b3f2e01a86fe30b7c92c7f156de49ca66bb0df2248813a382b4131a3",
+    "certificate": "aad8675977bb588872ef72807c78674493b27c322b2e4beadd15f075e8e3d45d",
+    "loops_audit": "1d3a446146801b2c5da2f284f6119bfaa9a00e06bfb05ad2d5fed122eb3c73dd",
+    "layout": "4f3cbfc802437e79f5930a8b28b55274c578edda3b66858646187540983a051b"
+   },
+   "caliber": "v2-hardgates",
+   "grade": "best",
+   "placement": "ring-cycle",
+   "gates_passed": "11/11",
+   "crossings": 0,
+   "visual_crossings": 0,
+   "box_press_1px": 0,
+   "edge_box_min_clear": 163.5,
+   "min_card_gap": 164.0,
+   "geometry_fail": 0,
+   "loops_problems": 0,
+   "loops_declared": 2,
+   "nodes": 3,
+   "edges": 4
+  },
+  "shifting-the-burden": {
+   "cld": "shifting-the-burden.cld",
+   "seconds": 1.41,
+   "sha256": {
+    "cld": "63220b16ecbe670c028dd6619dd4fc9237c8afebf7fdc1dde0dcae236383ca83",
+    "certificate": "26e3d37d17267e924b509607007591fcd4f1acfc20c6bfd4aebdb37c5bede709",
+    "loops_audit": "2ed57eb657c5a44bb50c254ca13b3e2a8cf850895f801cec3f26cf1deca86146",
+    "layout": "9e23a8365f4cfcd70d53eea70385502ef9136186d9f95c9544fd4c7c64d40c06"
+   },
+   "caliber": "v2-hardgates",
+   "grade": "best",
+   "placement": "ring-cycle",
+   "gates_passed": "11/11",
+   "crossings": 0,
+   "visual_crossings": 0,
+   "box_press_1px": 0,
+   "edge_box_min_clear": 155.6,
+   "min_card_gap": 119.0,
+   "geometry_fail": 0,
+   "loops_problems": 0,
+   "loops_declared": 3,
+   "nodes": 4,
+   "edges": 6
+  },
+  "success-to-the-successful": {
+   "cld": "success-to-the-successful.cld",
+   "seconds": 5.39,
+   "sha256": {
+    "cld": "0cdd8879bf187c4f42e4b256790974226ababac2ae6f44c13079a68348d49161",
+    "certificate": "8adc486abbacedb4405092514008cc1ce48e966afcae92ba1b3768e4ef3f51de",
+    "loops_audit": "132463ee14dc9e24a8c1c904f90ce0e24b3e66f2baa1443a752cdc4bb13a220b",
+    "layout": "4708bb8dc7e7a872c0f4724b12891b9f4891018ca420c20e1a0bb33f284fab41"
+   },
+   "caliber": "v2-hardgates",
+   "grade": "best",
+   "placement": "layered",
+   "gates_passed": "12/12",
+   "crossings": 0,
+   "visual_crossings": 0,
+   "box_press_1px": 0,
+   "edge_box_min_clear": 44.1,
+   "min_card_gap": 36.0,
+   "geometry_fail": 0,
+   "loops_problems": 0,
+   "loops_declared": 2,
+   "nodes": 4,
+   "edges": 5
+  },
+  "tragedy-of-the-commons": {
+   "cld": "tragedy-of-the-commons.cld",
+   "seconds": 1.27,
+   "sha256": {
+    "cld": "99c64cce9c1ba3491f389dd4137a30a1e2d4744254ef9db1ef462d8278dc905d",
+    "certificate": "8e921bf6dc503dddb9e3fc55dbbe98cd7330bb5f73d8ae253d5f1884f82269c6",
+    "loops_audit": "d04319aea4a3cf933efd014aae0bc0f4139b87e778b1a52aa579fd363c522e49",
+    "layout": "a2b7dff1f98b060ceaca90010b5b2df112e004547101fee8c998af6c0a85c4ab"
+   },
+   "caliber": "v2-hardgates",
+   "grade": "best",
+   "placement": "ring-cycle",
+   "gates_passed": "11/11",
+   "crossings": 0,
+   "visual_crossings": 0,
+   "box_press_1px": 0,
+   "edge_box_min_clear": 128.0,
+   "min_card_gap": 119.0,
+   "geometry_fail": 0,
+   "loops_problems": 0,
+   "loops_declared": 3,
+   "nodes": 4,
+   "edges": 6
+  }
+ }
+}

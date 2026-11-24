@@ -1,0 +1,17 @@
+# 金标准基模 · 恶性升级 Escalation
+# 出处：Senge 1990《第五项修炼》第 7 章 / Kim 1998《Systems Archetype Basics》Escalation（公有领域结构）
+# 结构：4 节点 / 4 边 / 1 环（单增强环，四节点闭环）
+# 回路人工核对（沿箭头读一遍极性）：
+#   R1 军备升级：甲方行动 +> 乙方威胁感 +> 乙方行动 +> 甲方威胁感 +> 甲方行动 —— 全同向 = 增强（R）
+graph "escalation"
+var a_activity "甲方行动"
+var b_threat "乙方威胁感"
+var b_activity "乙方行动"
+var a_threat "甲方威胁感"
+
+a_activity -> + b_threat @loops R1
+b_threat -> + b_activity @loops R1
+b_activity -> + a_threat @loops R1
+a_threat -> + a_activity @loops R1
+
+loop R1 "军备升级" "R" [a_activity, b_threat, b_activity, a_threat]

@@ -1,0 +1,18 @@
+# 金标准基模 · 舍本逐末（补救反而恶化）Fixes that Fail
+# 出处：Senge 1990《第五项修炼》第 7 章 / Braun 2002《The System Archetypes》（公有领域结构）
+# 结构：3 节点 / 4 边 / 2 环（1 平衡 + 1 增强）
+# 回路人工核对（沿箭头读一遍极性）：
+#   B1 症状缓解：问题症状 +> 快速修复 -> 问题症状 —— 一条负向 = 平衡（B）
+#   R2 后果反噬：问题症状 +> 快速修复 +> 意外后果 +> 问题症状 —— 全同向 = 增强（R，带延迟的回弹）
+graph "fixes-that-fail"
+var problem "问题症状"
+var fix "快速修复"
+var consequence "意外后果"
+
+problem -> + fix @loops B1,R2
+fix -> - problem @loops B1
+fix -> + consequence @loops R2
+consequence -> + problem @loops R2
+
+loop B1 "症状缓解" "B" [problem, fix]
+loop R2 "后果反噬" "R" [problem, fix, consequence]

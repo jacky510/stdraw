@@ -1,0 +1,21 @@
+# 金标准基模 · 富者愈富 Success to the Successful
+# 出处：Senge 1990《第五项修炼》第 7 章 / Kim 1998《Systems Archetype Basics》Success to the Successful（公有领域结构）
+# 结构：4 节点 / 5 边 / 2 环（2 增强）；两组「资源 <-> 成功」双向边，资源池耦合边（甲资源 -> 乙资源）不在任何环上
+# 回路人工核对（沿箭头读一遍极性）：
+#   R1 甲方滚雪球：甲方资源 +> 甲方成功 +> 甲方资源 —— 全同向 = 增强（R）
+#   R2 乙方滚雪球：乙方资源 +> 乙方成功 +> 乙方资源 —— 全同向 = 增强（R）
+#   耦合边（非环）：甲方资源 -> 乙方资源 —— 有限资源池此消彼长，只做单向耦合，不参与回路极性判定
+graph "success-to-the-successful"
+var a_res "甲方资源"
+var a_suc "甲方成功"
+var b_res "乙方资源"
+var b_suc "乙方成功"
+
+a_res -> + a_suc @loops R1
+a_suc -> + a_res @loops R1
+b_res -> + b_suc @loops R2
+b_suc -> + b_res @loops R2
+a_res -> - b_res
+
+loop R1 "甲方滚雪球" "R" [a_res, a_suc]
+loop R2 "乙方滚雪球" "R" [b_res, b_suc]

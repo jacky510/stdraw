@@ -1,0 +1,22 @@
+# 金标准基模 · 目标侵蚀 Eroding Goals（又名 Drifting Goals）
+# 出处：Senge 1990《第五项修炼》第 7 章 / Kim 1998《Systems Archetype Basics》Drifting Goals（公有领域结构）
+# 结构：5 节点 / 6 边 / 2 环（2 平衡）；两环共用「目标差距」节点（蝶结顶点）
+# 回路人工核对（沿箭头读一遍极性）：
+#   B1 目标追求：目标差距 +> 改进行动 +> 实际状态 -> 目标差距 —— 一条负向 = 平衡（B）
+#   B2 目标漂移：目标差距 +> 降标压力 -> 目标 +> 目标差距 —— 一条负向 = 平衡（B，标准被悄悄放低）
+graph "eroding-goals"
+var gap "目标差距"
+var act "改进行动"
+var state "实际状态"
+var pressure "降标压力"
+var goal "目标"
+
+gap -> + act @loops B1
+act -> + state @loops B1
+state -> - gap @loops B1
+gap -> + pressure @loops B2
+pressure -> - goal @loops B2
+goal -> + gap @loops B2
+
+loop B1 "目标追求" "B" [gap, act, state]
+loop B2 "目标漂移" "B" [gap, pressure, goal]

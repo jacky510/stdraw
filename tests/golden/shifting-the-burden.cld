@@ -1,0 +1,23 @@
+# 金标准基模 · 舍本逐末（转嫁负担 / 上瘾）Shifting the Burden
+# 出处：Senge 1990《第五项修炼》第 7 章 / Braun 2002《The System Archetypes》Fig. Shifting the Burden（公有领域结构）
+# 结构：4 节点 / 6 边 / 3 环（2 平衡 + 1 增强）；问题症状与症状解、根本解各成一对双向边
+# 回路人工核对（沿箭头读一遍极性）：
+#   B1 快速见效：问题症状 +> 症状解 -> 问题症状 —— 一条负向 = 平衡（B）
+#   B2 根本治理：问题症状 +> 根本解 -> 问题症状 —— 一条负向 = 平衡（B，带延迟）
+#   R3 依赖加深：问题症状 +> 症状解 +> 副作用 -> 根本解 -> 问题症状 —— 两条负向 = 增强（R，越用越依赖）
+graph "shifting-the-burden"
+var problem "问题症状"
+var symptomatic "症状解"
+var fundamental "根本解"
+var side_effect "副作用"
+
+problem -> + symptomatic @loops B1,R3
+symptomatic -> - problem @loops B1
+problem -> + fundamental @loops B2
+fundamental -> - problem @loops B2,R3
+symptomatic -> + side_effect @loops R3
+side_effect -> - fundamental @loops R3
+
+loop B1 "快速见效" "B" [problem, symptomatic]
+loop B2 "根本治理" "B" [problem, fundamental]
+loop R3 "依赖加深" "R" [problem, symptomatic, side_effect, fundamental]

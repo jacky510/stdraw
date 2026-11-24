@@ -81,13 +81,16 @@ jobs:
       #   - render-check (playwright) is NOT needed: corpus phases never invoke
       #     stdraw.rendercheck — DOM measurement is phase C, owned by
       #     checks-core, which installs render-check itself.
+      #     Phase M (golden archetype gate, tests/golden_gate.py) runs here
+      #     for the same solver reason: its baseline is recorded under the
+      #     cp-sat engine and the gate refuses a fallback-construct run.
       - name: "Install (solver layer: --recipe auto placement refinement)"
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[solver]"
-      - name: "Corpus regression: dense n10 sampling + classic 19-graph corpus + anchor sweep + polarity"
+      - name: "Corpus regression: dense n10 sampling + classic 19-graph corpus + anchor sweep + polarity + golden archetype gate"
         env:
-          STDRAW_CI_PHASES: B2,H2,J,H3
+          STDRAW_CI_PHASES: B2,H2,J,H3,M
         run: python tests/ci_checks.py
 
   checks-units:

@@ -18,7 +18,14 @@ Three assertion layers:
      - with playwright available, measure per-card actual text width in
        demo-2d.html against the planned box bounds;
      - without it, honestly SKIP (neither pass nor fail; the workflow
-       installs the optional layer as backstop).
+     installs the optional layer as backstop).
+     M. Golden archetype set (tests/golden/*.cld, standalone gate
+     tests/golden_gate.py; docs/validation-tiers.md section 10):
+     - every classic archetype (3-8 nodes) grades best, geometry fail 0,
+     loops audit problems 0, 0 crossings, all certificate hard gates true;
+     - byte-identical to tests/golden/baseline.json (certificate / loops
+     audit / version-stripped layout / fixture sha256) -- drift = FAIL;
+     - per-graph timing printed against the recorded reference (ledger only).
 
 Stdlib only (layer C optionally depends on playwright).
 """
@@ -950,6 +957,25 @@ def main():
 
             # K. Language policy gate: repo-wide bilingual partition
         mark("I: demo/certificate freshness (1 re-render)")
+
+        # ── M. Golden archetype set (tests/golden/*.cld, gate script
+        # tests/golden_gate.py, docs/validation-tiers.md section 10): the
+        # small hard acceptance baseline for engine changes.  Every classic
+        # archetype (3-8 nodes) must grade best with geometry fail 0, loops
+        # audit problems 0 and 0 crossings, and stay byte-identical to
+        # tests/golden/baseline.json (drift alarm); per-graph timing is
+        # printed against the recorded reference (speed-up ledger).  Needs
+        # the solver layer (cp-sat engine) -- lives in the corpus job.
+        if _on("M"):
+            r_gold = subprocess.run(
+                [sys.executable, os.path.join(root, "tests", "golden_gate.py")],
+                capture_output=True, text=True, encoding="utf-8", errors="replace")
+            print(r_gold.stdout.rstrip())
+            if r_gold.returncode != 0:
+                failures.append(f"golden gate: exit {r_gold.returncode}\n"
+                                + (r_gold.stderr[-800:] or r_gold.stdout[-2000:]))
+        mark("M: golden archetype set (8 renders + baseline compare)")
+
         if _on("K"):
             #    (EN face CJK-free incl. code files, zh face prose-free).
             r_lang = subprocess.run(

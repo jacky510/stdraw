@@ -1,0 +1,18 @@
+# 金标准基模 · 增长极限 Limits to Growth
+# 出处：Senge 1990《第五项修炼》第 7 章 / Kim 1998《Systems Archetype Basics》Limits to Success（公有领域结构）
+# 结构：3 节点 / 4 边 / 2 环（1 增强 + 1 平衡）；行动-状态共用一条边（R1 与 B1 共享）
+# 回路人工核对（沿箭头读一遍极性）：
+#   R1 增长引擎：增长行动 +> 增长状态 +> 增长行动 —— 全同向 = 增强（R）
+#   B1 增长制约：增长状态 +> 制约因素 -> 增长行动 +> 增长状态 —— 一条负向 = 平衡（B）
+graph "limits-to-growth"
+var action "增长行动"
+var state "增长状态"
+var limit "制约因素"
+
+action -> + state @loops R1,B1
+state -> + action @loops R1
+state -> + limit @loops B1
+limit -> - action @loops B1
+
+loop R1 "增长引擎" "R" [action, state]
+loop B1 "增长制约" "B" [state, limit, action]
