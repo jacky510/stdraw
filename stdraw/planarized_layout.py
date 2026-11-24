@@ -164,12 +164,13 @@ def _l1_deterministic(graph, cfg, linestyle):
     }
     pkg_parent = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     code = (
-        "import sys, json;"
-        f"sys.path.insert(0, r'{pkg_parent}');"
+        "import sys, os, json;"
+        "sys.path.insert(0, os.environ['STDRAW_PKG_PARENT']);"
         "from stdraw.planarized_layout import _l1_worker_main;"
         "print(_l1_worker_main(sys.stdin.read()))"
     )
-    env = {**os.environ, "STDRAW_L1_PINNED": "1", "PYTHONHASHSEED": "0"}
+    env = {**os.environ, "STDRAW_L1_PINNED": "1", "PYTHONHASHSEED": "0",
+           "STDRAW_PKG_PARENT": pkg_parent}
     try:
         r = subprocess.run([sys.executable, "-c", code],
                            input=json.dumps(payload),
