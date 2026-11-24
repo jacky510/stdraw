@@ -45,7 +45,13 @@ INFLATE_CSS = ("#stdraw-svg [data-node] text{font-size:20px !important;"
 
 
 def _pin_local_stdraw():
-    """Same-tree self-check (ref-scrubbed pattern): force stdraw from this tree."""
+    """Same-tree self-check (ref-scrubbed pattern): force stdraw from this tree.
+
+    Destructive to interpreter state: drops every ``stdraw*`` entry from
+    ``sys.modules`` and the editable-install finders from ``sys.meta_path``,
+    then re-imports the package.  Only ever call it through the
+    ``pinned_local_stdraw`` fixture, which puts the pre-pin state back.
+    """
     if not os.path.isfile(os.path.join(ROOT, "stdraw", "__init__.py")):
         pytest.skip("stdraw package not found in this tree")
     for f in [m for m in sys.meta_path
@@ -111,8 +117,37 @@ def _endpoint_violations(pg, tol=0.5):
     return bad
 
 
-def test_font_env_robustness():
-    _pin_local_stdraw()
+@pytest.fixture
+def pinned_local_stdraw():
+    """Pin stdraw to this tree for ONE test, then undo the pin.
+
+    Without the undo the pin leaks past the test and splits the suite:
+    every other test file was imported (collected) BEFORE this test ran, so
+    its module-level ``from stdraw.routing import Router`` keeps naming the
+    ORIGINAL class object while the engine -- re-imported at call time --
+    instantiates the NEW one.  Monkeypatches on the old class never reach
+    the chain and those tests go red purely by file order (green alone,
+    red when sorted after this file).  Snapshot the pre-pin state (modules /
+    meta_path / sys.path) and restore it after the test, so the session is
+    order-independent; tests/conftest.py guards that invariant per test.
+    """
+    saved_modules = {m: mod for m, mod in sys.modules.items()
+                     if m == "stdraw" or m.startswith("stdraw.")}
+    saved_meta_path = list(sys.meta_path)
+    saved_path = list(sys.path)
+    try:
+        _pin_local_stdraw()
+        yield
+    finally:
+        for m in [m for m in sys.modules
+                  if m == "stdraw" or m.startswith("stdraw.")]:
+            del sys.modules[m]
+        sys.modules.update(saved_modules)
+        sys.meta_path[:] = saved_meta_path
+        sys.path[:] = saved_path
+
+
+def test_font_env_robustness(pinned_local_stdraw):
     tmp = tempfile.mkdtemp(prefix="stdraw-v079-fontenv-")
     try:
         demo, payload, static_rects = _render_demo(tmp)
