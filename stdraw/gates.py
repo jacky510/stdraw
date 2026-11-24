@@ -12,6 +12,7 @@ calibers *should* be unified is a separate decision, not this card's.
 This module must not import .routing at module import time (routing.py
 imports this module; constants are resolved lazily via _rt()).
 """
+import math
 from dataclasses import dataclass, field
 
 _ROUTING = None
@@ -208,3 +209,46 @@ def edge_gate_check(router, i, routes, baseline, policy, msep_floor=None,
             i, routes, baseline.coi[i]):
         return False
     return True
+
+
+# ---- lens-chain closed-ring caliber (metrics.lens_pairs_closed, check.py
+# gate 9): a lens pair is a closed ring only if BOTH arcs visibly bow.  The
+# sampled arc's apex offset from its chord as a fraction of the chord length
+# must reach LENS_BULGE_MIN on each arc (constructed lenses sit at 0.30 =
+# LENS_K 0.6 / 2; a flattened pair reads ~0.01 = two near-straight lines)
+# AND the two arcs bow to opposite sides of the chord.  Pure function on
+# delivered coordinates -- one source for the certificate and the geometry
+# report.
+LENS_BULGE_MIN = 0.15
+
+
+def arc_bulge(pts, ctrl=None, flip=False):
+    """(ratio, side) of one arc against its own chord.
+
+    ratio = |apex offset| / chord length (None on a degenerate chord);
+    side = sign of the apex's cross-product offset from the chord direction
+    (screen coordinates, y down), negated when ``flip`` (the reverse arc of
+    a pair is measured along the pair direction).
+
+    ``ctrl`` given = quadratic Bezier (p0, ctrl, p1): the apex sits at
+    t = 0.5, apex offset = 0.5 * (ctrl - chord midpoint), exact.  Without
+    ``ctrl`` the polyline's largest perpendicular offset is used (sampled
+    or waypoint routes).
+    """
+    (x0, y0), (x1, y1) = pts[0], pts[-1]
+    chord = math.hypot(x1 - x0, y1 - y0)
+    if chord < 1e-9:
+        return None, 0
+    ux, uy = (x1 - x0) / chord, (y1 - y0) / chord
+    apex = 0.0
+    if ctrl is not None:
+        apex = 0.5 * ((ctrl[0] - x0) * uy - (ctrl[1] - y0) * ux)
+    else:
+        for p in pts:
+            d = (p[0] - x0) * uy - (p[1] - y0) * ux
+            if abs(d) > abs(apex):
+                apex = d
+    side = 1 if apex > 1e-9 else (-1 if apex < -1e-9 else 0)
+    if flip:
+        side = -side
+    return abs(apex) / chord, side

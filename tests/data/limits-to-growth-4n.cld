@@ -1,0 +1,12 @@
+graph "Limits to Growth"
+var eff "Efforts"
+var perf "Performance"
+var lim "Limiting action"
+var cap "Capacity constraint"
+eff -> + perf @loops R1,B1
+perf -> + eff @loops R1
+perf -> + lim @loops B1
+cap -> + lim
+lim -> - perf @loops B1
+loop R1 "Growth" "R" [eff, perf]
+loop B1 "Limit" "B" [perf, lim]

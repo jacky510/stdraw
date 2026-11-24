@@ -86,3 +86,21 @@ python t4_sweep.py <leg> <abs_out_dir>     # 脚本随卡归档；core 循环 = 
 - `stdraw/routing.py`：12 处 `_edge_stats` 级验收表达式改为调用 `edge_gate_check`（见 §1 表）；
   `_evaluate` 级候选过滤与 STDRAW_SNAP_DEBUG 调试打印**原样不动**；
 - 行为零变化证明：重构前后双跑 sha256 全同 + 全量 pytest 绿。
+
+## §7 等价加速与透镜合同（2026-11-25）
+
+三处**不改任何输出字节**的等价加速（金标准 8 图 + 4 节点 limits-to-growth 原图的布局输出逐字节不变）：
+
+1. **候选下界剪枝**（`Router._cand_lb`，`_evaluate_cached` 候选循环）：候选分数只含精确已知项
+   （线型偏好 `kind_pref`、规则惩罚 `rule_pen`、0.01×线长）的下界 ≥ 现任分数时，跳过几何求值。
+   下界只少算不多算，被跳过的候选不可能胜出，选择结果与全量求值一致。
+2. **互指对分离度 memo**（`EvalCache.pairsep` / `samples12`，内容键 `sib_key`）：同一对端点采样折线的
+   `min_pair_dist(…, 4)` 只算一次。
+3. **lens 联合重指派的 bbox 预检**（`lens_joint_reassign`，G-LENS-JOINT）：两条弧采样折线的包围盒间隙
+   ≥12px 时直接判 `sep≥12` 通过（包围盒间隙是两条折线真实最小距离的下界：任意点对距离 ≥
+   包围盒间隙，下界已 ≥12 则真实值必 ≥12），否则照旧跑 `min_pair_dist`。
+
+**透镜合同**（证书 `lens_pairs_closed` / check 第 9 门，`lens-chain` 模式；口径正本
+`docs/layout-modes.md`「透镜链」节）：每个互指对的两条边都是 Q 弧，鼓度 = 二次 Bezier 顶点到弦的
+偏移 / 弦长（有控制点时精确 = 0.5×|ctrl − 弦中点|；无控制点按折线顶点取）≥ `gates.LENS_BULGE_MIN`
+（0.15），且两弧鼓向弦的异侧。`gates.arc_bulge(pts, ctrl=None, flip=False)` 是鼓度与侧别的单一来源。

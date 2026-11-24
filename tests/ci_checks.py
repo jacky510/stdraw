@@ -83,6 +83,11 @@ AUTO_EXAMPLES = EXAMPLES + [
     # make the tier-0 fan angle-infeasible; the tier-1 facing-border fan
     # must keep the comb contract (grade best, hub edges straight)
     "tests/data/hdd-wide-tickers.cld",
+    # lens-chain regression (pure 2-cycle figure: two 2-node loops sharing a
+    # node + a pendant link): the layered path left it uncertified on the
+    # spacing CV; the lens tier must keep the lens contract (grade best,
+    # both lenses closed arc rings, every endpoint on the 16-anchor set)
+    "tests/data/limits-to-growth-4n.cld",
 ]
 # Layer B2 (WS3-Q routing-quality rework ref-scrubbed): random dense-graph
 # sampling -- in the random n10 fixed-seed corpus, 4/10 cases previously
@@ -163,6 +168,9 @@ COMB_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "lines_no_coincidence",
                       "anchors_standard",
                       "visual_crossings_zero")
+# lens-chain (pure 2-cycle figures): the layered regularity set PLUS the
+# lens contract (every mutual pair a closed arc ring, arcs >= 12px apart)
+LENS_HARD_GATES = HARD_GATES + ("lens_pairs_closed", "lens_pair_min_sep_ge_12")
 # radial (hub-centered spokes): HUB center deviation + azimuth equal-spacing
 # CV replace the row/pitch calibers (same shape as the ring gate set)
 RADIAL_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
@@ -185,6 +193,8 @@ def _hard_gates_for(cert):
         return SPINE_WING_HARD_GATES
     if p == "comb-bilateral":
         return COMB_HARD_GATES
+    if p == "lens-chain":
+        return LENS_HARD_GATES
     if p in ("symmetric", "bowtie-vertex"):
         return SYM_HARD_GATES
     return HARD_GATES

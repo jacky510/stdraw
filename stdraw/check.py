@@ -10,6 +10,8 @@ import math
 import sys
 from typing import List
 
+from .gates import LENS_BULGE_MIN, arc_bulge
+
 
 # ── SVG path d (M/L/A) parsing and geometry verification helpers ──
 def _arc_points(x0, y0, rx, sweep, x1, y1, n=48):
@@ -296,6 +298,10 @@ def auto_geometry_report(layout: dict) -> dict:
     # comb-bilateral placement (v0.7.7): row caliber = column pitch + column
     # axis + hub-pair mirror symmetry (same caliber as the certificate)
     comb_mode = meta.get("placement") == "comb-bilateral"
+    # lens-chain placement (pure 2-cycle figures): uniform lens rows carry
+    # the generic row-pitch caliber; regularity = pitch + 24px snap + the
+    # lens contract (both directions of every chain pair delivered as arcs)
+    lens_mode = meta.get("placement") == "lens-chain"
     # column-chain / symmetric placement: row caliber switches per mode
     # (column = uniform main-chain pitch + column-axis alignment;
     # symmetric = mirror-axis error); 24px column snap inapplicable to both.
@@ -656,6 +662,35 @@ def auto_geometry_report(layout: dict) -> dict:
         else:
             chk("9. radial form coherence (manual-calibrated battery)",
                 False, "meta.radial hub/center/ring_nodes missing")
+    elif lens_mode:
+        # lens-chain: the layered regularity caliber (uniform row pitch +
+        # 24px column snap >= 0.6) plus the lens contract -- both directions
+        # of every chain pair delivered as an arc (one closed ring per
+        # 2-node loop); same caliber as the certificate lens_pairs_closed
+        _lens = meta.get("lens") or {}
+        _rts = {(e.get("a"), e.get("b")): (e.get("route") or {})
+                for e in edges}
+        _open = []
+        for A, B, _d in _lens.get("pairs") or []:
+            _fa, _fb = _rts.get((A, B), {}), _rts.get((B, A), {})
+            if _fa.get("kind") != "arc" or _fb.get("kind") != "arc":
+                _open.append((A, B))
+                continue
+            # closed ring: both arcs visibly bow (apex / chord >=
+            # LENS_BULGE_MIN) to opposite sides of the chord
+            _ra, _sa = arc_bulge(_fa.get("points") or [], _fa.get("ctrl"))
+            _rb, _sb = arc_bulge(_fb.get("points") or [], _fb.get("ctrl"),
+                                 flip=True)
+            if (_ra is None or _rb is None or _ra < LENS_BULGE_MIN
+                    or _rb < LENS_BULGE_MIN or _sa == 0 or _sa == _sb):
+                _open.append((A, B))
+        _lens_ok = (pitch_ok and snap >= 0.6 and bool(_lens.get("pairs"))
+                    and not _open)
+        chk("9. lens-chain placement regularity (uniform pitch + 24px snap "
+            ">= 0.6 + every pair a closed arc ring)",
+            _lens_ok,
+            f"24px column snap {snap:.2f}, pitch uniform {pitch_ok}, "
+            f"pairs {len(_lens.get('pairs') or [])}, open pairs {_open}")
     else:
         chk("9. simple-graph placement regularity"
             + (" (manual: N/A)" if manual_mode
@@ -677,6 +712,7 @@ def auto_geometry_report(layout: dict) -> dict:
                                              "comb-construct",
                                              "spine-construct",
                                              "radial-construct",
+                                             "lens-construct",
                                              "planarized")))
     chk("10. auto-v2 metadata complete", ok10,
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "

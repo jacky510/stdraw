@@ -18,6 +18,7 @@ import math
 from typing import Dict, List, Optional
 
 from . import __version__ as _PKG_VERSION
+from .gates import LENS_BULGE_MIN, arc_bulge
 
 EPS = 1e-9
 ROW_EPS = 4          # visual same-row test: y difference <= 4px counts as one row
@@ -297,13 +298,18 @@ def scene_from_auto(v4: dict) -> dict:
     ch = v4["meta"].get("cardH", 44)
     for v, p in v4["nodes"].items():
         nodes[v] = {"x": p["x"], "y": p["y"], "w": p.get("w", 140), "h": ch}
-    edges, polylines, anchors = [], {}, {}
+    edges, polylines, anchors, ctrls = [], {}, {}, {}
     for i, e in enumerate(v4["edges"]):
         edges.append({"a": e["a"], "b": e["b"]})
         polylines[i] = [tuple(p) for p in e["route"]["points"]]
         anchors[i] = e["anchors"]
+        if e["route"].get("ctrl") is not None:
+            ctrls[i] = tuple(e["route"]["ctrl"])
     return {"nodes": nodes, "edges": edges, "polylines": polylines,
             "anchors": anchors,
+            # Q-arc control points by edge index (lens closed-ring bulge
+            # accounting; absent on non-arc routes)
+            "ctrls": ctrls,
             "router_pairs": v4["meta"].get("router_cross_pairs"),
             # ref-scrubbed finalize: dense-snap deferral pass-through (None on
             # normal graphs) -- certificate_auto annotates anchors_standard.
@@ -333,6 +339,8 @@ def scene_from_auto(v4: dict) -> dict:
             "spine_wing": v4["meta"].get("spine_wing"),
             # comb-bilateral mode certificate caliber (v0.7.7)
             "comb": v4["meta"].get("comb"),
+            # lens-chain mode certificate caliber (pure 2-cycle figures)
+            "lens": v4["meta"].get("lens"),
             # ref-scrubbed: deterministic mode-decision audit trail (which rule
             # hit, why, trial gate, legacy band exemption)
             "mode_decision_trace": v4["meta"].get("mode_decision_trace"),
@@ -480,6 +488,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # + constant column pitch + hub-pair mirror symmetry + all-straight fan
     comb_mode = scene.get("placement") == "comb-bilateral"
     comb = scene.get("comb") or {}
+    # lens-chain mode certificate caliber: pure 2-cycle figures (every
+    # loop a mutual pair, simple graph a forest) -- each pair a closed arc
+    # ring; gates = the layered regularity set + the lens contract
+    lens_mode = scene.get("placement") == "lens-chain"
+    lens = scene.get("lens") or {}
     # P1-2 (jacky 2026-11-13 ruling): manual coordinates (--from-layout) are
     # exempt from the two automatic-pipeline structural checks — same caliber
     # as check.py 6a/9 ("manual: N/A"). Layered-mode gate slots read "N/A";
@@ -493,7 +506,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     dense_on = bool(dense.get("triggered"))
     dense_hub = dense.get("hub")
     layered_mode = not (ring_mode or column_mode or sym_mode or bowtie_mode
-                        or spine_mode or comb_mode or radial_mode)
+                        or spine_mode or comb_mode or radial_mode or lens_mode)
     # planarization degrade ladder (docs/planarization-degrade-contract.md):
     # L1 = witness-marked planarized drawing (crossed-certified caliber);
     # L2 = generic path + honest planarization_deferred record.  L0 scenes
@@ -1159,6 +1172,60 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
+    elif lens_mode:
+        # lens-chain caliber gates (docs/layout-modes.md, lens-chain): the
+        # layered regularity set (spacing CV / uniform row pitch / 24px
+        # column snap) PLUS the lens contract -- every mutual pair of the
+        # chain delivered as two arcs (one closed ring per 2-node loop):
+        # both arcs visibly bow (apex / chord >= LENS_BULGE_MIN, opposite
+        # sides -- a flattened pair is not a ring) and stay
+        # >= LENS_PAIR_SEP_MIN apart (the routing
+        # lens-pair joint-snap floor, routing._lens_pair_joint_snap)
+        _lk = scene.get("line_kinds") or []
+        _sep_by = {p["pair"][0]: p["pair"][1] for p in pair_infos}
+        _pairs = lens.get("pairs") or []
+        _lens_bad, _lens_seps, _lens_bulges = 0, [], []
+        for _row in _pairs:
+            _A, _B = _row[0], _row[1]
+            _ia = [i for i, e in enumerate(edges) if (e["a"], e["b"]) == (_A, _B)]
+            _ib = [i for i, e in enumerate(edges) if (e["a"], e["b"]) == (_B, _A)]
+            if not _ia or not _ib or _lk[_ia[0]] != "arc" or _lk[_ib[0]] != "arc":
+                _lens_bad += 1
+            else:
+                # closed ring = both arcs visibly bow (apex / chord >=
+                # LENS_BULGE_MIN) to OPPOSITE sides of the chord
+                _pl = scene["polylines"]
+                _ct = scene.get("ctrls") or {}
+                _ra, _sa = arc_bulge(_pl[_ia[0]], _ct.get(_ia[0]))
+                _rb, _sb = arc_bulge(_pl[_ib[0]], _ct.get(_ib[0]),
+                                     flip=True)
+                if (_ra is None or _rb is None or _ra < LENS_BULGE_MIN
+                        or _rb < LENS_BULGE_MIN or _sa == 0 or _sa == _sb):
+                    _lens_bad += 1
+                else:
+                    _lens_bulges += [_ra, _rb]
+            _s = _sep_by.get(f"{_A}<->{_B}", _sep_by.get(f"{_B}<->{_A}"))
+            if _s is not None:
+                _lens_seps.append(_s)
+        metrics["lens_pair_min_sep"] = (round(min(_lens_seps), 1)
+                                        if _lens_seps else None)
+        metrics["lens_pair_min_bulge"] = (round(min(_lens_bulges), 3)
+                                          if _lens_bulges else None)
+        g = {
+            "box_press_zero": metrics["box_press_1px"] == 0,
+            "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
+            "anchors_smooth": metrics["anchor_violations"] == 0,
+            "anchors_standard": metrics["anchor_standard_violations"] == 0,
+            "min_gap_ge_16": metrics["min_card_gap"] >= 16,
+            "cv_le_035": metrics["spacing_cv"] <= 0.35,
+            "pitch_uniform": pitch_uniform,
+            "column_snap24_ge_060": (snap_rate is None or snap_rate >= 0.60),
+            "lens_pairs_closed": bool(_pairs) and _lens_bad == 0,
+            "lens_pair_min_sep_ge_12": (metrics["lens_pair_min_sep"] is not None
+                                        and metrics["lens_pair_min_sep"] >= 12.0),
+            "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
+        }
     elif plz_l1:
         # planarized witness-marked caliber: anchors / row-column
         # regularity gates are inapplicable to the straight-line
@@ -1279,6 +1346,12 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                    g["cv_le_035"] and g["spine_axis_le_2px"] and
                    g["midline_adherence_le_2px"] and
                    g["symmetry_mirror_le_2px"])
+    elif lens_mode:
+        hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
+                   g["anchors_smooth"] and g["min_gap_ge_16"] and
+                   g["cv_le_035"] and g["pitch_uniform"] and
+                   g["column_snap24_ge_060"] and g["lens_pairs_closed"] and
+                   g["lens_pair_min_sep_ge_12"])
     else:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"] and
@@ -1367,7 +1440,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                       "bowtie-vertex" if bowtie_mode else
                       "spine-wing" if spine_mode else
                       "comb-bilateral" if comb_mode else
-                      "radial" if radial_mode else "layered"),
+                      "radial" if radial_mode else
+                      "lens-chain" if lens_mode else "layered"),
         # ref-scrubbed: which structural rule fired and why, trial-gate outcome,
         # and whether the registered anchor-band legacy exemption applies —
         # the trigger-template audit trail (None for scenes without the trace,
@@ -1502,6 +1576,27 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "spine_axis_deviation": metrics.get("spine_axis_deviation"),
             "midline_deviation": metrics.get("midline_deviation"),
             "mirror_err": metrics.get("symmetry_mirror_err"),
+        }
+    if lens_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "Lens-chain caliber (auto-v2 structural tier): every loop of the "
+            "figure is a mutual pair a<->b over a forest (pure 2-cycle "
+            "figure); each pair is placed as a LENS on constructed "
+            "coordinates and delivered as two Q arcs bowing to opposite "
+            "sides of the chord (one closed ring per 2-node loop: both arcs "
+            "bow >= LENS_BULGE_MIN x chord to opposite sides and stay "
+            ">= 12px apart, gates = lens_pairs_closed + "
+            "lens_pair_min_sep_ge_12), non-lens links are constructed "
+            "straight segments between facing standard anchors; the layered "
+            "regularity set still gates (spacing CV <= 0.35, uniform row "
+            "pitch, 24px column snap >= 0.6); trial gate falls back to the "
+            "layered path silently (docs/layout-modes.md, lens-chain)"]
+        out["lens"] = {
+            "pairs": lens.get("pairs"),
+            "gap": lens.get("gap"),
+            "k": lens.get("k"),
+            "link_gap": lens.get("link_gap"),
+            "lens_pair_min_sep": metrics.get("lens_pair_min_sep"),
         }
     # Delivery-face confession (same caliber as certificate()):
     out["interactive"] = interactive

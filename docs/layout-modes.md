@@ -20,6 +20,7 @@
 | 3 | 纵列（长链/少环） | 3≤n≤12 ∧ 最长简单回路 3≤k≤4 ∧ k<n（主环小 → 主链感强；k=n 的大环归环形；环形 pure-cycle/ratio 触发者不进纵列） | `column-chain` |
 | 4 | 环形 | 纯环 / 主环覆盖 ≥n-2 / 环边占比 ≥0.9 ∧ k≥5 或覆盖全图 | `ring-cycle` |
 | 5 | 放射（星型/fan） | `hub_deg≥6 ∧ leaf_frac≥0.5 ∨ hub_deg≥10`（hub=度最大节点，平局取 id 序小者；leaf_frac=deg-1 叶占比；详见下节） | `radial` |
+| 5b | 透镜链（纯二环图） | 存在互指对 a<->b ∧ 去重互指对后的简单图为森林（不存在长度 ≥3 的回路）∧ 2≤n≤12 ∧ 每节点至多属于 2 个互指对（详见下节） | `lens-chain` |
 | 6 | 分层（既有路径） | 其余（链/树/大图等） | `layered` |
 
 每个新模式带**试验闸门**：构造排布后跑同一布线器复核硬门代理（交叉≤2、
@@ -91,6 +92,70 @@
   失败 → 回退分层时 meta 记 `form_fallback`（模式+原因），证书
   **拒证降级**（grade=uncertified + `topology_form_fallback` 门行），
   永不因几何卫生干净而 best——形态错位先于一切卫生指标。
+
+### 透镜链（lens-chain，纯二环图）
+
+**消费方（广度冻结 triage，2026-11-25）**：回路上只有二环（互指对 a<->b）的图——
+CLD 经典的「增强回路 + 调节回路共享一个变量」族（limits-to-growth、
+success-to-the-successful 等）。既有结构层全部要求存在长度 ≥3 的回路
+（模式链 symmetric → bowtie-vertex → spine-wing → comb-bilateral →
+column-chain → ring-cycle），这类图此前一律落到分层路径：44px 卡上互指双方的连接点挤在边框
+中点附近，透镜被压成近直线，间距规整度过不了门。实测（文档原图 4 节点
+limits-to-growth）：分层路径 `uncertified` 11/12，唯一 FAIL = spacing CV 0.387 >
+0.35，~7.3s。调分层 / 构造式摆位满足不了「每个二节点回路自成一圈 + 间距规整」，
+故按 triage 新增本结构层。
+
+**判定**（`stdraw/lenslayout.py: detect_lens_chain`）：2≤n≤12；互指对按声明序；
+互指对去重后的简单图必须是森林（出现任何长度 ≥3 的简单回路 → 不触发，交给
+既有结构层）；每个节点至多属于 2 个互指对（三条透镜共点没有模板）；链从端点
+（只属 1 个互指对的节点）出发按声明序走出（B_i == A_{i+1}）；其余节点按 BFS
+挂到最近的链节点上（pendant 树，`parents` 记父节点）。
+
+**摆位**（`place_lens_chain`）：每个互指对摆成一个**透镜**——两框沿链方向相对、
+边到边 `LENS_GAP`=150px，两条有向边构造为 Q 弧、分别鼓向弦的两侧（弧顶偏移
+= `LENS_K`/2 × 弦长 = 0.30 × 弦长），每个二节点回路读作一个闭合「圈」。链在每个
+共享节点**右转**（E→S→W→N），相邻透镜互相垂直、不争抢同一段边框。pendant
+节点挂在父节点**同一行**的外侧（边到边 `LINK_GAP`=48px，行距保持均匀）；多条
+互指链竖向堆叠、左对齐，全部坐标吸附 24px（x）/ 2px（y）栅格。
+
+**锚点口径**（16 标准锚点集，见下文）：水平透镜（弦沿 x）用相对的**角锚**
+（ne/nw 对 se/sw；44px 卡上 golden 对的两条弧在框边 7.6px 内挤成一股）；竖直
+透镜（弦沿 y）用相对的 **golden 锚**（东弦 s-g1/n-g2、西弦 n-g1/s-g2；角锚会让
+透镜比方框还宽，且共点节点处会被水平透镜的下弧同时占用而交叉）。弧侧规则：
+由对中先声明节点出发的边走行进方向的左侧（屏幕坐标），反向边走右侧——只取决于
+声明序，确定性。
+
+**交付**：`lens-construct` 引擎**全图按构造交付**——透镜对 = 上述弧对；每条非透镜边
+= 一段直线（`link_line`：沿主轴相对的两个标准边中点锚，如 cap 的 "w" → lim 的
+"e"），所有端点落在 16 标准锚点集上。交付层的 anchor_snap / lens_joint_reassign /
+mutual_arrival_flip 通道对本引擎整体跳过：它们把到达角重导到边框法向，会把竖直
+透镜压成 5–7° 的近直线（anchors_smooth 失败；探针实测弧顶控制点 469.8→377.2）。
+coincide_reroute / midband_reanchor / fan_spread 本就不触碰 constructed 路由。
+
+**试验闸门**（`layout_auto._lens_trial`）：`_constructed_gates(anchor_band=3.75)`
+（= 证书 anchors_standard 的容差；其余 trial 仍用 0.75）+ 规整度代理（spacing CV
+≤0.35、24px 列吸附 ≥0.6、行距均匀）全部通过才采纳；任一不过静默回退分层路径，
+负例逐字节不变（本模式没有反向形态门，不入 `_FORM_FALLBACK_MODES`）。含孤立节点的
+图不进本层（证书 spacing CV 计入停车节点、闸门代理不计——口径对齐前保守放行给
+分层）。
+
+**证书口径**（placement = `lens-chain`，14 门）= 分层规整集（`cv_le_035` /
+`pitch_uniform` / `column_snap24_ge_060`）+ 透镜合同两门 + 通用硬门：
+
+- `lens_pairs_closed`：每个互指对的两条边都是 Q 弧，且**鼓度**（弧顶到弦的距离 /
+  弦长，`gates.arc_bulge`）≥ `LENS_BULGE_MIN`=0.15，且两条弧鼓向弦的**异侧**——
+  构造透镜 = 0.30；被压平的透镜 ≈0.01，不算圈。
+- `lens_pair_min_sep_ge_12`：两条弧最小间距 ≥12px。
+- 指标：`lens_pair_min_sep`、`lens_pair_min_bulge`。check.py 第 9 门同口径。
+- `rowY` = 实际交付行（本引擎不做二次平移）；`pitch` = None（行距由 card_h +
+  `LENS_GAP` 决定，不是 cfg.pitch）。
+
+**实测**（2026-11-25）：limits-to-growth 4 节点原图 `best` 14/14、spacing_cv 0.132、
+净距 76.7、两透镜鼓度 0.30、~0.4s（分层路径 uncertified ~7.3s）；
+success-to-the-successful 由分层 3 行改为两透镜竖排：`best` 14/14（原 12/12）、
+spacing_cv 0.0（原 0.022）、最小卡距 144（原 36）、净距 122（原 44）。金标准其余
+7 图逐字节不变。回归测试 `tests/test_lens_chain.py`；CI 把 4 节点原图列入
+`AUTO_EXAMPLES`（auto 门集 = `LENS_HARD_GATES`）。
 
 ### 静默回退审计（2026-11-15 全形态排查；2026-11-17 按 64fa7db 双腿 sweep 勘误）
 
@@ -402,6 +467,7 @@ id 顺序）驱动；同构图的对应节点同色 → 对应槽位。已验证
 | column-chain | 主链列轴偏差 ≤2px + 主链行距恒等 |
 | symmetric | 镜像轴误差 ≤2px |
 | bowtie-vertex | 镜像轴误差 ≤2px（共享节点居轴心 + 上下环镜像） |
+| lens-chain | 行距恒等 + 24px 列吸附 ≥60% + 透镜合同（每个互指对 = 两条 Q 弧、鼓度 ≥0.15、异侧、两弧间距 ≥12px） |
 | layered | 行距恒等 + 24px 列吸附 ≥60%（简单图） |
 
 ## 方框标准锚点集（16 点，ref-scrubbed；ref-scrubbed 起为**缺省吸附口径**）
@@ -611,6 +677,7 @@ ref-scrubbed（`Router.lens_joint_reassign`）以**非镜像**锚指派恢复了
 | symmetric（领结对） | 是（镜像对称） | 有 | 有 | 冻结基线姿态 |
 | spine-wing（纵柱+翼位） | 是 | 有 | 有 | 冻结基线姿态（反向门已扩权） |
 | ring-cycle（环形） | 是 | 有 | 有 | 冻结基线姿态（反向门已扩权） |
+| lens-chain（透镜链） | 是（纯二环图） | 有（`tests/test_lens_chain.py`） | 有 | 冻结基线姿态（广度冻结 triage 见「透镜链」节） |
 
 **判定：无任何模式按「无消费方」降档**——每个模式都被确定性分发器可达（未来 corpus 图
 可能命中）且有测试覆盖，无一为死代码。模式家族整体进入**冻结基线姿态**（照 ortho-v1 先例）：

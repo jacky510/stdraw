@@ -1068,7 +1068,8 @@ def _radial_trial(plan, nodes, widths, card_h, cfg, edges, why=None,
 
 
 def _constructed_gates(nodes_px, edges, routes, cfg, constructed,
-                       dense_hub=None, min_gap_override=None):
+                       dense_hub=None, min_gap_override=None,
+                       anchor_band=None):
     """Unified hard-gate proxy over constructed routes (closed arcs / mirror-symmetry arcs) and routed routes (ref-scrubbed).
 
     Same caliber as _ring_trial: press=0, edge-box clearance>=clearance,
@@ -1081,6 +1082,11 @@ def _constructed_gates(nodes_px, edges, routes, cfg, constructed,
     RADIAL_MIN_PAIR_GAP + 2 and the card-gap leg reviews that floor
     instead of cfg.min_gap; every other caller keeps cfg.min_gap
     verbatim.
+    anchor_band: border-band tolerance for the on-edge leg (px inside the
+    box border).  None keeps the historical 0.75 (constructed arcs sit on
+    the border line); the lens-chain trial passes 3.75 = the certificate
+    anchors_standard band (standard 16-anchor set, inset 3px + 0.75
+    tolerance), the same caliber the delivered figure is graded against.
     Returns True = gate passed.
     """
     from .routing import (dist_point_rect, min_pair_dist, sample_polyline,
@@ -1116,7 +1122,14 @@ def _constructed_gates(nodes_px, edges, routes, cfg, constructed,
         for v, p_idx, n_idx in ((a, 0, 1), (b, len(pts) - 1, len(pts) - 2)):
             cx, cy, w, h = nodes_px[v]
             a0 = pts[p_idx]
-            if (abs(abs(a0[0] - cx) - w / 2) > abs(abs(a0[1] - cy) - h / 2) + 1e-9
+            if anchor_band is not None:
+                # certificate anchors_standard caliber: the anchor sits in
+                # the border band (standard 16-anchor set, inset + tol)
+                _ox = abs(abs(a0[0] - cx) - w / 2)
+                _oy = abs(abs(a0[1] - cy) - h / 2)
+                if min(_ox, _oy) > anchor_band:
+                    return False
+            elif (abs(abs(a0[0] - cx) - w / 2) > abs(abs(a0[1] - cy) - h / 2) + 1e-9
                     and abs(abs(a0[1] - cy) - h / 2) > 0.75):
                 return False
             dx, dy = pts[n_idx][0] - a0[0], pts[n_idx][1] - a0[1]
@@ -1631,6 +1644,88 @@ def _column_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     return {"placed": (pos, y, meta, constructed), "deg0": plan["deg0"]}
 
 
+def _lens_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
+    """Lens-chain placement + routing trial gate (pure 2-cycle figures:
+    every loop is a mutual pair, simple graph a forest).
+
+    Adopted only if the lens contract holds -- each mutual pair is a
+    constructed Q-arc pair bowing to opposite sides of its chord (one
+    closed ring per 2-node loop), every non-lens edge is a constructed
+    straight segment between facing standard anchors -- AND the unified
+    hard-gate proxy passes AND the certificate-grade regularity proxies
+    hold (spacing CV <= 0.35, 24px column snap >= 0.6, uniform row pitch).
+    Any failure returns None and the figure falls back to the existing
+    layered path, byte-for-byte unchanged (docs/layout-modes.md, section
+    lens-chain).  Figures with isolated (parked) nodes are left to the
+    layered path: the certificate spacing CV counts parked nodes while
+    this gate's regularity proxy excludes them.
+    """
+    from . import lenslayout
+    if plan["deg0"]:
+        if why is not None:
+            why["reason"] = ("trial: isolated node(s) parked -- "
+                             "no lens template (layered path kept)")
+        return None
+    try:
+        pos, y, meta, constructed = lenslayout.place_lens_chain(
+            plan, widths, card_h, cfg)
+    except lenslayout.InfeasibleLensChain as exc:
+        if why is not None:
+            why["reason"] = (f"trial: constructed placement infeasible "
+                             f"({exc})")
+        return None
+    deg0 = list(plan["deg0"])
+    nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
+    router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
+    routes = router.route_all()
+    # every edge rides the generic constructed-route injection channel
+    # (same as comb tier-1 / symmetric arcs): lens pairs as Q-arc pairs,
+    # links as single straight segments; the unified hard gates below
+    # review the injected geometry like any route
+    idx = {e: i for i, e in enumerate(edges)}
+    for key, cr in constructed.items():
+        i = idx.get(key)
+        if i is None:
+            continue
+        info = {"kind": cr["kind"],
+                "points": [list(p) for p in cr["points"]],
+                "press": 0, "min_clear": None, "cross": 0,
+                "cross_edges": 0, "ang_a": 90.0, "ang_b": 90.0}
+        if cr.get("ctrl") is not None:
+            info["ctrl"] = list(cr["ctrl"])
+        routes[i] = info
+    for key, i in idx.items():
+        cr = constructed.get(key)
+        if cr is None:
+            if why is not None:
+                why["reason"] = (f"trial gate: lens contract broken — "
+                                 f"edge {key[0]}->{key[1]} not constructed")
+            return None
+    if not _constructed_gates(nodes_px, edges, routes, cfg, constructed,
+                              anchor_band=3.75):
+        if why is not None:
+            why["reason"] = ("trial gate: hard-gate proxy failed "
+                             "(crossings<=2 / press=0 / clearance>=16 / "
+                             "smooth anchors / mutual separation / card gap)")
+        return None
+    cv, snap, pitch_ok = lenslayout.regularity(pos, y, nodes, deg0)
+    if cv > lenslayout.CV_MAX or snap < lenslayout.SNAP_MIN or not pitch_ok:
+        if why is not None:
+            why["reason"] = (f"trial gate: regularity proxies failed "
+                             f"(spacing CV {cv:.3f} > {lenslayout.CV_MAX} / "
+                             f"24px snap {snap:.2f} < {lenslayout.SNAP_MIN} / "
+                             f"pitch uniform {pitch_ok})")
+        return None
+    if why is not None:
+        why["reason"] = ("trial gate passed (lens contract held: every "
+                         "pair a closed arc ring, links straight)")
+    plan = dict(plan)
+    plan["placed"] = (pos, y, meta)
+    plan["constructed"] = {k: dict(v) for k, v in constructed.items()}
+    plan["deg0"] = deg0
+    return plan
+
+
 def _layout_candidates(graph, cfg, edges, linestyle, manual):
     """layout() stage 1 -- candidate generation: card metrics, dense verdict,
     mode priority chain + trial gates, placement (manual / constructed /
@@ -1768,6 +1863,11 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
         _tw_sym, _tw_bw, _tw_sw = {}, {}, {}
         _tw_comb, _tw_col, _tw_ring = {}, {}, {}
         _tw_rad = {}
+        # lens-chain (pure 2-cycle figures: every loop a mutual pair, simple
+        # graph a forest) -- evaluated after radial, the last structural
+        # reading before the layered fallback
+        lens_plan = None
+        _why_lens, _tw_lens = {}, {}
         # reverse-form gate (jacky ruling 2026-11-15, widened 2026-11-16):
         # when a structural form detector fires but its trial gate fails,
         # the fallback to layered is NOT silent anymore -- the abandoned
@@ -1905,6 +2005,27 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
         if not any(p is not None for p in (sym_plan, bw_plan, sw_plan,
                                            comb_plan, column_plan,
                                            ring_plan, radial_plan)):
+            # lens-chain (priority 5, after radial, before layered): pure
+            # 2-cycle figures (every loop a mutual pair a<->b, simple graph
+            # a forest) -- the reinforcing + balancing loops sharing one
+            # variable.  Every lens is a closed arc ring on constructed
+            # coordinates; the trial gate falls back to layered silently
+            # (byte-for-byte) on any failure.
+            from . import lenslayout as _lenslayout
+            _lens = _lenslayout.detect_lens_chain(graph, why=_why_lens)
+            if _lens is not None:
+                lens_plan = _lens_trial(_lens, nodes, widths, card_h, cfg,
+                                        edges, why=_tw_lens)
+            # trace entry only when this tier actually did something (a lens
+            # structure was detected or a trial ran): a figure without a
+            # mutual pair keeps its pre-lens trace byte-for-byte
+            if _lens is not None or _tw_lens:
+                _rule_hit("lens-chain", 5, _lens is not None, lens_plan,
+                          _why_lens, _tw_lens)
+        if not any(p is not None for p in (sym_plan, bw_plan, sw_plan,
+                                           comb_plan, column_plan,
+                                           ring_plan, radial_plan,
+                                           lens_plan)):
             _mode_rules.append({"tier": 5, "rule": "layered (existing path)",
                                 "triggered": True,
                                 "reason": ("fallback: no structural mode "
@@ -1978,6 +2099,18 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
                     for yy in sorted({y[v] for v in nodes})]
             engine = "radial-construct"
             pos_meta = dmeta
+        elif lens_plan is not None:
+            lpos, ly, lmeta = lens_plan["placed"]
+            pos, y = lpos, ly
+            deg0 = list(lens_plan["deg0"])
+            rows = [[v for v in nodes if y[v] == yy]
+                    for yy in sorted({y[v] for v in nodes})]
+            engine = "lens-construct"
+            pos_meta = lmeta
+            # lens arcs ride the generic constructed-route injection channel
+            # (frozen out of coincide/midband/fan_spread; the trial already
+            # rechecked the unified hard gates on the injected geometry)
+            constructed = lens_plan.get("constructed") or {}
         else:
             # ② layering (cycle breaking + longest path + empty-layer compression)
             _, dag = _cycle_break(core, edges)
@@ -2594,13 +2727,20 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
     _density = len(edges) / max(len(nodes), 1)
     _snap_deferred = None
     _snap_reverted = False
-    if er_presets is not None:
+    if er_presets is not None or engine == "lens-construct":
         # edge placement rules v1: endpoints are already on the standard
         # 16-anchor set BY CONSTRUCTION (rules 1-9 assigned them before
         # routing) -- anchor_snap has nothing left to move (spec §8:
         # "delete the snap pass, keep at most the check"; the
         # anchors_standard gate still
         # verifies membership honestly on delivered coordinates).
+        # lens-chain constructed arcs: same by-construction caliber -- the
+        # lens anchors ARE standard anchors (corner set / golden set picked
+        # per lens direction so adjacent lenses at a shared node never
+        # compete for one corner); the lens-pair joint snap would re-seat
+        # the corner pair onto the golden pair and collide with the
+        # neighbouring lens (measured: visual crossing under the shared
+        # corner), so the snap pass is skipped for that engine as well.
         _snap_report = {"moved": 0, "failures": [], "lens_pairs": []}
         _timing.mark("anchor_snap.edgerules_by_construction")
     elif _density >= ANCHOR_SNAP_DENSE_E_OVER_N:
@@ -2704,7 +2844,14 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
     # on deferral (dense) or revert (any density): the restored routes already
     # passed the pre-snap flip above, and re-flipping unsnapped routes under
     # the enhanced accounting would perturb the honest pre-snap state.
-    if er_presets is None and _snap_deferred is None and not _snap_reverted:
+    if (er_presets is None and _snap_deferred is None and not _snap_reverted
+            and engine != "lens-construct"):
+        # lens-chain constructed arcs are by-design (eye shape on corner
+        # anchors, trial-gate reviewed); the arrival channel re-derives
+        # ctrl toward the border normal, which flattens the vertical lens
+        # into two near-straight tangential lines (measured: 5-7 deg
+        # tangent departure, anchors_smooth fails) -- skipped for that
+        # engine only, every other engine keeps the channel verbatim
         # ref-scrubbed: joint anchor re-assignment for lens pairs whose
         # post-snap flip still exceeds the arrival target (non-mirrored
         # joint assignments; strict improvement only, else untouched).
@@ -2895,6 +3042,13 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
     if manual is not None:
         row_y_out = [yy + dy for yy in sorted({y[v] for v in nodes})]
         pitch_out = None
+    elif engine == "lens-construct":
+        # lens rows: y already carries the delivery shift in place (the
+        # shift loop above updates y[v]); record the actual row centers,
+        # pitch does not apply (uniform by construction at
+        # card_h + LENS_GAP, reported through the lens meta block)
+        row_y_out = sorted({y[v] for v in nodes})
+        pitch_out = None
     elif engine in ("ring-construct", "comb-construct", "radial-construct"):
         # ring/comb/radial placement have no uniform-row semantics: rowY
         # records the deduplicated order of actual y values; pitch does not
@@ -2917,6 +3071,7 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
                          "column-construct": "column-chain",
                          "ring-construct": "ring-cycle",
                          "radial-construct": "radial",
+                         "lens-construct": "lens-chain",
                          "manual": "manual"}
     _final_placement = ((pos_meta.get("placement")
                          if isinstance(pos_meta, dict) else None)

@@ -529,6 +529,17 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                 '<h4>Placement mode: comb-bilateral (sources in one vertical '
                 'column + two mirrored hub wings at the column middle row; '
                 'all hub edges straight lines)</h4>')
+        elif placement == "lens-chain":
+            metric_rows += (
+                f'<tr><td>Lens pairs (closed arc rings)</td>'
+                f'<td>{len((cert.get("lens") or {}).get("pairs") or [])}</td></tr>'
+                f'<tr><td>Lens pair min separation px</td>'
+                f'<td>{m.get("lens_pair_min_sep")}</td></tr>')
+            placement_html = (
+                '<h4>Placement mode: lens-chain (pure 2-cycle figure: every '
+                'loop a mutual pair placed as a lens of two opposite arcs, '
+                'one closed ring per 2-node loop; non-lens links straight '
+                'lines)</h4>')
         elif placement == "symmetric":
             metric_rows += (
                 f'<tr><td>Mirror-axis error</td><td>{m.get("symmetry_mirror_err")}</td></tr>')
@@ -609,6 +620,10 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
 
     engine = meta.get("position_engine", "construct")
     ls = meta.get("line_style", "straight")
+    if meta.get("placement") == "lens-chain":
+        # the lens arcs are constructed (not a --linestyle choice): the
+        # h1 must not read as if the figure were drawn straight
+        ls = f"{ls} (lens arcs constructed)"
     # contract section 4.5: L1 output must not claim the RT theorem
     # phrasing; L0 keeps today's bytes (interpolation equals the old
     # literals exactly when meta.planarization is absent)

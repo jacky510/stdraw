@@ -23,6 +23,7 @@
 | 3 | Column (long chain / few loops) | 3 <= n <= 12 ∧ longest simple loop 3 <= k <= 4 ∧ k < n (small main ring -> strong chain reading; k = n macro-loops go to ring; pure-cycle/ratio ring triggers do not enter column) | `column-chain` |
 | 4 | Ring | Pure cycle / main-ring coverage >= n-2 / cycle-edge ratio >= 0.9 ∧ k >= 5 or full coverage | `ring-cycle` |
 | 5 | Radial (star/fan) | `hub_deg >= 6 ∧ leaf_frac >= 0.5 ∨ hub_deg >= 10` (hub = max-degree node, ties to the smallest id; leaf_frac = share of degree-1 leaves; see below) | `radial` |
+| 5b | Lens chain (pure 2-loop figures) | At least one mutual pair a<->b ∧ the simple graph after merging mutual pairs is a forest (no loop of length >= 3) ∧ 2 <= n <= 12 ∧ every node in at most 2 mutual pairs (see below) | `lens-chain` |
 | 6 | Layered (existing path) | Everything else (chains / trees / large graphs) | `layered` |
 
 Every new mode carries a **trial gate**: after constructing the placement, the
@@ -64,6 +65,93 @@ a `mode_decision_trace` in `meta` (`layout.json`) and in the certificate
   instead of being silently applied.
 - Manual layouts (`--from-layout`) bypass the chain: `manual: true`,
   `rules: []` — routing hard gates still apply, graded honestly.
+
+### Lens chain (lens-chain, pure 2-loop figures)
+
+**Consumer (breadth-freeze triage, 2026-11-25)**: figures whose only loops are
+2-loops (mutual pairs a<->b) -- the classic CLD "reinforcing loop + balancing loop
+sharing one variable" family (limits-to-growth, success-to-the-successful, ...).
+Every earlier structural tier requires a loop of length >= 3 (the chain
+symmetric -> bowtie-vertex -> spine-wing -> comb-bilateral -> column-chain ->
+ring-cycle), so these
+figures always fell through to the layered path: on 44px cards the two endpoints
+of a mutual pair crowd the border midpoint, the lens collapses into near-straight
+lines, and the spacing regularity gate fails. Measured (the 4-node limits-to-growth
+source figure): layered path `uncertified` 11/12, the only FAIL = spacing CV 0.387
+> 0.35, ~7.3s. Tuning the layered / constructive placement cannot deliver "one
+closed ring per 2-node loop + regular spacing", so this tier was added per the
+triage.
+
+**Detection** (`stdraw/lenslayout.py: detect_lens_chain`): 2 <= n <= 12; mutual
+pairs in declaration order; the simple graph after merging mutual pairs must be a
+forest (any simple loop of length >= 3 -> no trigger, the earlier tiers own it);
+a node belongs to at most 2 mutual pairs (no template for three lenses on one
+node); chains are walked from an end node (belonging to exactly 1 pair) in
+declaration order (B_i == A_{i+1}); every other node hangs by BFS off the nearest
+chain node (pendant tree, `parents` records it).
+
+**Placement** (`place_lens_chain`): each mutual pair becomes a **lens** -- the two
+boxes face each other along the chain direction, `LENS_GAP` = 150px edge to edge;
+the two directed edges are constructed Q arcs bowing to opposite sides of the
+chord (apex offset = `LENS_K` / 2 x chord = 0.30 x chord), so each 2-node loop
+reads as one closed ring. The chain **turns right** at every shared node
+(E -> S -> W -> N): adjacent lenses are perpendicular and never contest the same
+border. Pendant nodes hang in the **same row** as their parent (`LINK_GAP` = 48px
+edge to edge, row pitch stays uniform); several mutual chains stack vertically,
+left-aligned; all coordinates snap to the 24px (x) / 2px (y) grid.
+
+**Anchors** (the 16-anchor set, see below): a horizontal lens (chord along x)
+uses opposite **corner anchors** (ne/nw vs se/sw; on 44px cards the two arcs of a
+golden pair crowd into one strand within 7.6px of the border); a vertical lens
+(chord along y) uses opposite **golden anchors** (east chord s-g1/n-g2, west chord
+n-g1/s-g2; corner anchors make the lens wider than the boxes, and at a shared
+node the horizontal lens's lower arc contests the same corner). Arc side rule:
+the edge leaving the pair's first-declared node bows to the left of the travel
+direction (screen coordinates), the reverse edge to the right -- declaration
+order only, deterministic.
+
+**Delivery**: the `lens-construct` engine delivers the **whole figure by
+construction** -- lens pairs as the arc pairs above; every non-lens edge as one
+straight segment (`link_line`: the two facing standard edge-midpoint anchors
+along the main axis, e.g. cap "w" -> lim "e"), so every endpoint lies on the
+16-anchor set. The delivery-layer anchor_snap / lens_joint_reassign /
+mutual_arrival_flip passes are skipped for this engine: they re-derive arrival
+angles onto the border normal, which flattens a vertical lens into 5-7 deg
+near-straight lines (anchors_smooth fails; probe-measured apex control point
+469.8 -> 377.2). coincide_reroute / midband_reanchor / fan_spread never touch
+constructed routes anyway.
+
+**Trial gate** (`layout_auto._lens_trial`): `_constructed_gates(anchor_band=3.75)`
+(= the certificate anchors_standard tolerance; the other trials keep 0.75) plus
+the regularity proxies (spacing CV <= 0.35, 24px column snap >= 0.6, uniform row
+pitch) must all pass; any failure falls back silently to the layered path and
+negative cases stay byte-identical (no reverse-form gate in this mode, not in
+`_FORM_FALLBACK_MODES`). Figures with isolated nodes skip this tier (the
+certificate spacing CV counts parked nodes, the gate proxy does not -- left to
+the layered path until the calibers are aligned).
+
+**Certificate caliber** (placement = `lens-chain`, 14 gates) = the layered
+regularity set (`cv_le_035` / `pitch_uniform` / `column_snap24_ge_060`) + the
+two lens-contract gates + the common hard gates:
+
+- `lens_pairs_closed`: both edges of every mutual pair are Q arcs, each with
+  **bulge** (apex-to-chord distance / chord length, `gates.arc_bulge`) >=
+  `LENS_BULGE_MIN` = 0.15, and the two arcs bow to **opposite** sides of the
+  chord -- a constructed lens = 0.30; a flattened lens ~ 0.01 is not a ring.
+- `lens_pair_min_sep_ge_12`: the two arcs stay >= 12px apart.
+- Metrics: `lens_pair_min_sep`, `lens_pair_min_bulge`. check.py gate 9 shares
+  the caliber.
+- `rowY` = the delivered rows (this engine never shifts twice); `pitch` = None
+  (the row pitch is card_h + `LENS_GAP`, not cfg.pitch).
+
+**Measured** (2026-11-25): the 4-node limits-to-growth source figure grades
+`best` 14/14, spacing_cv 0.132, clearance 76.7, both lenses bulge 0.30, ~0.4s
+(layered path uncertified ~7.3s); success-to-the-successful moves from 3 layered
+rows to two stacked lenses: `best` 14/14 (was 12/12), spacing_cv 0.0 (was
+0.022), min card gap 144 (was 36), clearance 122 (was 44). The other 7 golden
+figures stay byte-identical. Regression tests `tests/test_lens_chain.py`; CI
+lists the 4-node source figure in `AUTO_EXAMPLES` (auto gate set =
+`LENS_HARD_GATES`).
 
 ### Single-node zero-crossing neighborhood reposition (ring-cycle post-pass, 2026-11-13)
 
@@ -439,6 +527,7 @@ geometrically equivalent (mirror images).
 | column-chain | spine column-axis deviation <= 2px + uniform spine row pitch |
 | symmetric | mirror-axis error <= 2px |
 | bowtie-vertex | mirror-axis error <= 2px (shared node on the axis + rings mirrored up/down) |
+| lens-chain | uniform row pitch + 24px column snap >= 60% + the lens contract (every mutual pair = two Q arcs, bulge >= 0.15, opposite sides, arcs >= 12px apart) |
 | layered | uniform row pitch + 24px column snap >= 60% (simple graphs) |
 
 ## Standard box anchor set (16 points, ref-scrubbed; default snap caliber since ref-scrubbed)
