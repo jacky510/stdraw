@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """stdraw systems-thinking diagram engine.
 
-Three-layer architecture:
-    Layout layer (planar / layout3d, replaceable implementations)
+Two-layer architecture:
+    Layout layer (planar, replaceable implementations)
     Quality layer (metrics five-metric certificate + check geometry self-inspection + loops loop semantic audit) -- this project's moat
-    Viewer layer (viewer/)
 
 Honest tiering promise: if a certificate cannot be obtained we say so; we never claim 0 crossings for arbitrary graphs.
 """

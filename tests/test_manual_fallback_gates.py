@@ -92,7 +92,7 @@ def main():
                       ensure_ascii=False)
         out = os.path.join(tmp, "breach")
         r = run(["layout", CLD, "--recipe", "auto", "--from-layout", src,
-                 "--outdir", out, "--skip-3d"])
+                 "--outdir", out])
         ok("breaching layout: pipeline ran", r.returncode in (0, 1),
            r.stderr[-120:] if r.returncode not in (0, 1) else "")
         rep = load(os.path.join(out, "geometry_report.json"))
@@ -141,7 +141,7 @@ def main():
             json.dump(manual_layout([EDGE_CLEAN]), f, ensure_ascii=False)
         out2 = os.path.join(tmp, "benign")
         r2 = run(["layout", CLD, "--recipe", "auto", "--from-layout", src2,
-                  "--outdir", out2, "--skip-3d"])
+                  "--outdir", out2])
         ok("benign layout: pipeline ran", r2.returncode in (0, 1), "")
         lay2 = load(os.path.join(out2, "layout.json"))
         fm2 = lay2["meta"].get("from_layout", {})
@@ -160,7 +160,7 @@ def main():
         # -- 3. determinism: two runs byte-identical --
         out3 = os.path.join(tmp, "breach2")
         run(["layout", CLD, "--recipe", "auto", "--from-layout", src,
-             "--outdir", out3, "--skip-3d"])
+             "--outdir", out3])
         same = all(
             open(os.path.join(out, fn), "rb").read() ==
             open(os.path.join(out3, fn), "rb").read()

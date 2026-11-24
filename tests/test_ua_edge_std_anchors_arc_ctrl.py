@@ -63,7 +63,7 @@ def _rerender(tmp_path, manual, name):
     man_p.write_text(json.dumps(manual, ensure_ascii=False), encoding="utf-8")
     out = tmp_path / name
     r = subprocess.run([PY, "-m", "stdraw", "layout", CORPUS, "--outdir",
-                        str(out), "--skip-3d", "--from-layout", str(man_p)],
+                        str(out), "--from-layout", str(man_p)],
                        cwd=ROOT, capture_output=True, text=True,
                        encoding="utf-8", errors="replace")
     # rc 1 = honest geometry-gate failures (the manual tweak legitimately
@@ -111,7 +111,7 @@ def test_exported_arc_ctrl_is_replayed_verbatim(tmp_path):
     # baseline arc of the same pair (the base the viewer translates)
     base = tmp_path / "base"
     r = subprocess.run([PY, "-m", "stdraw", "layout", CORPUS, "--outdir",
-                        str(base), "--skip-3d"], cwd=ROOT,
+                        str(base)], cwd=ROOT,
                        capture_output=True, text=True, encoding="utf-8",
                        errors="replace")
     assert r.returncode == 0, r.stderr[-600:]
@@ -175,7 +175,7 @@ def test_bad_ctrl_raises_and_ctrl_without_arc_style_is_ignored(tmp_path):
     man_p = tmp_path / "bad.json"
     man_p.write_text(json.dumps(man, ensure_ascii=False), encoding="utf-8")
     r = subprocess.run([PY, "-m", "stdraw", "layout", CORPUS, "--outdir",
-                        str(tmp_path / "bad"), "--skip-3d", "--from-layout",
+                        str(tmp_path / "bad"), "--from-layout",
                         str(man_p)], cwd=ROOT, capture_output=True, text=True,
                        encoding="utf-8", errors="replace")
     assert "must be an [x, y] pair of finite numbers" in r.stderr

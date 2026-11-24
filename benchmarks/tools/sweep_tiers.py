@@ -13,7 +13,7 @@
 #        stays in place with "tier": "retired" metadata in manifest.json
 #
 # Each invocation runs one leg: for every graph, `python -m stdraw layout
-# <cld> --outdir <legdir>/<base> --skip-3d` under a wall-clock budget, then
+# <cld> --outdir <legdir>/<base>` under a wall-clock budget, then
 # records sha256 of every produced file into <legdir>/sweep_index.json.
 # Re-enterable (T6 discipline): graphs already recorded in the index are
 # skipped; progress is appended to <legdir>/sweep.log.
@@ -149,7 +149,7 @@ def run_leg(tier, legdir, budget, log):
         outdir = os.path.join(legdir, fam, base)
         t0 = time.time()
         cmd = [sys.executable, "-m", "stdraw", "layout", cld,
-               "--outdir", outdir, "--skip-3d"]
+               "--outdir", outdir]
         try:
             p = subprocess.run(cmd, capture_output=True, cwd=REPO, timeout=budget)
             rc = p.returncode

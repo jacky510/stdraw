@@ -52,15 +52,15 @@ All images are real renderings produced by the current engine (v0.9.0) from the 
 
 <table>
   <tr>
-    <td><a href="../demos/debt-spiral-2d-en.html"><img src="docs/gallery/debt-spiral-2d-en.png" alt="debt spiral CLD 2D auto-v2 ring layout, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
-    <td><a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout, polarity tubes + cone arrowheads" width="420"/></a></td>
+    <td><a href="demos/debt-spiral-2d-en.html"><img src="docs/gallery/debt-spiral-2d-en.png" alt="debt spiral CLD 2D auto-v2 ring layout, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
+    <td><a href="demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D spine-wing layout, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
   </tr>
   <tr>
     <td><strong>2D · auto-v2 ring layout</strong> (debt-spiral, 5n/6e, a textbook debt-spiral feedback loop drawn as a clean ring — 0 crossings, gap 75.6 px; edges colored by sign: + vermilion / − drafting blue, all solid)</td>
-    <td><strong>3D · sphere arrangement</strong> (rotate freely; projection crossings solved by the camera; two-color polarity tubes + cone arrowheads on every edge)</td>
+    <td><strong>2D · auto-v2 spine-wing layout</strong> (classic-cld growth-and-burden, 8n/13e, spine x-alignment + midline adherence + mirror-symmetric wings — 0 crossings, gap 35.0 px; edges colored by sign: + vermilion / − drafting blue, all solid)</td>
   </tr>
   <tr>
-    <td colspan="2" align="center"><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a></td>
+    <td colspan="2" align="center"><a href="demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a></td>
   </tr>
   <tr>
     <td colspan="2" align="center"><strong>Quality certificate panel</strong> (hard gates + gate tally + honest grade, exactly as shipped in the demo; spine-wing caliber: spine-axis / midline-adherence / mirror deviation)</td>
@@ -96,19 +96,16 @@ stdraw/
 │   ├── columnlayout.py  # v0.6.0: column layout (long-chain/few-loop: spine in one column + side branches + closing side arc)
 │   ├── symlayout.py     # v0.6.0: bowtie-pair symmetric layout (two triangles sharing an edge: vertical-axis mirror + consistent line kinds)
 │   ├── planar.py        #   ortho-v1: 2D planar layout (theorem-level 0 crossings, frozen behavior)
-│   ├── layout3d.py      #   3D five-solid arrangements (sphere/cube/tetrahedron/cone)
 │   ├── metrics.py       #   quality certificates v1/v2 + honest grading
 │   ├── check.py         #   geometry self-checks (CI-gate form: v1 11 checks / v2 hard-gate checks)
 │   ├── loops.py         #   loop-semantics audit (lint)
 │   ├── dsl.py           #   .cld DSL parser
 │   ├── model.py         #   graph data model
 │   ├── render.py        #   2D HTML rendering (inline SVG, v1/v2 forms, --theme light|dark)
-│   ├── render3d.py      #   3D HTML rendering (three.js)
-│   ├── themes.py        #   design tokens: single source for the light/dark palettes (viewer/themes.js is generated from it)
+│   ├── themes.py        #   design tokens: single source for the light/dark palettes
 │   └── __main__.py      #   CLI: stdraw layout ... [--recipe auto|ortho] [--linestyle straight|arc] [--theme light|dark]
 ├── examples/            # .cld cases (limits-to-growth / classic-cld-growth-and-burden)
-├── demos/               # deliverable form: 2D/3D demos + certificate JSON
-├── viewer/              # zero-dependency interactive viewer (four forms + live certificate)
+├── demos/               # deliverable form: 2D demos + certificate JSON
 ├── skills/stdraw/       # Agent Skill (installable via skills add)
 ├── tests/baselines/     # ortho-v1 byte-regression baselines (frozen-behavior iron gate)
 ├── docs/                # DSL spec (EN + zh-CN) + gallery + OR-Tools comparison + crossing-exact math (WS2)
@@ -126,13 +123,11 @@ stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62
 
 # 3. Look at the deliverables
 #    out/demo-2d.html     — 2D layout + embedded quality certificate
-#    out/demo-3d.html     — 3D sphere/cube/tetrahedron/cone (needs the in-repo assets/)
 #    out/certificate.json — metrics + honest grade
 #    out/loops_audit.json — loop-semantics audit
 ```
 
-A ready-made deliverable ships in the repo: open [`demos/classic-cld-2d.html`](demos/classic-cld-2d.html) / [`demos/classic-cld-3d.html`](demos/classic-cld-3d.html).
-Interactive viewer (four forms + node dragging + loop panel): open `viewer/index.html` in a browser, nothing to install.
+A ready-made deliverable ships in the repo: open [`demos/classic-cld-2d.html`](demos/classic-cld-2d.html).
 
 ### Manual touch-up loop (drag → export → re-certify)
 
@@ -145,11 +140,11 @@ nodes (mouse or touch), live metrics recompute in the toolbar, then:
 
 # 2. Re-run routing + certificate on YOUR coordinates — same hard gates,
 #    honest scoring (a manual layout is never graded leniently):
-stdraw layout input.cld --outdir out-manual --skip-3d --from-layout graph-manual-layout.json
+stdraw layout input.cld --outdir out-manual --from-layout graph-manual-layout.json
 
 # 3. (optional) Side-by-side auto-vs-manual certificate comparison
 #    (the gap is the engine-vs-human aesthetic distance):
-stdraw layout input.cld --outdir out-manual --skip-3d \
+stdraw layout input.cld --outdir out-manual \
     --from-layout graph-manual-layout.json --compare-auto
 
 # 4. Three-layer diff (node-level moves / structural metrics / loop semantics)
@@ -175,7 +170,7 @@ detour around obstacles render each fold point as a small **drag handle**
 
 ```bash
 # after dragging handles + export:
-stdraw layout input.cld --outdir out-manual --skip-3d --from-layout graph-manual-layout.json
+stdraw layout input.cld --outdir out-manual --from-layout graph-manual-layout.json
 # layout.json now carries route kind "waypoints" with via = your fold points
 ```
 
@@ -279,7 +274,6 @@ Honest grading semantics (iron rule: **never pass off a non-certificate as one**
 | Grade | Definition (auto-v2) |
 |---|---|
 | **`best`** | all hard gates pass (box-over-line 0 / clearance ≥ 16 / smooth anchors / regular arrangement) + 0 crossings |
-| **`3d`** | dimension-lift to 3D: rotate freely, no spatial crossings, projection crossings solved by the camera |
 | **`uncertified`** | everything else — honestly ungraded |
 
 Grade semantics single source: [docs/grading-contract.md](docs/grading-contract.md) —
@@ -353,7 +347,6 @@ stdraw layout model.cld --from-layout manual-layout.json --outdir out-manual
 
 - **Never claims 0 crossings for arbitrary graphs**: in auto-v2, crossings are a minimized objective term, not a theorem guarantee; ortho-v1 raises `NotPlanarError` on non-planar input and degrades honestly instead of forcing a drawing.
 - ortho-v1 (frozen recipe) allows "unrelated wires occluded under cards" as legacy design (cards are opaque) and counts it honestly in the certificate — a known v0.1 boundary; **the v0.2 default recipe auto-v2 makes box-over-line a hard gate (= 0)**.
-- The 3D layer makes no 2D crossing promises — spatial chords don't intersect thanks to the extra dimension; projection crossings are solved by the camera.
 - The layout layer is a replaceable implementation (currently: layering + crossing minimization + straight/arc routing; CP-SAT is an optional refinement layer — without it the engine degrades to the constructive method: full features, construct-tier quality).
 - The local-search neighborhood covers in-row shifts and adjacent swaps, not cross-row moves — the last crossing of some graphs may need a larger neighborhood (roadmap M3).
 

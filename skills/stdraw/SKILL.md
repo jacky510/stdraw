@@ -30,10 +30,8 @@ pip install stdraw        # or inside the repo: pip install -e .
 ## How to Run
 
 ```bash
-# Layout + certificate + loops audit + 2D/3D demo HTML (auto-v2 recipe, straight/arc lines)
+# Layout + certificate + loops audit + demo HTML (auto-v2 recipe, straight/arc lines; 2D only)
 stdraw layout model.cld --outdir out --pitch 62
-# 2D only (faster)
-stdraw layout model.cld --outdir out --skip-3d
 # Classic orthogonal recipe (all-vertical wires, provably 0 crossings on planar graphs;
 # behavior frozen — pinned by production callers, byte-regression protected)
 stdraw layout model.cld --outdir out --recipe ortho
@@ -51,8 +49,8 @@ pip install "stdraw[solver]"
   `loop R1 "label" "R" [a, b, c]`. JSON graph model also accepted.
 - Outputs in `--outdir`: `certificate.json` (grade + metrics),
   `geometry_report.json` (checks; CLI exits 1 on fail),
-  `loops_audit.json` (semantic lint), `demo-2d.html`, `demo-3d.html`,
-  `layout.json`, `positions3d.json`.
+  `loops_audit.json` (semantic lint), `demo-2d.html`,
+  `layout.json`.
 - Default recipe `auto-v2` enforces hard gates: box-over-line = 0 (any angle,
   1px margin), edge-to-box clearance >= 16px, smooth border anchors, and
   mode-aware arrangement regularity (bowtie-vertex / spine-wing / vertical-column /
@@ -64,7 +62,6 @@ pip install "stdraw[solver]"
 | `grade` | Meaning | What you may tell the user |
 |---|---|---|
 | `best` | hard gates all pass + 0 crossings | "hard gates pass, zero crossings" (auto-v2: crossings are minimized, not theorem-guaranteed; ortho recipe: theorem-guaranteed) |
-| `3d` | 3D delivery (rotate freely; projection crossings solved by camera) | no 2D crossing claim |
 | `uncertified` | everything else — honestly ungraded | **never** dress this up as success |
 
 Iron rule: stdraw never claims arbitrary graphs are 0-crossing. Relay grades as-is.
@@ -101,7 +98,6 @@ vertical-orthogonal pages are CI-regression baselines only). Single source:
 ## Pitfalls
 
 - Small graphs: pass `--pitch 62` to clear the min-gap gate.
-- `demo-3d.html` needs the repo's `assets/three.min.js` at the relative path.
 - `loops_audit.json` `problems` must be 0 before trusting declared loops.
 - Loop polarity is shown by edge color (light theme: single-loop R vermilion `#c2410c` /
 B drafting blue `#1e6fae`; dark theme `#ffb454` / `#6ec6ff` - single source

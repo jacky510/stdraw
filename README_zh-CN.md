@@ -54,15 +54,15 @@ pip install stdraw
 
 <table>
   <tr>
-    <td><a href="../demos/debt-spiral-2d.html"><img src="docs/gallery/debt-spiral-2d.png" alt="debt spiral CLD 2D auto-v2 ring layout, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
-    <td><a href="../demos/classic-cld-3d.html"><img src="docs/gallery/classic-cld-3d.png" alt="classic CLD 3D sphere layout, polarity tubes + cone arrowheads" width="420"/></a></td>
+    <td><a href="demos/debt-spiral-2d.html"><img src="docs/gallery/debt-spiral-2d.png" alt="debt spiral CLD 2D auto-v2 ring layout, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
+    <td><a href="demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="经典 CLD 2D 纵柱+翼位布局，边按符号双色，0 交叉" width="420"/></a></td>
   </tr>
   <tr>
     <td><strong>2D · auto-v2 环形布局</strong>（债务螺旋，5n/6e，教科书级债务螺旋反馈环画成一个干净的环——0 交叉、卡间距 75.6px；边按符号双色：+ 朱红 / − 制图蓝，全实线）</td>
-    <td><strong>3D · 球面排布</strong>（任意角度旋转，投影交叉由相机解决；两色极性管+每边锥形箭头）</td>
+    <td><strong>2D · auto-v2 纵柱+翼位布局</strong>（经典 CLD 增长与负担，8n/13e，中枢对严格垂直居轴 + 翼位压水平中线 + 翼外镜像对称——0 交叉、卡间距 35.0px；边按符号双色：+ 朱红 / − 制图蓝，全实线）</td>
   </tr>
   <tr>
-    <td colspan="2" align="center"><a href="../demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a></td>
+    <td colspan="2" align="center"><a href="demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a></td>
   </tr>
   <tr>
     <td colspan="2" align="center"><strong>质量证书面板</strong>（硬门 + 门禁 + 诚实分级，随 demo 交付；纵柱翼位口径：纵柱轴偏差/中线贴靠/镜像误差）</td>
@@ -98,18 +98,15 @@ stdraw/
 │   ├── columnlayout.py  # v0.6.0：纵列排布（长链/少环：主链一列 + 支路侧挂 + 闭合侧弧）
 │   ├── symlayout.py     # v0.6.0：领结对对称排布（双三角共边：纵轴镜像 + 线型一致）
 │   ├── planar.py        #   ortho-v1：2D 平面布局（0 交叉定理保证，行为冻结）
-│   ├── layout3d.py      #   3D 五形体排布（球面/立方体/四面体/圆锥）
 │   ├── metrics.py       #   质量证书 v1/v2 + 诚实分级
 │   ├── check.py         #   几何自检（CI 门禁形态：v1 11 项 / v2 硬门 11 项）
 │   ├── loops.py         #   环路语义审计（lint）
 │   ├── dsl.py           #   .cld DSL 解析器
 │   ├── model.py         #   图数据模型
 │   ├── render.py        #   2D HTML 渲染（内联 SVG，v1/v2 双形态）
-│   ├── render3d.py      #   3D HTML 渲染（three.js）
 │   └── __main__.py      #   CLI：stdraw layout ... [--recipe auto|ortho] [--linestyle straight|arc]
 ├── examples/            # .cld 案例（增长极限 / 增长极限×转嫁负担）
-├── demos/               # 交付形态：2D/3D demo + 证书 JSON
-├── viewer/              # 零依赖交互查看器（四形态 + 页面内实时证书）
+├── demos/               # 交付形态：2D demo + 证书 JSON
 ├── skills/stdraw/       # Agent Skill（skills add 即装）
 ├── tests/baselines/     # ortho-v1 逐字节回归基线（生产行为冻结铁门）
 ├── docs/                # DSL 规范 + gallery + OR-Tools 对比 + 精确交叉数数学（WS2）
@@ -127,13 +124,11 @@ stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62
 
 # 3. 看交付形态
 #    out/demo-2d.html     — 2D 布局 + 内嵌质量证书
-#    out/demo-3d.html     — 3D 球面/立方体/四面体/圆锥排布（需同仓 assets/）
 #    out/certificate.json — 指标 + 诚实分级
 #    out/loops_audit.json — 环路语义审计
 ```
 
-仓库内已有跑好的交付形态：直接打开 [`demos/classic-cld-2d.html`](demos/classic-cld-2d.html) / [`demos/classic-cld-3d.html`](demos/classic-cld-3d.html)。
-交互查看器（四形态 + 节点拖拽 + 环路面板）：浏览器打开 `viewer/index.html`，无需安装任何东西。
+仓库内已有跑好的交付形态：直接打开 [`demos/classic-cld-2d.html`](demos/classic-cld-2d.html)。
 
 ### 手动微调闭环（拖拽 → 导出 → 复算证书）
 
@@ -146,10 +141,10 @@ stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62
 
 # 2. 按你的坐标重跑布线+证书——硬门口径不变、如实评分
 #    （手动布局绝不因「是人排的」就放水）：
-stdraw layout input.cld --outdir out-manual --skip-3d --from-layout graph-manual-layout.json
+stdraw layout input.cld --outdir out-manual --from-layout graph-manual-layout.json
 
 # 3. （可选）auto vs manual 双证书对照（差距即引擎与人的审美距离）：
-stdraw layout input.cld --outdir out-manual --skip-3d \
+stdraw layout input.cld --outdir out-manual \
     --from-layout graph-manual-layout.json --compare-auto
 
 # 4. 三层 diff（节点位移 / 结构指标 / 回路语义）——从人工编辑里
@@ -171,7 +166,7 @@ v0.5.3 起拖拽期间对**全部线型实时重布线**（直线/弧线/可见�
 
 ```bash
 # 拖完把手并导出后：
-stdraw layout input.cld --outdir out-manual --skip-3d --from-layout graph-manual-layout.json
+stdraw layout input.cld --outdir out-manual --from-layout graph-manual-layout.json
 # layout.json 中该边 route.kind = "waypoints"，via = 你的折点
 ```
 
@@ -264,7 +259,6 @@ loop R1 "采纳扩散" "R" [rate, adopters, word]
 | 级别（token） | 定义（auto-v2） |
 |---|---|
 | **`best`（最优）** | 硬门全过（框压线 0 / 边-框净距≥16 / 锚点平滑 / 规律排布）+ 线 0 交叉 |
-| **`3d`（最次）** | 升维 3D：任意角度旋转，空间无交叉，投影交叉由相机解决 |
 | **`uncertified`（未获证书）** | 其余情况——如实不评级 |
 
 分级语义单一事实源：[docs/grading-contract.md](docs/grading-contract.md)——auto-v2（caliber `v2-hardgates`）只产出 `best` / `uncertified` 两档（`second` 已于 v0.7.15+ 从 v2 实现移除，仅存于 v1-legacy 的 ortho 口径，而该口径产物**已被 D0 禁令禁止作为交付物**）；交叉 ≤2 / 行对齐是布局软目标，不是证书门。
@@ -328,7 +322,6 @@ stdraw layout model.cld --from-layout manual-layout.json --outdir out-manual
 
 - **绝不宣称任意图 0 交叉**：auto-v2 的交叉数是目标函数最小化项而非定理保证；ortho-v1 在不可平面输入抛 `NotPlanarError` 诚实降级，不硬画。
 - ortho-v1（冻结配方）的「无关线遮挡式穿卡」为 legacy 设计允许（卡片不透明），证书如实计数——这是 v0.1 已知边界，**v0.2 默认配方 auto-v2 已把框压线定为硬门（=0）**；且 **D0 禁令（2026-11-11）**：全竖直正交图「到处是方框压线、多次改不掉」，属结构性缺陷 + 字节冻结锁死，**禁止作为交付物**，只保留冻结基线供 CI 回归（隔离而非修复），扫描器 `scripts/check_no_ortho_delivery.py` 已接入 CI。
-- 3D 层不做 2D 交叉承诺——空间弦线不相交由维度冗余保证，投影交叉由相机解决。
 - 布局层是可替换实现（当前：分层 + 交叉最小化 + 直线/弧线布线；CP-SAT 为可选精化层，未装时构造法降级，质量回退但功能齐全）。
 - 局部搜索邻域为行内横移与相邻交换，不含跨行搬移——个别图的最后一处交叉可能需要更大邻域（路线图 M3）。
 

@@ -71,8 +71,8 @@ def test_python_std_anchor_inset_matches_waypoint_caliber():
 
 def _auto_layout(tmp_path):
     out = tmp_path / "auto"
-    r = subprocess.run([PY, "-m", "stdraw", "layout", EX, "--outdir", str(out),
-                        "--skip-3d"], cwd=ROOT, capture_output=True, text=True,
+    r = subprocess.run([PY, "-m", "stdraw", "layout", EX, "--outdir", str(out)],
+                        cwd=ROOT, capture_output=True, text=True,
                        encoding="utf-8", errors="replace")
     assert r.returncode == 0, r.stderr[-400:]
     return json.load(open(out / "layout.json", encoding="utf-8"))
@@ -104,7 +104,7 @@ def test_waypoints_endpoints_in_standard_anchor_set(tmp_path):
     man_p.write_text(json.dumps(man, ensure_ascii=False), encoding="utf-8")
     out = tmp_path / "wp"
     r = subprocess.run([PY, "-m", "stdraw", "layout", EX, "--outdir", str(out),
-                        "--skip-3d", "--from-layout", str(man_p)],
+                        "--from-layout", str(man_p)],
                        cwd=ROOT, capture_output=True, text=True,
                        encoding="utf-8", errors="replace")
     assert r.returncode == 0, r.stderr[-400:]

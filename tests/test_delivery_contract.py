@@ -114,7 +114,7 @@ class TestCliDelivery(unittest.TestCase):
     def test_auto_layout_interactive_no_warning(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "auto")
-            r = _cli([LIMITS, "--outdir", out, "--skip-3d"])
+            r = _cli([LIMITS, "--outdir", out])
             self.assertEqual(r.returncode, 0, r.stderr)
             with open(os.path.join(out, "layout.json"), encoding="utf-8") as f:
                 layout = json.load(f)
@@ -133,7 +133,7 @@ class TestCliDelivery(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             for i in (1, 2):
                 out = os.path.join(tmp, "auto-%d" % i)
-                r = _cli([LIMITS, "--outdir", out, "--skip-3d"])
+                r = _cli([LIMITS, "--outdir", out])
                 self.assertEqual(r.returncode, 0, r.stderr)
                 with open(os.path.join(out, "layout.json"), "rb") as f:
                     outs.append(f.read())

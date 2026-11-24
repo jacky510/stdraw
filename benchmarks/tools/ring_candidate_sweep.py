@@ -108,7 +108,7 @@ def probe(rows):
 
 def run_subprocess_layout(cld, outdir):
     cmd = [sys.executable, "-m", "stdraw", "layout", cld,
-           "--outdir", outdir, "--skip-3d"]
+           "--outdir", outdir]
     t0 = time.time()
     r = subprocess.run(cmd, capture_output=True, text=True,
                        encoding="utf-8", errors="replace", cwd=REPO,

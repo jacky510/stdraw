@@ -12,8 +12,6 @@ Honest grading (never masquerade as a finished product):
   second = placement requirements met + 1-2 crossings (certificate records
            crossing coordinates for human review)
   uncertified = everything else (stated honestly, never downgraded to fake it)
-The 3D layer is out of scope for this module (3D metrics belong to M2; the M0
-3D demo only reports placement and edge lengths).
 """
 import json
 import math

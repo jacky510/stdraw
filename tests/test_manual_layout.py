@@ -57,7 +57,7 @@ def main():
     try:
         # -- auto baseline --
         out_auto = os.path.join(tmp, "auto")
-        r = run(["layout", EX, "--outdir", out_auto, "--skip-3d"])
+        r = run(["layout", EX, "--outdir", out_auto])
         ok("A0 auto baseline rc=0", r.returncode == 0, r.stderr[-200:])
         lay_a = load(os.path.join(out_auto, "layout.json"))
 
@@ -71,8 +71,8 @@ def main():
             json.dump(ident, f, ensure_ascii=False)
         out_i1 = os.path.join(tmp, "ident1")
         out_i2 = os.path.join(tmp, "ident2")
-        r1 = run(["layout", EX, "--outdir", out_i1, "--skip-3d", "--from-layout", ip])
-        run(["layout", EX, "--outdir", out_i2, "--skip-3d", "--from-layout", ip])
+        r1 = run(["layout", EX, "--outdir", out_i1, "--from-layout", ip])
+        run(["layout", EX, "--outdir", out_i2, "--from-layout", ip])
         geo_i = load(os.path.join(out_i1, "geometry_report.json"))
         lay_i = load(os.path.join(out_i1, "layout.json"))
         ok("A1 identical manual rc=0 & geometry fail=0",
@@ -101,7 +101,7 @@ def main():
         with open(pp, "w", encoding="utf-8") as f:
             json.dump(pert, f, ensure_ascii=False)
         out_p = os.path.join(tmp, "pert")
-        r2 = run(["layout", EX, "--outdir", out_p, "--skip-3d",
+        r2 = run(["layout", EX, "--outdir", out_p,
                   "--from-layout", pp, "--compare-auto"])
         lay_p = load(os.path.join(out_p, "layout.json"))
         geo_p = load(os.path.join(out_p, "geometry_report.json"))
@@ -135,21 +135,21 @@ def main():
         with open(ap_, "w", encoding="utf-8") as f:
             json.dump(arr, f, ensure_ascii=False)
         out_c = os.path.join(tmp, "arr")
-        rc_ = run(["layout", EX, "--outdir", out_c, "--skip-3d", "--from-layout", ap_])
+        rc_ = run(["layout", EX, "--outdir", out_c, "--from-layout", ap_])
         ok("C1 [x,y] array subset accepted", rc_.returncode == 0, rc_.stderr[-150:])
         bad = {"viewBox": [0, 0, 100, 100], "nodes": {"nope": {"x": 1, "y": 2}}}
         bp = os.path.join(tmp, "bad.json")
         with open(bp, "w", encoding="utf-8") as f:
             json.dump(bad, f)
         rc2 = run(["layout", EX, "--outdir", os.path.join(tmp, "bad"),
-                   "--skip-3d", "--from-layout", bp])
+                   "--from-layout", bp])
         ok("C2 id-set mismatch → exit 2 with honest error",
            rc2.returncode == 2 and "does not match" in (rc2.stderr + rc2.stdout),
            rc2.stderr[-150:])
 
         # D. layout-diff: hypothetical manual layout of debt-spiral (pull debt 20px toward the R1 loop center)
         out_da = os.path.join(tmp, "debt-auto")
-        run(["layout", DEBT, "--outdir", out_da, "--skip-3d"])
+        run(["layout", DEBT, "--outdir", out_da])
         lay_d = load(os.path.join(out_da, "layout.json"))
         # hypothetical manual: pull debt toward the R1 loop center (debt/interest/deficit)
         peers = ["interest", "deficit"]
@@ -169,7 +169,7 @@ def main():
         with open(md, "w", encoding="utf-8") as f:
             json.dump(manual_d, f, ensure_ascii=False)
         out_dm = os.path.join(tmp, "debt-manual")
-        run(["layout", DEBT, "--outdir", out_dm, "--skip-3d", "--from-layout", md])
+        run(["layout", DEBT, "--outdir", out_dm, "--from-layout", md])
         dpath = os.path.join(tmp, "debt-diff.json")
         r3 = run(["layout-diff", os.path.join(out_da, "layout.json"),
                   os.path.join(out_dm, "layout.json"),
@@ -238,7 +238,7 @@ def main():
                 with open(pth, "w", encoding="utf-8") as f:
                     json.dump(man_try, f, ensure_ascii=False)
                 out_try = os.path.join(tmp, "wp-fixture")
-                run(["layout", EX, "--outdir", out_try, "--skip-3d",
+                run(["layout", EX, "--outdir", out_try,
                      "--from-layout", pth])
                 lay_try = load(os.path.join(out_try, "layout.json"))
                 geo_try = load(os.path.join(out_try, "geometry_report.json"))
@@ -271,9 +271,9 @@ def main():
                 json.dump(wp_base, f, ensure_ascii=False)
             out_w1 = os.path.join(tmp, "wp1")
             out_w2 = os.path.join(tmp, "wp2")
-            r_w1 = run(["layout", EX, "--outdir", out_w1, "--skip-3d",
+            r_w1 = run(["layout", EX, "--outdir", out_w1,
                         "--from-layout", wpth])
-            run(["layout", EX, "--outdir", out_w2, "--skip-3d",
+            run(["layout", EX, "--outdir", out_w2,
                  "--from-layout", wpth])
             geo_w = load(os.path.join(out_w1, "geometry_report.json"))
             lay_w = load(os.path.join(out_w1, "layout.json"))
@@ -331,7 +331,7 @@ def main():
         with open(bp1, "w", encoding="utf-8") as f:
             json.dump(bad1, f, ensure_ascii=False)
         rc_b1 = run(["layout", EX, "--outdir", os.path.join(tmp, "wpbad1"),
-                     "--skip-3d", "--from-layout", bp1])
+                     "--from-layout", bp1])
         ok("H1 unknown edge in waypoints → exit 2",
            rc_b1.returncode == 2 and "not in the graph" in (rc_b1.stderr + rc_b1.stdout),
            rc_b1.stderr[-120:])
@@ -343,13 +343,13 @@ def main():
         with open(bp2, "w", encoding="utf-8") as f:
             json.dump(bad2, f, ensure_ascii=False)
         rc_b2 = run(["layout", EX, "--outdir", os.path.join(tmp, "wpbad2"),
-                     "--skip-3d", "--from-layout", bp2])
+                     "--from-layout", bp2])
         ok("H2 non-numeric waypoint → exit 2",
            rc_b2.returncode == 2 and "not numeric" in (rc_b2.stderr + rc_b2.stdout),
            rc_b2.stderr[-120:])
         # no edges field = original behavior (A1 already covers the identical case; here verify the default is unaffected)
         rc_ne = run(["layout", EX, "--outdir", os.path.join(tmp, "wp-noedge"),
-                     "--skip-3d", "--from-layout", ip])
+                     "--from-layout", ip])
         ok("H3 manual without edges key unchanged (rc=0)", rc_ne.returncode == 0,
            rc_ne.stderr[-100:])
 

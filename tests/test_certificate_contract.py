@@ -29,7 +29,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CORPUS = os.path.join(ROOT, "benchmarks", "corpus", "classic")
 
 # Historical token space (docs): second exists only in the v1-legacy
-# caliber, 3d is the docs-level 3D-delivery tier.
+# caliber, 3d is a retired docs-level tier (3D layer removed; the token
+# stays so historical certificates still read back as valid).
 GRADE_TOKENS = {"best", "second", "3d", "uncertified"}
 
 

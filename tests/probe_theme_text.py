@@ -83,7 +83,7 @@ def _ratio(fg, bg):
 def render_fixture(theme, outdir, cld):
     r = subprocess.run(
         [sys.executable, "-m", "stdraw", "layout", cld, "--recipe", "auto",
-         "--skip-3d", "--theme", theme, "--outdir", outdir, "--name", "sts"],
+         "--theme", theme, "--outdir", outdir, "--name", "sts"],
         cwd=ROOT, capture_output=True, text=True)
     if r.returncode != 0:
         print("FAIL  render %s exited %s: %s" % (theme, r.returncode, r.stderr[-400:]))

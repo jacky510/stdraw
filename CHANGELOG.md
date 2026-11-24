@@ -4,6 +4,16 @@ Notable user-visible changes to **stdraw**. Entries before 0.8.0 are not
 reproduced here; the engineering version history lives in
 [AGENTS.md](AGENTS.md) ("Version" section) — pointer, not a copy.
 
+## Unreleased
+
+- **3D layer removed** (owner ruling 2026-11-24: the 3D deliverable was
+  judged low-value and dropped): `layout3d` / `render3d`, the `--solids`,
+  `--theme-3d` and `--skip-3d` flags, `positions3d.json`, `demo-3d.html`,
+  the bundled three.js assets and the standalone 3D viewer are gone.
+  The CLI is 2D-only; every 2D artifact is byte-identical to 0.9.0
+  (26-figure three-way hash sweep: pre-removal `--skip-3d`,
+  pre-removal default, post-removal default).
+
 ## 0.9.0 — 2026-11-23
 
 - **anchors-as-prior candidate generation (opt-in)**: hand-drawn anchor

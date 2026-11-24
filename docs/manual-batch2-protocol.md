@@ -66,7 +66,7 @@
 - jacky 的导出收集齐后统一放入 `benchmarks/manual/jacky-batch2/`，
   与 `<graph>-draft.json` 并排。
 - 每份 `<graph>-jacky.json` 可用 `--from-layout` 重放复核：
-  `stdraw layout <sources>/<graph>.cld --outdir <检查目录> --skip-3d --from-layout <graph>-jacky.json`
+  `stdraw layout <sources>/<graph>.cld --outdir <检查目录> --from-layout <graph>-jacky.json`
   （人工口径下自动管线的结构门读 N/A，其余门如实评级，见
   docs/grading-contract.md §3.1）。
 - 后续消费：偏好对进入人工锚点库（第一批先例 =

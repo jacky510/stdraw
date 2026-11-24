@@ -41,7 +41,7 @@ def run_cli(args):
 
 
 def _render(outdir, cld, extra):
-    r = run_cli(["layout", cld, "--outdir", outdir, "--skip-3d"] + extra)
+    r = run_cli(["layout", cld, "--outdir", outdir] + extra)
     assert r.returncode == 0, r.stdout[-500:] + r.stderr[-500:]
     return outdir
 

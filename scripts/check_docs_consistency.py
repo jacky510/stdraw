@@ -389,7 +389,8 @@ def main() -> int:
     # Canonical facts are the CODE (docs/grading-contract.md is the prose
     # single source): the v2 certificate_auto emits grade tokens
     # best/uncertified; `second` survives only inside the v1-legacy ortho
-    # certificate(); `3d` is the docs-level 3D-delivery tier.  Every doc
+    # certificate(); `3d` is a retired docs-level tier (3D layer removed,
+    # kept only so historical certificates read back as valid).  Every doc
     # that presents grading tiers must (a) not present `second` as a
     # current tier and (b) reference the single source docs/grading-
     # contract.md.  AGENTS.md is a protected file whose grading mentions

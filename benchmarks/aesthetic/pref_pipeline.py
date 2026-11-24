@@ -237,14 +237,14 @@ def dc_json_gate_rule():
 # ═══════════════════════ render helper (engine-authoritative) ═════════════
 
 def render_doc_svg(source_cld, doc, outdir):
-    """Render a layout doc through the engine CLI (--from-layout, --skip-3d);
+    """Render a layout doc through the engine CLI (--from-layout);
     return the largest embedded <svg> string.  Deterministic."""
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
     doc_path = outdir / "_doc.json"
     doc_path.write_text(json.dumps(slim_doc(doc), ensure_ascii=False),
                         encoding="utf-8")
-    cmd = [dc.PY, "-m", "stdraw", "layout", str(source_cld), "--skip-3d",
+    cmd = [dc.PY, "-m", "stdraw", "layout", str(source_cld),
            "--outdir", str(outdir), "--recipe", "auto",
            "--from-layout", str(doc_path)]
     r = subprocess.run(cmd, cwd=str(REPO), capture_output=True, text=True,
@@ -351,7 +351,7 @@ def render_spotcheck_html(rows):
  .note{font-size:13px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:16px}
 </style></head><body><div class="wrap">
 <h1>扰动合成对 · 抽查包</h1>
-<p class="sub">4 份锚点 ×（原图 / 轻扰 / 重扰）三联，引擎权威渲染（--from-layout 重放，--skip-3d）。请肉眼确认「扰动确实更差」后再让合成对全量进训练。</p>
+<p class="sub">4 份锚点 ×（原图 / 轻扰 / 重扰）三联，引擎权威渲染（--from-layout 重放）。请肉眼确认「扰动确实更差」后再让合成对全量进训练。</p>
 <p class="note">判读提示：轻扰 = 每节点 ±3px 确定性抖动（整体观感轻微变糙）；重扰 = 累积剂量（若重扰档被几何硬门拦下，则展示为可通过门的最深档，并在角标注明档位——硬门：卡片间距 ≥16px 且零真压卡）。每格下方有最小间距(px)与交叉数，供辅助判读。交叉数为证书代理口径：按存储布局的卡片中心直连线段求交计算；用户绕行折线的意义正是消除直连交叉，故画面可见交叉可少于该数（渲染画面为存储布局的字节保真重放，与该数同源）。</p>"""]
     for r in rows:
         parts.append('<div class="row"><h2>%s <span style="color:#64748b;font-size:13px;font-weight:400">（图: %s · 族: %s）</span></h2><div class="tri">' % (
@@ -438,7 +438,7 @@ def collect_view_candidates():
                 lj, cj = outdir / "layout.json", outdir / "certificate.json"
                 if not (lj.exists() and cj.exists()):
                     cmd = [dc.PY, "-m", "stdraw", "layout", str(src),
-                           "--skip-3d", "--outdir", str(outdir)] + list(flags)
+                           "--outdir", str(outdir)] + list(flags)
                     subprocess.run(cmd, cwd=str(REPO), capture_output=True,
                                    text=True, encoding="utf-8",
                                    errors="replace")

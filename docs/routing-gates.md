@@ -76,7 +76,7 @@ layout.json sha256 全同），复跑命令见 §5。
 
 ```bash
 # 逐图 layout.json sha256 清单（classic 21 + random n10），重构前后各跑一次比对
-python t4_sweep.py <leg> <abs_out_dir>     # 脚本随卡归档；core 循环 = python -m stdraw layout <file.cld> --outdir <dir> --skip-3d
+python t4_sweep.py <leg> <abs_out_dir>     # 脚本随卡归档；core 循环 = python -m stdraw layout <file.cld> --outdir <dir>
 # 确定性二跑：同输入同命令两次 sha256 全同（AGENTS.md 既有口径）
 ```
 

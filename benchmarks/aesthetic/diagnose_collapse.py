@@ -188,14 +188,14 @@ FRESH_RECIPES = (("auto", ("--recipe", "auto")),
 
 def fresh_candidate(graph, source, outroot):
     """Run the committed engine CLI on the graph source; return
-    [(recipe, layout_doc, certificate_dict)].  Deterministic; --skip-3d per
-    the D0 directive."""
+    [(recipe, layout_doc, certificate_dict)].  Deterministic (2D deliverables only).
+    """
     out = []
     for name, flags in FRESH_RECIPES:
         outdir = Path(outroot) / ("%s.%s" % (graph, name))
         lj, cj = outdir / "layout.json", outdir / "certificate.json"
         if not (lj.exists() and cj.exists()):
-            cmd = [PY, "-m", "stdraw", "layout", str(source), "--skip-3d",
+            cmd = [PY, "-m", "stdraw", "layout", str(source),
                    "--outdir", str(outdir)] + list(flags)
             r = subprocess.run(cmd, cwd=str(REPO), capture_output=True,
                                text=True, encoding="utf-8", errors="replace")

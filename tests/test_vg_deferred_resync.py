@@ -91,7 +91,7 @@ def test_dense_deferral_delivers_measured_equals_rendered(tmp_path):
     measured polyline (check 13 fail); now both are the corner geometry."""
     out = tmp_path / "i12"
     r = subprocess.run([sys.executable, "-m", "stdraw", "layout", I12,
-                        "--outdir", str(out), "--skip-3d"],
+                        "--outdir", str(out)],
                        capture_output=True, text=True, cwd=ROOT, timeout=600)
     assert "anchor_snap DEFERRED" in r.stderr, r.stderr[-800:]
     assert "vg polyline(s) resynced" in r.stderr, r.stderr[-800:]

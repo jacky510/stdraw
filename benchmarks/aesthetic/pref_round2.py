@@ -631,7 +631,7 @@ def run_fidelity_probe():
     (tmp / "full").mkdir(parents=True)
     full_path.write_text(json.dumps(full, ensure_ascii=False), encoding="utf-8")
     cmd = [pp.dc.PY, "-m", "stdraw", "layout", str(pp.source_cld_for(g)),
-           "--skip-3d", "--outdir", str(tmp / "full"), "--recipe", "auto",
+           "--outdir", str(tmp / "full"), "--recipe", "auto",
            "--from-layout", str(full_path)]
     r = subprocess.run(cmd, cwd=str(REPO), capture_output=True, text=True,
                        encoding="utf-8", errors="replace")

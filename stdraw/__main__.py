@@ -8,8 +8,6 @@ Outputs (--outdir, default ./stdraw-out):
   certificate.json    five-metric + placement metrics + honest grading certificate
   loops_audit.json    loop semantics audit (lint)
   demo-2d.html        standalone rendering page (certificate embedded)
-  positions3d.json    3D per-solid assignment coordinates
-  demo-3d.html        3D interactive page (needs ../assets/three.min.js relative path)
 """
 import argparse
 import json
@@ -25,9 +23,7 @@ from .check import geometry_report_to_file
 from .metrics import certificate, scene_from_planar
 from .loops import loops_audit
 from .render import render_html
-from .themes import DEFAULT_3D_THEME, DEFAULT_STATIC_THEME, THEMES, THEMES_3D
-from .layout3d import SOLIDS, layout3d
-from .render3d import render_3d_html
+from .themes import DEFAULT_STATIC_THEME, THEMES
 from .delivery import strip_delivery_metadata, stamp_cli_deliverable
 
 
@@ -73,7 +69,7 @@ def main(argv=None):
             "  python -m stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62\n"
             "Outputs (--outdir, default ./stdraw-out): graph.json / layout.json /\n"
             "geometry_report.json / certificate.json / loops_audit.json /\n"
-            "demo-2d.html / positions3d.json / demo-3d.html"
+            "demo-2d.html"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("command", choices=["layout", "layout-diff"],
@@ -90,9 +86,6 @@ def main(argv=None):
                          "+ three-tier selection, not-worse-than-auto guard)")
     ap.add_argument("--linestyle", default="straight", choices=["straight", "arc"],
                     help="auto recipe line style (default straight; arc = all-arc preference)")
-    ap.add_argument("--skip-3d", action="store_true", help="run the 2D layer only")
-    ap.add_argument("--solids", default="sphere,cube,tetra,cone",
-                    help="3D solid list (comma separated)")
     ap.add_argument("--pitch", type=int, default=None,
                     help="row pitch px (default 56; raise it for small graphs to pass the clearance gate, parameter is transparent)")
     ap.add_argument("--value-pad", type=float, default=None, metavar="PX",
@@ -109,9 +102,6 @@ def main(argv=None):
     ap.add_argument("--name", default="", help="graph name (default: the DSL graph name)")
     ap.add_argument("--theme", default=DEFAULT_STATIC_THEME, choices=sorted(THEMES),
                     help="2D demo HTML theme (default: light = the current production face)")
-    ap.add_argument("--theme-3d", default=DEFAULT_3D_THEME, choices=sorted(THEMES_3D),
-                    help="3D demo theme (default: dark = the frozen shipped look; "
-                         "light = the UI-A light stage)")
     ap.add_argument("--exact", action="store_true",
                     help="WS2 exact crossing-number layer: B&B squeeze computes cr(G) and writes the "
                          "certificate exactness block (proven_optimal/gap; requires the optional "
@@ -169,13 +159,13 @@ def main(argv=None):
     p = w("graph.json", g.to_dict())
     with open(os.path.join(a.outdir, "graph.cld"), "w", encoding="utf-8") as f:
         f.write(dumps(g))
-    print(f"[1/6] graph model OK: {len(g.nodes)} nodes / {len(g.edges)} edges / "
+    print(f"[1/5] graph model OK: {len(g.nodes)} nodes / {len(g.edges)} edges / "
           f"{len(g.loops)} declared loops -> {p}")
 
     # Loop semantics audit (lint)
     lr = loops_audit(g)
     p = w("loops_audit.json", lr)
-    print(f"[2/6] loop audit: declared {lr['summary']['declared']}, closed "
+    print(f"[2/5] loop audit: declared {lr['summary']['declared']}, closed "
           f"{lr['summary']['closed']}, independently enumerated {lr['summary']['enumerated']}, "
           f"problems {lr['summary']['problems']} -> {p}")
     for pr in lr["problems"]:
@@ -190,7 +180,7 @@ def main(argv=None):
         try:
             v4 = eng.run()
         except NotPlanarError as e:
-            print(f"[3/6] 2D planar layer inapplicable: {e}")
+            print(f"[3/5] 2D planar layer inapplicable: {e}")
             print("      honest degradation: skipping the 2D certificate (a replaceable layout-layer implementation is M1+)")
             v4 = None
         else:
@@ -203,7 +193,7 @@ def main(argv=None):
             labels = {n.id: n.label for n in g.nodes}
             values = {n.id: n.value for n in g.nodes if n.value}
             p = w("layout.json", v4)
-            print(f"[3/6] 2D layout (ortho-v1 frozen recipe): {v4['viewBox'][2]}x"
+            print(f"[3/5] 2D layout (ortho-v1 frozen recipe): {v4['viewBox'][2]}x"
                   f"{v4['viewBox'][3]}, {v4['meta']['rows']} rows -> {p}")
             # 11-check geometry self-report (runs on delivered coordinates)
             rc = geometry_report_to_file(
@@ -215,7 +205,7 @@ def main(argv=None):
                                interactive="yes", drag_layer="yes")
             p = w("certificate.json", cert)
             m = cert["metrics"]
-            print(f"[4/6] certificate: crossings {m['crossings']} / true card piercings {m['occlusions_true_0px']} / "
+            print(f"[4/5] certificate: crossings {m['crossings']} / true card piercings {m['occlusions_true_0px']} / "
                   f"gap {m['min_card_gap']} / alignment {m['row_align_rate']} / CV "
                   f"{m['spacing_cv']} -> grade [{cert['grade']}] -> {p}")
             hp = os.path.join(a.outdir, "demo-2d.html")
@@ -270,7 +260,7 @@ def main(argv=None):
         v4 = stamp_cli_deliverable(v4)
         p = w("layout.json", v4)
         meta = v4["meta"]
-        print(f"[3/6] 2D layout (auto-v2, engine={meta['position_engine']}, "
+        print(f"[3/5] 2D layout (auto-v2, engine={meta['position_engine']}, "
               f"line style={meta['line_style']}): {v4['viewBox'][2]}x{v4['viewBox'][3]}, "
               f"{meta['rows']} rows -> {p}")
         rc = geometry_report_to_file(
@@ -307,7 +297,7 @@ def main(argv=None):
                                 deliverable=True)
         p = w("certificate.json", cert)
         m = cert["metrics"]
-        print(f"[4/6] certificate: crossings {m['crossings']} / box press {m['box_press_1px']} / "
+        print(f"[4/5] certificate: crossings {m['crossings']} / box press {m['box_press_1px']} / "
               f"edge-box clearance {m['edge_box_min_clear']} / anchor violations {m['anchor_violations']} / "
               f"gap {m['min_card_gap']} / CV {m['spacing_cv']} -> "
               f"grade [{cert['grade']}] -> {p}")
@@ -321,31 +311,12 @@ def main(argv=None):
             else:
                 sys.exit(1)
 
-    # 3D per-solid assignment
-    if not a.skip_3d:
-        gd = {"nodes": [{"id": n.id, "label": n.label} for n in g.nodes],
-              "edges": [{"a": e.a, "b": e.b, "p": e.polarity} for e in g.edges]}
-        solids = [s.strip() for s in a.solids.split(",") if s.strip()]
-        unknown = [s for s in solids if s not in SOLIDS]
-        if unknown:
-            print(f"unknown solids {unknown}, choose from {list(SOLIDS)}", file=sys.stderr)
-            sys.exit(2)
-        layouts = {s: layout3d(gd, s) for s in solids}
-        p = w("positions3d.json",
-              {s: layouts[s]["positions"] for s in solids})
-        print(f"[5/6] 3D assignment: {solids} -> {p}")
-        hp = os.path.join(a.outdir, "demo-3d.html")
-        note = ("deterministic placement: slots + minimum-total-edge-length assignment; "
-                "no crossing promise in 3D, projection crossings are solved by the camera")
-        with open(hp, "w", encoding="utf-8") as f:
-            f.write(render_3d_html(gd, layouts, name, note, theme=a.theme_3d))
-        print(f"      demo -> {hp} (theme {a.theme_3d}; must live in the same tree as assets/three.min.js relative path)")
     # ── compare-auto: automatic-layout comparison for the same graph (dual certificates) ──
     if a.from_layout and a.compare_auto:
         cmp_dir = a.outdir.rstrip("/\\") + "-compare-auto"
         print("\n-- compare-auto: automatic layout comparison for the same graph --")
         try:
-            rc_cmp = main(["layout", a.input, "--outdir", cmp_dir, "--skip-3d"]
+            rc_cmp = main(["layout", a.input, "--outdir", cmp_dir]
                           + (["--name", name] if name else []))
         except SystemExit as _e:                    # geometry fail -> exit 1, recorded honestly
             rc_cmp = _e.code
@@ -391,7 +362,7 @@ def main(argv=None):
               f" (auto_cli_exit={rc_cmp})")
         print(f"  -> {p}")
 
-    print("[6/6] done.")
+    print("[5/5] done.")
     return deferred_exit
 
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Design tokens: the single source of truth for every color in stdraw's two
-themes (`light` and `dark`), plus the per-theme 3D parameter groups.
+themes (`light` and `dark`).
 
 Caliber (UI-A "drafting room" spec, jacky 2026-11-11 ruling; spec original
 preserved in-repo at docs/ui-theme-spec-a.md):
@@ -15,9 +15,6 @@ preserved in-repo at docs/ui-theme-spec-a.md):
     darker blue-leaning ground, NEUTRAL steel-gray container stroke and grid
     (no more cyan collusion with the B ink), amber/sky kept as the only two
     polar colors on the canvas.
-  - The interactive-viewer token block and the 3D DARK group are the shipped
-    look, FROZEN REGRESSION PINS (spec D5 / section 3.2: zero changes;
-    render3d.py's dark constants mirror DARK_3D verbatim).
   - R/B semantic pairs, one per theme (UI-A): light R=#c2410c (vermilion) /
     B=#1e6fae (drafting blue); dark R=#ffb454 / B=#6ec6ff. The polar inks are
     the ONLY two colors in a delivered figure; everything else stays
@@ -25,12 +22,6 @@ preserved in-repo at docs/ui-theme-spec-a.md):
 
 Consumers:
   - Python static export: stdraw/render.py reads THEMES[...] via get().
-  - Interactive viewer: viewer/themes.js is GENERATED from this module by
-    viewer_js(); tests/test_theme_tokens.py pins the generated file byte-exact
-    (drift gate: edit tokens here, regenerate, never hand-edit the .js).
-  - 3D layer: LIGHT_3D / DARK_3D are token definitions only in this landing
-    step; render3d.py consumption (light stage / dark freeze wiring) is a
-    follow-up card.
 """
 
 LIGHT = {
@@ -199,62 +190,6 @@ DARK = {
 
 THEMES = {"light": LIGHT, "dark": DARK}
 DEFAULT_STATIC_THEME = "light"    # static pipeline default (production face)
-DEFAULT_VIEWER_THEME = "dark"     # viewer default (shipped look, frozen)
-
-# ── 3D parameter groups (consumed by stdraw/render3d.py; the dark output is
-#    a FROZEN byte pin — see the DARK_3D note) ──────────────────────────────
-# LIGHT (UI-A spec section 3.1; structure unchanged, parameters only).
-LIGHT_3D = {
-    "scene_bg": "#f0ece1",         # stage / scene.background
-    "fog_color": "#ded8c9",        # fog target
-    "grid_major": "#d3ccbb",       # GridHelper major line
-    "grid_minor": "#c6bfad",       # GridHelper minor line
-    "card_fill": "#fffdf6",        # card texture fill
-    "card_stroke": "#2a3644",      # card texture stroke
-    "card_text": "#22303f",        # card label ink
-    "card_muted": "#6e6a5e",       # card secondary text
-    "tube_r": "#c2410c",           # '+' polarity tube/cone material
-    "tube_b": "#1e6fae",           # '−' polarity tube/cone material
-    # chrome completion (not restated by the spec 3.1 table; values reuse the
-    # light ink/paper family — no third chromatic hue on the 3D canvas):
-    "node_sprite": "#2a3644",      # node sphere sprite — ink dot (dark ships
-                                   # amber #f59e0b; light keeps the two-polar-
-                                   # inks-only caliber, so the marker is ink)
-    "ui_text": "#22303f",          # toolbar/body text (card_text family)
-    "ui_muted": "#6e6a5e",         # secondary info text (card_muted family)
-    "ui_accent": "#2a3644",        # active solid button — ink fill
-    "ui_accent_text": "#fffdf6",   # active solid button text — paper
-}
-
-# DARK — FROZEN REGRESSION PIN (UI-A spec D5 / section 3.2: zero changes).
-# Values mirror render3d.py's shipped constants verbatim (full mirror,
-# including tokens the spec table does not restate). Any byte change in the
-# dark 3D output is a pin break, not a restyle.
-DARK_3D = {
-    "scene_bg": "#0b1220",         # scene.background AND fog color (0x0b1220)
-    "fog_color": "#0b1220",
-    "grid_major": "#1e293b",       # GridHelper(1600, 32, 0x1e293b, ...)
-    "grid_minor": "#16233b",
-    "card_fill": "#1e293b",        # card family fill (0x1e293b)
-    "card_stroke": "#334155",      # card border line (0x334155)
-    "card_text": "#f1f5f9",        # label sprite text
-    "node_sprite": "#f59e0b",      # node sphere sprite (0xf59e0b)
-    "tube_r": "#fbbf24",           # '+' amber-400
-    "tube_b": "#7dd3fc",           # '−' sky-400
-    # chrome completion — shipped literals, frozen (render3d.py byte pin):
-    "ui_text": "#e2e8f0",          # toolbar/body text
-    "ui_muted": "#94a3b8",         # secondary info text
-    "ui_accent": "#2563eb",        # active solid button
-    "ui_accent_text": "#e2e8f0",   # equals ui_text: the dark active-button CSS
-                                   # carries no color property (byte pin), so
-                                   # render3d.py omits it when these match
-}
-
-THEMES_3D = {"light": LIGHT_3D, "dark": DARK_3D}
-DEFAULT_3D_THEME = "dark"          # 3D shipped look frozen (spec D5 byte pin);
-                                   # the 3D demo only goes light on an explicit
-                                   # --theme light (an in-page toggle would
-                                   # change the dark demo's bytes)
 
 
 def get(name):
@@ -264,21 +199,3 @@ def get(name):
     except KeyError:
         raise ValueError("unknown theme %r; expected one of %s"
                          % (name, sorted(THEMES))) from None
-
-
-def viewer_js():
-    """Render viewer/themes.js content (generated artifact, byte-pinned)."""
-    import json
-    header = (
-        "/* GENERATED by stdraw/themes.py — do not edit by hand.\n"
-        " * Regenerate: python -c \"from stdraw.themes import write_viewer_js; "
-        "write_viewer_js('viewer/themes.js')\"\n"
-        " * Byte-pinned by tests/test_theme_tokens.py (drift gate).\n"
-        " */\n")
-    return header + "window.STDRAW_THEMES = " + \
-        json.dumps(THEMES, ensure_ascii=False, separators=(",", ":")) + ";\n"
-
-
-def write_viewer_js(path):
-    with open(path, "w", encoding="utf-8", newline="\n") as f:
-        f.write(viewer_js())

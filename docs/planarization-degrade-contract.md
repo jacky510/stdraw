@@ -11,7 +11,7 @@
 
 | 卡面前提 | 实测 | 证据（回读命令） |
 |---|---|---|
-| 「planar.py 遇非平面输入硬失败」 | **仅 ortho recipe**（`--recipe ortho`，CI-only 冻结基线）。CLI 捕获 `NotPlanarError` 后诚实跳过 2D 证书，**exit 0 不是 1** | `python -m stdraw layout benchmarks/corpus/random/random-n10-i09.cld --outdir <d> --recipe ortho --skip-3d` → stdout `[3/6] 2D planar layer inapplicable … honest degradation`，exit=0 |
+| 「planar.py 遇非平面输入硬失败」 | **仅 ortho recipe**（`--recipe ortho`，CI-only 冻结基线）。CLI 捕获 `NotPlanarError` 后诚实跳过 2D 证书，**exit 0 不是 1** | `python -m stdraw layout benchmarks/corpus/random/random-n10-i09.cld --outdir <d> --recipe ortho` → stdout `[3/5] 2D planar layer inapplicable … honest degradation`，exit=0 |
 | 「random n10 非平面样本 exit 1 变 exit 0」 | **部分成立但机制不同**。n10-i09：今日已 exit=0（crossings=1 ≤ 2），auto-v2 无平面性要求（`stdraw/layout_auto.py` 头注 "No planarity requirement"）；n20-i00：**exit=1**，但根因是 crossings=30 > 2 触发几何门，不是 NotPlanarError | n10-i09 / n20-i00 `--recipe auto` 实测（§6 快照） |
 | 「从只能画平面图到任何 CLD 都能画」 | auto-v2 早已能画任何 CLD；**非平面图的 grade 永远 uncertified**（`visual_crossings_zero` 硬门 + `best` 要求 0 交叉，`stdraw/metrics.py` v2 评分段） | `grep -n "visual_crossings_zero" stdraw/metrics.py` |
 

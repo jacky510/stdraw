@@ -70,7 +70,7 @@ def _pin_local_stdraw():
 def _render_demo(tmp):
     out = os.path.join(tmp, "hdd-wide")
     r = subprocess.run([PY, "-m", "stdraw", "layout", CLD,
-                        "--outdir", out, "--skip-3d"],
+                        "--outdir", out],
                        capture_output=True, text=True, encoding="utf-8",
                        errors="replace", cwd=ROOT)
     assert r.returncode in (0, 1), f"CLI exit {r.returncode}: {r.stderr[-400:]}"

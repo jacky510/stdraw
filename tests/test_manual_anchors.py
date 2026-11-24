@@ -254,7 +254,7 @@ class TestManualAnchors(unittest.TestCase):
                 od = os.path.join(tmp, f"rt{k}")
                 r = subprocess.run(
                     [sys.executable, "-m", "stdraw", "layout", EXAMPLE,
-                     "--outdir", od, "--skip-3d", "--from-layout", ip],
+                     "--outdir", od, "--from-layout", ip],
                     capture_output=True, text=True, encoding="utf-8",
                     errors="replace", cwd=ROOT)
                 self.assertIn(r.returncode, (0, 1),
@@ -283,7 +283,7 @@ class TestManualAnchors(unittest.TestCase):
             ob = os.path.join(tmp, "benign")
             rb = subprocess.run(
                 [sys.executable, "-m", "stdraw", "layout", EXAMPLE,
-                 "--outdir", ob, "--skip-3d", "--from-layout", ib],
+                 "--outdir", ob, "--from-layout", ib],
                 capture_output=True, text=True, encoding="utf-8",
                 errors="replace", cwd=ROOT)
             self.assertIn(rb.returncode, (0, 1), rb.stderr[-400:])

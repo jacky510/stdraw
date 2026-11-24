@@ -27,10 +27,7 @@ EN_TEXT_FILES = [
     "pyproject.toml",
     "skills/stdraw/SKILL.md",
     "docs/dsl-spec-v0.1.md",
-    "viewer/README.md",
-    "viewer/index.html",
     "demos/classic-cld-2d.html",
-    "demos/classic-cld-3d.html",
     "demos/classic-certificate.json",
     "demos/classic-loops-audit.json",
     "benchmarks/README.md",
@@ -96,10 +93,7 @@ def check_en_text_file(rel):
     with open(path, encoding="utf-8") as f:
         text = f.read()
     problems = []
-    # region exemptions: viewer model-data const blocks; md code fences
-    if rel == "viewer/index.html":
-        text = re.sub(r"const GRAPH = \{.*?\};", " ", text, flags=re.S)
-        text = re.sub(r"const LAYOUTS = \{.*?\};", " ", text, flags=re.S)
+    # region exemptions: md code fences
     if rel.endswith(".md"):
         text = re.sub(r"```.*?```", " ", text, flags=re.S)
     # whitelist known model labels (longest first so no label eats another)

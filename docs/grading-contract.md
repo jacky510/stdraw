@@ -20,9 +20,11 @@ Canonical facts are the CODE, never the prose:
 | `v2-hardgates` | `auto-v2` | `best`, `crossed-certified` (planarized L1 only), `uncertified` |
 | `v1-legacy` | `ortho-v1` | `best`, `uncertified` (plus a retained legacy `second` branch, logically near-unreachable) |
 
-`3d` is a **documentation-level tier** describing the 3D delivery path
-(rotate freely; projection crossings solved by the camera): it does not
-appear as a value of the 2D `certificate.json.grade` field.
+`3d` is a **retired documentation-level tier**: it described the 3D delivery
+path (a separate layout3d / render3d module pair and its CLI flags), removed
+from the engine after v0.9.0. It never appeared as a value of the 2D
+`certificate.json.grade` field; the token is kept in the read-back set only so
+historical certificates still validate.
 
 `second` is **v1-legacy only**: the branch still exists in the v1 grading
 code for byte-compatible regression, but it was removed from the v2

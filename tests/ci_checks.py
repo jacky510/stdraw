@@ -901,7 +901,7 @@ def main():
             #    byte-exact pin is valid).
             fresh_out = os.path.join(tmp, "I-fresh-demo")
             r_f = run_cli("examples/classic-cld-growth-and-burden.cld", fresh_out,
-                          ("--name", "classic-cld", "--skip-3d"), pitch=None)
+                          ("--name", "classic-cld"), pitch=None)
             if r_f.returncode != 0:
                 failures.append(f"demo freshness: CLI exit {r_f.returncode}\n"
                                 f"{r_f.stderr[-500:]}")
@@ -915,7 +915,7 @@ def main():
                             "re-render by the current engine (deliverable stale -- rerun "
                             "python -m stdraw layout examples/"
                             "classic-cld-growth-and-burden.cld --name classic-cld"
-                            " --skip-3d and update the demo + docs/gallery screenshots)")
+                            " and update the demo + docs/gallery screenshots)")
                     else:
                         print("OK  demo freshness: demos/classic-cld-2d.html byte-identical "
                               "to the current engine's re-render (ref-scrubbed anti-staleness gate)")
@@ -933,7 +933,7 @@ def main():
                                 "not match a re-render by the current engine (deliverable "
                                 "python -m stdraw layout examples/"
                                 "classic-cld-growth-and-burden.cld --name classic-cld"
-                                " --skip-3d and update demos/classic-certificate.json)")
+                                " and update demos/classic-certificate.json)")
                         else:
                             print("OK  certificate freshness: demos/classic-certificate.json "
                                   "byte-identical to the current engine's re-render (ref-scrubbed anti-staleness gate)")
@@ -975,7 +975,7 @@ def main():
                       "deliverable)")
             ortho_out = os.path.join(tmp, "L-ortho-d0-scan")
             r_o = run_cli("examples/limits-to-growth.cld", ortho_out,
-                          ("--recipe", "ortho", "--skip-3d"))
+                          ("--recipe", "ortho"))
             if r_o.returncode != 0:
                 failures.append(f"D0 gate: ortho control render exit "
                                 f"{r_o.returncode}\n{r_o.stderr[-300:]}")

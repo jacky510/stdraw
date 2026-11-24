@@ -39,7 +39,7 @@ def run_layout(cld_path, outdir):
     """CLI render at the CI caliber (auto recipe self-tunes its pitch)."""
     return subprocess.run(
         [sys.executable, "-m", "stdraw", "layout", cld_path,
-         "--outdir", outdir, "--skip-3d"],
+         "--outdir", outdir],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
         cwd=ROOT)
 

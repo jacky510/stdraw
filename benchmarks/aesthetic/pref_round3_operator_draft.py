@@ -113,7 +113,7 @@ def run_engine(src, outdir, extra=()):
     outdir = Path(outdir)
     if (outdir / "layout.json").exists():
         return json.loads((outdir / "layout.json").read_text(encoding="utf-8"))
-    cmd = [PY, "-m", "stdraw", *extra, "--skip-3d", "--outdir", str(outdir),
+    cmd = [PY, "-m", "stdraw", *extra, "--outdir", str(outdir),
            "layout", str(src)]
     r = subprocess.run(cmd, cwd=str(REPO), capture_output=True, text=True,
                        encoding="utf-8", errors="replace", timeout=600)

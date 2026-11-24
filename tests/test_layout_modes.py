@@ -476,7 +476,7 @@ class TestDeterminism(unittest.TestCase):
         src = os.path.join(CORPUS, "urban-migration.cld")
         for out in (out1, out2):
             subprocess.run([py, "-m", "stdraw", "layout", src,
-                            "--outdir", out, "--skip-3d"],
+                            "--outdir", out],
                            cwd=root, check=True, capture_output=True)
         for fn in ("layout.json", "certificate.json", "geometry_report.json"):
             with open(os.path.join(out1, fn), "rb") as f:
