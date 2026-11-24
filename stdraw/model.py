@@ -78,11 +78,17 @@ class Graph:
         if dup:
             problems.append(f"duplicate node ids: {sorted(dup)}")
         idset = set(ids)
+        seen_dirs = set()
         for e in self.edges:
             if e.a not in idset or e.b not in idset:
                 problems.append(f"edge endpoint not declared: {e.a}->{e.b}")
             if e.polarity not in ("+", "-"):
                 problems.append(f"invalid polarity: {e.a}->{e.b} {e.polarity!r}")
+            if e.a == e.b:
+                problems.append(f"self-loop edge: {e.a}->{e.b}")
+            if (e.a, e.b) in seen_dirs:
+                problems.append(f"duplicate edge: {e.a}->{e.b}")
+            seen_dirs.add((e.a, e.b))
         id2loop = {lp.id: lp for lp in self.loops}
         for e in self.edges:
             for lid in e.loops:

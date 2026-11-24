@@ -21,31 +21,82 @@ Parsing is deterministic: the same text always yields the same Graph.
 import re
 from .model import Graph, Node, Edge, Loop, Group
 
+# A quoted field carries \" and \\ escapes; other backslash pairs are kept
+# verbatim (unknown escapes are not interpreted).
+_QSTR = r'"((?:[^"\\]|\\.)*)"'
 _VAR_RE = re.compile(
-    r'^var\s+(\w+)\s+"([^"]*)"(?:\s+@value\s+"([^"]*)")?'
+    r'^var\s+(\w+)\s+' + _QSTR +
+    r'(?:\s+@value\s+' + _QSTR + r')?'
     r'(?:\s+@group\s+(\w+))?(?:\s+@w\s+(\d+))?\s*$')
 _EDGE_RE = re.compile(
     r'^(\w+)\s*->\s*([+\-])\s*(\w+)(?:\s+@loops\s+([\w,\s]+))?\s*$')
 _LOOP_RE = re.compile(
-    r'^loop\s+(\w+)\s+"([^"]*)"\s+"?([RB])"?\s*\[([^\]]*)\]\s*$')
-_GROUP_RE = re.compile(r'^group\s+(\w+)\s+"([^"]*)"\s*$')
-_GRAPH_RE = re.compile(r'^graph\s+"([^"]*)"\s*$')
+    r'^loop\s+(\w+)\s+' + _QSTR + r'\s*"?([RB])"?\s*\[([^\]]*)\]\s*$')
+_GROUP_RE = re.compile(r'^group\s+(\w+)\s+' + _QSTR + r'\s*$')
+_GRAPH_RE = re.compile(r'^graph\s+' + _QSTR + r'\s*$')
+
+
+def _unescape(s: str) -> str:
+    """Undo the DSL escapes: \\\" -> \" and \\\\ -> backslash (verbatim otherwise)."""
+    out = []
+    i = 0
+    while i < len(s):
+        c = s[i]
+        if c == "\\" and i + 1 < len(s) and s[i + 1] in ('"', "\\"):
+            out.append(s[i + 1])
+            i += 2
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+
+def _escape(s: str) -> str:
+    """Escape a field for DSL output: backslash first, then quotes."""
+    return s.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _strip_comment(line: str) -> str:
+    """Drop a trailing # comment, but only outside quoted fields.
+
+    A '#' inside a quoted field is data (e.g. var a "C# dev"), not a comment.
+    """
+    out = []
+    inq = False
+    i = 0
+    while i < len(line):
+        c = line[i]
+        if inq and c == "\\" and i + 1 < len(line):
+            out.append(c)
+            out.append(line[i + 1])
+            i += 2
+            continue
+        if c == '"':
+            inq = not inq
+            out.append(c)
+            i += 1
+            continue
+        if c == "#" and not inq:
+            break
+        out.append(c)
+        i += 1
+    return "".join(out)
 
 
 def parse(text: str) -> Graph:
     g = Graph(nodes=[], edges=[], loops=[], groups=[], name="")
     for lineno, raw in enumerate(text.splitlines(), 1):
-        line = raw.split("#", 1)[0].strip()
+        line = _strip_comment(raw).strip()
         if not line:
             continue
         m = _GRAPH_RE.match(line)
         if m:
-            g.name = m.group(1)
+            g.name = _unescape(m.group(1))
             continue
         m = _VAR_RE.match(line)
         if m:
-            g.nodes.append(Node(id=m.group(1), label=m.group(2),
-                                value=m.group(3) or "",
+            g.nodes.append(Node(id=m.group(1), label=_unescape(m.group(2)),
+                                value=_unescape(m.group(3)) if m.group(3) is not None else "",
                                 group=m.group(4) or None,
                                 extra_w=int(m.group(5) or 0)))
             continue
@@ -58,12 +109,12 @@ def parse(text: str) -> Graph:
         m = _LOOP_RE.match(line)
         if m:
             ns = [x.strip() for x in m.group(4).split(",") if x.strip()]
-            g.loops.append(Loop(id=m.group(1), label=m.group(2),
+            g.loops.append(Loop(id=m.group(1), label=_unescape(m.group(2)),
                                 nodes=ns, kind=m.group(3)))
             continue
         m = _GROUP_RE.match(line)
         if m:
-            g.groups.append(Group(id=m.group(1), label=m.group(2)))
+            g.groups.append(Group(id=m.group(1), label=_unescape(m.group(2))))
             continue
         raise ValueError(f"DSL line {lineno} cannot be parsed: {raw.strip()!r}")
     problems = g.validate()
@@ -73,15 +124,18 @@ def parse(text: str) -> Graph:
 
 
 def dumps(g: Graph) -> str:
-    """Graph -> DSL text (round-trip consistent: parse(dumps(g)) == g)."""
+    """Graph -> DSL text (round-trip consistent: parse(dumps(g)) == g).
+
+    Quoted fields escape backslash first, then double quotes (\\\" / \\\\).
+    """
     out = []
     if g.name:
-        out.append(f'graph "{g.name}"')
+        out.append(f'graph "{_escape(g.name)}"')
     out.append("")
     for n in g.nodes:
-        parts = [f'var {n.id} "{n.label}"']
+        parts = [f'var {n.id} "{_escape(n.label)}"']
         if n.value:
-            parts.append(f'@value "{n.value}"')
+            parts.append(f'@value "{_escape(n.value)}"')
         if n.group:
             parts.append(f"@group {n.group}")
         if n.extra_w:
@@ -93,7 +147,7 @@ def dumps(g: Graph) -> str:
         out.append(f"{e.a} -> {e.polarity} {e.b}{tail}")
     out.append("")
     for lp in g.loops:
-        out.append(f'loop {lp.id} "{lp.label}" "{lp.kind}" [{", ".join(lp.nodes)}]')
+        out.append(f'loop {lp.id} "{_escape(lp.label)}" "{lp.kind}" [{", ".join(lp.nodes)}]')
     for gr in g.groups:
-        out.append(f'group {gr.id} "{gr.label}"')
+        out.append(f'group {gr.id} "{_escape(gr.label)}"')
     return "\n".join(out) + "\n"
