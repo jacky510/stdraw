@@ -28,8 +28,6 @@
 | `docs/` | caliber originals: `dsl-spec-v0.1.md` (+ `.zh-CN.md` counterpart) / `layout-modes.md` / `crossing-exact.md` / `gallery/` (screenshots) |
 | `benchmarks/` | corpus `corpus/` + raw evidence `raw/` + `REPORT.md` (benchmark summary-table original) + `tools/` |
 | `skills/stdraw/` | the openly published Agent Skill (open-source install entry, see the pointer note above) |
-| `viewer/` | zero-dependency 3D interactive viewer |
-| `assets/` | third-party JS for viewer/3D pages (three.min.js etc.; do not bump versions on your own) |
 
 ## Common commands
 
@@ -39,7 +37,7 @@ Local dev interpreter: `<user-home>/AppData/Local/Programs/Python/Python312/pyth
 |---|---|
 | `python -m pytest tests/ -q` | unit tests |
 | `python tests/ci_checks.py` | CI iron gates: ortho frozen regression byte-pinned + auto-v2 hard gates + determinism double-run (+ optional DOM layer) |
-| `python -m stdraw layout examples/classic-cld-growth-and-burden.cld --name classic-cld --skip-3d` | run the main sample, producing certificate/demo |
+| `python -m stdraw layout examples/classic-cld-growth-and-burden.cld --name classic-cld` | run the main sample, producing certificate/demo |
 | same command twice + `sha256sum` comparison | determinism verification (outputs are safe to commit, diff must be clean) |
 | re-render the demo and compare byte-for-byte against `demos/classic-cld-2d.html` | demo freshness gate (stale-deliverable detection) |
 
@@ -53,7 +51,7 @@ Local dev interpreter: `<user-home>/AppData/Local/Programs/Python/Python312/pyth
 
 - Changing the `tests/baselines/` frozen baselines or ortho-v1 frozen behavior — unless the card explicitly requires "re-baselining" and states the basis (only with same-file precedent)
 - Touching the publishing face (`README*` / `demos/` / `docs/gallery/` / `skills/stdraw/SKILL.md`) without publishing-face acceptance
-- Relaxing certificate hard-gate thresholds or changing the grade semantics (best/3d/uncertified) — never tune gates to let a figure pass
+- Relaxing certificate hard-gate thresholds or changing the grade semantics (best / uncertified; the `3d` token is retired, historical read-back only) — never tune gates to let a figure pass
 - Copying the default-side `systems-thinking-diagram` skill canonical copy into the repo (pointers only, see the header)
 - Bumping the version number (`pyproject.toml` / README badges / the "Version" section of this file) as a side effect — **since ref-scrubbed, version closure is unified through a dedicated "version closure card"**, no scattered bumps
 - Shared-main-tree discipline: `<user-home>/Projects/stdraw` main tree often has multiple cards' in-flight changes — **never commit files that are not on your own card's list**; commits always go through a temporary clone (precedent ref-scrubbed)
@@ -195,7 +193,8 @@ content.
    **0 crossings on planar graphs with theorem guarantee**; behavior frozen,
    protected by a CI byte-regression iron gate, safe for production callers
    to pin. Non-planar input raises `NotPlanarError` (the CLI prints an
-   honest degradation and continues to the 3D layer — not a failure).
+   honest degradation and stops there — no 2D layout / certificate /
+   demo is written, exit status 0; the CLI is 2D-only, no fallback layer).
 5. **Loop semantics audit (lint)**: verifies declared loop closure and R/B
    polarity parity against an independent enumeration of all graph loops;
    `loops_audit.json`'s `summary.problems` must = 0.
@@ -212,10 +211,6 @@ content.
    and outputs the dual-certificate comparison `compare-auto.json`;
    `layout-diff` produces a three-layer diff (node displacement / structural
    metrics / loop semantics).
-7. **3D dimension lift + viewer**: nodes arranged on regular solids
-   (sphere/cube/tetrahedron/cone), spatial chords don't intersect, projection
-   crossings are solved by the camera; `viewer/index.html` is a
-   zero-dependency interactive viewer (four forms + dragging + loop panel).
 
 ## Install
 
@@ -239,8 +234,6 @@ stdraw layout-diff <layout.json> <layout2.json> [--cld graph-source] [--diff-out
 | `--outdir` | `stdraw-out` | output directory |
 | `--recipe {auto,ortho}` | `auto` | auto = auto-v2 (straight/arc lines + hard gates + mode-based placement); ortho = ortho-v1 (constructive, frozen behavior, pin-safe) |
 | `--linestyle {straight,arc}` | `straight` | auto recipe line style (arc = all-arc preference) |
-| `--skip-3d` | off | run the 2D layer only |
-| `--solids` | `sphere,cube,tetra,cone` | 3D solid list (comma separated) |
 | `--pitch` | 56 | row pitch px; raising it for small graphs (e.g. 62) makes the clearance gates easier |
 | `--name` | the DSL graph name | graph name in the certificate |
 | `--exact` | off | exact crossing-number layer: B&B squeeze computes cr(G) into the certificate exactness block (needs `stdraw[solver]`) |
@@ -253,9 +246,9 @@ Examples:
 
 ```bash
 stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62
-python -m stdraw layout examples/limits-to-growth.cld --outdir out --skip-3d
+python -m stdraw layout examples/limits-to-growth.cld --outdir out
 stdraw layout model.cld --outdir out --exact
-stdraw layout model.cld --outdir out-manual --skip-3d --from-layout graph-manual-layout.json
+stdraw layout model.cld --outdir out-manual --from-layout graph-manual-layout.json
 stdraw layout-diff out/layout.json out-manual/layout.json --cld model.cld --diff-out diff.json
 ```
 
@@ -288,7 +281,6 @@ models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
 | `certificate.json` | metrics + gates + report items + honest grade + `placement` mode + delivery-face confession (`"interactive"` / `"drag_layer"`: yes only when the CLI shipped demo-2d.html with its drag layer — usable as a host CI gate) | **quality assertion** (below) |
 | `loops_audit.json` | loop audit: declared / closed / enumerated / problems | assert `summary.problems == 0` |
 | `demo-2d.html` | 2D deliverable page (embedded certificate + drag touch-up layer) | directly human-viewable / printable |
-| `positions3d.json` / `demo-3d.html` | 3D per-solid coordinates + interactive page | demo-3d needs the in-repo `assets/` relative path |
 | `compare-auto.json` (with `--compare-auto`) | manual vs automatic dual-certificate comparison | quantifies the aesthetic distance between engine and human |
 
 ## How to read the certificate (honest grading semantics)
@@ -348,7 +340,7 @@ models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
 | grade | semantics |
 |---|---|
 | `best` | all placement hard gates pass + 0 line crossings (auto recipe: an optimization result, not a theorem guarantee; ortho recipe: theorem-guaranteed) |
-| `3d` | 3D dimension-lift delivery (when the 2D layer is inapplicable or abandoned) |
+| `3d` | **retired** documentation-level tier: the 3D layer was removed after v0.9.0; never emitted by the 2D pipeline, kept in the read-back set only so historical certificates still validate (docs/grading-contract.md) |
 | `uncertified` | everything else — **honestly ungraded**. This is not an error; it is the honest boundary |
 
 Iron rule: stdraw **never claims 0 crossings for arbitrary graphs**. CLDs
@@ -369,7 +361,7 @@ assert audit["summary"]["problems"] == 0
 
 ## Determinism
 
-Same input, same output (byte-identical, incl. 3D assignments and HTML).
+Same input, same output (byte-identical, incl. the HTML deliverable).
 Layout has no RNG; CP-SAT single worker + fixed seed; CP-SAT placement for
 n>10 uses a **deterministic time budget** (`max_deterministic_time=8`, an
 operation-count caliber rather than wall clock — the same version on the
@@ -422,8 +414,9 @@ Honest conclusions (wins stated as wins, losses as losses):
 - Crossings are a soft target (since v0.6.0): placement regularity first;
   with all hard gates passed, <= 2 crossings are acceptable (the "best"
   grade still requires 0 crossings); the ortho recipe raises
-  `NotPlanarError` on non-planar input; 2D planarization degradation is on
-  the roadmap;
+  `NotPlanarError` on non-planar input (the CLI prints the honest degradation
+  and delivers no 2D layout — 2D-only, no fallback layer); 2D planarization
+  degradation is on the roadmap;
 - ortho-v1 allows "unrelated wires occluded under cards" (cards opaque, the
   v0.1 design caliber), honestly counted in the certificate; auto-v2's
   box-over-line is a hard gate = 0. **Delivery ban (ruling D0, 2026-11-11):
@@ -433,7 +426,6 @@ Honest conclusions (wins stated as wins, losses as losses):
   for CI byte-regression; enforced by `scripts/check_no_ortho_delivery.py`
   (CI gate) plus the certificate's `deliverable: false` / `blocked_by: D0`
   confession; see `docs/grading-contract.md` section 4;
-- The 3D layer makes no 2D crossing promise;
 - Random sparse graphs n>=20: positioned as the best incumbent within the
   8det budget (not proven optimal); routing box press / clearance follow
   REPORT section 4 measurements (non-zero); `_polish` feedback runs only for
@@ -455,6 +447,13 @@ Current **0.9.0** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
 
+- **After v0.9.0 (unreleased)**: 3D layer removed (owner ruling 2026-11-24:
+  the 3D deliverable was judged low-value and dropped) — `layout3d` /
+  `render3d`, the `--solids` / `--theme-3d` / `--skip-3d` flags,
+  `positions3d.json` / `demo-3d.html`, the bundled three.js `assets/` and
+  the standalone 3D `viewer/` are gone (commit 81901db); the CLI is 2D-only
+  and every 2D artifact is byte-identical to 0.9.0; the `3d` grade token is
+  retired to historical read-back only (CHANGELOG.md Unreleased).
 - **v0.9.0 version closure** (85-commit sweep since 0.8.2: preference
   research toolchain + opt-in candidate generation + performance):
   (a) opt-in anchors-as-prior candidate generation — family-gated anchor
