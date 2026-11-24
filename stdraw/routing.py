@@ -296,6 +296,22 @@ def min_pair_dist(pts_a, pts_b, early_px=1.0):
     return math.sqrt(best) if best < float("inf") else None
 
 
+def _bbox_gap_lb(pts_a, pts_b):
+    """Lower bound on min distance between two point sequences: the gap
+    between their bounding boxes (true min distance is never below it)."""
+    ax0 = min(p[0] for p in pts_a)
+    ax1 = max(p[0] for p in pts_a)
+    ay0 = min(p[1] for p in pts_a)
+    ay1 = max(p[1] for p in pts_a)
+    bx0 = min(p[0] for p in pts_b)
+    bx1 = max(p[0] for p in pts_b)
+    by0 = min(p[1] for p in pts_b)
+    by1 = max(p[1] for p in pts_b)
+    gx = max(0.0, ax0 - bx1, bx0 - ax1)
+    gy = max(0.0, ay0 - by1, by0 - ay1)
+    return math.hypot(gx, gy)
+
+
 def seg_cross(p1, p2, p3, p4):
     """Strict intersection test (includes collinear overlap; endpoint touching does not count). Same accounting as metrics."""
     def orient(a, b, c):
@@ -384,6 +400,31 @@ class EvalCache:
                                  #   canonical line/arc candidate prefix
         self.rk_id = {}      # canonical segs key -> small int
         self._rkrefs = {}    # id(segs list) -> (ref, canonical key, int)
+        # T12 mutual-pair separation memo: (candidate id, sibling id) ->
+        # (unrounded pair_sep, unrounded sep_def); the 12px coarse samples
+        # of a candidate and the identity-guarded sibling-sample interning
+        # feed the key (same exact-content argument as the other caches).
+        self.pairsep = {}
+        self.samples12 = {}
+        self.sib_id = {}
+        self._sibrefs = {}
+
+    def sib_key(self, samples):
+        """Small-int id for a sibling coarse-sample list, content-keyed.
+
+        Identity-guarded like route_key: route_all builds ONE sample list
+        per edge per pass and reuses it across that edge's ~200 candidate
+        evaluations, so the common case resolves by object identity.
+        """
+        ent = self._sibrefs.get(id(samples))
+        if ent is not None and ent[0] is samples:
+            return ent[1]
+        key = tuple(samples)
+        sid = self.sib_id.get(key)
+        if sid is None:
+            sid = self.sib_id[key] = len(self.sib_id)
+        self._sibrefs[id(samples)] = (samples, sid)
+        return sid
 
     def route_key(self, segs):
         """Small-int id for a routed-segments list, content-keyed.
@@ -835,6 +876,43 @@ class Router:
         return cands
 
     # -- candidate evaluation --
+    def _cand_lb(self, cand, a, b):
+        """Exact lower bound on a candidate's _evaluate score (T12 pruning).
+
+        score = 4000*press + 40*cross + 30*clr_def + 0.01*length +
+                PAIR_SEP_W*sep_def + kind_pref + rule_pen + 2*ang_def
+                (+1500 soft rejection); every term except kind_pref /
+                rule_pen is non-negative, and kind_pref is -2.0 only for a
+                mutual-pair arc.  The bound keeps exactly those three terms
+                (length memoized through the shared EvalCache when present).
+        """
+        kind, pts = cand[0], cand[1]
+        ec = self._ecache
+        if ec is None:
+            length = sum(math.dist(pts[i], pts[i + 1])
+                         for i in range(len(pts) - 1))
+        else:
+            ck = tuple((p[0], p[1]) for p in pts)
+            cki = ec.ck_id.get(ck)
+            if cki is None:
+                cki = ec.ck_id[ck] = len(ec.ck_id)
+            length = ec.length.get(cki)
+            if length is None:
+                length = ec.length[cki] = sum(
+                    math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
+        if kind == "arc":
+            kp = -2.0 if (min(a, b), max(a, b)) in self.mutual else 0.0
+        elif kind == "vg":
+            kp = 120.0
+        elif kind == "poly":
+            kp = 40.0
+        elif kind == "wrap":
+            kp = 200.0
+        else:
+            kp = 0.0
+        rp = cand[5] if len(cand) > 5 else 0.0
+        return kp + rp + 0.01 * length
+
     def _evaluate(self, cand, a, b, routed_segs, sib_samples=None, honest=False):
         if self._ecache is None:
             return self._evaluate_base(cand, a, b, routed_segs,
@@ -1135,9 +1213,17 @@ class Router:
         pair_sep = None
         sep_def = 0.0
         if mutual_pair and sib_samples:
-            pair_sep = min_pair_dist(sample_polyline(pts, step=12), sib_samples)
-            if pair_sep is not None:
-                sep_def = max(0.0, PAIR_SEP_MIN - pair_sep)
+            # T12: exact memo per (candidate content, sibling-sample content)
+            pk = (cki, ec.sib_key(sib_samples))
+            ps = ec.pairsep.get(pk)
+            if ps is None:
+                s12 = ec.samples12.get(cki)
+                if s12 is None:
+                    s12 = ec.samples12[cki] = sample_polyline(pts, step=12)
+                ps = min_pair_dist(s12, sib_samples)
+                ps = ec.pairsep[pk] = (
+                    ps, max(0.0, PAIR_SEP_MIN - ps) if ps is not None else 0.0)
+            pair_sep, sep_def = ps
         if mutual_pair and kind == "arc":
             kind_pref = -2.0
         if kind == "vg":
@@ -2662,11 +2748,23 @@ class Router:
                         for i in (i1, i2):
                             routes[i]["points"] = geo[i][0]
                             routes[i]["ctrl"] = geo[i][1]
-                        sep = min_pair_dist(
-                            sample_polyline(routes[i1]["points"], step=4),
-                            sample_polyline(routes[i2]["points"], step=4))
-                        if sep is None or sep < 12.0:
+                        # T12: bbox lower bound first -- the true minimum
+                        # distance of the two arcs is never below the gap
+                        # between their bounding boxes, so a gap >= 12px
+                        # clears the threshold without the O(n*m) 4px
+                        # sample sweep (sep feeds ONLY this threshold; the
+                        # flipped-state sep2 below is still measured
+                        # exactly).  Empty point lists keep the original
+                        # None -> continue semantics.
+                        _p1, _p2 = routes[i1]["points"], routes[i2]["points"]
+                        if not _p1 or not _p2:
                             continue
+                        if _bbox_gap_lb(_p1, _p2) < 12.0:
+                            sep = min_pair_dist(
+                                sample_polyline(_p1, step=4),
+                                sample_polyline(_p2, step=4))
+                            if sep is None or sep < 12.0:
+                                continue
                         # T4: unified delivery-gate caliber (docs/routing-gates.md G-LENS-JOINT)
                         ok = True
                         for i in (i1, i2):
@@ -3832,6 +3930,27 @@ class Router:
                         sib = sample_polyline(rpts, step=12)
                 best = None
                 for cand in self._candidates(a, b, i):
+                    # P1 T12 exact branch-and-bound: every non-negative
+                    # score term (press / crossings / clearance / pair
+                    # separation / anchor angle) is dropped and only the
+                    # three exactly-known terms (line-kind preference, rule
+                    # penalty, 0.01 x polyline length) form a LOWER bound
+                    # on the candidate's score.  A candidate whose bound
+                    # already cannot beat the incumbent (strict-improvement
+                    # selection, EPS-caliber) is skipped without evaluating
+                    # -- the winner is the first candidate attaining the
+                    # minimum, and a skipped candidate can never attain a
+                    # score below the incumbent at its own evaluation time,
+                    # so the delivered choice is bitwise unchanged (the
+                    # 1e-6 absolute margin absorbs the association-order
+                    # rounding of the bound).  Measured on the 4-node
+                    # limits-to-growth figure: the mutual-pair wrap /
+                    # polyline channels (fixed +200 / +40 type cost) are
+                    # pruned as soon as one clean line/arc exists.
+                    if best is not None:
+                        lb = self._cand_lb(cand, a, b)
+                        if lb >= best[0] - EPS + 1e-6:
+                            continue
                     sc, info = self._evaluate(cand, a, b, routed_segs, sib,
                                               honest=self.presets is not None)
                     if info is not None and (best is None or sc < best[0] - EPS):
