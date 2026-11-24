@@ -77,7 +77,7 @@ from calibrate_v2 import (  # noqa: E402  (same directory)
     load_graph_source_docs,
 )
 
-MODEL_PATH = REPO / "benchmarks" / "aesthetic" / "model-v2.json"
+MODEL_PATH = REPO / "stdraw" / "data" / "model-v2.json"
 REPORT_V2_PATH = REPO / "benchmarks" / "aesthetic" / "calibration-report-v2.json"
 WINNER_CALIBER = "normalized"   # committed v2 winner (asserted below)
 PY = sys.executable

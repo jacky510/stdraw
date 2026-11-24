@@ -27,9 +27,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from stdraw.aesthetic_score import AestheticError, check_hub_intensity_gap  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-MODEL = os.path.join(ROOT, "benchmarks", "aesthetic", "model-v2.json")
+MODEL = os.path.join(ROOT, "stdraw", "data", "model-v2.json")
 REPORT = os.path.join(ROOT, "benchmarks", "aesthetic", "calibration-report-v2.json")
 NEG_DIR = os.path.join(ROOT, "benchmarks", "raw", "aesthetic-v1-negatives")
+
+# calibration report + negatives provenance check need the checkout's git
+# repo and research artifacts (repo marker lands with the sdist-testability
+# commit); the packaged model itself (stdraw/data) ships with the sdist/wheel.
 
 
 def _load(path):

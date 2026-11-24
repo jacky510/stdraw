@@ -75,7 +75,7 @@ POSITIVE_DIRS = (REPO / "benchmarks" / "manual", REPO / "tests" / "data")
 NEGATIVE_DIR = REPO / "benchmarks" / "raw" / "aesthetic-v1-negatives"
 BATCH2_DIR = REPO / "benchmarks" / "manual" / "jacky-batch2"
 SOURCE_DIR = BATCH2_DIR / "sources"
-FAMILY_MAP = REPO / "benchmarks" / "corpus" / "classic" / "topology-families.json"
+FAMILY_MAP = REPO / "stdraw" / "data" / "topology-families.json"
 V1_REPORT = REPO / "benchmarks" / "aesthetic" / "calibration-report.json"
 OUT_DIR = REPO / "benchmarks" / "aesthetic"
 
@@ -905,7 +905,7 @@ def main():
     # ── emit ──
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     composite = per_cal[winner][0]
-    (OUT_DIR / "model-v2.json").write_text(
+    (REPO / "stdraw" / "data" / "model-v2.json").write_text(
         json.dumps(composite, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8", newline="\n")
     (OUT_DIR / "calibration-report-v2.json").write_text(

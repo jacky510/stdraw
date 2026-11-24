@@ -327,7 +327,7 @@ def main():
     # ---- pools / features (converged-solver bank, unchanged caliber) ----
     pool = base.load_pool()
     labels = load_family_labels(str(FAMILY_MAP))
-    model_v2 = json.loads((OUT_DIR / "model-v2.json").read_text(encoding="utf-8"))
+    model_v2 = json.loads((REPO / "stdraw" / "data" / "model-v2.json").read_text(encoding="utf-8"))
     model_v3 = json.loads((OUT_DIR / "model-v3-alpha.json").read_text(encoding="utf-8"))
     kept_v3 = list(json.loads(
         (OUT_DIR / "lasso-path-v3-alpha.json").read_text(encoding="utf-8")

@@ -46,7 +46,7 @@ from stdraw import dsl  # noqa: E402
 from stdraw.anchor_prior import CALIBER, LIBRARY_SCHEMA, family_of_graph
 from stdraw.aesthetic_score import graph_name_of, scalars_for_layout  # noqa: E402
 
-OUT = REPO / "benchmarks" / "manual" / "anchor-library" / "anchor-features.json"
+OUT = REPO / "stdraw" / "data" / "anchor-features.json"
 
 # The 18th anchor lives with the preference-pool candidates (it entered the
 # library with the pool); the other 17 come from the committed positive dirs

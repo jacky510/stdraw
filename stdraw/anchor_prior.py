@@ -28,24 +28,26 @@ finds no anchors, ``no-anchor-within-threshold`` when the closest anchor is
 beyond the calibrated threshold, ``library-unavailable`` / ``row-not-
 evaluable`` for degraded inputs).  Silence is not an option.
 
-The library is DATA (benchmarks/manual/anchor-library/anchor-features.json,
-only-add): anchors are jacky's hand-drawn layouts and their precomputed
-feature rows; the code never embeds anchor coordinates or thresholds.
+The library is DATA (stdraw/data/anchor-features.json, packaged with the
+wheel, only-add): anchors are jacky's hand-drawn layouts and their
+precomputed feature rows; the code never embeds anchor coordinates or
+thresholds.
 """
 import json
 import math
 from pathlib import Path
 
+from . import _datafiles
 from .aesthetic_score import scalars_for_layout
 
 LIBRARY_SCHEMA = "stdraw.anchor-library/1"
 CALIBER = "normalized"
 
-# Default sidecar location: data file resolved relative to the repo root
-# (the parent of the stdraw package).  Candidate-v1 only; absence degrades
-# honestly (provenance records it) instead of raising.
-_DEFAULT_LIBRARY = Path(__file__).resolve().parent.parent / "benchmarks" / \
-    "manual" / "anchor-library" / "anchor-features.json"
+# Default sidecar location: packaged runtime data (stdraw/data/, resolved
+# via importlib.resources so pip installs and git clones behave identically).
+# Candidate-v1 only; absence degrades honestly (provenance records it)
+# instead of raising.
+_DEFAULT_LIBRARY = _datafiles.data_file("anchor-features.json")
 
 # Minimum evaluable key share for a distance to count as evaluable
 # (three-state discipline: below this the distance is "not evaluable",
@@ -140,8 +142,7 @@ def load_library(path=None):
     absent/mismatched -- the caller records the degradation honestly."""
     p = Path(path) if path is not None else _DEFAULT_LIBRARY
     try:
-        with open(p, "r", encoding="utf-8") as f:
-            doc = json.load(f)
+        doc = json.loads(_datafiles.read_text(p))
     except OSError:
         return None
     if doc.get("schema") != LIBRARY_SCHEMA:

@@ -91,7 +91,7 @@ SESSION_DIR = REPO / "benchmarks" / "manual" / "pairwise" / "session-2026-11-21"
 ANSWERS_PATH = SESSION_DIR / "answers-2026-11-21.json"
 CAND_META_PATH = SESSION_DIR / "candidates.json"
 SYN_DIR = REPO / "benchmarks" / "aesthetic" / "pref-synthetic"
-FAMILY_MAP = REPO / "benchmarks" / "corpus" / "classic" / "topology-families.json"
+FAMILY_MAP = REPO / "stdraw" / "data" / "topology-families.json"
 OUT_DIR = REPO / "benchmarks" / "aesthetic"
 JSON_OUT = OUT_DIR / "pref-ranking-m0m1m2.json"
 MD_OUT = OUT_DIR / "pref-ranking-report-m0m1m2.md"
@@ -104,7 +104,7 @@ RETEST_BASELINE = 5.0 / 6.0
 
 # committed artifacts whose bytes must not move (discriminator non-regression)
 SHA_PINNED = (
-    "benchmarks/aesthetic/model-v2.json",
+    "stdraw/data/model-v2.json",
     "benchmarks/aesthetic/model-v3-alpha.json",
     "benchmarks/aesthetic/lasso-path-v3-alpha.json",
     "benchmarks/aesthetic/calibration-report-v2.json",
@@ -602,7 +602,7 @@ def main():
 
     pool = load_pool()
     labels = load_family_labels(str(FAMILY_MAP))
-    model_v2 = json.loads((OUT_DIR / "model-v2.json").read_text(encoding="utf-8"))
+    model_v2 = json.loads((REPO / "stdraw" / "data" / "model-v2.json").read_text(encoding="utf-8"))
     model_v3 = json.loads((OUT_DIR / "model-v3-alpha.json").read_text(encoding="utf-8"))
     kept_v3 = list(json.loads(
         (OUT_DIR / "lasso-path-v3-alpha.json").read_text(encoding="utf-8")

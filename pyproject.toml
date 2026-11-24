@@ -40,7 +40,13 @@ render-check = ["playwright>=1.40"] # CI-side DOM box-bound measurement (optiona
 stdraw = "stdraw.__main__:main"
 
 [tool.setuptools]
-packages = ["stdraw"]
+packages = ["stdraw", "stdraw.data"]
+
+[tool.setuptools.package-data]
+# Packaged runtime data (T3): anchor-prior library + aesthetic M0 models +
+# topology family labels must ship inside the wheel/sdist so pip installs
+# behave identically to a git clone (importlib.resources reads them).
+"stdraw.data" = ["*.json"]
 
 [tool.pytest.ini_options]
 # test_ring_layout.py / test_visibility.py are module-level check scripts

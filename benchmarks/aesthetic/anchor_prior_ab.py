@@ -224,7 +224,7 @@ def main():
              "crossings": r["crossings"]})
     anchor_pairs_src = cand_meta3
     labels = load_family_labels(str(c1.FAMILY_MAP))
-    model_v2 = json.loads((REPO / "benchmarks" / "aesthetic" /
+    model_v2 = json.loads((REPO / "stdraw" / "data" /
                            "model-v2.json").read_text(encoding="utf-8"))
     m0 = {"model": model_v2, "labels": labels}
     scorer = dc.Scorer(model_v2, labels)

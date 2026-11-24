@@ -33,9 +33,13 @@ from stdraw.aesthetic_score import (  # noqa: E402
 
 MANUAL = REPO / "benchmarks" / "manual"
 NEGATIVES = REPO / "benchmarks" / "raw" / "aesthetic-v1-negatives"
-MODEL = REPO / "benchmarks" / "aesthetic" / "model-v1.json"
+MODEL = REPO / "stdraw" / "data" / "model-v1.json"
 REPORT = REPO / "benchmarks" / "aesthetic" / "calibration-report.json"
-FAMILY_MAP = REPO / "benchmarks" / "corpus" / "classic" / "topology-families.json"
+FAMILY_MAP = REPO / "stdraw" / "data" / "topology-families.json"
+
+# manual fixtures + calibration report are repo-only research data; the
+# packaged data files (stdraw/data) ship everywhere (repo marker for them
+# lands with the sdist-testability commit).
 
 
 def _load(p):

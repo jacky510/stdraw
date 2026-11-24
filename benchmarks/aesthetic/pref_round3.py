@@ -239,7 +239,7 @@ class OfflineArms:
 
     def __init__(self, pool_by_graph, ext_by_graph):
         labels = pr.load_family_labels(str(pr.FAMILY_MAP))
-        model_v2 = json.loads((pr.OUT_DIR / "model-v2.json")
+        model_v2 = json.loads((pr.REPO / "stdraw" / "data" / "model-v2.json")
                               .read_text(encoding="utf-8"))
         model_v3 = json.loads((pr.OUT_DIR / "model-v3-alpha.json")
                               .read_text(encoding="utf-8"))

@@ -49,7 +49,7 @@ from stdraw.aesthetic_score import (  # noqa: E402
 
 POSITIVE_DIRS = (REPO / "benchmarks" / "manual", REPO / "tests" / "data")
 NEGATIVE_DIR = REPO / "benchmarks" / "raw" / "aesthetic-v1-negatives"
-FAMILY_MAP = REPO / "benchmarks" / "corpus" / "classic" / "topology-families.json"
+FAMILY_MAP = REPO / "stdraw" / "data" / "topology-families.json"
 OUT_DIR = REPO / "benchmarks" / "aesthetic"
 
 # jacky's hand-measured reference (2026-11-20, operator directive):
@@ -386,7 +386,7 @@ def main():
     # ── emit ──
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     composite = per_cal[winner][0]
-    (OUT_DIR / "model-v1.json").write_text(
+    (REPO / "stdraw" / "data" / "model-v1.json").write_text(
         json.dumps(composite, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8", newline="\n")
     (OUT_DIR / "calibration-report.json").write_text(

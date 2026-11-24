@@ -6,7 +6,7 @@ section 3.1:
 
     viability hard gate (unchanged)
       -> M0 quality gate: the COMMITTED v2 pointwise model
-         (benchmarks/aesthetic/model-v2.json) scores each candidate; a
+         (stdraw/data/model-v2.json, packaged) scores each candidate; a
          candidate is eliminated when it sits more than epsilon below the
          pool best.  epsilon = the committed cross-session noise-gate
          calibration (M0 epsilon P75 = 58.6 over the 18 both-good pairs,
@@ -27,22 +27,23 @@ silent approximation.
 import json
 from pathlib import Path
 
+from . import _datafiles
 from .aesthetic_score import route_shape, scalars_for_layout, score_row
 
 MODEL_SCHEMA = "stdraw.aesthetic_model/v1"
 CALIBER = "normalized"          # committed v2 winner caliber
 
-# Committed calibration constant (benchmarks/aesthetic/
-# pref-ranking-final-v2.json -> epsilon_calibration.per_arm.M0.p75_initial,
+# Committed calibration constant (stdraw/data/model-v2.json retrieval
+# calibration -> epsilon_calibration.per_arm.M0.p75_initial,
 # P75 over the 18 both-good pairs).  A named constant on purpose: it is the
 # documented threshold of the gate, re-derived by the calibration artifacts,
 # never tuned per graph.
 M0_EPS_P75 = 58.6
 
-_REPO = Path(__file__).resolve().parent.parent
-DEFAULT_MODEL_PATH = _REPO / "benchmarks" / "aesthetic" / "model-v2.json"
-DEFAULT_LABELS_PATH = _REPO / "benchmarks" / "corpus" / "classic" / \
-    "topology-families.json"
+# Packaged runtime data (importlib.resources; identical for pip installs
+# and git clones).
+DEFAULT_MODEL_PATH = _datafiles.data_file("model-v2.json")
+DEFAULT_LABELS_PATH = _datafiles.data_file("topology-families.json")
 
 
 def load_model(model_path=None, labels_path=None):
@@ -52,8 +53,8 @@ def load_model(model_path=None, labels_path=None):
     mp = Path(model_path) if model_path else DEFAULT_MODEL_PATH
     lp = Path(labels_path) if labels_path else DEFAULT_LABELS_PATH
     try:
-        model = json.loads(mp.read_text(encoding="utf-8"))
-        labels = load_family_labels(str(lp))
+        model = json.loads(_datafiles.read_text(mp))
+        labels = load_family_labels(lp)
     except (OSError, ValueError):
         return None
     if model.get("schema") != MODEL_SCHEMA:

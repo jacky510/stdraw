@@ -609,8 +609,8 @@ def hub_intensity_threshold_derivation():
 
 def load_family_labels(path):
     """{graph name: family} from topology-families.json (file labels, first pass)."""
-    with open(path, "r", encoding="utf-8") as f:
-        topo = json.load(f)
+    from . import _datafiles
+    topo = json.loads(_datafiles.read_text(path))
     return {row["name"]: row["family"] for row in topo.get("graphs", [])}
 
 
@@ -894,7 +894,7 @@ def calibrate_shape_conditional(positive_docs, negative_docs, caliber, labels):
             "rho_threshold": RHO_RING_THRESHOLD,
             "hub_intensity_threshold": HUB_INTENSITY_THRESHOLD,
             "hub_intensity_threshold_derivation": hub_intensity_threshold_derivation(),
-            "family_map_source": "benchmarks/corpus/classic/topology-families.json",
+            "family_map_source": "stdraw/data/topology-families.json (packaged)",
             "shape_excluded_features": {k: list(v) for k, v in SHAPE_EXCLUDED_FEATURES.items()},
         },
         "models": models,
@@ -990,7 +990,7 @@ def main(argv=None):
         prog="python -m stdraw.aesthetic_score",
         description="Aesthetic scorer v1: 0-100 'looks hand-drawn' score (deterministic)")
     ap.add_argument("layout_json", nargs="?", help="layout.json to score")
-    ap.add_argument("--model", help="fitted model JSON (default: benchmarks/aesthetic/model-v1.json)")
+    ap.add_argument("--model", help="fitted model JSON (default: packaged stdraw/data/model-v1.json)")
     ap.add_argument("--calibrate", action="store_true", help="fit from anchors + negatives")
     ap.add_argument("--positives", action="append",
                     help="directory with human anchor layout JSONs (repeatable)")
@@ -1028,10 +1028,9 @@ def main(argv=None):
 
     if not args.layout_json:
         ap.error("provide layout_json or --calibrate")
-    model_path = args.model or str(Path(__file__).resolve().parent.parent
-                                   / "benchmarks" / "aesthetic" / "model-v1.json")
-    with open(model_path, "r", encoding="utf-8") as f:
-        model = json.load(f)
+    from . import _datafiles
+    model_path = args.model or _datafiles.data_file("model-v1.json")
+    model = json.loads(_datafiles.read_text(model_path))
     with open(args.layout_json, "r", encoding="utf-8") as f:
         doc = json.load(f)
     if model.get("kind") == "shape-conditional":
