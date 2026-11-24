@@ -113,8 +113,11 @@ def loops_audit(graph: Graph) -> dict:
         negs = 0
         for i in range(len(cyc)):
             a, b = cyc[i], cyc[(i + 1) % len(cyc)]
-            pols = [e.polarity for e in graph.edges
-                    if (e.a, e.b) in ((a, b), (b, a))]
+            # polarity is directional: only the edge walked a->b counts,
+            # never its reverse b->a (fixed 2026-11: the old
+            # `in ((a, b), (b, a))` folded opposite-direction edges into the
+            # same hop and miscomputed R/B parity)
+            pols = [e.polarity for e in graph.edges if (e.a, e.b) == (a, b)]
             if pols and "-" in pols:
                 negs += 1
         return "B" if negs % 2 else "R", negs
