@@ -5,7 +5,7 @@ Syntax (line-oriented, # starts a comment, blank lines ignored):
 
     graph "graph name"
     var <id> "<label>" [@value "<value text>"] [@group <gid>] [@w <extra px>]
-    <a> -> <+|-> <b> [@loops <id1>,<id2>]
+    <a> -> <+|-> <b> [@loops <id1>,<id2>] [@delay]
     loop <id> "<label>" "<R|B>" [<n1>, <n2>, ...]
     group <gid> "<group label>"
 
@@ -13,6 +13,9 @@ Syntax (line-oriented, # starts a comment, blank lines ignored):
   layout and certificates;
 - Loop declarations state semantic loops, validated by loops.lint for closure
   + R/B polarity edge counting;
+- Edge tags may follow in either order (@loops ... / @delay), each at most
+  once; dumps() always writes @loops first, then @delay (the canonical order
+  that keeps parse(dumps(g)) == g);
 - Groups are optional and do not participate in layout (tension handling is
   discussed in the model.py module docstring).
 
@@ -28,8 +31,10 @@ _VAR_RE = re.compile(
     r'^var\s+(\w+)\s+' + _QSTR +
     r'(?:\s+@value\s+' + _QSTR + r')?'
     r'(?:\s+@group\s+(\w+))?(?:\s+@w\s+(\d+))?\s*$')
-_EDGE_RE = re.compile(
-    r'^(\w+)\s*->\s*([+\-])\s*(\w+)(?:\s+@loops\s+([\w,\s]+))?\s*$')
+_EDGE_RE = re.compile(r'^(\w+)\s*->\s*([+\-])\s*(\w+)(.*)$')
+# one edge tag: "@loops <ids>" or "@delay" (a whole word), followed by
+# whitespace or end of line
+_EDGE_TAG_RE = re.compile(r'^@(?:loops\s+([\w,\s]+)|delay)(?=\s|$)')
 _LOOP_RE = re.compile(
     r'^loop\s+(\w+)\s+' + _QSTR + r'\s*"?([RB])"?\s*\[([^\]]*)\]\s*$')
 _GROUP_RE = re.compile(r'^group\s+(\w+)\s+' + _QSTR + r'\s*$')
@@ -102,9 +107,28 @@ def parse(text: str) -> Graph:
             continue
         m = _EDGE_RE.match(line)
         if m:
-            loops = [x.strip() for x in (m.group(4) or "").split(",") if x.strip()]
+            loops, delay, tail, bad = [], False, m.group(4), False
+            while tail.strip():
+                rest = tail.lstrip()
+                t = _EDGE_TAG_RE.match(rest)
+                if not t:
+                    bad = True          # unknown tag / stray text after the edge
+                    break
+                if t.group(1) is not None:
+                    if loops:
+                        bad = True      # a second @loops tag
+                        break
+                    loops = [x.strip() for x in t.group(1).split(",") if x.strip()]
+                else:
+                    if delay:
+                        bad = True      # a second @delay tag
+                        break
+                    delay = True
+                tail = rest[t.end():]
+            if bad:
+                raise ValueError(f"DSL line {lineno} cannot be parsed: {raw.strip()!r}")
             g.edges.append(Edge(a=m.group(1), b=m.group(3),
-                                polarity=m.group(2), loops=loops))
+                                polarity=m.group(2), loops=loops, delay=delay))
             continue
         m = _LOOP_RE.match(line)
         if m:
@@ -144,6 +168,8 @@ def dumps(g: Graph) -> str:
     out.append("")
     for e in g.edges:
         tail = f" @loops {','.join(e.loops)}" if e.loops else ""
+        if e.delay:
+            tail += " @delay"
         out.append(f"{e.a} -> {e.polarity} {e.b}{tail}")
     out.append("")
     for lp in g.loops:

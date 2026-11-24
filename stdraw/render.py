@@ -247,6 +247,16 @@ def _edge_svg(e, labels, values, T):
     ax, ay = e["arrow"]
     out.append(f'<path d="M 0 0 L -7 -3 L -7 3 Z" fill="{color}" '
                f'transform="translate({ax} {ay}) rotate({ang:.1f})"/>')
+    if e.get("delay"):
+        # @delay link: the || mark (two ticks at the arc-length midpoint,
+        # single source stdraw/annotations.py) rides as the group's 3rd path
+        # -- the drag layer addresses paths[0] (line) / paths[1] (arrow) by
+        # index, so the mark must never come before them.
+        from .annotations import delay_mark_d
+        _md = delay_mark_d(pts)
+        if _md:
+            out.append(f'<path class="stdraw-delay" d="{_md}" fill="none" '
+                       f'stroke="{color}" stroke-width="1.3"/>')
     return ''.join(out)
 
 
@@ -262,7 +272,8 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                      loops_report: dict = None, labels: dict = None,
                      values: dict = None,
                      theme: str = DEFAULT_STATIC_THEME,
-                     hint: str = None) -> str:
+                     hint: str = None,
+                     loop_labels: bool = True) -> str:
     T = _get_theme(theme)
     # Dark face only: emit the body foreground (fixes black-on-dark
     # text after the dark palette landed). Light keeps UA default
@@ -410,6 +421,18 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                      'h.addEventListener("pointerleave",function(){'
                      't.style.display="none";});'
                      '})(els[i]);}})();</scr' + 'ipt>')
+    # loop labels (annotation layer, single source stdraw/annotations.py):
+    # the positions were computed by the layout pipeline on this very
+    # geometry and shipped in layout.json["annotations"] -- drawn verbatim,
+    # never re-derived here (the drag layer re-places them with its JS port
+    # after a drag).  Labels sit under the cards: the geometry gate already
+    # guarantees they touch no card and no line, so the order only matters
+    # for a drawing that failed that gate (then the card wins, visibly).
+    _labels = ((v4.get("annotations") or {}).get("loop_labels")) or []
+    if _labels and loop_labels:
+        from .annotations import label_svg
+        parts.append('<g id="stdraw-looplabels">' +
+                     ''.join(label_svg(l, T) for l in _labels) + '</g>')
     for v, p in nodes.items():
         x, y, w = p["x"], p["y"], p["w"]
         label = html.escape(labels.get(v, v))
@@ -449,8 +472,15 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                    # vg polyline corner points (handle positions and the bend
                    # semantics source for drag re-routing)
                    "via": e["route"].get("via"),
-                   "pts": e["route"]["points"]}
+                   "pts": e["route"]["points"],
+                   # @delay link (key present only on delayed edges)
+                   **({"delay": True} if e.get("delay") else {})}
                   for e in edges],
+        # loop labels (annotation layer): size + member nodes so the drag
+        # layer's JS port can re-place them; absent without loops
+        **({"loops": [{"id": l["id"], "kind": l["kind"], "w": l["w"], "h": l["h"],
+                       "members": l.get("members") or []} for l in _labels]}
+           if (_labels and loop_labels) else {}),
     }
     # Toolbar hint chrome: English default (repo language policy: EN face,
     # zero CJK in engine chrome); callers override via the `hint` parameter
@@ -468,6 +498,8 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         '<span class="stdraw-hint">' + hint + '</span>'
         '<span id="stdraw-metrics">…</span>'
         '<button id="stdraw-anchors-toggle" type="button">Anchors: off</button>'
+        + ('<button id="stdraw-loops-toggle" type="button">Loops: on</button>'
+           if (_labels and loop_labels) else '') +
         '<button id="stdraw-export" type="button">Export layout</button>'
         '<button id="stdraw-reset" type="button">Reset</button>'
         '</div>')

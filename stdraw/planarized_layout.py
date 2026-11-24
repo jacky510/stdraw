@@ -886,7 +886,7 @@ def _planarized_l1(graph, cfg, linestyle, cores):
             pts = polys[ei]
             vids = wit_by_idx.get(ei, [])
         a_pt, b_pt = pts[0], pts[-1]
-        edges_out.append({
+        _eo = {
             "a": e.a, "b": e.b,
             "polarity": getattr(e, "polarity", "+"),
             "loop_kinds": [], "loop_color": None,
@@ -897,7 +897,10 @@ def _planarized_l1(graph, cfg, linestyle, cores):
                         "b": [round(b_pt[0], 1), round(b_pt[1], 1)]},
             "arrow": [round(b_pt[0], 1), round(b_pt[1], 1)],
             "route_cross_edges": len(vids),
-        })
+        }
+        if getattr(e, "delay", False):
+            _eo["delay"] = True   # @delay link (key emitted only when set)
+        edges_out.append(_eo)
 
     # ── markers payload (contract section 3) ──
     lbv = exactness["lb"]

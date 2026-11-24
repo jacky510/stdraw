@@ -2925,6 +2925,8 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
              "anchors": {"a": list(info["points"][0]), "b": list(info["points"][-1])},
              "arrow": [round(info["points"][-1][0], 1), round(info["points"][-1][1], 1)],
              "route_cross_edges": int(info.get("cross_edges", 0))}  # diagnostic value from the evaluation period
+        if getattr(graph.edges[i], "delay", False):
+            e["delay"] = True   # @delay link: the render layer draws the || mark at the arc-length midpoint
         if info["kind"] == "arc":
             e["route"]["arc"] = True
             e["route"]["ctrl"] = [round(c, 1) for c in info.get("ctrl", info["points"][len(info["points"]) // 2])]
@@ -3111,11 +3113,26 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
         # stay identical to the pre-feature engine -- a no-op never writes.
         if _reposition_rec is not None:
             _mode_trace["post_layout_reposition"] = _reposition_rec
+    # annotation layer (single source stdraw/annotations.py): loop labels
+    # (id + name + direction glyph at the loop centroid, nudged onto the
+    # first collision-free slot) are placed ONCE here on the delivered
+    # geometry and shipped in layout.json under "annotations" -- the export
+    # draws them, the interactive layer re-places them on drag, and the
+    # self-check + certificate re-read the shipped positions (check.py /
+    # metrics.py; geometry hard gate).  A graph without loops writes no
+    # annotations key (layout.json bytes unchanged).
+    from . import annotations as _ann
+    _loop_labels = _ann.place_loop_labels(
+        {v: {"x": pos[v], "y": y[v], "w": widths[v]} for v in nodes},
+        [[tuple(p) for p in e["route"]["points"]] for e in edges_out],
+        graph.loops, card_h, W, H)
     v4 = {
         "viewBox": [0, 0, W, H],
         "nodes": {v: {"x": pos[v], "y": y[v], "w": widths[v]} for v in nodes},
         "edges": edges_out,
         "bars": {},
+        # loop labels ride the layout (key absent when the graph has no loop)
+        **({"annotations": {"loop_labels": _loop_labels}} if _loop_labels else {}),
         "meta": {
             "rows": len(row_y_out),
             "rowY": row_y_out,

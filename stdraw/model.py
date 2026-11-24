@@ -24,6 +24,7 @@ class Edge:
     b: str
     polarity: str            # "+" same-sign (reinforcing) / "-" opposite-sign (balancing)
     loops: List[str] = field(default_factory=list)   # tags of loops this edge participates in
+    delay: bool = False       # optional: a delay on this link (DSL @delay; rendered as the || mark, gated)
 
 
 @dataclass
@@ -112,7 +113,10 @@ class Graph:
                 for n in self.nodes
             ],
             "edges": [
-                {"a": e.a, "b": e.b, "polarity": e.polarity, "loops": e.loops}
+                # "delay" is emitted only when set: graphs without a delayed
+                # edge keep their historical graph.json bytes
+                {"a": e.a, "b": e.b, "polarity": e.polarity, "loops": e.loops,
+                 **({"delay": True} if e.delay else {})}
                 for e in self.edges
             ],
             "loops": [
@@ -130,7 +134,8 @@ class Graph:
                            if k in Node.__dataclass_fields__})
                    for nd in d.get("nodes", [])],
             edges=[Edge(a=e["a"], b=e["b"], polarity=e.get("polarity", "+"),
-                        loops=list(e.get("loops", [])))
+                        loops=list(e.get("loops", [])),
+                        delay=bool(e.get("delay", False)))
                    for e in d.get("edges", [])],
             loops=[Loop(id=lp["id"], label=lp.get("label", ""),
                         nodes=list(lp.get("nodes", [])), kind=lp.get("kind", ""))

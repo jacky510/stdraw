@@ -57,3 +57,23 @@ Audit conclusions go into `loops_audit.json`, and the issue list is printed at t
 - Delay markers (`||`) on edges;
 - Automatic group derivation (community detection) and grouping consumed by layout;
 - Multi-graph/subgraph, versioned schema.
+
+## Appendix A. Edge delay marker `@delay`
+
+An edge line may end with `@delay` (after the optional `@loops` tag list; the
+two tags may appear in either order, each at most once):
+
+```
+a -> + b @loops R1,B1 @delay
+b -> + a @delay @loops R1
+```
+
+`@delay` is a semantic marker (the effect takes time). The engine records it
+on the edge (`delay: true`, written only when set) and draws a delay mark:
+two short perpendicular ticks at the arc-length midpoint of the delivered
+route. The mark is checked on the delivered coordinates (certificate gate
+`delay_marks_clear`: every tick >= 16px from every card, crossing no other
+line and no other mark). The canonical dump order is `@loops ... @delay`;
+`parse(dumps(g)) == g` holds with and without delay markers. An unknown
+token, a repeated `@delay` or a trailing token after the tags is rejected
+with a DSL error.

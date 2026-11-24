@@ -107,7 +107,7 @@ def test_ltg4_figure_is_best_on_the_lens_tier():
     assert cert["placement"] == "lens-chain"
     assert cert["grade"] == "best", cert["gates"]
     assert all(cert["gates"].values()), cert["gates"]
-    assert cert["gates_passed"] == "14/14"
+    assert cert["gates_passed"] == "15/15"     # 14 lens-tier gates + loop_labels_clear
     m = cert["metrics"]
     assert m["crossings"] == 0 and m["visual_crossings"] == 0
     assert m["box_press_1px"] == 0 and m["anchor_violations"] == 0

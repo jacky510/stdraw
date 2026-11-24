@@ -138,7 +138,7 @@ var edges = D.edges.map(function (e) {
           pa0: cp(pts[0]), pb0: cp(pts[pts.length - 1]),
           via: (e.via && e.via.length >= 3) ? e.via.map(cp) : null,
           corners: (e.via && e.via.length >= 3) ? e.via.map(cp) : null,
-          pts: pts, base: pts.map(cp), d0: null};
+          pts: pts, base: pts.map(cp), d0: null, delay: !!e.delay, dm: null, dm0: null};
 });
 edges.forEach(function (e, i) {
   var g = visG(i);
@@ -147,6 +147,8 @@ edges.forEach(function (e, i) {
     if (p0) {
       e.d0 = p0.getAttribute('d');
       bindEdgeHover(i, p0);   // visible stroke sits on top of the hit band
+      e.dm = g.querySelector('.stdraw-delay');   // @delay mark (3rd path)
+      if (e.dm) e.dm0 = e.dm.getAttribute('d');
     }
   }
 });
@@ -293,6 +295,7 @@ function updateEdge(i) {
     var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
     paths[1].setAttribute('transform', 'translate(' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
   }
+  if (e.delay && e.dm) e.dm.setAttribute('d', annDelayMarkD(e.pts));   // @delay mark follows the route
   updateEndpointHandles(i);   // ref-scrubbed: endpoint handles track every redraw
 }
 function borderPoint(c, hw, hh, toward) {
@@ -913,6 +916,7 @@ function metrics() {
           cv: Math.round(cv * 1000) / 1000, row: Math.round(aligned / ids.length * 1000) / 1000};
 }
 function refreshMetrics() {
+  annRefreshLabels();   // annotation layer: loop labels re-placed after every geometry change
   var el = document.getElementById('stdraw-metrics');
   if (!el) return;
   var m = metrics();
@@ -2043,6 +2047,7 @@ function reset() {
     // Original rendering (vg path_d incl. fillet arcs) restored from the initial d strings
     if (paths[0] && e.d0) paths[0].setAttribute('d', e.d0);
     else if (paths[0]) paths[0].setAttribute('d', edgeD(e.pts));
+    if (e.delay && e.dm && e.dm0) e.dm.setAttribute('d', e.dm0);   // static @delay mark restored
     if (paths[1]) {
       var n2 = e.pts.length, a = e.pts[n2 - 2], b = e.pts[n2 - 1];
       var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
@@ -2285,6 +2290,121 @@ var btnA = document.getElementById('stdraw-anchors-toggle');
 if (btnA) {
   btnA.textContent = 'Anchors: ' + (anchorToggle ? 'on' : 'off');   // ref-scrubbed: default off
   btnA.addEventListener('click', function () { setAnchorToggle(!anchorToggle); });
+}
+// ── annotation layer: JS port of stdraw/annotations.py (loop labels + @delay marks) ──
+// Loop-label positions are computed by the engine on the delivered geometry
+// and ship in the static SVG + payload; this port only RE-places a label
+// after a drag, with the same candidate order and the same rounding, so the
+// on-load state equals the static render.  A label with no collision-free
+// slot stays hidden (never on a card or a line).
+function annRectGap(x1, y1, w1, h1, x2, y2, w2, h2) {
+  var dx = Math.abs(x1 - x2) - (w1 + w2) / 2, dy = Math.abs(y1 - y2) - (h1 + h2) / 2;
+  return Math.hypot(Math.max(dx, 0), Math.max(dy, 0));
+}
+function annSegHitsRect(x1, y1, x2, y2, cx, cy, hw, hh) {
+  var dx = x2 - x1, dy = y2 - y1, t0 = 0, t1 = 1, k, p, q, r;
+  var pq = [[-dx, x1 - (cx - hw)], [dx, (cx + hw) - x1], [-dy, y1 - (cy - hh)], [dy, (cy + hh) - y1]];
+  for (k = 0; k < 4; k++) {
+    p = pq[k][0]; q = pq[k][1];
+    if (Math.abs(p) < 1e-9) { if (q < 0) return false; }
+    else {
+      r = q / p;
+      if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+      else { if (r < t0) return false; if (r < t1) t1 = r; }
+    }
+  }
+  return t1 - t0 > 1e-9;
+}
+var ANN_RADII = [0, 12, 20, 28, 36, 44, 52, 64, 80, 96, 112, 128, 144, 160], ANN_DIRS = 12;
+var ANN_RADII_FAR = [168, 176, 184, 192, 200, 212, 224, 240, 256], ANN_DIRS_FAR = 24;
+var ANN_EDGE = 4, ANN_BOX_GAP = 4, ANN_TARGET_GAP = 8, ANN_LABEL_GAP = 8;
+var loopLabels = D.loops || [];
+function annLabelClear(cx, cy, w, h, others, gap) {
+  if (gap === undefined) gap = ANN_BOX_GAP;
+  if (cx - w / 2 < ANN_EDGE || cx + w / 2 > VB[2] - ANN_EDGE || cy - h / 2 < ANN_EDGE || cy + h / 2 > VB[3] - ANN_EDGE) return false;
+  var hw = w / 2 + gap, hh = h / 2 + gap, ks = Object.keys(nodes), i, j, n, pts;
+  for (i = 0; i < ks.length; i++) { n = nodes[ks[i]]; if (annRectGap(cx, cy, w, h, n.x, n.y, n.w, cardH) < gap - 1e-9) return false; }
+  for (i = 0; i < edges.length; i++) { pts = edges[i].pts; for (j = 0; j + 1 < pts.length; j++) { if (annSegHitsRect(pts[j][0], pts[j][1], pts[j + 1][0], pts[j + 1][1], cx, cy, hw, hh)) return false; } }
+  for (i = 0; i < others.length; i++) { if (annRectGap(cx, cy, w, h, others[i][0], others[i][1], others[i][2], others[i][3]) < ANN_LABEL_GAP - 1e-9) return false; }
+  return true;
+}
+function annPlaceLabels() {
+  var placed = [], i;
+  for (i = 0; i < loopLabels.length; i++) {
+    var l = loopLabels[i], mem = l.members || [], ok = false, cx = null, cy = null, r, k, seen = {};
+    var sx = 0, sy = 0, cnt = 0;
+    mem.forEach(function (v) { var n = nodes[v]; if (n) { sx += n.x; sy += n.y; cnt++; } });
+    if (cnt >= 2) {
+      var cx0 = sx / cnt, cy0 = sy / cnt;
+      var rings = [ANN_RADII, ANN_RADII_FAR], gaps = [ANN_TARGET_GAP, ANN_BOX_GAP], g, nd;
+      outer:
+      for (g = 0; g < 4; g++) {
+        var ring = rings[g >> 1], gap = gaps[g & 1];
+        seen = {};
+        for (r = 0; r < ring.length; r++) {
+          nd = (ring[r] === 0) ? 1 : (ring === ANN_RADII ? ANN_DIRS : ANN_DIRS_FAR);
+          for (k = 0; k < nd; k++) {
+            var a = 2 * Math.PI * k / nd - Math.PI / 2;
+            var tx = Math.round(cx0 + ring[r] * Math.cos(a));
+            var ty = Math.round(cy0 + ring[r] * Math.sin(a));
+            if (seen['x' + tx + 'y' + ty]) continue;
+            seen['x' + tx + 'y' + ty] = 1;
+            if (annLabelClear(tx, ty, l.w, l.h, placed, gap)) { ok = true; cx = tx; cy = ty; break outer; }
+          }
+        }
+      }
+    }
+    l.placed = ok; l.x = cx; l.y = cy;
+    if (ok) placed.push([cx, cy, l.w, l.h]);
+    if (l.g) {
+      if (ok) { l.g.setAttribute('transform', 'translate(' + cx + ' ' + cy + ')'); l.g.removeAttribute('display'); }
+      else { l.g.setAttribute('display', 'none'); }
+    }
+  }
+}
+loopLabels.forEach(function (l) { l.g = null; });
+(function () {
+  var gs = svg.querySelectorAll('g.stdraw-looplabel'), i, j;
+  for (i = 0; i < gs.length; i++) {
+    var id = gs[i].getAttribute('data-loop');
+    for (j = 0; j < loopLabels.length; j++) { if (String(loopLabels[j].id) === id) loopLabels[j].g = gs[i]; }
+  }
+})();
+var annLabelLayer = document.getElementById('stdraw-looplabels');
+var loopsOn = true;
+function setLoopsToggle(on) {
+  loopsOn = on;
+  if (annLabelLayer) annLabelLayer.style.display = on ? '' : 'none';
+  var b = document.getElementById('stdraw-loops-toggle');
+  if (b) b.textContent = 'Loops: ' + (on ? 'on' : 'off');
+}
+var btnL = document.getElementById('stdraw-loops-toggle');
+if (btnL) btnL.addEventListener('click', function () { setLoopsToggle(!loopsOn); });
+function annRefreshLabels() { if (!loopLabels || !loopLabels.length) return; annPlaceLabels(); }
+function annDelayMarkD(pts) {
+  var segs = [], total = 0, i, d;
+  for (i = 0; i + 1 < pts.length; i++) {
+    d = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+    if (d > 1e-9) { segs.push([pts[i], pts[i + 1], d]); total += d; }
+  }
+  if (!segs.length) return '';
+  var half = total / 2, acc = 0, mx, my, tx, ty, s, t;
+  for (i = 0; i < segs.length; i++) {
+    s = segs[i];
+    if (acc + s[2] >= half - 1e-12) {
+      t = (half - acc) / s[2];
+      mx = s[0][0] + (s[1][0] - s[0][0]) * t; my = s[0][1] + (s[1][1] - s[0][1]) * t;
+      tx = (s[1][0] - s[0][0]) / s[2]; ty = (s[1][1] - s[0][1]) / s[2];
+      break;
+    }
+    acc += s[2];
+  }
+  var nx = -ty, ny = tx, out = [];
+  [-2, 2].forEach(function (o) {
+    var cx = mx + tx * o, cy = my + ty * o;
+    out.push('M ' + (cx - nx * 5).toFixed(1) + ' ' + (cy - ny * 5).toFixed(1) + ' L ' + (cx + nx * 5).toFixed(1) + ' ' + (cy + ny * 5).toFixed(1));
+  });
+  return out.join(' ');
 }
 rebuildHandles();
 rebuildAllEndpointHandles();   // ref-scrubbed: initial endpoint handle placement

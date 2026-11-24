@@ -165,3 +165,33 @@ Consequently:
   via an explicitly authorized card (never to let a specific figure pass).
 - This document is updated in the same change set as any doc that presents
   grading tiers; the docs-consistency gate fails on drift.
+
+## Appendix B. Annotation gates and the lens-chain tier (auto-v2)
+
+- `loop_labels_clear` -- every certificate of a figure with declared loops
+  carries the loop labels (loop id + name + direction glyph; polarity is
+  carried by colour only, no `+`/`-` glyphs) in `layout.json`
+  `annotations.loop_labels`. The shipped positions are re-verified on the
+  delivered coordinates: >= 4px from every card and every line, >= 8px from
+  every other label, >= 4px inside the viewBox. A label that cannot be
+  placed is reported `placed: false` (`metrics.loop_labels_unplaced`), is
+  hidden in the export, and never counts as a violation by itself.
+- Label placement order (raises quality, never lowers the floor): the
+  candidate centers are concentric rings around the loop centroid (near
+  ring up to 160px, then a far ring 168-256px in 24 directions). Slots are
+  tried in four passes -- near ring with the comfort clearance (>= 8px
+  from cards and lines), near ring at the gate floor (4px), far ring with
+  the comfort clearance, far ring at the floor. Slot coordinates round
+  half up exactly like the interactive layer's JS `Math.round`, so the
+  drag replay reproduces the exported positions.
+- `delay_marks_clear` -- present when an edge carries `@delay`: every tick
+  >= 16px from every card, no tick crosses another line or another mark.
+- Both gates are listed in the certificate gate table (counted in
+  `gates_passed`) and as geometry-report checks (a violation makes
+  `geometry_report.json` `fail > 0`).
+- `lens-chain` tier (pure 2-loop figures, placement mode `lens-chain`):
+  gate set = the layered regularity gates + `lens_pairs_closed` +
+  `lens_pair_min_sep_ge_12` (14 gates). A figure without a mutual pair
+  keeps its pre-lens mode trace byte-for-byte.
+- Byte-neutrality: a figure without declared loops and without `@delay`
+  carries no `annotations` key and no `delay` edge key.

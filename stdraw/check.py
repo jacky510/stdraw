@@ -780,6 +780,29 @@ def auto_geometry_report(layout: dict) -> dict:
          else f"{pathd_n} vg paths render/verify consistent (G1 <=4 deg, geometry deviation <=1.5px)"
          if pathd_n else "no vg path_d routes in this graph (trivially passes)"))
 
+    # 14/15. Annotation layer (single source stdraw/annotations.py): the
+    # positions shipped in layout.json are re-read here -- never recomputed
+    # from a different model -- and tested against the delivered cards and
+    # lines.  Both checks exist only when the layout carries the annotation
+    # (older layout.json / ortho outputs keep their check list byte-identical).
+    from . import annotations as _ann
+    _lbls = ((layout.get("annotations") or {}).get("loop_labels")) or []
+    if _lbls:
+        _lok, _lbad = _ann.labels_clear(nodes, [p for p, _ in P], _lbls, CARD_H, W, H)
+        chk("14. loop labels clear of cards, lines and each other (>=4px cards/lines, >=8px labels, inside viewBox)",
+            _lok,
+            (str(_lbad[:5]) if _lbad else
+             f"{sum(1 for l in _lbls if l.get('placed'))}/{len(_lbls)} labels placed, all clear"))
+    _dly = [i for i, e in enumerate(edges) if e.get("delay")]
+    if _dly:
+        _dok, _dbad, _dmin = _ann.delays_clear(
+            nodes, [p for p, _ in P], _dly,
+            [f"{e['a']}->{e['b']}" for e in edges], CARD_H)
+        chk("15. delay marks clear of cards (>=16px), lines and other marks",
+            _dok,
+            (str(_dbad[:5]) if _dbad else
+             f"{len(_dly)} mark(s), min tick->box distance {_dmin}px"))
+
     report["summary"] = {
         "viewBox": [W, H], "aspect": round(W / H, 3) if H else 0,
         "nodes": len(nodes), "edges": len(edges),

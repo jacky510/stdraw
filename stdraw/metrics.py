@@ -350,6 +350,13 @@ def scene_from_auto(v4: dict) -> dict:
             "from_layout": v4["meta"].get("from_layout"),
             # line-kind statistics (arc > straight > polyline hierarchy report)
             "line_kinds": [e["route"].get("kind") for e in v4["edges"]],
+            # annotation layer pass-through: loop-label positions shipped in
+            # layout.json (re-verified in certificate_auto; empty when the
+            # graph declares no loop) + the canvas they must sit inside, and
+            # the indices of the @delay links (mark geometry is re-verified)
+            "loop_labels": (v4.get("annotations") or {}).get("loop_labels") or [],
+            "viewBox": v4["viewBox"],
+            "delay_edges": [i for i, e in enumerate(v4["edges"]) if e.get("delay")],
             }
 
 
@@ -1284,6 +1291,36 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             ex_cn is not None and len(crossings) == len(wit_pts)
             and abs(len(crossings) - ex_cn) < 0.5)
         g["visual_crossings_zero"] = "N/A"      # replaced (contract 4.6)
+    # annotation layer hard gates (single source stdraw/annotations.py): the
+    # loop-label and delay-mark geometry is re-read from the delivered
+    # coordinates and tested against the delivered boxes and lines.  Each key
+    # is written only when the drawing carries the annotation (trigger writes
+    # the key -- corpus bytes stay identical); hard_ok folds both in below.
+    from . import annotations as _ann
+    _lbls = scene.get("loop_labels") or []
+    if _lbls:
+        _vw = scene.get("viewBox") or [0, 0, 0, 0]
+        _chh = float(next(iter(nodes.values())).get("h", 44))
+        _lok, _lbad = _ann.labels_clear(nodes, list(polys.values()), _lbls, _chh,
+                                        _vw[2], _vw[3])
+        g["loop_labels_clear"] = _lok
+        metrics["loop_labels"] = [
+            {k: l.get(k) for k in ("id", "kind", "placed", "x", "y", "offset")}
+            for l in _lbls]
+        metrics["loop_labels_unplaced"] = sum(1 for l in _lbls if not l.get("placed"))
+        if _lbad:
+            notes.append("loop labels overlapping cards/lines: " + ", ".join(_lbad))
+    _dly = scene.get("delay_edges") or []
+    if _dly:
+        _dok, _dbad, _dmin = _ann.delays_clear(
+            nodes, [polys[i] for i in range(len(edges))], _dly,
+            [f"{e['a']}->{e['b']}" for e in edges],
+            float(next(iter(nodes.values())).get("h", 44)))
+        g["delay_marks_clear"] = _dok
+        metrics["delay_mark_min_box"] = _dmin
+        metrics["delay_mark_count"] = sum(1 for _ in _dly)
+        for _p in _dbad:
+            notes.append("delay mark: " + _p)
     if routing_consistent is not None:
         g["routing_consistent"] = routing_consistent
     if gates:
@@ -1381,6 +1418,10 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     else:
         hard_ok = (hard_ok and g["anchors_standard"]       # ref-scrubbed: 16-anchor membership
                    and g["visual_crossings_zero"])
+        # annotation gates (present only on drawings that carry the
+        # annotation; absent keys are neutral)
+        hard_ok = (hard_ok and g.get("loop_labels_clear", True)
+                   and g.get("delay_marks_clear", True))
     dual_ok = routing_consistent is not False   # dual-accounting mismatch -> refuse the certificate
     if plz_l1:
         if hard_ok and dual_ok:
