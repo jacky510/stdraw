@@ -17,7 +17,7 @@ h1{font-size:18px} svg{background:#f7f3ea;border:1px solid #e2e8f0;border-radius
 #stdraw-svg [data-node].dragging{cursor:grabbing}
 </style>
 <h1>stdraw 2D layout · 债务螺旋 (auto-v2: straight/arc lines first-class, zero box-press hard gate, edge-box clearance &ge;16px; position engine ring-construct, line style straight)</h1>
-<svg id="stdraw-svg" viewBox="0 0 480 408" font-family="Microsoft YaHei,sans-serif"><defs><pattern id="stdraw-grid" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="1.1" fill="#cfc7b4"/></pattern></defs><rect x="0" y="0" width="480" height="408" fill="url(#stdraw-grid)" pointer-events="none"/><g data-edge="0"><path d="M 246.0 89.0 L 168.6 323.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(168.6 323.0) rotate(108.3)"/></g><g data-edge="1"><path d="M 147.4 323.0 L 114.6 193.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(114.6 193.0) rotate(-104.2)"/></g><g data-edge="2"><path d="M 149.0 155.0 L 235.4 89.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(235.4 89.0) rotate(-37.4)"/></g><g data-edge="3"><path d="M 291.0 89.0 L 377.4 155.0" fill="none" stroke="#1e6fae" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#1e6fae" transform="translate(377.4 155.0) rotate(37.4)"/></g><g data-edge="4"><path d="M 377.4 193.0 L 344.6 323.0" fill="none" stroke="#1e6fae" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#1e6fae" transform="translate(344.6 323.0) rotate(104.2)"/></g><g data-edge="5"><path d="M 289.0 342.0 L 203.0 342.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(203.0 342.0) rotate(180.0)"/></g><g data-node="debt"><rect x="198" y="48" width="96" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="246" y="74" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">债务总额</text></g><g data-node="interest"><rect x="110" y="320" width="96" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="158" y="346" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">利息支出</text></g><g data-node="deficit"><rect x="56" y="152" width="96" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="104" y="178" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">收支缺口</text></g><g data-node="credit"><rect x="340" y="152" width="96" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="388" y="178" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">信用评级</text></g><g data-node="rate"><rect x="286" y="320" width="96" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="334" y="346" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">融资成本</text></g></svg><div class="stdraw-toolbar"><span class="stdraw-hint">Drag cards to rearrange · double-click a line to cycle its style (auto/straight/arc/free) · in free style click a line to add fold points (max 8) or drag a segment to shift it · hover a card to show its 16 standard anchors (toggle) · drag an edge endpoint to snap to the nearest anchor · metrics update live; the certificate is authoritative via CLI --from-layout</span><span id="stdraw-metrics">…</span><button id="stdraw-anchors-toggle" type="button">Anchors: off</button><button id="stdraw-export" type="button">Export layout</button><button id="stdraw-reset" type="button">Reset</button></div><script id="stdraw-data" type="application/json">{"name":"债务螺旋","viewBox":[0,0,480,408],"cardH":44,"nodes":[{"id":"debt","x":246,"y":70,"w":96},{"id":"interest","x":158,"y":342,"w":96},{"id":"deficit","x":104,"y":174,"w":96},{"id":"credit","x":388,"y":174,"w":96},{"id":"rate","x":334,"y":342,"w":96}],"edges":[{"a":"debt","b":"interest","pol":"+","arc":false,"ctrl":null,"via":null,"pts":[[246.0,89.0],[168.6,323.0]]},{"a":"interest","b":"deficit","pol":"+","arc":false,"ctrl":null,"via":null,"pts":[[147.4,323.0],[114.6,193.0]]},{"a":"deficit","b":"debt","pol":"+","arc":false,"ctrl":null,"via":null,"pts":[[149.0,155.0],[235.4,89.0]]},{"a":"debt","b":"credit","pol":"-","arc":false,"ctrl":null,"via":null,"pts":[[291.0,89.0],[377.4,155.0]]},{"a":"credit","b":"rate","pol":"-","arc":false,"ctrl":null,"via":null,"pts":[[377.4,193.0],[344.6,323.0]]},{"a":"rate","b":"interest","pol":"+","arc":false,"ctrl":null,"via":null,"pts":[[289.0,342.0],[203.0,342.0]]}]}</script><script>(function () {
+<svg id="stdraw-svg" viewBox="0 0 480 408" font-family="Microsoft YaHei,sans-serif"><defs><pattern id="stdraw-grid" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="1.1" fill="#cfc7b4"/></pattern></defs><rect x="0" y="0" width="480" height="408" fill="url(#stdraw-grid)" pointer-events="none"/><g data-edge="0"><path d="M 235.4 89.0 Q 233.9 216.3 168.6 323.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(168.6 323.0) rotate(121.2)"/></g><g data-edge="1"><path d="M 147.4 323.0 Q 113.6 263.6 114.6 193.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(114.6 193.0) rotate(-90.0)"/></g><g data-edge="2"><path d="M 149.0 155.0 Q 166.6 110.5 201.0 89.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(201.0 89.0) rotate(-32.7)"/></g><g data-edge="3"><path d="M 291.0 89.0 Q 325.4 110.5 343.0 155.0" fill="none" stroke="#1e6fae" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#1e6fae" transform="translate(343.0 155.0) rotate(67.9)"/></g><g data-edge="4"><path d="M 377.4 193.0 Q 378.4 263.6 344.6 323.0" fill="none" stroke="#1e6fae" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#1e6fae" transform="translate(344.6 323.0) rotate(119.2)"/></g><g data-edge="5"><path d="M 289.0 342.0 Q 246.0 353.2 203.0 342.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(203.0 342.0) rotate(-166.0)"/></g><g id="stdraw-looplabels"><g class="stdraw-looplabel" data-loop="R1" transform="translate(97 71)" pointer-events="none"><rect x="-72" y="-9" width="145" height="18" rx="9" fill="#fffdf6" fill-opacity="0.92"/><g transform="translate(-59.5 0)"><path d="M -3.2 -2.7 A 4.2 4.2 0 1 1 -3.2 2.7" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M -5.5 -0.1 L -1.5 1.3 L -4.9 4.1 Z" fill="#c2410c"/></g><text x="-48" y="0" dominant-baseline="middle" font-size="11" fill="#22303f"><tspan font-weight="700" fill="#c2410c">R1</tspan> <tspan>利息滚雪球回路</tspan></text></g><g class="stdraw-looplabel" data-loop="R2" transform="translate(298 220)" pointer-events="none"><rect x="-66" y="-9" width="133" height="18" rx="9" fill="#fffdf6" fill-opacity="0.92"/><g transform="translate(-53.5 0)"><path d="M -3.2 -2.7 A 4.2 4.2 0 1 1 -3.2 2.7" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M -5.5 -0.1 L -1.5 1.3 L -4.9 4.1 Z" fill="#c2410c"/></g><text x="-42" y="0" dominant-baseline="middle" font-size="11" fill="#22303f"><tspan font-weight="700" fill="#c2410c">R2</tspan> <tspan>信用恶化回路</tspan></text></g></g><g data-node="debt"><rect x="198" y="48" width="96" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="246" y="74" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">债务总额</text></g><g data-node="interest"><rect x="110" y="320" width="96" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="158" y="346" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">利息支出</text></g><g data-node="deficit"><rect x="56" y="152" width="96" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="104" y="178" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">收支缺口</text></g><g data-node="credit"><rect x="340" y="152" width="96" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="388" y="178" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">信用评级</text></g><g data-node="rate"><rect x="286" y="320" width="96" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="334" y="346" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">融资成本</text></g></svg><div class="stdraw-toolbar"><span class="stdraw-hint">Drag cards to rearrange · double-click a line to cycle its style (auto/straight/arc/free) · in free style click a line to add fold points (max 8) or drag a segment to shift it · hover a card to show its 16 standard anchors (toggle) · drag an edge endpoint to snap to the nearest anchor · metrics update live; the certificate is authoritative via CLI --from-layout</span><span id="stdraw-metrics">…</span><button id="stdraw-anchors-toggle" type="button">Anchors: off</button><button id="stdraw-loops-toggle" type="button">Loops: on</button><button id="stdraw-export" type="button">Export layout</button><button id="stdraw-reset" type="button">Reset</button></div><script id="stdraw-data" type="application/json">{"name":"债务螺旋","viewBox":[0,0,480,408],"cardH":44,"nodes":[{"id":"debt","x":246,"y":70,"w":96},{"id":"interest","x":158,"y":342,"w":96},{"id":"deficit","x":104,"y":174,"w":96},{"id":"credit","x":388,"y":174,"w":96},{"id":"rate","x":334,"y":342,"w":96}],"edges":[{"a":"debt","b":"interest","pol":"+","arc":true,"ctrl":[233.9,216.3],"via":null,"pts":[[235.4,89.0],[235.1,99.6],[234.7,110.1],[234.0,120.5],[233.1,130.9],[232.0,141.2],[230.7,151.4],[229.1,161.5],[227.3,171.6],[225.3,181.6],[223.1,191.5],[220.6,201.4],[218.0,211.2],[215.1,220.9],[212.0,230.5],[208.6,240.1],[205.1,249.6],[201.3,259.0],[197.3,268.4],[193.1,277.7],[188.6,286.9],[183.9,296.0],[179.1,305.1],[174.0,314.1],[168.6,323.0]]},{"a":"interest","b":"deficit","pol":"+","arc":true,"ctrl":[113.6,263.6],"via":null,"pts":[[147.4,323.0],[144.6,318.0],[142.0,313.0],[139.5,308.0],[137.1,302.9],[134.8,297.8],[132.7,292.6],[130.7,287.4],[128.7,282.1],[127.0,276.9],[125.3,271.5],[123.7,266.2],[122.3,260.8],[121.0,255.4],[119.8,249.9],[118.8,244.4],[117.8,238.8],[117.0,233.2],[116.3,227.6],[115.7,221.9],[115.3,216.2],[114.9,210.5],[114.7,204.7],[114.6,198.9],[114.6,193.0]]},{"a":"deficit","b":"debt","pol":"+","arc":true,"ctrl":[166.6,110.5],"via":null,"pts":[[149.0,155.0],[150.5,151.3],[152.0,147.7],[153.7,144.2],[155.3,140.8],[157.1,137.5],[158.8,134.2],[160.7,131.0],[162.6,127.9],[164.6,124.9],[166.6,121.9],[168.7,119.1],[170.8,116.3],[173.0,113.6],[175.2,110.9],[177.6,108.4],[179.9,105.9],[182.4,103.5],[184.8,101.2],[187.4,99.0],[190.0,96.8],[192.7,94.7],[195.4,92.7],[198.2,90.8],[201.0,89.0]]},{"a":"debt","b":"credit","pol":"-","arc":true,"ctrl":[325.4,110.5],"via":null,"pts":[[291.0,89.0],[293.8,90.8],[296.6,92.7],[299.3,94.7],[302.0,96.8],[304.6,99.0],[307.2,101.2],[309.6,103.5],[312.1,105.9],[314.4,108.4],[316.7,110.9],[319.0,113.6],[321.2,116.3],[323.3,119.1],[325.4,121.9],[327.4,124.9],[329.4,127.9],[331.3,131.0],[333.2,134.2],[334.9,137.5],[336.7,140.8],[338.3,144.2],[339.9,147.7],[341.5,151.3],[343.0,155.0]]},{"a":"credit","b":"rate","pol":"-","arc":true,"ctrl":[378.4,263.6],"via":null,"pts":[[377.4,193.0],[377.4,198.9],[377.3,204.7],[377.1,210.5],[376.7,216.2],[376.3,221.9],[375.7,227.6],[375.0,233.2],[374.2,238.8],[373.2,244.4],[372.2,249.9],[371.0,255.4],[369.7,260.8],[368.3,266.2],[366.7,271.5],[365.0,276.9],[363.3,282.1],[361.3,287.4],[359.3,292.6],[357.2,297.8],[354.9,302.9],[352.5,308.0],[350.0,313.0],[347.4,318.0],[344.6,323.0]]},{"a":"rate","b":"interest","pol":"+","arc":true,"ctrl":[246.0,353.2],"via":null,"pts":[[289.0,342.0],[285.4,342.9],[281.8,343.7],[278.2,344.4],[274.7,345.1],[271.1,345.7],[267.5,346.2],[263.9,346.6],[260.3,347.0],[256.8,347.2],[253.2,347.4],[249.6,347.6],[246.0,347.6],[242.4,347.6],[238.8,347.4],[235.2,347.2],[231.7,347.0],[228.1,346.6],[224.5,346.2],[220.9,345.7],[217.3,345.1],[213.8,344.4],[210.2,343.7],[206.6,342.9],[203.0,342.0]]}],"loops":[{"id":"R1","kind":"R","w":145,"h":18,"members":["debt","interest","deficit"]},{"id":"R2","kind":"R","w":133,"h":18,"members":["debt","credit","rate","interest","deficit"]}]}</script><script>(function () {
 'use strict';
 var dataEl = document.getElementById('stdraw-data');
 if (!dataEl) return;
@@ -60,7 +60,7 @@ var edges = D.edges.map(function (e) {
           pa0: cp(pts[0]), pb0: cp(pts[pts.length - 1]),
           via: (e.via && e.via.length >= 3) ? e.via.map(cp) : null,
           corners: (e.via && e.via.length >= 3) ? e.via.map(cp) : null,
-          pts: pts, base: pts.map(cp), d0: null};
+          pts: pts, base: pts.map(cp), d0: null, delay: !!e.delay, dm: null, dm0: null};
 });
 edges.forEach(function (e, i) {
   var g = visG(i);
@@ -69,6 +69,8 @@ edges.forEach(function (e, i) {
     if (p0) {
       e.d0 = p0.getAttribute('d');
       bindEdgeHover(i, p0);   // visible stroke sits on top of the hit band
+      e.dm = g.querySelector('.stdraw-delay');   // @delay mark (3rd path)
+      if (e.dm) e.dm0 = e.dm.getAttribute('d');
     }
   }
 });
@@ -215,6 +217,7 @@ function updateEdge(i) {
     var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
     paths[1].setAttribute('transform', 'translate(' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
   }
+  if (e.delay && e.dm) e.dm.setAttribute('d', annDelayMarkD(e.pts));   // @delay mark follows the route
   updateEndpointHandles(i);   // ref-scrubbed: endpoint handles track every redraw
 }
 function borderPoint(c, hw, hh, toward) {
@@ -835,6 +838,7 @@ function metrics() {
           cv: Math.round(cv * 1000) / 1000, row: Math.round(aligned / ids.length * 1000) / 1000};
 }
 function refreshMetrics() {
+  annRefreshLabels();   // annotation layer: loop labels re-placed after every geometry change
   var el = document.getElementById('stdraw-metrics');
   if (!el) return;
   var m = metrics();
@@ -1965,6 +1969,7 @@ function reset() {
     // Original rendering (vg path_d incl. fillet arcs) restored from the initial d strings
     if (paths[0] && e.d0) paths[0].setAttribute('d', e.d0);
     else if (paths[0]) paths[0].setAttribute('d', edgeD(e.pts));
+    if (e.delay && e.dm && e.dm0) e.dm.setAttribute('d', e.dm0);   // static @delay mark restored
     if (paths[1]) {
       var n2 = e.pts.length, a = e.pts[n2 - 2], b = e.pts[n2 - 1];
       var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
@@ -2208,6 +2213,121 @@ if (btnA) {
   btnA.textContent = 'Anchors: ' + (anchorToggle ? 'on' : 'off');   // ref-scrubbed: default off
   btnA.addEventListener('click', function () { setAnchorToggle(!anchorToggle); });
 }
+// ── annotation layer: JS port of stdraw/annotations.py (loop labels + @delay marks) ──
+// Loop-label positions are computed by the engine on the delivered geometry
+// and ship in the static SVG + payload; this port only RE-places a label
+// after a drag, with the same candidate order and the same rounding, so the
+// on-load state equals the static render.  A label with no collision-free
+// slot stays hidden (never on a card or a line).
+function annRectGap(x1, y1, w1, h1, x2, y2, w2, h2) {
+  var dx = Math.abs(x1 - x2) - (w1 + w2) / 2, dy = Math.abs(y1 - y2) - (h1 + h2) / 2;
+  return Math.hypot(Math.max(dx, 0), Math.max(dy, 0));
+}
+function annSegHitsRect(x1, y1, x2, y2, cx, cy, hw, hh) {
+  var dx = x2 - x1, dy = y2 - y1, t0 = 0, t1 = 1, k, p, q, r;
+  var pq = [[-dx, x1 - (cx - hw)], [dx, (cx + hw) - x1], [-dy, y1 - (cy - hh)], [dy, (cy + hh) - y1]];
+  for (k = 0; k < 4; k++) {
+    p = pq[k][0]; q = pq[k][1];
+    if (Math.abs(p) < 1e-9) { if (q < 0) return false; }
+    else {
+      r = q / p;
+      if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+      else { if (r < t0) return false; if (r < t1) t1 = r; }
+    }
+  }
+  return t1 - t0 > 1e-9;
+}
+var ANN_RADII = [0, 12, 20, 28, 36, 44, 52, 64, 80, 96, 112, 128, 144, 160], ANN_DIRS = 12;
+var ANN_RADII_FAR = [168, 176, 184, 192, 200, 212, 224, 240, 256], ANN_DIRS_FAR = 24;
+var ANN_EDGE = 4, ANN_BOX_GAP = 4, ANN_TARGET_GAP = 8, ANN_LABEL_GAP = 8;
+var loopLabels = D.loops || [];
+function annLabelClear(cx, cy, w, h, others, gap) {
+  if (gap === undefined) gap = ANN_BOX_GAP;
+  if (cx - w / 2 < ANN_EDGE || cx + w / 2 > VB[2] - ANN_EDGE || cy - h / 2 < ANN_EDGE || cy + h / 2 > VB[3] - ANN_EDGE) return false;
+  var hw = w / 2 + gap, hh = h / 2 + gap, ks = Object.keys(nodes), i, j, n, pts;
+  for (i = 0; i < ks.length; i++) { n = nodes[ks[i]]; if (annRectGap(cx, cy, w, h, n.x, n.y, n.w, cardH) < gap - 1e-9) return false; }
+  for (i = 0; i < edges.length; i++) { pts = edges[i].pts; for (j = 0; j + 1 < pts.length; j++) { if (annSegHitsRect(pts[j][0], pts[j][1], pts[j + 1][0], pts[j + 1][1], cx, cy, hw, hh)) return false; } }
+  for (i = 0; i < others.length; i++) { if (annRectGap(cx, cy, w, h, others[i][0], others[i][1], others[i][2], others[i][3]) < ANN_LABEL_GAP - 1e-9) return false; }
+  return true;
+}
+function annPlaceLabels() {
+  var placed = [], i;
+  for (i = 0; i < loopLabels.length; i++) {
+    var l = loopLabels[i], mem = l.members || [], ok = false, cx = null, cy = null, r, k, seen = {};
+    var sx = 0, sy = 0, cnt = 0;
+    mem.forEach(function (v) { var n = nodes[v]; if (n) { sx += n.x; sy += n.y; cnt++; } });
+    if (cnt >= 2) {
+      var cx0 = sx / cnt, cy0 = sy / cnt;
+      var rings = [ANN_RADII, ANN_RADII_FAR], gaps = [ANN_TARGET_GAP, ANN_BOX_GAP], g, nd;
+      outer:
+      for (g = 0; g < 4; g++) {
+        var ring = rings[g >> 1], gap = gaps[g & 1];
+        seen = {};
+        for (r = 0; r < ring.length; r++) {
+          nd = (ring[r] === 0) ? 1 : (ring === ANN_RADII ? ANN_DIRS : ANN_DIRS_FAR);
+          for (k = 0; k < nd; k++) {
+            var a = 2 * Math.PI * k / nd - Math.PI / 2;
+            var tx = Math.round(cx0 + ring[r] * Math.cos(a));
+            var ty = Math.round(cy0 + ring[r] * Math.sin(a));
+            if (seen['x' + tx + 'y' + ty]) continue;
+            seen['x' + tx + 'y' + ty] = 1;
+            if (annLabelClear(tx, ty, l.w, l.h, placed, gap)) { ok = true; cx = tx; cy = ty; break outer; }
+          }
+        }
+      }
+    }
+    l.placed = ok; l.x = cx; l.y = cy;
+    if (ok) placed.push([cx, cy, l.w, l.h]);
+    if (l.g) {
+      if (ok) { l.g.setAttribute('transform', 'translate(' + cx + ' ' + cy + ')'); l.g.removeAttribute('display'); }
+      else { l.g.setAttribute('display', 'none'); }
+    }
+  }
+}
+loopLabels.forEach(function (l) { l.g = null; });
+(function () {
+  var gs = svg.querySelectorAll('g.stdraw-looplabel'), i, j;
+  for (i = 0; i < gs.length; i++) {
+    var id = gs[i].getAttribute('data-loop');
+    for (j = 0; j < loopLabels.length; j++) { if (String(loopLabels[j].id) === id) loopLabels[j].g = gs[i]; }
+  }
+})();
+var annLabelLayer = document.getElementById('stdraw-looplabels');
+var loopsOn = true;
+function setLoopsToggle(on) {
+  loopsOn = on;
+  if (annLabelLayer) annLabelLayer.style.display = on ? '' : 'none';
+  var b = document.getElementById('stdraw-loops-toggle');
+  if (b) b.textContent = 'Loops: ' + (on ? 'on' : 'off');
+}
+var btnL = document.getElementById('stdraw-loops-toggle');
+if (btnL) btnL.addEventListener('click', function () { setLoopsToggle(!loopsOn); });
+function annRefreshLabels() { if (!loopLabels || !loopLabels.length) return; annPlaceLabels(); }
+function annDelayMarkD(pts) {
+  var segs = [], total = 0, i, d;
+  for (i = 0; i + 1 < pts.length; i++) {
+    d = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+    if (d > 1e-9) { segs.push([pts[i], pts[i + 1], d]); total += d; }
+  }
+  if (!segs.length) return '';
+  var half = total / 2, acc = 0, mx, my, tx, ty, s, t;
+  for (i = 0; i < segs.length; i++) {
+    s = segs[i];
+    if (acc + s[2] >= half - 1e-12) {
+      t = (half - acc) / s[2];
+      mx = s[0][0] + (s[1][0] - s[0][0]) * t; my = s[0][1] + (s[1][1] - s[0][1]) * t;
+      tx = (s[1][0] - s[0][0]) / s[2]; ty = (s[1][1] - s[0][1]) / s[2];
+      break;
+    }
+    acc += s[2];
+  }
+  var nx = -ty, ny = tx, out = [];
+  [-2, 2].forEach(function (o) {
+    var cx = mx + tx * o, cy = my + ty * o;
+    out.push('M ' + (cx - nx * 5).toFixed(1) + ' ' + (cy - ny * 5).toFixed(1) + ' L ' + (cx + nx * 5).toFixed(1) + ' ' + (cy + ny * 5).toFixed(1));
+  });
+  return out.join(' ');
+}
 rebuildHandles();
 rebuildAllEndpointHandles();   // ref-scrubbed: initial endpoint handle placement
 syncEpHitRadius();             // 2026-11-12: floor the on-screen endpoint hit radius for the actual render scale
@@ -2223,15 +2343,15 @@ window.addEventListener('load', function () { syncDomGeometry(); });
 </script>
 <div class="cert"><div class="cert-head"><span class="cert-title">QUALITY CERTIFICATE</span><span class="cert-sub">rechecked on delivered coordinates · auto-v2 hard gates</span><span class="stamp">best</span></div>
 <table class="cert-sign">
-<tr><td class="lbl">GRADE</td><td class="val"><span class="stamp">best</span></td></tr><tr><td class="lbl">GATES</td><td class="val">11/11</td></tr><tr><td class="lbl">CROSSINGS</td><td class="val">0</td></tr><tr><td class="lbl">PRESS</td><td class="val">0</td></tr><tr><td class="lbl">CLEAR</td><td class="val">55.7</td></tr><tr><td class="lbl">CV</td><td class="val">0.0</td></tr><tr><td class="lbl">MODE</td><td class="val">ring-cycle</td></tr>
+<tr><td class="lbl">GRADE</td><td class="val"><span class="stamp">best</span></td></tr><tr><td class="lbl">GATES</td><td class="val">12/12</td></tr><tr><td class="lbl">CROSSINGS</td><td class="val">0</td></tr><tr><td class="lbl">PRESS</td><td class="val">0</td></tr><tr><td class="lbl">CLEAR</td><td class="val">67.6</td></tr><tr><td class="lbl">CV</td><td class="val">0.0</td></tr><tr><td class="lbl">MODE</td><td class="val">ring-cycle</td></tr>
 </table>
 <div class="cert-detail">
 <h4>Metrics</h4>
 <table>
-<tr><td>Crossings (soft target · report item)</td><td>0</td></tr><tr><td>Visual crossings (hard gate · incl. fan pairs)</td><td>0</td></tr><tr><td>Box press (1px margin)</td><td>0</td></tr><tr><td>Min edge-box clearance</td><td>55.7</td></tr><tr><td>Anchor violations</td><td>0</td></tr><tr><td>Average edge length</td><td>136.3</td></tr><tr><td>Minimum card gap</td><td>75.6</td></tr><tr><td>Line-kind distribution</td><td>{'line': 6}</td></tr><tr><td>On-ring equal-spacing CV</td><td>0.0013</td></tr><tr><td>Regular-polygon template deviation</td><td>0.0051</td></tr>
+<tr><td>Crossings (soft target · report item)</td><td>0</td></tr><tr><td>Visual crossings (hard gate · incl. fan pairs)</td><td>0</td></tr><tr><td>Box press (1px margin)</td><td>0</td></tr><tr><td>Min edge-box clearance</td><td>67.6</td></tr><tr><td>Anchor violations</td><td>0</td></tr><tr><td>Average edge length</td><td>129.3</td></tr><tr><td>Minimum card gap</td><td>75.6</td></tr><tr><td>Line-kind distribution</td><td>{'arc': 6}</td></tr><tr><td>On-ring equal-spacing CV</td><td>0.0013</td></tr><tr><td>Regular-polygon template deviation</td><td>0.0051</td></tr>
 </table>
 <h4>Placement mode: ring (main ring in regular-polygon slots + in-ring chord routing; row alignment / column snap inapplicable)</h4>
-<h4>Gates 11/11</h4><table><tr><td>box_press_zero</td><td class="ok">✓</td></tr><tr><td>edge_box_clear_ge_16</td><td class="ok">✓</td></tr><tr><td>anchors_smooth</td><td class="ok">✓</td></tr><tr><td>anchors_standard</td><td class="ok">✓</td></tr><tr><td>min_gap_ge_16</td><td class="ok">✓</td></tr><tr><td>ring_spacing_cv_le_050</td><td class="ok">✓</td></tr><tr><td>ring_template_fit_le_070</td><td class="ok">✓</td></tr><tr><td>mutual_pairs_separated</td><td class="ok">✓</td></tr><tr><td>lines_no_coincidence</td><td class="ok">✓</td></tr><tr><td>visual_crossings_zero</td><td class="ok">✓</td></tr><tr><td>routing_consistent</td><td class="ok">✓</td></tr></table>
+<h4>Gates 12/12</h4><table><tr><td>box_press_zero</td><td class="ok">✓</td></tr><tr><td>edge_box_clear_ge_16</td><td class="ok">✓</td></tr><tr><td>anchors_smooth</td><td class="ok">✓</td></tr><tr><td>anchors_standard</td><td class="ok">✓</td></tr><tr><td>min_gap_ge_16</td><td class="ok">✓</td></tr><tr><td>ring_spacing_cv_le_050</td><td class="ok">✓</td></tr><tr><td>ring_template_fit_le_070</td><td class="ok">✓</td></tr><tr><td>mutual_pairs_separated</td><td class="ok">✓</td></tr><tr><td>lines_no_coincidence</td><td class="ok">✓</td></tr><tr><td>visual_crossings_zero</td><td class="ok">✓</td></tr><tr><td>loop_labels_clear</td><td class="ok">✓</td></tr><tr><td>routing_consistent</td><td class="ok">✓</td></tr></table>
 <h4>Report items (non-vetoing)</h4><table><tr><td>0 crossings</td><td class="ok">✓</td></tr><tr><td>Row alignment &ge;0.60</td><td class="ok">✓</td></tr></table>
 <p class="grade">Grade: <b>best</b> — all hard gates passed (box press 0 / clearance &gt;=16 / anchors smooth / regularity) + 0 line crossings</p>
 <p class="note">Edge sign: <svg width="28" height="10" style="vertical-align:middle" aria-hidden="true"><line x1="2" y1="5" x2="26" y2="5" stroke="#c2410c" stroke-width="4"/></svg> <b>+</b>&nbsp;&nbsp;<svg width="28" height="10" style="vertical-align:middle" aria-hidden="true"><line x1="2" y1="5" x2="26" y2="5" stroke="#1e6fae" stroke-width="4"/></svg> <b>−</b></p>

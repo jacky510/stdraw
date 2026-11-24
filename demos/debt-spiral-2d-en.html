@@ -17,7 +17,7 @@ h1{font-size:18px} svg{background:#f7f3ea;border:1px solid #e2e8f0;border-radius
 #stdraw-svg [data-node].dragging{cursor:grabbing}
 </style>
 <h1>stdraw 2D layout · Debt Spiral (auto-v2: straight/arc lines first-class, zero box-press hard gate, edge-box clearance &ge;16px; position engine ring-construct, line style straight)</h1>
-<svg id="stdraw-svg" viewBox="0 0 584 480" font-family="Microsoft YaHei,sans-serif"><defs><pattern id="stdraw-grid" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="1.1" fill="#cfc7b4"/></pattern></defs><rect x="0" y="0" width="584" height="480" fill="url(#stdraw-grid)" pointer-events="none"/><g data-edge="0"><path d="M 284.0 89.0 L 174.0 391.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(174.0 391.0) rotate(110.0)"/></g><g data-edge="1"><path d="M 154.9 391.0 L 119.2 219.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(119.2 219.0) rotate(-101.7)"/></g><g data-edge="2"><path d="M 119.2 181.0 L 270.8 89.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(270.8 89.0) rotate(-31.3)"/></g><g data-edge="3"><path d="M 297.2 89.0 L 446.0 181.0" fill="none" stroke="#1e6fae" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#1e6fae" transform="translate(446.0 181.0) rotate(31.7)"/></g><g data-edge="4"><path d="M 462.0 219.0 L 394.0 391.0" fill="none" stroke="#1e6fae" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#1e6fae" transform="translate(394.0 391.0) rotate(111.6)"/></g><g data-edge="5"><path d="M 321.0 410.0 L 255.0 410.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(255.0 410.0) rotate(180.0)"/></g><g data-node="debt"><rect x="225" y="48" width="118" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="284" y="74" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">Total Debt</text></g><g data-node="interest"><rect x="90" y="388" width="168" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="174" y="414" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">Interest Expense</text></g><g data-node="deficit"><rect x="47" y="178" width="118" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="106" y="204" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">Budget Gap</text></g><g data-node="credit"><rect x="391" y="178" width="142" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="462" y="204" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">Credit Rating</text></g><g data-node="rate"><rect x="318" y="388" width="152" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="394" y="414" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">Financing Cost</text></g></svg><div class="stdraw-toolbar"><span class="stdraw-hint">Drag cards to rearrange · double-click a line to cycle its style (auto/straight/arc/free) · in free style click a line to add fold points (max 8) or drag a segment to shift it · hover a card to show its 16 standard anchors (toggle) · drag an edge endpoint to snap to the nearest anchor · metrics update live; the certificate is authoritative via CLI --from-layout</span><span id="stdraw-metrics">…</span><button id="stdraw-anchors-toggle" type="button">Anchors: off</button><button id="stdraw-export" type="button">Export layout</button><button id="stdraw-reset" type="button">Reset</button></div><script id="stdraw-data" type="application/json">{"name":"Debt Spiral","viewBox":[0,0,584,480],"cardH":44,"nodes":[{"id":"debt","x":284,"y":70,"w":118},{"id":"interest","x":174,"y":410,"w":168},{"id":"deficit","x":106,"y":200,"w":118},{"id":"credit","x":462,"y":200,"w":142},{"id":"rate","x":394,"y":410,"w":152}],"edges":[{"a":"debt","b":"interest","pol":"+","arc":false,"ctrl":null,"via":null,"pts":[[284.0,89.0],[174.0,391.0]]},{"a":"interest","b":"deficit","pol":"+","arc":false,"ctrl":null,"via":null,"pts":[[154.9,391.0],[119.2,219.0]]},{"a":"deficit","b":"debt","pol":"+","arc":false,"ctrl":null,"via":null,"pts":[[119.2,181.0],[270.8,89.0]]},{"a":"debt","b":"credit","pol":"-","arc":false,"ctrl":null,"via":null,"pts":[[297.2,89.0],[446.0,181.0]]},{"a":"credit","b":"rate","pol":"-","arc":false,"ctrl":null,"via":null,"pts":[[462.0,219.0],[394.0,391.0]]},{"a":"rate","b":"interest","pol":"+","arc":false,"ctrl":null,"via":null,"pts":[[321.0,410.0],[255.0,410.0]]}]}</script><script>(function () {
+<svg id="stdraw-svg" viewBox="0 0 584 480" font-family="Microsoft YaHei,sans-serif"><defs><pattern id="stdraw-grid" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="1.1" fill="#cfc7b4"/></pattern></defs><rect x="0" y="0" width="584" height="480" fill="url(#stdraw-grid)" pointer-events="none"/><g data-edge="0"><path d="M 270.8 89.0 Q 257.2 253.4 174.0 391.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(174.0 391.0) rotate(120.6)"/></g><g data-edge="1"><path d="M 154.9 391.0 Q 110.9 312.5 119.2 219.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(119.2 219.0) rotate(-85.6)"/></g><g data-edge="2"><path d="M 119.2 181.0 Q 143.3 120.8 228.0 89.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(228.0 89.0) rotate(-21.1)"/></g><g data-edge="3"><path d="M 340.0 89.0 Q 420.2 121.0 446.0 181.0" fill="none" stroke="#1e6fae" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#1e6fae" transform="translate(446.0 181.0) rotate(65.3)"/></g><g data-edge="4"><path d="M 462.0 219.0 Q 451.2 312.5 394.0 391.0" fill="none" stroke="#1e6fae" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#1e6fae" transform="translate(394.0 391.0) rotate(125.5)"/></g><g data-edge="5"><path d="M 321.0 410.0 Q 288.0 418.4 255.0 410.0" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M 0 0 L -7 -3 L -7 3 Z" fill="#c2410c" transform="translate(255.0 410.0) rotate(-166.0)"/></g><g id="stdraw-looplabels"><g class="stdraw-looplabel" data-loop="R1" transform="translate(327 307)" pointer-events="none"><rect x="-89" y="-9" width="178" height="18" rx="9" fill="#fffdf6" fill-opacity="0.92"/><g transform="translate(-76.0 0)"><path d="M -3.2 -2.7 A 4.2 4.2 0 1 1 -3.2 2.7" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M -5.5 -0.1 L -1.5 1.3 L -4.9 4.1 Z" fill="#c2410c"/></g><text x="-65" y="0" dominant-baseline="middle" font-size="11" fill="#22303f"><tspan font-weight="700" fill="#c2410c">R1</tspan> <tspan>interest snowball</tspan></text></g><g class="stdraw-looplabel" data-loop="R2" transform="translate(348 258)" pointer-events="none"><rect x="-100" y="-9" width="200" height="18" rx="9" fill="#fffdf6" fill-opacity="0.92"/><g transform="translate(-87.0 0)"><path d="M -3.2 -2.7 A 4.2 4.2 0 1 1 -3.2 2.7" fill="none" stroke="#c2410c" stroke-width="1.3"/><path d="M -5.5 -0.1 L -1.5 1.3 L -4.9 4.1 Z" fill="#c2410c"/></g><text x="-76" y="0" dominant-baseline="middle" font-size="11" fill="#22303f"><tspan font-weight="700" fill="#c2410c">R2</tspan> <tspan>credit deterioration</tspan></text></g></g><g data-node="debt"><rect x="225" y="48" width="118" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="284" y="74" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">Total Debt</text></g><g data-node="interest"><rect x="90" y="388" width="168" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="174" y="414" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">Interest Expense</text></g><g data-node="deficit"><rect x="47" y="178" width="118" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="106" y="204" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">Budget Gap</text></g><g data-node="credit"><rect x="391" y="178" width="142" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="462" y="204" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">Credit Rating</text></g><g data-node="rate"><rect x="318" y="388" width="152" height="44" rx="14" fill="#fffdf6" stroke="#2a3644" stroke-width="1.5"/><text x="394" y="414" text-anchor="middle" dominant-baseline="middle" font-size="12.5" fill="#22303f">Financing Cost</text></g></svg><div class="stdraw-toolbar"><span class="stdraw-hint">Drag cards to rearrange · double-click a line to cycle its style (auto/straight/arc/free) · in free style click a line to add fold points (max 8) or drag a segment to shift it · hover a card to show its 16 standard anchors (toggle) · drag an edge endpoint to snap to the nearest anchor · metrics update live; the certificate is authoritative via CLI --from-layout</span><span id="stdraw-metrics">…</span><button id="stdraw-anchors-toggle" type="button">Anchors: off</button><button id="stdraw-loops-toggle" type="button">Loops: on</button><button id="stdraw-export" type="button">Export layout</button><button id="stdraw-reset" type="button">Reset</button></div><script id="stdraw-data" type="application/json">{"name":"Debt Spiral","viewBox":[0,0,584,480],"cardH":44,"nodes":[{"id":"debt","x":284,"y":70,"w":118},{"id":"interest","x":174,"y":410,"w":168},{"id":"deficit","x":106,"y":200,"w":118},{"id":"credit","x":462,"y":200,"w":142},{"id":"rate","x":394,"y":410,"w":152}],"edges":[{"a":"debt","b":"interest","pol":"+","arc":true,"ctrl":[257.2,253.4],"via":null,"pts":[[270.8,89.0],[269.5,102.7],[268.0,116.2],[266.3,129.7],[264.3,143.1],[262.1,156.3],[259.7,169.5],[256.9,182.6],[254.0,195.6],[250.8,208.5],[247.4,221.4],[243.7,234.1],[239.8,246.7],[235.7,259.2],[231.3,271.7],[226.6,284.0],[221.7,296.3],[216.6,308.5],[211.3,320.5],[205.7,332.5],[199.8,344.4],[193.7,356.2],[187.4,367.9],[180.8,379.5],[174.0,391.0]]},{"a":"interest","b":"deficit","pol":"+","arc":true,"ctrl":[110.9,312.5],"via":null,"pts":[[154.9,391.0],[151.3,384.4],[147.9,377.8],[144.7,371.1],[141.7,364.4],[138.8,357.6],[136.1,350.8],[133.7,343.9],[131.4,337.0],[129.2,330.0],[127.3,323.0],[125.5,315.9],[124.0,308.8],[122.6,301.6],[121.3,294.3],[120.3,287.0],[119.5,279.7],[118.8,272.3],[118.3,264.8],[118.0,257.3],[117.9,249.8],[117.9,242.1],[118.2,234.5],[118.6,226.8],[119.2,219.0]]},{"a":"deficit","b":"debt","pol":"+","arc":true,"ctrl":[143.3,120.8],"via":null,"pts":[[119.2,181.0],[121.3,176.0],[123.6,171.2],[126.2,166.4],[128.9,161.7],[131.9,157.1],[135.0,152.7],[138.4,148.3],[142.0,144.0],[145.8,139.8],[149.8,135.7],[154.0,131.8],[158.4,127.9],[163.1,124.1],[167.9,120.4],[173.0,116.8],[178.2,113.3],[183.7,110.0],[189.4,106.7],[195.3,103.5],[201.4,100.4],[207.8,97.4],[214.3,94.5],[221.0,91.7],[228.0,89.0]]},{"a":"debt","b":"credit","pol":"-","arc":true,"ctrl":[420.2,121.0],"via":null,"pts":[[340.0,89.0],[346.6,91.7],[353.0,94.5],[359.2,97.4],[365.2,100.4],[371.1,103.5],[376.7,106.7],[382.1,110.0],[387.4,113.4],[392.5,116.9],[397.4,120.5],[402.1,124.2],[406.6,128.0],[410.9,131.9],[415.0,135.9],[419.0,139.9],[422.7,144.1],[426.3,148.4],[429.7,152.7],[432.9,157.2],[435.9,161.8],[438.7,166.4],[441.3,171.2],[443.7,176.0],[446.0,181.0]]},{"a":"credit","b":"rate","pol":"-","arc":true,"ctrl":[451.2,312.5],"via":null,"pts":[[462.0,219.0],[461.0,226.8],[459.9,234.5],[458.6,242.1],[457.1,249.8],[455.5,257.3],[453.7,264.8],[451.8,272.3],[449.7,279.7],[447.4,287.0],[445.0,294.3],[442.4,301.6],[439.6,308.8],[436.7,315.9],[433.6,323.0],[430.4,330.0],[427.0,337.0],[423.4,343.9],[419.7,350.8],[415.8,357.6],[411.8,364.4],[407.6,371.1],[403.2,377.8],[398.7,384.4],[394.0,391.0]]},{"a":"rate","b":"interest","pol":"+","arc":true,"ctrl":[288.0,418.4],"via":null,"pts":[[321.0,410.0],[318.3,410.7],[315.5,411.3],[312.8,411.8],[310.0,412.3],[307.2,412.8],[304.5,413.1],[301.7,413.5],[299.0,413.7],[296.2,413.9],[293.5,414.1],[290.8,414.2],[288.0,414.2],[285.2,414.2],[282.5,414.1],[279.8,413.9],[277.0,413.7],[274.2,413.5],[271.5,413.1],[268.8,412.8],[266.0,412.3],[263.2,411.8],[260.5,411.3],[257.8,410.7],[255.0,410.0]]}],"loops":[{"id":"R1","kind":"R","w":178,"h":18,"members":["debt","interest","deficit"]},{"id":"R2","kind":"R","w":200,"h":18,"members":["debt","credit","rate","interest","deficit"]}]}</script><script>(function () {
 'use strict';
 var dataEl = document.getElementById('stdraw-data');
 if (!dataEl) return;
@@ -60,7 +60,7 @@ var edges = D.edges.map(function (e) {
           pa0: cp(pts[0]), pb0: cp(pts[pts.length - 1]),
           via: (e.via && e.via.length >= 3) ? e.via.map(cp) : null,
           corners: (e.via && e.via.length >= 3) ? e.via.map(cp) : null,
-          pts: pts, base: pts.map(cp), d0: null};
+          pts: pts, base: pts.map(cp), d0: null, delay: !!e.delay, dm: null, dm0: null};
 });
 edges.forEach(function (e, i) {
   var g = visG(i);
@@ -69,6 +69,8 @@ edges.forEach(function (e, i) {
     if (p0) {
       e.d0 = p0.getAttribute('d');
       bindEdgeHover(i, p0);   // visible stroke sits on top of the hit band
+      e.dm = g.querySelector('.stdraw-delay');   // @delay mark (3rd path)
+      if (e.dm) e.dm0 = e.dm.getAttribute('d');
     }
   }
 });
@@ -215,6 +217,7 @@ function updateEdge(i) {
     var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
     paths[1].setAttribute('transform', 'translate(' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
   }
+  if (e.delay && e.dm) e.dm.setAttribute('d', annDelayMarkD(e.pts));   // @delay mark follows the route
   updateEndpointHandles(i);   // ref-scrubbed: endpoint handles track every redraw
 }
 function borderPoint(c, hw, hh, toward) {
@@ -835,6 +838,7 @@ function metrics() {
           cv: Math.round(cv * 1000) / 1000, row: Math.round(aligned / ids.length * 1000) / 1000};
 }
 function refreshMetrics() {
+  annRefreshLabels();   // annotation layer: loop labels re-placed after every geometry change
   var el = document.getElementById('stdraw-metrics');
   if (!el) return;
   var m = metrics();
@@ -1965,6 +1969,7 @@ function reset() {
     // Original rendering (vg path_d incl. fillet arcs) restored from the initial d strings
     if (paths[0] && e.d0) paths[0].setAttribute('d', e.d0);
     else if (paths[0]) paths[0].setAttribute('d', edgeD(e.pts));
+    if (e.delay && e.dm && e.dm0) e.dm.setAttribute('d', e.dm0);   // static @delay mark restored
     if (paths[1]) {
       var n2 = e.pts.length, a = e.pts[n2 - 2], b = e.pts[n2 - 1];
       var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
@@ -2208,6 +2213,121 @@ if (btnA) {
   btnA.textContent = 'Anchors: ' + (anchorToggle ? 'on' : 'off');   // ref-scrubbed: default off
   btnA.addEventListener('click', function () { setAnchorToggle(!anchorToggle); });
 }
+// ── annotation layer: JS port of stdraw/annotations.py (loop labels + @delay marks) ──
+// Loop-label positions are computed by the engine on the delivered geometry
+// and ship in the static SVG + payload; this port only RE-places a label
+// after a drag, with the same candidate order and the same rounding, so the
+// on-load state equals the static render.  A label with no collision-free
+// slot stays hidden (never on a card or a line).
+function annRectGap(x1, y1, w1, h1, x2, y2, w2, h2) {
+  var dx = Math.abs(x1 - x2) - (w1 + w2) / 2, dy = Math.abs(y1 - y2) - (h1 + h2) / 2;
+  return Math.hypot(Math.max(dx, 0), Math.max(dy, 0));
+}
+function annSegHitsRect(x1, y1, x2, y2, cx, cy, hw, hh) {
+  var dx = x2 - x1, dy = y2 - y1, t0 = 0, t1 = 1, k, p, q, r;
+  var pq = [[-dx, x1 - (cx - hw)], [dx, (cx + hw) - x1], [-dy, y1 - (cy - hh)], [dy, (cy + hh) - y1]];
+  for (k = 0; k < 4; k++) {
+    p = pq[k][0]; q = pq[k][1];
+    if (Math.abs(p) < 1e-9) { if (q < 0) return false; }
+    else {
+      r = q / p;
+      if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+      else { if (r < t0) return false; if (r < t1) t1 = r; }
+    }
+  }
+  return t1 - t0 > 1e-9;
+}
+var ANN_RADII = [0, 12, 20, 28, 36, 44, 52, 64, 80, 96, 112, 128, 144, 160], ANN_DIRS = 12;
+var ANN_RADII_FAR = [168, 176, 184, 192, 200, 212, 224, 240, 256], ANN_DIRS_FAR = 24;
+var ANN_EDGE = 4, ANN_BOX_GAP = 4, ANN_TARGET_GAP = 8, ANN_LABEL_GAP = 8;
+var loopLabels = D.loops || [];
+function annLabelClear(cx, cy, w, h, others, gap) {
+  if (gap === undefined) gap = ANN_BOX_GAP;
+  if (cx - w / 2 < ANN_EDGE || cx + w / 2 > VB[2] - ANN_EDGE || cy - h / 2 < ANN_EDGE || cy + h / 2 > VB[3] - ANN_EDGE) return false;
+  var hw = w / 2 + gap, hh = h / 2 + gap, ks = Object.keys(nodes), i, j, n, pts;
+  for (i = 0; i < ks.length; i++) { n = nodes[ks[i]]; if (annRectGap(cx, cy, w, h, n.x, n.y, n.w, cardH) < gap - 1e-9) return false; }
+  for (i = 0; i < edges.length; i++) { pts = edges[i].pts; for (j = 0; j + 1 < pts.length; j++) { if (annSegHitsRect(pts[j][0], pts[j][1], pts[j + 1][0], pts[j + 1][1], cx, cy, hw, hh)) return false; } }
+  for (i = 0; i < others.length; i++) { if (annRectGap(cx, cy, w, h, others[i][0], others[i][1], others[i][2], others[i][3]) < ANN_LABEL_GAP - 1e-9) return false; }
+  return true;
+}
+function annPlaceLabels() {
+  var placed = [], i;
+  for (i = 0; i < loopLabels.length; i++) {
+    var l = loopLabels[i], mem = l.members || [], ok = false, cx = null, cy = null, r, k, seen = {};
+    var sx = 0, sy = 0, cnt = 0;
+    mem.forEach(function (v) { var n = nodes[v]; if (n) { sx += n.x; sy += n.y; cnt++; } });
+    if (cnt >= 2) {
+      var cx0 = sx / cnt, cy0 = sy / cnt;
+      var rings = [ANN_RADII, ANN_RADII_FAR], gaps = [ANN_TARGET_GAP, ANN_BOX_GAP], g, nd;
+      outer:
+      for (g = 0; g < 4; g++) {
+        var ring = rings[g >> 1], gap = gaps[g & 1];
+        seen = {};
+        for (r = 0; r < ring.length; r++) {
+          nd = (ring[r] === 0) ? 1 : (ring === ANN_RADII ? ANN_DIRS : ANN_DIRS_FAR);
+          for (k = 0; k < nd; k++) {
+            var a = 2 * Math.PI * k / nd - Math.PI / 2;
+            var tx = Math.round(cx0 + ring[r] * Math.cos(a));
+            var ty = Math.round(cy0 + ring[r] * Math.sin(a));
+            if (seen['x' + tx + 'y' + ty]) continue;
+            seen['x' + tx + 'y' + ty] = 1;
+            if (annLabelClear(tx, ty, l.w, l.h, placed, gap)) { ok = true; cx = tx; cy = ty; break outer; }
+          }
+        }
+      }
+    }
+    l.placed = ok; l.x = cx; l.y = cy;
+    if (ok) placed.push([cx, cy, l.w, l.h]);
+    if (l.g) {
+      if (ok) { l.g.setAttribute('transform', 'translate(' + cx + ' ' + cy + ')'); l.g.removeAttribute('display'); }
+      else { l.g.setAttribute('display', 'none'); }
+    }
+  }
+}
+loopLabels.forEach(function (l) { l.g = null; });
+(function () {
+  var gs = svg.querySelectorAll('g.stdraw-looplabel'), i, j;
+  for (i = 0; i < gs.length; i++) {
+    var id = gs[i].getAttribute('data-loop');
+    for (j = 0; j < loopLabels.length; j++) { if (String(loopLabels[j].id) === id) loopLabels[j].g = gs[i]; }
+  }
+})();
+var annLabelLayer = document.getElementById('stdraw-looplabels');
+var loopsOn = true;
+function setLoopsToggle(on) {
+  loopsOn = on;
+  if (annLabelLayer) annLabelLayer.style.display = on ? '' : 'none';
+  var b = document.getElementById('stdraw-loops-toggle');
+  if (b) b.textContent = 'Loops: ' + (on ? 'on' : 'off');
+}
+var btnL = document.getElementById('stdraw-loops-toggle');
+if (btnL) btnL.addEventListener('click', function () { setLoopsToggle(!loopsOn); });
+function annRefreshLabels() { if (!loopLabels || !loopLabels.length) return; annPlaceLabels(); }
+function annDelayMarkD(pts) {
+  var segs = [], total = 0, i, d;
+  for (i = 0; i + 1 < pts.length; i++) {
+    d = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+    if (d > 1e-9) { segs.push([pts[i], pts[i + 1], d]); total += d; }
+  }
+  if (!segs.length) return '';
+  var half = total / 2, acc = 0, mx, my, tx, ty, s, t;
+  for (i = 0; i < segs.length; i++) {
+    s = segs[i];
+    if (acc + s[2] >= half - 1e-12) {
+      t = (half - acc) / s[2];
+      mx = s[0][0] + (s[1][0] - s[0][0]) * t; my = s[0][1] + (s[1][1] - s[0][1]) * t;
+      tx = (s[1][0] - s[0][0]) / s[2]; ty = (s[1][1] - s[0][1]) / s[2];
+      break;
+    }
+    acc += s[2];
+  }
+  var nx = -ty, ny = tx, out = [];
+  [-2, 2].forEach(function (o) {
+    var cx = mx + tx * o, cy = my + ty * o;
+    out.push('M ' + (cx - nx * 5).toFixed(1) + ' ' + (cy - ny * 5).toFixed(1) + ' L ' + (cx + nx * 5).toFixed(1) + ' ' + (cy + ny * 5).toFixed(1));
+  });
+  return out.join(' ');
+}
 rebuildHandles();
 rebuildAllEndpointHandles();   // ref-scrubbed: initial endpoint handle placement
 syncEpHitRadius();             // 2026-11-12: floor the on-screen endpoint hit radius for the actual render scale
@@ -2223,15 +2343,15 @@ window.addEventListener('load', function () { syncDomGeometry(); });
 </script>
 <div class="cert"><div class="cert-head"><span class="cert-title">QUALITY CERTIFICATE</span><span class="cert-sub">rechecked on delivered coordinates · auto-v2 hard gates</span><span class="stamp">best</span></div>
 <table class="cert-sign">
-<tr><td class="lbl">GRADE</td><td class="val"><span class="stamp">best</span></td></tr><tr><td class="lbl">GATES</td><td class="val">11/11</td></tr><tr><td class="lbl">CROSSINGS</td><td class="val">0</td></tr><tr><td class="lbl">PRESS</td><td class="val">0</td></tr><tr><td class="lbl">CLEAR</td><td class="val">66.3</td></tr><tr><td class="lbl">CV</td><td class="val">0.001</td></tr><tr><td class="lbl">MODE</td><td class="val">ring-cycle</td></tr>
+<tr><td class="lbl">GRADE</td><td class="val"><span class="stamp">best</span></td></tr><tr><td class="lbl">GATES</td><td class="val">12/12</td></tr><tr><td class="lbl">CROSSINGS</td><td class="val">0</td></tr><tr><td class="lbl">PRESS</td><td class="val">0</td></tr><tr><td class="lbl">CLEAR</td><td class="val">78.8</td></tr><tr><td class="lbl">CV</td><td class="val">0.001</td></tr><tr><td class="lbl">MODE</td><td class="val">ring-cycle</td></tr>
 </table>
 <div class="cert-detail">
 <h4>Metrics</h4>
 <table>
-<tr><td>Crossings (soft target · report item)</td><td>0</td></tr><tr><td>Visual crossings (hard gate · incl. fan pairs)</td><td>0</td></tr><tr><td>Box press (1px margin)</td><td>0</td></tr><tr><td>Min edge-box clearance</td><td>66.3</td></tr><tr><td>Anchor violations</td><td>0</td></tr><tr><td>Average edge length</td><td>183.4</td></tr><tr><td>Minimum card gap</td><td>60.0</td></tr><tr><td>Line-kind distribution</td><td>{'line': 6}</td></tr><tr><td>On-ring equal-spacing CV</td><td>0.0012</td></tr><tr><td>Regular-polygon template deviation</td><td>0.0035</td></tr>
+<tr><td>Crossings (soft target · report item)</td><td>0</td></tr><tr><td>Visual crossings (hard gate · incl. fan pairs)</td><td>0</td></tr><tr><td>Box press (1px margin)</td><td>0</td></tr><tr><td>Min edge-box clearance</td><td>78.8</td></tr><tr><td>Anchor violations</td><td>0</td></tr><tr><td>Average edge length</td><td>173.9</td></tr><tr><td>Minimum card gap</td><td>60.0</td></tr><tr><td>Line-kind distribution</td><td>{'arc': 6}</td></tr><tr><td>On-ring equal-spacing CV</td><td>0.0012</td></tr><tr><td>Regular-polygon template deviation</td><td>0.0035</td></tr>
 </table>
 <h4>Placement mode: ring (main ring in regular-polygon slots + in-ring chord routing; row alignment / column snap inapplicable)</h4>
-<h4>Gates 11/11</h4><table><tr><td>box_press_zero</td><td class="ok">✓</td></tr><tr><td>edge_box_clear_ge_16</td><td class="ok">✓</td></tr><tr><td>anchors_smooth</td><td class="ok">✓</td></tr><tr><td>anchors_standard</td><td class="ok">✓</td></tr><tr><td>min_gap_ge_16</td><td class="ok">✓</td></tr><tr><td>ring_spacing_cv_le_050</td><td class="ok">✓</td></tr><tr><td>ring_template_fit_le_070</td><td class="ok">✓</td></tr><tr><td>mutual_pairs_separated</td><td class="ok">✓</td></tr><tr><td>lines_no_coincidence</td><td class="ok">✓</td></tr><tr><td>visual_crossings_zero</td><td class="ok">✓</td></tr><tr><td>routing_consistent</td><td class="ok">✓</td></tr></table>
+<h4>Gates 12/12</h4><table><tr><td>box_press_zero</td><td class="ok">✓</td></tr><tr><td>edge_box_clear_ge_16</td><td class="ok">✓</td></tr><tr><td>anchors_smooth</td><td class="ok">✓</td></tr><tr><td>anchors_standard</td><td class="ok">✓</td></tr><tr><td>min_gap_ge_16</td><td class="ok">✓</td></tr><tr><td>ring_spacing_cv_le_050</td><td class="ok">✓</td></tr><tr><td>ring_template_fit_le_070</td><td class="ok">✓</td></tr><tr><td>mutual_pairs_separated</td><td class="ok">✓</td></tr><tr><td>lines_no_coincidence</td><td class="ok">✓</td></tr><tr><td>visual_crossings_zero</td><td class="ok">✓</td></tr><tr><td>loop_labels_clear</td><td class="ok">✓</td></tr><tr><td>routing_consistent</td><td class="ok">✓</td></tr></table>
 <h4>Report items (non-vetoing)</h4><table><tr><td>0 crossings</td><td class="ok">✓</td></tr><tr><td>Row alignment &ge;0.60</td><td class="ok">✓</td></tr></table>
 <p class="grade">Grade: <b>best</b> — all hard gates passed (box press 0 / clearance &gt;=16 / anchors smooth / regularity) + 0 line crossings</p>
 <p class="note">Edge sign: <svg width="28" height="10" style="vertical-align:middle" aria-hidden="true"><line x1="2" y1="5" x2="26" y2="5" stroke="#c2410c" stroke-width="4"/></svg> <b>+</b>&nbsp;&nbsp;<svg width="28" height="10" style="vertical-align:middle" aria-hidden="true"><line x1="2" y1="5" x2="26" y2="5" stroke="#1e6fae" stroke-width="4"/></svg> <b>−</b></p>
