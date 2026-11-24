@@ -20,6 +20,16 @@ MAX_DFS_DEPTH = 12     # DFS depth cap for declared-ring closure
 MAX_ENUM_DEPTH = 10    # length cap for independently enumerated loops
 
 
+def canon_cycle(path):
+    """Canonical directed cycle form: the rotation with the smallest node first.
+
+    Direction is preserved -- a reversed cycle keeps a different canonical
+    form, so two opposite-direction loops over the same node set stay
+    distinguishable.
+    """
+    return min(tuple(path[i:] + path[:i]) for i in range(len(path)))
+
+
 def loops_audit(graph: Graph) -> dict:
     out_adj = defaultdict(list)   # a -> [(b, polarity)]
     edge_loops: Dict[tuple, List[str]] = {}
@@ -30,6 +40,7 @@ def loops_audit(graph: Graph) -> dict:
 
     declared = {lp.id: lp for lp in graph.loops}
     report = {"loops": [], "problems": [], "extra_cycles": []}
+    walk_by_id = {}   # loop id -> closed walk found by the DFS below (if any)
 
     # ── 1+2. Audit each declared ring ──
     for lid, lp in declared.items():
@@ -60,6 +71,8 @@ def loops_audit(graph: Graph) -> dict:
         if start:
             dfs(start, [start], set())
         closed = found is not None
+        if closed:
+            walk_by_id[lid] = found
         parity_kind = "B" if neg % 2 else "R"
         kind_ok = (not lp.kind) or (lp.kind == parity_kind)
         item = {
@@ -90,9 +103,6 @@ def loops_audit(graph: Graph) -> dict:
     # which once caused neg_edges/kind to swap between two renders of loops_audit.json (ref-scrubbed).
     cycles = set()
 
-    def canon_cycle(path):
-        return min(tuple(path[i:] + path[:i]) for i in range(len(path)))
-
     def walk(cur, start, path, seen_e):
         if len(path) > MAX_ENUM_DEPTH:
             return
@@ -122,12 +132,21 @@ def loops_audit(graph: Graph) -> dict:
                 negs += 1
         return "B" if negs % 2 else "R", negs
 
-    declared_node_sets = [frozenset(lp.nodes) for lp in graph.loops]
+    # Declared-loop matching is direction-aware: a declared loop is
+    # normalized to the canonical directed tuple of its closure walk (the
+    # walk found in section 1, falling back to the declared node order when
+    # the walk failed), and compared with canon_cycle.  Matching on node
+    # sets alone folded two opposite-direction cycles over the same nodes
+    # into one declaration, hiding genuinely undeclared cycles.
+    declared_canon = []
+    for lp in graph.loops:
+        w = walk_by_id.get(lp.id)
+        path = w[:-1] if (w and len(w) >= 3 and w[0] == w[-1]) else lp.nodes
+        declared_canon.append((lp.id, canon_cycle(path)))
     for cyc in sorted(cycles):          # tuple order = deterministic total order, no tie ambiguity
         kind, negs = cycle_kind(cyc)
-        cset = frozenset(cyc)
-        match = next((lp.id for lp, s in zip(graph.loops, declared_node_sets)
-                      if s == cset), None)
+        ccanon = canon_cycle(list(cyc))
+        match = next((lid for lid, dc in declared_canon if dc == ccanon), None)
         report["extra_cycles"].append({
             "nodes": sorted(cyc), "kind": kind, "neg_edges": negs,
             "matches_declared": match})

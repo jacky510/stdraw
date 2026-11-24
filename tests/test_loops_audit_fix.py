@@ -74,3 +74,75 @@ loop L "L" "B" [a, b, c]
     rep = loops_audit(g)
     cyc = _cycles_by_nodes(rep)
     assert cyc[("a", "b", "c")] == ("B", 3)
+
+
+# ── T2: declared-cycle matching is direction-aware ──
+
+def test_undeclared_reverse_cycle_is_reported():
+    # a->b->c->a and a->c->b->a both exist; only the former is declared.
+    # The reverse cycle must be reported as undeclared (pre-fix: node-set
+    # matching silently accepted both).
+    g = parse("""
+graph "t2"
+var a "a"
+var b "b"
+var c "c"
+a -> + b @loops F
+b -> + c @loops F
+c -> + a @loops F
+a -> + c
+c -> + b
+b -> + a
+loop F "F" "R" [a, b, c]
+""")
+    rep = loops_audit(g)
+    tri = [c for c in rep["extra_cycles"] if c["nodes"] == ["a", "b", "c"]]
+    assert len(tri) == 2
+    assert sorted((c["matches_declared"] for c in tri), key=str) == ["F", None]
+    # the undeclared problem names the reverse direction explicitly
+    assert any("undeclared cycle a->c->b" in p for p in rep["problems"])
+
+
+def test_declared_cycle_still_matched():
+    # single loop, declared order rotated differently from the walked cycle:
+    # canonical rotation must still match
+    g = parse("""
+graph "ok"
+var a "a"
+var b "b"
+var c "c"
+a -> + b @loops L
+b -> + c @loops L
+c -> + a @loops L
+loop L "L" "R" [b, c, a]
+""")
+    rep = loops_audit(g)
+    cyc = next(c for c in rep["extra_cycles"] if c["nodes"] == ["a", "b", "c"])
+    assert cyc["matches_declared"] == "L"
+    assert rep["summary"]["undeclared"] == 0
+
+
+def test_matching_uses_closure_walk_direction():
+    # declared node order says b->a->c, but the only closable walk runs
+    # a->b->c->a; the walk direction is authoritative, so the real cycle
+    # matches and the declared-order direction does not mask it
+    g = parse("""
+graph "walkdir"
+var a "a"
+var b "b"
+var c "c"
+a -> + b @loops L
+b -> + c @loops L
+c -> + a @loops L
+a -> + c
+c -> + b
+b -> + a
+loop L "L" "R" [b, a, c]
+""")
+    rep = loops_audit(g)
+    # the closable tagged cycle matches via its closure walk even though the
+    # declared sequence starts differently
+    tri = [c for c in rep["extra_cycles"] if c["nodes"] == ["a", "b", "c"]]
+    assert len(tri) == 2
+    assert sorted((c["matches_declared"] for c in tri), key=str) == ["L", None]
+    assert any("undeclared cycle a->c->b" in p for p in rep["problems"])
