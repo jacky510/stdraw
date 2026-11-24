@@ -46,7 +46,7 @@ pip install "stdraw[solver]"
 ## Quick Reference
 
 - Input: `.cld` DSL — `var id "label"` / `a -> + b @loops R1` /
-  `loop R1 "label" "R" [a, b, c]`. JSON graph model also accepted.
+  `loop R1 "label" "R" [a, b, c]` / `a -> + b @delay` (delay mark). JSON graph model also accepted.
 - Outputs in `--outdir`: `certificate.json` (grade + metrics),
   `geometry_report.json` (checks; CLI exits 1 on fail),
   `loops_audit.json` (semantic lint), `demo-2d.html`,
@@ -54,8 +54,15 @@ pip install "stdraw[solver]"
 - Default recipe `auto-v2` enforces hard gates: box-over-line = 0 (any angle,
   1px margin), edge-to-box clearance >= 16px, smooth border anchors, and
   mode-aware arrangement regularity (bowtie-vertex / spine-wing / vertical-column /
-  ring / mirror-symmetric / layered auto-selected by structure with trial gates; crossings and row
+  ring / mirror-symmetric / lens-chain / layered auto-selected by structure with trial gates; crossings and row
   alignment are reported soft targets since v0.6.0).
+- Loop-reading aids (default on): every declared loop carries a loop-center
+  label (id + name + direction glyph; `Loops: on/off` toggle on the demo page);
+  loop-member edges (loops of >= 3 nodes) default to an arc bending along
+  their loop - straight / polyline fallbacks are recorded with measured
+  reasons in `certificate.json` -> `loop_arcs.fallbacks`; `@delay` edges carry
+  a double-tick delay mark. All hard-gated (`loop_labels_clear`,
+  `delay_marks_clear`).
 
 ## Certificate Reading Rules (honest grading — pass through verbatim)
 
@@ -101,7 +108,8 @@ vertical-orthogonal pages are CI-regression baselines only). Single source:
 - `loops_audit.json` `problems` must be 0 before trusting declared loops.
 - Loop polarity is shown by edge color (light theme: single-loop R vermilion `#c2410c` /
 B drafting blue `#1e6fae`; dark theme `#ffb454` / `#6ec6ff` - single source
-`stdraw/themes.py`; mixed/acyclic neutral, negative edges dashed) - no letter
-badges. Manual touch-up loop: drag nodes in `demo-2d.html`, export layout,
+`stdraw/themes.py`; mixed/acyclic neutral, negative edges dashed) - no
+letter badges; the loop-center labels carry the loop id + name only. Manual
+touch-up loop: drag nodes in `demo-2d.html`, export layout,
 re-run with `--from-layout` (waypoints included) - see AGENTS.md.
 - All outputs are deterministic — safe to commit; re-runs diff clean.

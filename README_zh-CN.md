@@ -31,7 +31,8 @@ pip install stdraw
 
 主流图工具全停在「交叉最小化」启发式，并且**没有一个敢对自己的输出做承诺**。stdraw 反过来：
 
-- **auto-v2（默认配方）**：**按结构选模式的模式化排布**——确定性优先级链（领结对对称 → 领结共点 → 纵柱+翼位 → 双侧梳状 → 纵列 → 环形 → 分层）按图结构选一个排布模板，每个模式带试验闸门（不触发的图逐字节不变）+ 直线/弧线一等布线（CP-SAT 精化可选），带**硬质量门**：框压线=0（任何角度）、边-框净距≥16px、锚点平滑、按模式切换的规律门——详见 [docs/layout-modes.md](docs/layout-modes.md)；
+- **auto-v2（默认配方）**：**按结构选模式的模式化排布**——确定性优先级链（领结对对称 → 领结共点 → 纵柱+翼位 → 双侧梳状 → 纵列 → 环形 → 透镜链 → 分层）按图结构选一个排布模板，每个模式带试验闸门（不触发的图逐字节不变）+ 直线/弧线一等布线（CP-SAT 精化可选），带**硬质量门**：框压线=0（任何角度）、边-框净距≥16px、锚点平滑、按模式切换的规律门——详见 [docs/layout-modes.md](docs/layout-modes.md)；
+- **回路识读层**：每个已声明回路带**回路中心标识**（编号 + 名称 + 方向符号；极性仍只用颜色——标识上不加 +/−），默认显示，demo 页 `Loops: on/off` 可关；属于 ≥3 节点回路的边默认画**顺回路弧线**——顺着所在回路弯、背向回路质心鼓出，回路读起来成一个环——直线 / 绕行折线是带评分的兜底，实测原因写入 `certificate.json` → `loop_arcs.fallbacks`；`a -> + b @delay` 在边中点画双短线延迟标记（`graph.cld` 往返一致）。标识与刻线纳入硬门（`loop_labels_clear`、`delay_marks_clear`：不压框、不压线、标识互不重叠）——口径：[docs/grading-contract.md](docs/grading-contract.md) 附录 B 与 [docs/edge-placement-rules-v1.md](docs/edge-placement-rules-v1.md) §20；
 - **回路主导小图环形排布（v0.5.0）**：小图（≤12 节点）存在覆盖 ≥ n−2 节点的主环（或环边占比 ≥90%）时，主环按环序上**正多边形环槽位**（优先声明环序——R/B 极性着色沿环可读）、弦走环内、残节点确定性环内/环外指派；证书切换为**环形口径指标**（环上等间距 CV + 正多边形模板拟合误差），不再拿行对齐门槛误判环形排布；不触发的图保持分层路径逐字节不变；
 - **锚点带内硬门（v0.7.3）**：交付锚点带内口径（边中点 ±1/4 带、转角命中恒 0）落进 CI 逐图硬门——spine-wing 图须 100% 带内；互环对带内钳制过不了硬门时走确定性带内局部重定线（带内锚候选 + 嵌套弧逃生门 + 自家框内部检查）；其余引擎锁 v0.7.2 基线比例（ring 互环走廊 / bowtie ±12px 辐条走廊为在册遗留）——详见 [docs/layout-modes.md](docs/layout-modes.md)；
 - **布局美学 v3.1（v0.7.1，jacky 手拉样本定调）**：**纵柱+翼位模式（spine-wing）**——存在「中枢对」（某条边的两端点共享 ≥3 个公共邻居，构成中线翼位带）且次级簇可镜像配对的图（如 classic-cld 增长极限×转嫁负担，以 jacky 手拉布局为基准）走**纵柱+中线翼位排布**——中枢对严格垂直居轴、翼位压水平中线、翼外镜像对上下对称；确定性触发判定（中枢对公共邻居数 + rest 簇可配对 + 主链长度占比 ≤0.5），等价证书门（纵柱 x 对齐 ≤2px / 中线贴靠 ≤2px / 镜像 ≤2px）；语料 sweep 仅 classic-cld 一张切换，其余 18 张逐字节零漂移——详见 [docs/layout-modes.md](docs/layout-modes.md)；
@@ -54,12 +55,12 @@ pip install stdraw
 
 <table>
   <tr>
-    <td><a href="demos/debt-spiral-2d.html"><img src="docs/gallery/debt-spiral-2d.png" alt="debt spiral CLD 2D auto-v2 ring layout, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
-    <td><a href="demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="经典 CLD 2D 纵柱+翼位布局，边按符号双色，0 交叉" width="420"/></a></td>
+    <td><a href="demos/debt-spiral-2d.html"><img src="docs/gallery/debt-spiral-2d.png" alt="debt spiral CLD 2D auto-v2 ring layout, loop labels R1/R2 at the loop centers, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
+    <td><a href="demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="经典 CLD 2D 纵柱+翼位布局，回路标识 R1/B1–B4/R2 居回路中心，边按符号双色，0 交叉" width="420"/></a></td>
   </tr>
   <tr>
-    <td><strong>2D · auto-v2 环形布局</strong>（债务螺旋，5n/6e，教科书级债务螺旋反馈环画成一个干净的环——0 交叉、卡间距 75.6px；边按符号双色：+ 朱红 / − 制图蓝，全实线）</td>
-    <td><strong>2D · auto-v2 纵柱+翼位布局</strong>（经典 CLD 增长与负担，8n/13e，中枢对严格垂直居轴 + 翼位压水平中线 + 翼外镜像对称——0 交叉、卡间距 35.0px；边按符号双色：+ 朱红 / − 制图蓝，全实线）</td>
+    <td><strong>2D · auto-v2 环形布局</strong>（债务螺旋，5n/6e，教科书级债务螺旋反馈环画成一个干净的环——0 交叉、卡间距 75.6px；边按符号双色：+ 朱红 / − 制图蓝，全实线；回路标识 R1 / R2 居回路中心，6 条回路边全部沿环弧线）</td>
+    <td><strong>2D · auto-v2 纵柱+翼位布局</strong>（经典 CLD 增长与负担，8n/13e，中枢对严格垂直居轴 + 翼位压水平中线 + 翼外镜像对称——0 交叉、卡间距 35.0px；边按符号双色：+ 朱红 / − 制图蓝，全实线；回路标识 R1 / B1–B4 / R2 居回路中心）</td>
   </tr>
   <tr>
     <td colspan="2" align="center"><a href="demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a></td>
@@ -172,8 +173,11 @@ stdraw layout input.cld --outdir out-manual --from-layout graph-manual-layout.js
 
 ### 线型控制与手动微调（v0.7.7）
 
-自动线型规则：**默认直线**；只有结构性必要时才用弧线——互环对的
-双弧走廊、直线保不住 ≥16px 净距而浅弧可以、以及模式特化美学（如
+自动线型规则：**回路边默认弧线**——属于某个 ≥3 节点已声明回路的边顺着
+所在回路弯（背向回路质心鼓出，回路读起来成一个环）；**直线 / 绕行折线
+只作兜底**，仅当首选弧线不可交付（压框、净距、锚角）时启用，每条兜底都
+把实测原因写进 `certificate.json` → `loop_arcs.fallbacks`。不属于任何回路
+的边仍默认直线；互指对始终走透镜双弧走廊，模式特化美学照旧（如
 spine-wing 中线弧）。双侧供应链图（K_{m,2}：每个源点都连向两个不相
 邻 hub）进入新的 **comb-bilateral（双侧梳状）**排布——源点单竖列、
 双 hub 左右镜像槽位、hub 边全直线扇形。
@@ -225,6 +229,9 @@ loop R1 "采纳扩散" "R" [rate, adopters, word]
 最小闭环 = 变量 / 极性边 / 回路标签 / 分组（可选，布局层不消费分组——布局由关系唯一决定）。
 回路标签不是注释——lint 层验证闭合性与 R/B 极性奇偶，独立枚举全图回路对照（抓过「声明环不闭合」「极性标错」）。
 规范全文：[docs/dsl-spec-v0.1.zh-CN.md](docs/dsl-spec-v0.1.zh-CN.md)（[英文正本](docs/dsl-spec-v0.1.md)）。
+
+可选的 `@delay` 标在边行上表示延迟——边中点画双短线（与回路标识同受硬门约束）：
+`rate -> + adopters @loops R1 @delay`；`graph.cld` 往返一致。
 
 ## 证书与质量门
 
@@ -278,7 +285,7 @@ loop R1 "采纳扩散" "R" [rate, adopters, word]
 
 | 配方 | 线型 | 保证 | 适用 |
 |---|---|---|---|
-| `auto-v2`（默认） | 直线/弧线一等（`--linestyle straight\|arc`） | 硬质量门 + 交叉最小化（CP-SAT 可选 `pip install "stdraw[solver]"`）；按结构选排布模式：环形（回路主导）/ 纵列（长链少环）/ 镜像对称（领结），各带模式口径规律门；回路边 R=朱红/B=制图蓝着色（浅色档）、负边虚线 | 一般 CLD / 教学 / 报告 |
+| `auto-v2`（默认） | 直线/弧线一等（`--linestyle straight\|arc`） | 硬质量门 + 交叉最小化（CP-SAT 可选 `pip install "stdraw[solver]"`）；按结构选排布模式：环形（回路主导）/ 纵列（长链少环）/ 镜像对称（领结）/ 透镜链（纯二环图），各带模式口径规律门；回路边 R=朱红/B=制图蓝着色（浅色档）、负边虚线 | 一般 CLD / 教学 / 报告 |
 | `ortho-v1`（`--recipe ortho`） | 全竖直正交 | 可平面图 0 交叉定理保证（**行为冻结**，CI 逐字节回归） | 生产调用方 pin / 正交风格偏好 |
 
 ## Agent 集成

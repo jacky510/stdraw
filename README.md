@@ -29,8 +29,9 @@ pip install stdraw
 
 Mainstream diagram tools stop at "crossing minimization" heuristics, and **none of them make a verifiable promise about their own output**. stdraw is built the other way around:
 
-- **auto-v2 (default recipe)**: **structure-aware mode layout** — a deterministic priority chain (symmetric → bowtie-vertex → spine-wing → comb-bilateral → column-chain → ring-cycle → layered) picks one arrangement template per graph structure, each with a trial gate (non-triggering graphs stay byte-identical); plus straight/arc-first routing (optional CP-SAT refinement), enforced by **hard quality gates**: box-over-line = 0 (any angle), edge-to-box clearance ≥ 16px, smooth border anchors, and mode-specific regularity gates — see [docs/layout-modes.md](docs/layout-modes.md) (zh original; self-contained English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md));
+- **auto-v2 (default recipe)**: **structure-aware mode layout** — a deterministic priority chain (symmetric → bowtie-vertex → spine-wing → comb-bilateral → column-chain → ring-cycle → lens-chain → layered) picks one arrangement template per graph structure, each with a trial gate (non-triggering graphs stay byte-identical); plus straight/arc-first routing (optional CP-SAT refinement), enforced by **hard quality gates**: box-over-line = 0 (any angle), edge-to-box clearance ≥ 16px, smooth border anchors, and mode-specific regularity gates — see [docs/layout-modes.md](docs/layout-modes.md) (zh original; self-contained English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md));
 - **Ring layout for loop-dominated small graphs (v0.5.0)**: when a small graph (≤ 12 nodes) has a dominant simple cycle covering ≥ n−2 nodes (or ≥ 90% of its edges lie on cycles), the main loop is placed on **regular-polygon ring slots** in cycle order (declared loop order preferred, so R/B polarity colors read along the ring), chords route inside the ring, and residual nodes get deterministic inner/outer slots; the certificate switches to **ring-appropriate metrics** (ring-spacing CV + polygon template-fit error) instead of row alignment — layout mode is stated honestly, never judged by row-gate yardsticks; non-triggering graphs keep the layered path byte-identical;
+- **Loop-reading layer**: every declared loop gets a **loop-center label** (id + name + a direction glyph; polarity stays color-only — no +/− badges on labels), shown by default with a `Loops: on/off` toggle on the demo page; an edge that belongs to a loop of ≥ 3 nodes is drawn as a **loop-side arc** by default — bending along its loop, away from the loop's centroid, so the loop reads as a ring — while straight lines and detour polylines are scored fallbacks whose measured reasons are written to `certificate.json` → `loop_arcs.fallbacks`; `a -> + b @delay` marks a delay with a double tick at the edge midpoint (round-trips through `graph.cld`). Labels and ticks are hard-gated (`loop_labels_clear`, `delay_marks_clear`: no box, line or label overlap) — caliber: [docs/grading-contract.md](docs/grading-contract.md) Appendix B and [docs/edge-placement-rules-v1.md](docs/edge-placement-rules-v1.md) §20;
 - **Anchor-band hard gate (v0.7.3)**: delivered edge anchors clamped to the mid-band (edge midpoint ± 1/4 edge length, corner hits = 0) are now enforced per-figure in CI — spine-wing figures require 100% in-band; mutual-pair edges whose band-clamped anchors cannot pass the hard gates get a deterministic band-anchored local re-route (anchor-band candidates + nested-arc escape hatch + own-box interior check); other engines are locked to their v0.7.2 baseline ratios (ring mutual corridors / bowtie ±12px spoke corridors are registered legacy) — see [docs/layout-modes.md](docs/layout-modes.md) (zh original; self-contained English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md));
 - **Layout aesthetics v3.1 (v0.7.1)**: **spine-wing mode** — graphs with a dominant hub pair (an edge whose endpoints share ≥3 common neighbors = a midline "wing band") plus a constructible secondary cluster get the vertical-spine + midline-wing layout (jacky's hand-drawn classic-cld reference): spine strictly vertical on the axis, wings pressed to the horizontal midline, outer mirror pair symmetric about it; deterministic trigger (hub-pair common-neighbor count + rest-cluster pairing + spine length ratio ≤0.5), equivalent certificate gates (spine-axis ≤2px, midline ≤2px, mirror ≤2px); corpus sweep: only classic-cld-growth-and-burden switches, all other 18 byte-identical — see [docs/layout-modes.md](docs/layout-modes.md) (zh original; self-contained English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md));
 - **Layout aesthetics v3 (v0.7.0)**: **bowtie-vertex mode** — graphs whose topology is exactly two simple cycles sharing one node (e.g. wage-price-spiral, per jacky's hand-drawn reference) get an explicit double-mirror layout (shared node dead-center, one loop per half-plane, symmetric rows, all-straight lines with mutual-pair parallel corridors); **connection-point caliber** — line anchors clamp to each edge's mid-point ±1/4 band (corners excluded entirely, hit count always 0), multiple lines on the same side fan out symmetrically around the mid-point; **adaptive arc curvature** — bulge = min(6 + 0.06·chord, 40) px (short edges bend less, long edges capped), arcs within one symmetric structure share a single unified k for visual evenness — see [docs/layout-modes.md](docs/layout-modes.md) (zh original; self-contained English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md));
@@ -52,12 +53,12 @@ All images are real renderings produced by the current engine (v0.9.0) from the 
 
 <table>
   <tr>
-    <td><a href="demos/debt-spiral-2d-en.html"><img src="docs/gallery/debt-spiral-2d-en.png" alt="debt spiral CLD 2D auto-v2 ring layout, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
-    <td><a href="demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D spine-wing layout, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
+    <td><a href="demos/debt-spiral-2d-en.html"><img src="docs/gallery/debt-spiral-2d-en.png" alt="debt spiral CLD 2D auto-v2 ring layout, loop labels R1/R2 at the loop centers, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
+    <td><a href="demos/classic-cld-2d.html"><img src="docs/gallery/classic-cld-2d.png" alt="classic CLD 2D spine-wing layout, loop labels R1/B1-B4/R2 at the loop centers, edges colored by sign (+ vermilion / − drafting blue), 0 crossings" width="420"/></a></td>
   </tr>
   <tr>
-    <td><strong>2D · auto-v2 ring layout</strong> (debt-spiral, 5n/6e, a textbook debt-spiral feedback loop drawn as a clean ring — 0 crossings, gap 75.6 px; edges colored by sign: + vermilion / − drafting blue, all solid)</td>
-    <td><strong>2D · auto-v2 spine-wing layout</strong> (classic-cld growth-and-burden, 8n/13e, spine x-alignment + midline adherence + mirror-symmetric wings — 0 crossings, gap 35.0 px; edges colored by sign: + vermilion / − drafting blue, all solid)</td>
+    <td><strong>2D · auto-v2 ring layout</strong> (debt-spiral, 5n/6e, a textbook debt-spiral feedback loop drawn as a clean ring — 0 crossings, gap 75.6 px; edges colored by sign: + vermilion / − drafting blue, all solid; loop labels R1 / R2 at the loop centers, all 6 loop edges arc along the ring)</td>
+    <td><strong>2D · auto-v2 spine-wing layout</strong> (classic-cld growth-and-burden, 8n/13e, spine x-alignment + midline adherence + mirror-symmetric wings — 0 crossings, gap 35.0 px; edges colored by sign: + vermilion / − drafting blue, all solid; loop labels R1 / B1–B4 / R2 at the loop centers)</td>
   </tr>
   <tr>
     <td colspan="2" align="center"><a href="demos/classic-cld-2d.html"><img src="docs/gallery/certificate.png" alt="quality certificate panel" width="420"/></a></td>
@@ -176,10 +177,15 @@ stdraw layout input.cld --outdir out-manual --from-layout graph-manual-layout.js
 
 ### Line style control & manual fine-tuning (v0.7.7)
 
-Automatic line-style rule: **straight is the default**; an arc is used only
-when it is structurally justified — mutual-pair lens corridors, a straight
-line that cannot keep the >=16px clearance but a shallow arc can, or
-mode-specific aesthetics (e.g. the spine-wing midline arcs). Bilateral
+Automatic line-style rule: **loop-member edges default to an arc** — an edge
+that belongs to a declared loop of ≥ 3 nodes bends along its loop (bulging
+away from the loop's centroid, so the loop reads as a ring); **straight lines
+and detour polylines are the fallback**, chosen only when the preferred arc is
+not deliverable (box press, clearance, anchor angle), and every fallback is
+recorded with its measured reason in `certificate.json` → `loop_arcs.fallbacks`.
+Edges outside any loop keep straight as the default; mutual pairs always take
+their lens corridors, and mode-specific aesthetics still apply (e.g. the
+spine-wing midline arcs). Bilateral
 supply-chain graphs (K_{m,2}: every source feeding two non-adjacent hubs)
 get the new **comb-bilateral** placement — sources in one vertical column,
 the two hubs in mirrored left/right slots, all hub edges a straight fan.
@@ -237,6 +243,10 @@ layer does not consume groups — layout is determined by relations alone). Loop
 comments — the lint layer verifies closure and R/B polarity parity against an independent
 enumeration of all loops. Full spec: [docs/dsl-spec-v0.1.md](docs/dsl-spec-v0.1.md)
 (Chinese: [docs/dsl-spec-v0.1.zh-CN.md](docs/dsl-spec-v0.1.zh-CN.md)).
+
+Optional `@delay` on an edge line marks a delay — a double tick drawn at the
+edge midpoint (hard-gated like the loop labels): `rate -> + adopters @loops R1 @delay`;
+it round-trips through `graph.cld`.
 
 ## Certificates · Quality Gates
 
@@ -300,7 +310,7 @@ symmetry-axis alignment; definitions in docs/crossing-exact.md (Chinese) §7).
 
 | Recipe | Line style | Guarantee | Use when |
 |---|---|---|---|
-| `auto-v2` (default) | straight/arc first-class (`--linestyle straight\|arc`) | hard quality gates + crossing minimization (optional CP-SAT via `pip install "stdraw[solver]"`); placement modes by structure: ring (loop-dominated) / vertical column (long-chain, few loops) / mirror-symmetric (bowtie), each with mode-caliber regularity gates; loop edges colored R=vermilion / B=drafting blue (light theme), negative dashed | general CLDs / teaching / reports |
+| `auto-v2` (default) | straight/arc first-class (`--linestyle straight\|arc`) | hard quality gates + crossing minimization (optional CP-SAT via `pip install "stdraw[solver]"`); placement modes by structure: ring (loop-dominated) / vertical column (long-chain, few loops) / mirror-symmetric (bowtie) / lens chain (pure two-loop figures), each with mode-caliber regularity gates; loop edges colored R=vermilion / B=drafting blue (light theme), negative dashed | general CLDs / teaching / reports |
 | `ortho-v1` (`--recipe ortho`) | all-vertical orthogonal | theorem-level 0 crossings on planar graphs (**frozen behavior**, byte-regression in CI) | production callers pinning behavior / orthogonal style preference |
 
 ## Agent Integration
