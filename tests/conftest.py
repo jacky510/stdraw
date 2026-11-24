@@ -59,3 +59,30 @@ def _guard_stdraw_module_identity():
             "sys.meta_path / sys.path edits) in this test's teardown"
             % detail,
             pytrace=False)
+
+
+# ---------------------------------------------------------------------------
+# Packaging T6: repo-only-data auto-skip.
+#
+# `@pytest.mark.repo("rel/path", ...)` marks a test that needs data present
+# only in a git checkout (benchmarks/, .git, ...).  At collection each
+# marked item is skipped -- reason lists the missing paths -- when any
+# required path does not exist relative to the repo root, so the same suite
+# runs green from an sdist extraction (no benchmarks/, no .git) with honest
+# skips instead of failures.
+
+def pytest_collection_modifyitems(config, items):
+    import os
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for item in items:
+        required = []
+        for m in item.iter_markers(name="repo"):
+            required.extend(m.args)
+        if not required:
+            continue
+        missing = sorted({r for r in required
+                          if not os.path.exists(os.path.join(root, *r.split("/")))})
+        if missing:
+            item.add_marker(pytest.mark.skip(
+                reason="repo-only data absent: " + ", ".join(missing)))

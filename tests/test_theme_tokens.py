@@ -19,8 +19,14 @@ import os
 import re
 import sys
 
+import pytest
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+
+# the delivered viewer face (themes.js byte-pin + index.html) lives only in
+# the git checkout (packaging T6 auto-skip, see tests/conftest.py).
+pytestmark = pytest.mark.repo("viewer")
 
 from stdraw.themes import DARK, LIGHT, THEMES, viewer_js
 from stdraw.render import render_html

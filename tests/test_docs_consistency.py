@@ -10,7 +10,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
+
+# the gate verifies the checkout's publishing face (README/AGENTS/docs) via
+# a repo script -- both exist only in a git checkout (packaging T6
+# auto-skip, see tests/conftest.py).
+pytestmark = pytest.mark.repo("docs", "scripts")
 
 
 def test_docs_consistency_gate():

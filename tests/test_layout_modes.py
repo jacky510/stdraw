@@ -343,6 +343,10 @@ class TestSpineWingManualEquivalence(unittest.TestCase):
                 "bottom": max(spine, key=lambda i: ys[i])}
 
     def test_engine_roles_and_geometry_match_sample(self):
+        if not os.path.exists(self.MANUAL):
+            raise unittest.SkipTest(
+                "repo-only data absent: "
+                "benchmarks/manual/classic-cld-manual-layout.json")
         with open(self.MANUAL, encoding="utf-8") as f:
             sample = json.load(f)["nodes"]
         s = self._roles(sample)

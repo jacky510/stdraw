@@ -49,6 +49,10 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 MANUAL_DIR = os.path.join(ROOT, "benchmarks", "manual")
 CORPUS_DIR = os.path.join(ROOT, "benchmarks", "corpus")
 
+# the hand-drawn manual fixtures live only in the git checkout (packaging
+# T6 auto-skip, see tests/conftest.py); benchmarks/corpus ships in the sdist.
+pytestmark = pytest.mark.repo("benchmarks/manual")
+
 
 def _manual_fixture(name):
     with open(os.path.join(MANUAL_DIR, f"{name}-manual-layout.json"),

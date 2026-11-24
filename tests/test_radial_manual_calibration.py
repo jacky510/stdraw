@@ -41,6 +41,10 @@ from stdraw import radellayout  # noqa: E402
 MANUAL_DIR = os.path.join(os.path.dirname(__file__), "..",
                           "benchmarks", "manual")
 
+# the hand-drawn fan fixtures live only in the git checkout (packaging T6
+# auto-skip, see tests/conftest.py).
+pytestmark = pytest.mark.repo("benchmarks/manual")
+
 
 def _manual_fixture(tag):
     path = os.path.join(MANUAL_DIR, f"fan-{tag}-manual-layout.json")

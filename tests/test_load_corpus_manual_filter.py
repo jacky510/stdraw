@@ -15,37 +15,55 @@ byte-for-byte the calibration-report-v2 anchor_sources.positives list.
 
 Red lines honored: negatives corpus and committed artifacts untouched —
 this test only reads and uses temp files it deletes afterwards.
+
+Packaging T6: the research scripts (benchmarks/aesthetic) and the manual
+corpus exist only in a git checkout, so the module imports them lazily in
+setUpClass and the whole class self-skips when they are absent (running
+pytest from an sdist extraction).
 """
 import json
 import os
 import sys
-import tempfile
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, "benchmarks", "aesthetic"))
-
-from diagnose_collapse import load_corpus  # noqa: E402
-from calibrate_v2 import POSITIVE_DIRS, collect_positive_files  # noqa: E402
 
 MANUAL_DIR = os.path.join(ROOT, "benchmarks", "manual")
 V2_REPORT = os.path.join(ROOT, "benchmarks", "aesthetic",
                          "calibration-report-v2.json")
+AESTHETIC_SCRIPTS = os.path.join(ROOT, "benchmarks", "aesthetic")
+
+REPO_DATA_PRESENT = (os.path.isdir(MANUAL_DIR) and os.path.isfile(V2_REPORT)
+                     and os.path.isfile(os.path.join(AESTHETIC_SCRIPTS,
+                                                     "diagnose_collapse.py")))
+
+_SkipUnless = unittest.skipUnless(
+    REPO_DATA_PRESENT,
+    "repo-only data absent: benchmarks/manual + benchmarks/aesthetic scripts")
 
 
-def _rel(path):
-    return os.path.relpath(path, ROOT).replace(os.sep, "/")
-
-
+@_SkipUnless
 class LoadCorpusManualFilter(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, AESTHETIC_SCRIPTS)
+        from diagnose_collapse import load_corpus  # noqa: E402
+        from calibrate_v2 import POSITIVE_DIRS, collect_positive_files  # noqa: E402
+        cls._load_corpus = staticmethod(load_corpus)
+        cls._POSITIVE_DIRS = POSITIVE_DIRS
+        cls._collect_positive_files = staticmethod(collect_positive_files)
+
+    def _rel(self, path):
+        return os.path.relpath(path, ROOT).replace(os.sep, "/")
+
     def test_baseline_matches_committed_v2_report(self):
         """18 positives / 40 negatives; positive path list identical to the
         committed calibration-report-v2 anchor_sources.positives."""
-        labels, pos_docs, neg_docs, _eng, _src = load_corpus()
+        labels, pos_docs, neg_docs, _eng, _src = self._load_corpus()
         self.assertEqual(len(neg_docs), 40)
         self.assertEqual(len(pos_docs), 18)
-        got = sorted(_rel(p) for p, _ in pos_docs)
+        got = sorted(self._rel(p) for p, _ in pos_docs)
         with open(V2_REPORT, "r", encoding="utf-8") as f:
             report = json.load(f)
         expected = sorted(report["anchor_sources"]["positives"])
@@ -60,7 +78,7 @@ class LoadCorpusManualFilter(unittest.TestCase):
         """Any newly added non-anchor json under benchmarks/manual must not
         crash load_corpus and must not change the positive set (same paths,
         same order) compared to a junk-free run."""
-        labels, pos0, neg0, _e0, _s0 = load_corpus()
+        labels, pos0, neg0, _e0, _s0 = self._load_corpus()
         before = [p for p, _ in pos0]
 
         junk = [
@@ -78,7 +96,7 @@ class LoadCorpusManualFilter(unittest.TestCase):
                 with open(path, "w", encoding="utf-8") as f:
                     json.dump(payload, f)
                 created.append(path)
-            labels2, pos2, neg2, _e2, _s2 = load_corpus()
+            labels2, pos2, neg2, _e2, _s2 = self._load_corpus()
             self.assertEqual([p for p, _ in pos2], before)
             self.assertEqual(len(neg2), len(neg0))
             self.assertEqual(len(pos2), len(pos0))
@@ -91,15 +109,15 @@ class LoadCorpusManualFilter(unittest.TestCase):
         """Sanity on the sweep itself: every committed hand anchor is either
         kind-tagged or legacy-filename shaped, so the load_corpus filter
         admits all of them (no silent anchor loss)."""
-        for d in POSITIVE_DIRS:
-            for p in collect_positive_files(d):
+        for d in self._POSITIVE_DIRS:
+            for p in self._collect_positive_files(d):
                 with open(p, "r", encoding="utf-8") as f:
                     doc = json.load(f)
                 if isinstance(doc, dict) and (
                     doc.get("kind") == "manual-layout"
                     or p.name.endswith("-manual-layout.json")
                 ):
-                    self.assertTrue(doc.get("nodes"), _rel(p))
+                    self.assertTrue(doc.get("nodes"), self._rel(p))
 
 
 if __name__ == "__main__":

@@ -37,9 +37,10 @@ MODEL = REPO / "stdraw" / "data" / "model-v1.json"
 REPORT = REPO / "benchmarks" / "aesthetic" / "calibration-report.json"
 FAMILY_MAP = REPO / "stdraw" / "data" / "topology-families.json"
 
-# manual fixtures + calibration report are repo-only research data; the
-# packaged data files (stdraw/data) ship everywhere (repo marker for them
-# lands with the sdist-testability commit).
+# manual fixtures + calibration report are repo-only research data: the
+# packaged data files (stdraw/data) ship everywhere, these do not (packaging
+# T6 auto-skip, see tests/conftest.py).
+pytestmark = pytest.mark.repo("benchmarks/manual", "benchmarks/aesthetic")
 
 
 def _load(p):

@@ -32,8 +32,10 @@ REPORT = os.path.join(ROOT, "benchmarks", "aesthetic", "calibration-report-v2.js
 NEG_DIR = os.path.join(ROOT, "benchmarks", "raw", "aesthetic-v1-negatives")
 
 # calibration report + negatives provenance check need the checkout's git
-# repo and research artifacts (repo marker lands with the sdist-testability
-# commit); the packaged model itself (stdraw/data) ships with the sdist/wheel.
+# repo and research artifacts (packaging T6 auto-skip, tests/conftest.py);
+# the packaged model itself (stdraw/data) ships with the sdist/wheel.
+pytestmark = pytest.mark.repo(".git", "benchmarks/aesthetic",
+                              "benchmarks/raw/aesthetic-v1-negatives")
 
 
 def _load(path):

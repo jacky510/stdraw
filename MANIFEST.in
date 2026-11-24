@@ -1,0 +1,10 @@
+# Packaging (T6): the sdist must carry everything `pytest` needs to run
+# green from an extraction directory (repo-only data stays out and the
+# tests that need it auto-skip via the `repo` marker -- see
+# tests/conftest.py and pyproject.toml markers).
+graft tests
+graft examples
+graft benchmarks/corpus
+graft benchmarks/raw/aesthetic-v1-negatives
+global-exclude __pycache__ *.py[cod]
+prune tests/__pycache__

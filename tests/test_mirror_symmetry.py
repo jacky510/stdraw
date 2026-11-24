@@ -76,6 +76,12 @@ class TestFlagOffZeroDrift(unittest.TestCase):
         self.assertNotIn("sigma_nodes", report)   # honest no-sigma record
 
 
+_MANUAL_SOURCES = os.path.isdir(os.path.join(ROOT, "benchmarks", "manual",
+                                             "jacky-batch2", "sources"))
+
+
+@unittest.skipUnless(_MANUAL_SOURCES,
+                     "repo-only data absent: benchmarks/manual/jacky-batch2")
 class TestFlagOn(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

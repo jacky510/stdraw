@@ -143,10 +143,6 @@ jobs:
         run: playwright install chromium
       - name: "Full pytest suite (unit + regression + brute-force + scalability wall-clock + playwright font-env)"
         run: python -m pytest tests/ -q
-      - name: "Module-level check scripts (execute at import; run directly, not via pytest)"
-        run: |
-          python tests/test_ring_layout.py
-          python tests/test_visibility.py
 
   checks-py39-weekly:
     # 3.9 full-compatibility sweep: weekly schedule only, never on push/pr
