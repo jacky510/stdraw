@@ -37,6 +37,7 @@ EN_TEXT_FILES = [
 
 ZH_TEXT_FILES = [
     "README_zh-CN.md",
+    "docs/a-tier-drift-registry.md",
     "docs/layout-modes.md",
     "docs/crossing-exact.md",
     "docs/ortools-comparison.md",
