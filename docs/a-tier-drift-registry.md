@@ -239,3 +239,144 @@
 - `demos/` 三页同配方重渲（配方先在改前主干逐字节复现已提交产物 5/5，再换新引擎渲）：每页唯一 diff = H1 一行；`demos/classic-certificate.json` / `demos/classic-loops-audit.json` 逐字节不变。
 - `docs/gallery/` 三张截图按既有配方重截（1280×860 / 1280×920）；`certificate.png` 不涉及本次改动面，未动。
 - README.md / README_zh-CN.md / skills/stdraw/SKILL.md 补 `--no-loop-labels` 与交付线型口径说明；docs/grading-contract.md 附录 B 新增两节（`--no-loop-labels` N/A 口径、`line_style` 请求 vs 交付语义）；CHANGELOG Unreleased 两则。
+
+## 3. 登记 #3：回路方向符号随绘制环流 + 药丸文字居中 + 透镜收窄 + 互指对记账（2026-11-26）
+
+### 3.1 批准来源与变更内容
+
+- **来源**：P1 画图质量视觉验收（2026-11-25 终审）的 A1（MAJOR）/ A2 / A3（MINOR）/ B6。owner 拍板四项一卡、同批重祝福；金标准 8 图指纹重祝福为预先批准（本卡交付时一次登记，无须再批）。
+- **变更内容**：
+  - ① 方向符号（A1）：原按回路种类写死（R = 顺时针、B = 逆时针）。现读绘制环流：≥3 成员按成员顺序的有向面积（成员中心多边形）；2 成员、或成员中心共线时按交付环（成员路由按回路序拼接）的有向面积；交付环保留每条路由的全部点，两条平行直线（互指对按直线交付）读作细环；判不出如实记录并退回种类默认。每枚标签记 `dir` / `dir_source`，证书 `metrics.loop_labels[].dir` 同步。
+  - ② 药丸文字居中（A2）：`text-anchor: middle`，锚点取图标墨迹右缘与药丸右内缘的中点；药丸宽度解析式不变，布局指纹不因居中而动。
+  - ③ 透镜收窄（A3）：`LENS_K` 0.6 → 0.32（每弧鼓出 0.30 → 0.16 × 弦长）。
+  - ④ 记账（B6）：互指对里的非弧线成员记入 `loop_arcs.fallbacks`，单列 `mutual_pair_non_arc`，不评分、不动 `loop_edges_arced` 与 grade。
+- **不放宽**：门阈值、grade 语义、模式链、锚点口径零改动；`lens_pair_min_sep_ge_12` 未动（靶图实测 28.4，成功致成功 38.0）；`LENS_BULGE_MIN` 0.15 未动。
+- **提交**：`a948e89`（方向符号）`d429d8b`（居中）`63a31d8`（记账）`a845af3`（透镜）`0013928`（金标准重祝福）`31f0b27`（demos + gallery）`a1b0e61`（docs）`484be8d`（两成员回路的成员为直线时的环读数）；基线 = 主干 `78d75fe`。
+
+### 3.2 验收数字（改前主干 vs 改后，同机同解释器，程序现读）
+
+| 项 | 口径 | 改前 | 改后 |
+|---|---|---|---|
+| A1 反向回路：金标准 8 图 + 四节点靶图 + 延迟变体 | 符号扫掠标志 vs 绘制环流（验收报告算法） | 10 / 22（判不出 1） | 0 / 22（判不出 1） |
+| A1 反向回路：去延迟变体 | 同上 | 9 / 20（判不出 1） | 0 / 20（判不出 1） |
+| A2 药丸左右留白差 | 每枚 \|左留白 − 右留白\| 的最大值（22 枚） | 13.86 px | 0.52 px |
+| A3 透镜宽 / 宽弦比：四节点靶图 eff~perf | 两弧同向重采样的最大间距 / 两锚点弦长 159.0 px | 133.4 px / 0.84 | 88.8 px / 0.56 |
+| A3 透镜宽 / 宽弦比：四节点靶图 perf~lim | 同上（弦长 156.1 px） | 126.0 px / 0.81 | 82.2 px / 0.53 |
+| A3 透镜宽 / 宽弦比：成功致成功（两个透镜同值） | 同上（弦长 150.0 px） | 128.0 px / 0.85 | 86.0 px / 0.57 |
+| A3 鼓度 / 两弧最小间距（靶图） | lens_pair_min_bulge / lens_pair_min_sep | 0.3 / 28.4 | 0.16 / 28.4 |
+| A3 画布（靶图 viewBox） | 宽 × 高 | 720 × 424 | 720 × 384 |
+
+- **A3 未达验收值 ≤ 0.4，如实登记**：`LENS_K` 0.32 是现约束下的可达最优（靶图 0.56 / 0.53）。约束链（`LENS_K` × `LENS_GAP` 实测扫描，各 8 档）：
+  - 鼓度下限门 `lens_pairs_closed`（`LENS_BULGE_MIN` 0.15）要求 `LENS_K` ≥ 约 0.32——`LENS_K` 0.30 时靶图落在门界上，14/15、grade 降为 uncertified。
+  - 宽/弦 ≈ `LENS_K` + 两端锚点间距 / 弦长；44px 卡的对称角锚两端间距固定 38px，弦长 159.0 px 时下限即 0.56。要 ≤ 0.40 需弦长 ≥ 约 475px（`LENS_GAP` ≥ 约 470），而 `LENS_GAP` ≥ 360 时靶图退出 lens-chain（placement 为空、12/13）。
+  - 验收报告给的配方（锚点间距 24 + 每弧鼓出 20）鼓度 = 20 / 159.0 = 0.126，低于 0.15 门界，同样过不了门。
+  - 再窄只能动门、改锚点口径或放宽模式链——均不在本登记授权内，留 owner 决策。折中选项（未采纳，供决策）：`LENS_GAP` 330 时靶图宽/弦 0.44 / 0.42、门仍 15/15，但画布 888 × 608（现 720 × 384）、透镜绝对宽约 147px（现 89px）。
+
+- **B6**：成功致增长的「绩效 ↔ 极限」互指对有 2 条非弧线成员（折线 1 + 直线 1）。改前 `loop_arcs.fallbacks = []`（与 `line_kind_counts` 的 `line 1 / poly 1` 对不上）；改后 `fallbacks` 列出这 2 条（`delivered` = poly / line，`preferred_arc` = not scored: mutual pair），`mutual_pair_non_arc = 2`，note 追加一句单列说明；`line_kind_counts`、`loop_edges_arced`、grade、13/13 全不变。
+
+### 3.3 A 档两腿口径
+
+- 本次改的是默认渲染（标签层 + 透镜几何），故跑**A 档两腿**：基线腿 = 主干 `78d75fe`（改前），新腿 = 分支（改后）。两腿都跑完 classic 20 图 + random-n10 20 图后停；random-n20 20 图未比对（单图 670–780 s：基线腿跑完前 2 张后停，两张 rc=1、引擎未记录；新腿该族无产出；该族无回路标签、无透镜）。同机同解释器，每图逐文件比对 7 个产物。
+- 新腿起跑于 `a845af3`；其后引擎还有 1 个提交（`484be8d`，两成员回路的成员为直线时的环读数）。classic 20 图已在最终树重渲并覆盖腿内产物：17 图 7 产物逐字节全等，3 图有变且均在预期内（classic-cld / shifting-the-burden 只变 `layout.json` 的 `dir_source`；fishing-collapse 另变 `certificate.json` 与 `demo-2d.html`，B1 符号改向）。random 族无回路标签，抽 8 图（ring-construct 2 / cp-sat 2 / planarized 4）在最终树重渲，7 产物全等。
+- 基线腿记录于 2026-11-26 01:54:56，新腿记录于 2026-11-26 02:24:09；引擎口径两腿同为 `cp-sat-layered`。
+- **汇总**：条目 基线 42 / 新 40；逐字节 SAME 20 / DRIFT 20 / rc 差异 0 / 缺腿 2；丢门 0、门行被移除 0；crossings 变多 0、visual crossings 变多 0；placement 变 0；min clear 变小 0；回路标签数变 0；改后未放置标签的图 0；grade best 改前 20 → 改后 20；best 丢失 0。
+- grade 迁移：{best->best × 20, crossed-certified->crossed-certified × 4, uncertified->None × 2, uncertified->uncertified × 16}。
+- 漂移产物（图数）：{<leg missing> × 2, certificate.json × 20, demo-2d.html × 20, layout.json × 20}。
+- 引擎类型（新腿）：{None × 3, bowtie-construct × 3, column-construct × 7, cp-sat × 7, planarized × 4, ring-construct × 15, spine-construct × 1, sym-construct × 2}。
+
+### 3.4 逐图表（rc 两腿一致的已交付图）
+
+| graph | engine | grade 前→后 | 门 前→后 | crossings | visual | 线型 前→后 | 回路标签 | 反向符号 前→后 | min clear | 卡间距 | placement |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| classic/arms-race | ring-construct | `best` | `12/12` | `0` | `0` | `arc 4` | `1` | 1/1 → 0/1 | `171.4` | `113.3` | `ring-cycle` |
+| classic/brand-flywheel | ring-construct | `best` | `12/12` | `0` | `0` | `arc 8` | `3` | 1/3 → 0/3 | `18.6` | `56.6` | `ring-cycle` |
+| classic/bullwhip | column-construct | `best` | `13/13` | `0` | `0` | `arc 5 / line 1` | `2` | 2/2 → 0/2 | `21.8` | `36.0` | `column-chain` |
+| classic/burnout-attrition | column-construct | `best` | `13/13` | `0` | `0` | `arc 6` | `2` | 1/2 → 0/2 | `26.2` | `36.0` | `column-chain` |
+| classic/classic-cld-growth-and-burden | spine-construct | `best` | `14/14` | `0` | `0` | `arc 8 / line 5` | `6` | 3/6 → 0/6 | `20.0` | `35.0` | `spine-wing` |
+| classic/debt-spiral | ring-construct | `best` | `12/12` | `0` | `0` | `arc 6` | `2` | 0/2 → 0/2 | `67.6` | `75.6` | `ring-cycle` |
+| classic/eroding-goals | bowtie-construct | `best` | `12/12` | `0` | `0` | `line 6` | `2` | 1/2 → 0/2 | `124.0` | `108.2` | `bowtie-vertex` |
+| classic/fishing-collapse | ring-construct | `best` | `12/12` | `0` | `0` | `arc 7 / line 2` | `5` | 2/5 → 0/5 | `18.4` | `22.0` | `ring-cycle` |
+| classic/fixes-that-fail | sym-construct | `best` | `12/12` | `0` | `0` | `arc 4 / line 1` | `2` | 2/2 → 0/2 | `44.2` | `36.0` | `symmetric` |
+| classic/induced-demand | ring-construct | `best` | `12/12` | `0` | `0` | `arc 7` | `4` | 1/4 → 0/4 | `34.7` | `68.0` | `ring-cycle` |
+| classic/learning-flywheel | sym-construct | `best` | `12/12` | `0` | `0` | `arc 4 / line 1` | `2` | 1/2 → 0/2 | `44.3` | `36.0` | `symmetric` |
+| classic/limits-to-growth | column-construct | `best` | `13/13` | `0` | `0` | `arc 6 / vg 1` | `3` | 2/3 → 0/3 | `17.7` | `36.0` | `column-chain` |
+| classic/population-logistic | column-construct | `best` | `13/13` | `0` | `0` | `arc 5 / poly 1` | `3` | 0/3 → 0/3 | `16.7` | `36.0` | `column-chain` |
+| classic/renewable-resource | column-construct | `best` | `13/13` | `0` | `0` | `arc 5 / line 1 / poly 1` | `3` | 1/3 → 0/3 | `23.5` | `36.0` | `column-chain` |
+| classic/shifting-the-burden | bowtie-construct | `best` | `12/12` | `0` | `0` | `line 8` | `4` | 0/4 → 0/4 | `110.0` | `95.1` | `bowtie-vertex` |
+| classic/soil-erosion | ring-construct | `best` | `12/12` | `0` | `0` | `arc 8` | `3` | 2/3 → 0/3 | `55.3` | `66.0` | `ring-cycle` |
+| classic/success-to-the-successful | ring-construct | `best` | `12/12` | `0` | `0` | `arc 4 / line 4 / poly 2` | `3` | 2/3 → 0/3 | `23.5` | `32.0` | `ring-cycle` |
+| classic/tragedy-of-the-commons | column-construct | `best` | `13/13` | `0` | `0` | `arc 5 / line 1` | `2` | 0/2 → 0/2 | `18.1` | `35.0` | `column-chain` |
+| classic/urban-migration | column-construct | `best` | `13/13` | `0` | `0` | `arc 8` | `3` | 1/3 → 0/3 | `17.7` | `36.0` | `column-chain` |
+| classic/wage-price-spiral | bowtie-construct | `best` | `12/12` | `0` | `0` | `line 6` | `2` | 0/2 → 0/2 | `116.0` | `100.7` | `bowtie-vertex` |
+| random/random-n10-i00 | cp-sat | `uncertified` | `11/12` | `2` | `2` | `arc 3 / line 10 / vg 3` | `0` | 0/0 → 0/0 | `16.7` | `24.0` | `layered` |
+| random/random-n10-i01 | cp-sat | `uncertified` | `10/12` | `2` | `3` | `arc 1 / line 11 / poly 2 / vg 2` | `0` | 0/0 → 0/0 | `17.4` | `36.0` | `layered` |
+| random/random-n10-i02 | ring-construct | `uncertified` | `10/11` | `1` | `2` | `arc 2 / line 14` | `0` | 0/0 → 0/0 | `20.1` | `53.0` | `ring-cycle` |
+| random/random-n10-i03 | ring-construct | `uncertified` | `8/11` | `0` | `3` | `arc 2 / line 14` | `0` | 0/0 → 0/0 | `18.7` | `50.0` | `ring-cycle` |
+| random/random-n10-i04 | cp-sat | `uncertified` | `11/12` | `2` | `2` | `arc 2 / line 11 / poly 1 / vg 2` | `0` | 0/0 → 0/0 | `16.8` | `24.0` | `layered` |
+| random/random-n10-i05 | cp-sat | `uncertified` | `11/12` | `1` | `1` | `arc 2 / line 12 / vg 2` | `0` | 0/0 → 0/0 | `16.6` | `36.0` | `layered` |
+| random/random-n10-i06 | cp-sat | `uncertified` | `10/12` | `1` | `2` | `arc 3 / line 11 / poly 2` | `0` | 0/0 → 0/0 | `18.0` | `20.0` | `layered` |
+| random/random-n10-i07 | cp-sat | `uncertified` | `11/12` | `1` | `2` | `arc 6 / line 9 / vg 1` | `0` | 0/0 → 0/0 | `17.9` | `20.0` | `layered` |
+| random/random-n10-i08 | ring-construct | `uncertified` | `10/11` | `1` | `2` | `arc 1 / line 14 / vg 1` | `0` | 0/0 → 0/0 | `20.7` | `31.2` | `ring-cycle` |
+| random/random-n10-i09 | planarized | `crossed-certified` | `8/8` | `1` | `1` | `polyline 16` | `0` | 0/0 → 0/0 | `40.0` | `98.0` | `layered` |
+| random/random-n10-i10 | planarized | `crossed-certified` | `8/8` | `1` | `1` | `polyline 16` | `0` | 0/0 → 0/0 | `46.3` | `94.0` | `layered` |
+| random/random-n10-i11 | ring-construct | `uncertified` | `11/11` | `0` | `0` | `arc 3 / line 12 / vg 1` | `0` | 0/0 → 0/0 | `18.5` | `24.0` | `ring-cycle` |
+| random/random-n10-i12 | None | `uncertified` | `9/12` | `3` | `6` | `arc 4 / line 10 / poly 1 / vg 1` | `0` | 0/0 → 0/0 | `17.4` | `24.0` | `layered` |
+| random/random-n10-i13 | ring-construct | `uncertified` | `9/11` | `1` | `3` | `arc 1 / line 13 / poly 2` | `0` | 0/0 → 0/0 | `18.5` | `54.1` | `ring-cycle` |
+| random/random-n10-i14 | cp-sat | `uncertified` | `11/12` | `2` | `2` | `arc 2 / line 12 / vg 2` | `0` | 0/0 → 0/0 | `17.4` | `20.0` | `layered` |
+| random/random-n10-i15 | ring-construct | `uncertified` | `9/11` | `0` | `1` | `arc 3 / line 12 / poly 1` | `0` | 0/0 → 0/0 | `17.8` | `34.0` | `ring-cycle` |
+| random/random-n10-i16 | planarized | `crossed-certified` | `8/8` | `1` | `1` | `polyline 16` | `0` | 0/0 → 0/0 | `49.1` | `96.0` | `layered` |
+| random/random-n10-i17 | ring-construct | `uncertified` | `10/11` | `2` | `2` | `line 14 / vg 2` | `0` | 0/0 → 0/0 | `23.6` | `54.1` | `ring-cycle` |
+| random/random-n10-i18 | ring-construct | `uncertified` | `10/11` | `2` | `2` | `arc 1 / line 15` | `0` | 0/0 → 0/0 | `23.4` | `53.0` | `ring-cycle` |
+| random/random-n10-i19 | planarized | `crossed-certified` | `8/8` | `1` | `1` | `polyline 16` | `0` | 0/0 → 0/0 | `70.2` | `529.6` | `layered` |
+| random/random-n20-i00 | None | `uncertified` → `None` | `7/12` → `n/a` | `30` → `None` | `39` → `None` | `arc 10 / line 16 / poly 3 / vg 3` → `-` | `0` | - → - | `0.0` → `None` | `16.0` → `None` | `layered` → `None` |
+| random/random-n20-i01 | None | `uncertified` → `None` | `8/12` → `n/a` | `38` → `None` | `46` → `None` | `arc 9 / line 13 / poly 5 / vg 5` → `-` | `0` | - → - | `15.9` → `None` | `20.0` → `None` | `layered` → `None` |
+
+### 3.5 A1 全语料读数（两腿全部带回路标签的图）
+
+- 带回路标签的图 基线 20 / 新 20，回路标签 基线 57 / 新 57 枚。反向（验收报告口径：成员中心多边形，退化时读交付环）：基线 **23 / 57** → 新 **0 / 57**；两读数（中心多边形 vs 交付环）相反：基线 1 / 新 1 条。
+- 逐图反向数（基线 → 新）：arms-race 1→0；brand-flywheel 1→0；bullwhip 2→0；burnout-attrition 1→0；classic-cld-growth-and-burden 3→0；debt-spiral 0→0；eroding-goals 1→0；fishing-collapse 2→0；fixes-that-fail 2→0；induced-demand 1→0；learning-flywheel 1→0；limits-to-growth 2→0；population-logistic 0→0；renewable-resource 1→0；shifting-the-burden 0→0；soil-erosion 2→0；success-to-the-successful 2→0；tragedy-of-the-commons 0→0；urban-migration 1→0；wage-price-spiral 0→0。
+- 新腿另有 4 枚两成员标签（classic-cld B3、fishing-collapse B1、shifting-the-burden B1 / B3）的成员路由是直线：改前交付环按「去掉每条路由末点」拼接后只剩两点、读不出，退回种类默认；`484be8d` 起保留直线两端点后读出。其中 fishing-collapse B1 的符号随读数改向（改前与绘制环流相反），另 3 枚读数与默认一致、符号不变。
+- **已知边界（留 owner 决策）**：`classic/limits-to-growth` 的 B1 有 1 条成员弧鼓出到第三节点之外——按成员中心多边形读是顺时针、按绘制的环读是逆时针，两种读数相反；符号按卡面规则取中心多边形读数。金标准 8 图 + 靶图 22 枚标签里两种读数全部一致，验收数字不受影响。要不要改成「绘制环优先」，是口径选择，另议。
+
+### 3.6 门变化与质量字段变化（两腿逐图对照）
+
+- 门：无逐图增删。
+
+- 质量字段（placement / crossings / min clear / 回路标签数）：无变化。
+
+### 3.7 rc 差异与未交付图
+
+- random/random-n20-i00: rc base=1 new=None (engine None)
+- random/random-n20-i01: rc base=1 new=None (engine None)
+
+### 3.8 冻结基线处置（与流程门分开报）
+
+- `tests/baselines/`（ortho-v1 冻结 layout.json ×2）：ortho 配方未动，逐字节零漂移、无需重祝福。
+- `tests/golden/baseline.json`（金标准集 8 图）：按预先批准**重祝福一次**（提交 `0013928`，`python tests/golden_gate.py --update-baseline`）。语义零改动：8 图 `.cld` 与 `loops_audit` 指纹不变、8 图全 `best`、门数与模式不变；变的是 certificate（`loop_labels[].dir`、互指对记账）与 layout（符号方向 / 文字锚点 / 透镜几何）。三阶段 sha（前 8 位）：
+- 引擎其后的提交 `484be8d`（直线成员的环读数）不改这 8 图输出：门读回 8/8，与重祝福后的基线逐字节相等。
+
+| 图 | certificate（原 → 现） | layout（原 → 现） | 门 / grade / 模式 |
+|---|---|---|---|
+| eroding-goals | f2a51ba3 → e79b63b1 | aaee6321 → abf5b3ff | 12/12 best bowtie-vertex |
+| escalation | 85bf22ce → dbaef1fc | 6c86a2f1 → 917cb555 | 12/12 best ring-cycle |
+| fixes-that-fail | 782b3f02 → 66502b25 | 1636f01c → 77427b67 | 12/12 best ring-cycle |
+| growth-and-underinvestment | 3fed3a92 → d9593eb3 | 92e383e3 → eadb2b94 | 13/13 best column-chain |
+| limits-to-growth | 40f1a1b1 → c587cdd4 | 791991be → 5ce2285a | 12/12 best ring-cycle |
+| shifting-the-burden | 7b965f47 → a27f251e | d556fd37 → 158129ae | 12/12 best ring-cycle |
+| success-to-the-successful | 1d456cae → 9424e375 | cf52211a → 90cfa3f1 | 15/15 best lens-chain |
+| tragedy-of-the-commons | 0140239e → fd7628b5 | 09f848ef → 75210041 | 12/12 best ring-cycle |
+
+重祝福后门读回 8/8 ALL GREEN；`--update-baseline` 同时刷新计时参考（只作 WARN 参考，不作门）。
+
+### 3.9 byte-pinned 消费方（STDRAW_PIN）
+
+- 消费方现网 pin 仍为 `0.8.1`，未随本登记移动。
+- **升级 pin 时的预期变化**：带回路标签的图，回路标签（符号方向 / 文字位置）与证书 `loop_labels[].dir`、`loop_arcs.fallbacks` 记账会变；带互指对且走 lens-chain 的图，透镜宽度与画布高度会变（靶图 424 → 384）；两成员回路按直线交付的图，`loop_labels[].dir_source` 由 `kind:no-ring` 变为 `ring`，个别符号随读数改向。届时须走消费侧复现重验，不静默。
+
+### 3.10 publishing face 同步
+
+- `demos/` 三页同配方重渲，并逐格与新鲜渲染比对：页面、`demos/classic-certificate.json`、`demos/classic-loops-audit.json` 共 5 个文件 sha256 全等；每页唯一 diff = SVG 行（证书面板与页尾逐字节不变）。classic-cld 6 枚药丸里 3 枚符号改向（R1、B2、B4），药丸位置不动；debt-spiral（中 / 英）只有文字居中。
+- `docs/gallery/` 三张截图按既有配方重截（1280×860 / 1280×920），重截 sha256 与已提交文件全等；`certificate.png` 的面板未变，未动。引擎其后的提交 `484be8d` 不改演示产物：demos / 证书 freshness 门复跑通过，逐字节不变。
+- 逐格验收 14 / 14 通过；publishing face 文本文件 9 个，卡号 / 本机路径 / worktree 路径 / 内部审批用语 0 命中。
+- README.md / README_zh-CN.md / skills/stdraw/SKILL.md / CHANGELOG.md 本登记未动（版本收尾另有流程）。`docs/grading-contract.md` 附录 B 与 `docs/layout-modes.md`（中 / 英）已按新口径写明。
+
