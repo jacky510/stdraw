@@ -189,6 +189,31 @@ Consequently:
 - Both gates are listed in the certificate gate table (counted in
   `gates_passed`) and as geometry-report checks (a violation makes
   `geometry_report.json` `fail > 0`).
+- `--no-loop-labels` (render-time annotation-layer suppression): the CLI
+  flag removes the whole identity layer from `demo-2d.html` — loop-center
+  labels AND `@delay` tick marks, one switch (the API equivalent is
+  `render_html(..., loop_labels=False)`). The certificate then records
+  `loop_labels_clear` / `delay_marks_clear` as `"N/A"` (same caliber as
+  §3.1: the slots are excluded from `gates_passed`, never appear in
+  `blocking_gates`, and never block), with an honest note in
+  `honest_notes`. The `metrics` rows (`loop_labels`, `delay_mark_count`,
+  …) stay measured — they describe `layout.json`, which still carries the
+  placed annotations. Grade semantics are unchanged: an `N/A` slot is
+  truthy-neutral in the hard-gate fold, so the grade is decided by the
+  remaining gates exactly as before. A drawing without declared loops or
+  `@delay` edges is unaffected (the keys only exist when the drawing
+  carries the annotation — byte-neutrality holds).
+- `line_style` field semantics (request vs delivery): the certificate
+  field `line_style` (and the CLI `--linestyle` argument, echoed into
+  `layout.json` `meta.line_style`) is the **request**, not a claim about
+  the delivered drawing. With the loop-side arc default and the placement
+  modes' constructed template geometry, the delivered line-kind
+  distribution can differ from the request (e.g. every edge delivered as
+  an arc while the request reads `straight`). The **delivered facts** are
+  `metrics.line_kind_counts` (per-edge `route.kind` in `layout.json`) and
+  the `loop_arcs` block. The human-facing summaries (the `demo-2d.html`
+  headline and the CLI `[3/5]` line) therefore print the delivered counts
+  ("line kinds arc 9 / line 1" form), never the request value.
 - `lens-chain` tier (pure 2-loop figures, placement mode `lens-chain`):
   gate set = the layered regularity gates + `lens_pairs_closed` +
   `lens_pair_min_sep_ge_12` (14 gates). A figure without a mutual pair

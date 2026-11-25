@@ -199,3 +199,43 @@
 - `docs/validation-tiers.md` 写「A 档 61 图（classic 21）」，而 `sweep_tiers.graph_list("A")` 实际返回 62 个条目（classic 20 + examples 2 个同名条目 + random 40），同名条目在 index 里不单独留记录（两腿 index 各 60 条）。文档计数与工具不一致属既有问题，另卡对齐。
 
 - **字体独立性只覆盖 CI 逐字节门的产物，不是全量**：回路标签药丸宽度已是解析式；节点卡片宽度仍走 `card_size()` → `text_width()`（字体实测与解析式取大），拉丁字母标签的卡片在装了量宽字体的机器上更宽 —— `examples/hdd-supply-chain`、`examples/longtail-coupled-loops` 有 / 无字体渲染字节不同。这是本登记之前的既有行为（改前主干同样如此），这两张不在 CI 逐字节门覆盖内，本次未改。
+
+## 2. 登记 #2：demo 页 / CLI 摘要改为交付线型事实口径 + `--no-loop-labels`（2026-11-25）
+
+### 2.1 批准来源与变更内容
+
+- **来源**：登记 #1 收口时发现的「请求值 ≠ 交付事实」错位——demo 页 H1 与 CLI 摘要取 `meta.line_style`（CLI `--linestyle` 的请求值，默认 straight）印成「line style straight」，而 T10 之后回路成员边默认交付 loop-side 弧线（classic-cld 9 条边全弧线、页面标题却写 straight）。owner 实现卡跟进，卡面明令：改口径 + 新增 `--no-loop-labels` + 抽样证明页面文案漂移。属文案事实化修正，不是渲染行为变更。
+- **变更内容**：① H1 与 CLI 摘要改按证书 `metrics.line_kind_counts` 印交付线型分布（如 `line kinds arc 8 / line 5`，确定性排序：计数降序、键名升序）；透镜链 H1 的「(lens arcs constructed)」特判随之退役——交付事实口径下 H1 不再可能误述线型；② 新增 CLI `--no-loop-labels`（整个标识层一个开关：回路标签 + `@delay` 延迟标记），关闭时证书 `loop_labels_clear` / `delay_marks_clear` 如实记 `N/A`（排出门计数、永不阻断、grade 语义不变，口径同 §3.1 manual N/A）；`honest_notes` 追加一条如实说明。
+- **不放宽**：门阈值与 grade 语义零改动；默认腿全部产物（layout / certificate / loops_audit / graph / geometry_report）逐字节不变；`tests/baselines/`（ortho）与金标准集零漂移。
+
+### 2.2 两腿口径与抽样证明
+
+- 本次未跑全量 sweep：改动面只有 demo-2d.html 的 H1 一行与 CLI 控制台文案，按引擎类型抽样证明。两腿 = 主干 `9b33fde`（改前）vs 分支树（改后），同机同解释器（Python 3.12 + OR-Tools），每图逐文件比对 7 个产物（graph.json / graph.cld / layout.json / geometry_report.json / certificate.json / loops_audit.json / demo-2d.html）。
+- 抽样 7 图覆盖登记 #1 逐图表出现过的全部 7 类引擎；结果（程序取自两腿比对输出）：
+
+| 引擎类型 | 图 | rc 前/后 | 漂移产物 | 其余 6 产物 |
+|---|---|---|---|---|
+| ring-construct | classic-cld-growth-and-burden | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
+| column-construct | bullwhip | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
+| bowtie-construct | wage-price-spiral | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
+| sym-construct | fixes-that-fail | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
+| ring-2 | arms-race | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
+| cp-sat-layered | random-n10-i00 | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
+| planarized-L1 | random-n10-i09 | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
+
+- **7/7 图：唯一漂移产物 = `demo-2d.html`，且 diff 恰好只有 H1 一行**（请求值 → 交付计数）；其余 6 个产物逐字节一致，rc 两腿相同。据此外推：全量 sweep 影响面 = A 档 60 图各自的 `demo-2d.html` H1 一行（纯页面文案），下次全量 sweep 后腿自然覆盖复核。
+
+### 2.3 冻结基线处置
+
+- `tests/baselines/`（ortho-v1 冻结 layout.json ×2）：ortho 分支未动，零漂移。
+- `tests/golden/baseline.json`（金标准集 8 图）：金标准钉的是 certificate / loops_audit（原始字节）与 layout 指纹，不钉 demo 页——引擎几何零改动，指纹不变（CI 金标准门实测复核）。
+
+### 2.4 byte-pinned 消费方（STDRAW_PIN）
+
+- 现网 pin 仍为 `0.8.1`，未随本登记移动。默认腿全部非 demo 产物逐字节不变；唯一漂移 = `demo-2d.html` 的 H1 一行。消费方若逐字节 pin demo-2d.html 需重对齐（现 pin 代际产物本就不含回路标签层）。
+
+### 2.5 publishing face 同步
+
+- `demos/` 三页同配方重渲（配方先在改前主干逐字节复现已提交产物 5/5，再换新引擎渲）：每页唯一 diff = H1 一行；`demos/classic-certificate.json` / `demos/classic-loops-audit.json` 逐字节不变。
+- `docs/gallery/` 三张截图按既有配方重截（1280×860 / 1280×920）；`certificate.png` 不涉及本次改动面，未动。
+- README.md / README_zh-CN.md / skills/stdraw/SKILL.md 补 `--no-loop-labels` 与交付线型口径说明；docs/grading-contract.md 附录 B 新增两节（`--no-loop-labels` N/A 口径、`line_style` 请求 vs 交付语义）；CHANGELOG Unreleased 两则。
