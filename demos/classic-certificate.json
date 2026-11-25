@@ -205,6 +205,7 @@
   "arced": 5,
   "opposite_side_arcs": 1,
   "templated": 1,
+  "mutual_pair_non_arc": 2,
   "fallbacks": [
    {
     "edge": "rate->adopters",
@@ -220,6 +221,16 @@
     "edge": "adopters->potential",
     "delivered": "line",
     "preferred_arc": "a-end anchor angle 18 deg"
+   },
+   {
+    "edge": "crowding->quickfix",
+    "delivered": "line",
+    "preferred_arc": "not scored: mutual pair -- its geometry belongs to the lens / rule-8 contract"
+   },
+   {
+    "edge": "quickfix->crowding",
+    "delivered": "line",
+    "preferred_arc": "not scored: mutual pair -- its geometry belongs to the lens / rule-8 contract"
    },
    {
     "edge": "sideeffect->crowding",
@@ -291,7 +302,8 @@
     "placed": true,
     "x": 260,
     "y": 371,
-    "offset": 160.4
+    "offset": 160.4,
+    "dir": "ccw"
    },
    {
     "id": "B1",
@@ -299,7 +311,8 @@
     "placed": true,
     "x": 222,
     "y": 107,
-    "offset": 144.3
+    "offset": 144.3,
+    "dir": "ccw"
    },
    {
     "id": "B2",
@@ -307,7 +320,8 @@
     "placed": true,
     "x": 500,
     "y": 107,
-    "offset": 144.3
+    "offset": 144.3,
+    "dir": "cw"
    },
    {
     "id": "B3",
@@ -315,7 +329,8 @@
     "placed": true,
     "x": 642,
     "y": 109,
-    "offset": 95.9
+    "offset": 95.9,
+    "dir": "ccw"
    },
    {
     "id": "B4",
@@ -323,7 +338,8 @@
     "placed": true,
     "x": 528,
     "y": 440,
-    "offset": 128.0
+    "offset": 128.0,
+    "dir": "cw"
    },
    {
     "id": "R2",
@@ -331,7 +347,8 @@
     "placed": true,
     "x": 692,
     "y": 357,
-    "offset": 144.3
+    "offset": 144.3,
+    "dir": "cw"
    }
   ],
   "loop_labels_unplaced": 0
@@ -359,7 +376,7 @@
   "row_align_ge_060": true,
   "row_align_note": "report item: row alignment is no longer a veto (hand-pulled samples show row_align delta ~= 0)",
   "loop_edges_arced": false,
-  "loop_arcs_note": "report item: 5/9 loop-member lines delivered as loop-side arcs, 1 by the placement mode's constructed template; 2 straight/detour fallback(s) and 1 opposite-side arc(s) with measured reasons in loop_arcs.fallbacks"
+  "loop_arcs_note": "report item: 5/9 loop-member lines delivered as loop-side arcs, 1 by the placement mode's constructed template; 2 straight/detour fallback(s) and 1 opposite-side arc(s) with measured reasons in loop_arcs.fallbacks; 2 mutual-pair loop member(s) delivered as a non-arc (lens / rule-8 contract, not scored)"
  },
  "grade": "best",
  "grade_note": "all hard gates passed (box press 0 / clearance >=16 / anchors smooth / regularity) + 0 line crossings",
