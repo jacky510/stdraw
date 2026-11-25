@@ -6,7 +6,7 @@
   "engine_version": "0.9.0",
   "python": "3.12.10",
   "platform": "Windows-11-10.0.26300-SP0",
-  "recorded": "2026-11-25",
+  "recorded": "2026-11-26",
   "hash_caliber": {
    "cld": "sha256 of the fixture bytes, CRLF folded to LF",
    "certificate": "sha256 of certificate.json bytes, CRLF folded to LF",
@@ -17,29 +17,29 @@
   "rebless": "only under an approved card: python tests/golden_gate.py --update-baseline"
  },
  "timing_ref": {
-  "avg": 1.02,
-  "max": 2.14,
+  "avg": 1.1,
+  "max": 2.36,
   "platform": "Windows-11-10.0.26300-SP0",
   "per_graph": {
-   "eroding-goals": 0.85,
-   "escalation": 0.78,
-   "fixes-that-fail": 0.78,
-   "growth-and-underinvestment": 0.99,
-   "limits-to-growth": 2.14,
-   "shifting-the-burden": 0.92,
-   "success-to-the-successful": 0.81,
-   "tragedy-of-the-commons": 0.88
+   "eroding-goals": 0.88,
+   "escalation": 0.83,
+   "fixes-that-fail": 0.87,
+   "growth-and-underinvestment": 1.04,
+   "limits-to-growth": 2.36,
+   "shifting-the-burden": 1.03,
+   "success-to-the-successful": 0.87,
+   "tragedy-of-the-commons": 0.93
   }
  },
  "graphs": {
   "eroding-goals": {
    "cld": "eroding-goals.cld",
-   "seconds": 0.85,
+   "seconds": 0.88,
    "sha256": {
     "cld": "c784caa7f3b89233f04d339622b0c13dcf29b69788748caf3d82b0188a677ac5",
-    "certificate": "f2a51ba3f7c2d88c0705aa841f6ca192383233900e7196b308abbb5a293a7484",
+    "certificate": "e79b63b19a69966c81d5e58f92851e1c76b882c0737236672da9c337c61a280c",
     "loops_audit": "ed451a10da2d72d26130995c1dd7d168298eaa7a2d6966d2574bcd6db56376ed",
-    "layout": "aaee63214228178d4e917e6744619e3d3d22f0836c4552b5750657831c115f6e"
+    "layout": "abf5b3ff60641d5ced0581a6eea8adfdbe65ffd0b23fcb07bab3e0ea3cec0862"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -58,12 +58,12 @@
   },
   "escalation": {
    "cld": "escalation.cld",
-   "seconds": 0.78,
+   "seconds": 0.83,
    "sha256": {
     "cld": "a78ba0dacc6f665abc9ef9fbbc7e4fe00d89fcba62f59142bcbc2029935a2719",
-    "certificate": "85bf22ce7d7bf248413dc93d78aa06f3256b19cab776824bb8988a6784f0e90e",
+    "certificate": "dbaef1fcc7798d4cd283eed4df98816b7774a994e6507c68b4a4d01affd3fcd7",
     "loops_audit": "7cbb9c104143a09554bdb7190bac6bdac145b17c46e9fbc797c2a524785ce846",
-    "layout": "6c86a2f199688a772aa93d54a59291d145d5d68f78f3183e35c459ede98e3d77"
+    "layout": "917cb5559bfa07519966f8c5a28bdbee5eb1d81c2b9594b8bc93a1047aa8ac96"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -82,12 +82,12 @@
   },
   "fixes-that-fail": {
    "cld": "fixes-that-fail.cld",
-   "seconds": 0.78,
+   "seconds": 0.87,
    "sha256": {
     "cld": "ecd6d76a2751b968ac6e531207fd31e13cf01f9e5cc74187f11bb290eda567f4",
-    "certificate": "782b3f02b970606a8b12f7447dc319ac96d4477181000b91ff3615bbd20f669e",
+    "certificate": "66502b2570aba65ed4b7f76f4fc315520a8d1292e1ed30cd4aea34aaa6b770e3",
     "loops_audit": "a2ebafb9b0c0856b19c158cae5fa6383d14406155b6ba336c3deab6c6082c75c",
-    "layout": "1636f01c606c05564746b81fbba947f1b06f28def21827e1b306add9ebf5fb99"
+    "layout": "77427b675e98f0c2bd2323280bf5e2350a8117c718509e16e46e9636b5e5b7c3"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -106,12 +106,12 @@
   },
   "growth-and-underinvestment": {
    "cld": "growth-and-underinvestment.cld",
-   "seconds": 0.99,
+   "seconds": 1.04,
    "sha256": {
     "cld": "e0c89ae4cf2c8177760e45be0db9e34ce4745b0395aadbfe95d1d0812493d5f7",
-    "certificate": "3fed3a92375067b8cde2c5c09a943dd8e49ad110b25c17d4ad2fbbe0e8a66c98",
+    "certificate": "d9593eb3815dd78bc1476a199249735d3eb453007638fc21b44338b821b9df53",
     "loops_audit": "971651dc619ed422ccd1ebb15bc39ab47af38f9a7540c627103a64cdb54933b9",
-    "layout": "92e383e3f8f30ff7c9d0b109a9c60ef0b9a4bbadcf125a47ece6f3e2d723c2a1"
+    "layout": "eadb2b946a0deb24dd37a0ca8e97c4611d6a4391860146061d97ffa111269273"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -130,12 +130,12 @@
   },
   "limits-to-growth": {
    "cld": "limits-to-growth.cld",
-   "seconds": 2.14,
+   "seconds": 2.36,
    "sha256": {
     "cld": "96c4f0d9b3f2e01a86fe30b7c92c7f156de49ca66bb0df2248813a382b4131a3",
-    "certificate": "40f1a1b1f15d780d5a85c499aa3dbbb134446684cebb33c64f8f9687e9ab47a0",
+    "certificate": "c587cdd4c141bfb40bec9443ee9055a752a5f8086558ca3030f180ff05bf29c6",
     "loops_audit": "1d3a446146801b2c5da2f284f6119bfaa9a00e06bfb05ad2d5fed122eb3c73dd",
-    "layout": "791991bee614812188988f52f4389a89c04436e28b31fd375a47a9ef15cb06e5"
+    "layout": "5ce2285a837881fd7a7d3aeb5c21c10bf17c14aaf229d22fd4bf33ec85019fd0"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -154,12 +154,12 @@
   },
   "shifting-the-burden": {
    "cld": "shifting-the-burden.cld",
-   "seconds": 0.92,
+   "seconds": 1.03,
    "sha256": {
     "cld": "63220b16ecbe670c028dd6619dd4fc9237c8afebf7fdc1dde0dcae236383ca83",
-    "certificate": "7b965f4775ac5f98dd69139b2cdb50c75569723e16e05217341c1c2b209c07f2",
+    "certificate": "a27f251e8bf52cbb1c60dd966e3f5883e4c4b48726a7a6404f20b3f7023d58fd",
     "loops_audit": "2ed57eb657c5a44bb50c254ca13b3e2a8cf850895f801cec3f26cf1deca86146",
-    "layout": "d556fd37f975d8fbe027e7dc79416eea386816897b3cc02a65925f3de6d621a0"
+    "layout": "158129ae4f353414066f986c2bf4238b4b512ddc388605ec7d0cfe46fde7856e"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -178,12 +178,12 @@
   },
   "success-to-the-successful": {
    "cld": "success-to-the-successful.cld",
-   "seconds": 0.81,
+   "seconds": 0.87,
    "sha256": {
     "cld": "0cdd8879bf187c4f42e4b256790974226ababac2ae6f44c13079a68348d49161",
-    "certificate": "1d456cae35a9f37a25ef6593f4270e02986d22220e55cf2ad3dbab13ebd47c94",
+    "certificate": "9424e375a7626b530d3495849e3e1f2a4a3ab32e62a8a728c29863feb34699c8",
     "loops_audit": "132463ee14dc9e24a8c1c904f90ce0e24b3e66f2baa1443a752cdc4bb13a220b",
-    "layout": "cf52211a1dea5f12ca163e2e1600dec9e31235bd56b0ed71d7bacb7ee73fc90a"
+    "layout": "90cfa3f1e8669791e301a80591faa6537d1dc2a1cf51ee9619f9d6c3b088b145"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -192,7 +192,7 @@
    "crossings": 0,
    "visual_crossings": 0,
    "box_press_1px": 0,
-   "edge_box_min_clear": 122.4,
+   "edge_box_min_clear": 139.3,
    "min_card_gap": 144.0,
    "geometry_fail": 0,
    "loops_problems": 0,
@@ -202,12 +202,12 @@
   },
   "tragedy-of-the-commons": {
    "cld": "tragedy-of-the-commons.cld",
-   "seconds": 0.88,
+   "seconds": 0.93,
    "sha256": {
     "cld": "99c64cce9c1ba3491f389dd4137a30a1e2d4744254ef9db1ef462d8278dc905d",
-    "certificate": "0140239e65a10f3c80ae104ec289fb79bdce4552fd4179cff2d0f44fb70cb145",
+    "certificate": "fd7628b54636660ae9e94563e370746003e443d9a9d98f5289e6d4b516ce9b95",
     "loops_audit": "d04319aea4a3cf933efd014aae0bc0f4139b87e778b1a52aa579fd363c522e49",
-    "layout": "09f848ef7ea63a353d7a36ddf27c6883500d879ac924c2fb7ca6fd08818b7927"
+    "layout": "752100417e6ed8c9806ba39e236b415925c777add6dca1827e8fdc34d5653797"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
