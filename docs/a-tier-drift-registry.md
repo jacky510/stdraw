@@ -157,6 +157,21 @@
 | success-to-the-successful | 8adc486a → 1d456cae → 1d456cae | 4708bb8d → 60986c80 → 60986c80 | 15/15 best lens-chain（原 12/12 layered） |
 | tragedy-of-the-commons | 8e921bf6 → 1d1b841d → 0140239e | a2b7dff1 → 45cd6fd3 → 74da7074 | 12/12 best ring-cycle（原 11/11 ring-cycle） |
 
+- **二次重祝福（回路标签药丸宽度改为解析式；主干 CI 红后的修复）**：批准 = owner 2026-11-25 对「修复前进」的显式批准，范围只限 8 图 layout 指纹。起因 = 回路 id（`R1` / `B1` 粗体拉丁）的药丸宽度原取「字体实测与解析式二者取大」，装了量宽字体的机器与无字体机器交付字节不同（主干 CI 的 demo 新鲜度门 + 金标准 layout 指纹 ×8 红；grade 与门 0 变化）；现改为只按解析式宽度（`textmetrics.analytic_width`，新增回归测试）。结果 = 8 图只有 layout 指纹变（下表，程序取自基线 JSON 新旧对照），certificate / loops_audit / `.cld` 指纹不变，grade / 门数 / 模式 / crossings 全不变：
+
+| 图 | layout（原 → 现） | certificate | 门 / grade / 模式 |
+|---|---|---|---|
+| eroding-goals | bc79bfd9 → aaee6321 | f2a51ba3（不变） | 12/12 best bowtie-vertex |
+| escalation | 62f4d9f7 → 6c86a2f1 | 85bf22ce（不变） | 12/12 best ring-cycle |
+| fixes-that-fail | 06d8d85b → 1636f01c | 782b3f02（不变） | 12/12 best ring-cycle |
+| growth-and-underinvestment | 9ed56e99 → 92e383e3 | 3fed3a92（不变） | 13/13 best column-chain |
+| limits-to-growth | 471faf6d → 791991be | 40f1a1b1（不变） | 12/12 best ring-cycle |
+| shifting-the-burden | 9697587b → d556fd37 | 7b965f47（不变） | 12/12 best ring-cycle |
+| success-to-the-successful | 60986c80 → cf52211a | 1d456cae（不变） | 15/15 best lens-chain |
+| tragedy-of-the-commons | 74da7074 → 09f848ef | 0140239e（不变） | 12/12 best ring-cycle |
+
+  重祝福后的 8 个 layout 指纹与无字体机重渲结果逐张相同；`--update-baseline` 同时刷新计时参考（avg 1.02s / max 2.14s，WARN-only，不作门）。`demos/` 三个页面与 `docs/gallery/` 三张截图同引擎重渲（药丸窄 2–3px，证书面板截图不变）。
+
 ### 1.9 byte-pinned 消费方（STDRAW_PIN）
 
 - 消费方现网 pin = `0.8.1`（提交 `4c3cfb4`），**未随本次合入移动**（pin 升级另有流程）；推主干不影响其现网产物。消费方按 `docs/consumer-repro.md` 用 pin 归档 + 独立环境复现。
@@ -183,3 +198,4 @@
 
 - `docs/validation-tiers.md` 写「A 档 61 图（classic 21）」，而 `sweep_tiers.graph_list("A")` 实际返回 62 个条目（classic 20 + examples 2 个同名条目 + random 40），同名条目在 index 里不单独留记录（两腿 index 各 60 条）。文档计数与工具不一致属既有问题，另卡对齐。
 
+- **字体独立性只覆盖 CI 逐字节门的产物，不是全量**：回路标签药丸宽度已是解析式；节点卡片宽度仍走 `card_size()` → `text_width()`（字体实测与解析式取大），拉丁字母标签的卡片在装了量宽字体的机器上更宽 —— `examples/hdd-supply-chain`、`examples/longtail-coupled-loops` 有 / 无字体渲染字节不同。这是本登记之前的既有行为（改前主干同样如此），这两张不在 CI 逐字节门覆盖内，本次未改。
