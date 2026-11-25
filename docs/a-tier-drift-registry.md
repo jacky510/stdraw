@@ -420,3 +420,156 @@
 - `demos/` 三页同配方重渲：`demos/classic-certificate.json`、`demos/classic-loops-audit.json` 逐字节不变（未动）；三页 HTML 唯一 diff = 药丸行。
 - `docs/gallery/` 三张截图重截。配方：Playwright 自带 Chromium 153、保留滚动条、视口 = PNG 尺寸、缩放 1；该配方在主干上对已提交三张 PNG 100% 复现。重截图与已提交图的差异像素 100% 落在药丸框内（classic 7640 / debt-spiral 6190 / debt-spiral-en 4388 px，框外 0）。`certificate.png` 为证书面板裁剪、不含药丸，未动。
 - README.md / README_zh-CN.md / skills/stdraw/SKILL.md / CHANGELOG.md 本登记未动（版本收尾另有流程）。
+## 5. 登记 #5：互指对闭环透镜（非 lens 引擎）+ 圆角箭尖贴边 + column-chain 成员序（2026-11-26）
+
+### 5.1 批准来源与变更内容
+
+- **批准**：owner 的既有缺陷批卡（P1 验收报告 §7 既有问题段 B1–B4）；重祝福**未预授权**——金标准 8 图指纹变化在收口前单独回报 owner 批（本登记写明变化面，批后才 `--update-baseline`）。A 档漂移按登记放行的既有批准同 #1。
+- **变更内容**：① `Router.mutual_lens_construct`（交付层最后一道修复，非 lens 引擎全跑）：互指对按 lens-chain 同一配方重建成双弧透镜，锚变体按序试、逐边过 `LENS_CONSTRUCT` + 相距 ≥12，被门拒掉的对原样保留并逐变体记原因；② 新硬门 `mutual_pairs_closed`（非 lens 门表只加不减，lens-chain 排除）：证书从交付几何重读闭环 / 细透镜 / 可复现的豁免，修复道跑过被拒的对如实记入 `mutual_pairs_exempt`；③ 角锚上的箭尖沿末段方向投影到 r=14 圆角轮廓（只改 `arrow` 字段 + JS 镜像 + payload `cardRadius`）；④ column-chain 残余组成员序：有 spine 邻的成员优先占锚点行。
+- **grade 语义与既有门阈值零改动**；`mutual_pairs_separated`（≥4）保留不动，新门是加严方向。
+
+### 5.2 验收数字（改前主干 `49cf73e` vs 改后 `a9f71fc`，同机同解释器，程序现读）
+
+| 项 | 改前 | 改后 | 判 |
+|---|---|---|---|
+| B1 growth-and-underinvestment performance→limit 绕行（弧长 / 端点弦） | 1.681 | 1.065 | ≤1.2 达标 |
+| B1 同线箭尖 vs capacity→limit 箭尖距 | 4.5 px | 90.4 px | ≥8 达标 |
+| B2 fixes-that-fail problem↔fix 两线相隔 / 宽÷弦 | 4.5 px / 0.046 | 38.0 px / 0.544 | 宽/弦 ≥0.2 达标 |
+| B4 limits-to-growth action↔state 两线相隔 / 宽÷弦 | 17.8 px / 0.107 | 21.2 px / 0.394 | 宽/弦 ≥0.2 达标 |
+| B3 箭尖落在 r=14 圆角轮廓外（有符号距离 >0.05）金标准 8 图 | 14 枚（1.56 px） | 0 枚 | 悬空 0 达标 |
+| B3 同口径全语料 52 图 | 94 | 0 | — |
+| 金标准 8 图 grade / crossings | 8 best / 0 | 8 best / 0 | 全绿 |
+
+- B4 的 GaU R1（efforts↔performance）：改前已是 21px 相距的金锚透镜（本册量法宽/弦 0.529，验收报告的 0.10 口径未复现），本轮未动（performance 的上角锚被 B2 透镜占用，角锚变体不可用；弦 42px 由 80px 行距决定）——如实记录，不宣称改善。
+- A4（GaU 三枚标签归属）：改后三枚仍不在各自环内（R1/B2 偏心距 80 / 95.9，B3 64）；药丸 18px 高 + 两侧 4px 门隙需要透镜宽 ≥88 → 弦 ≥209，现节距 80 下不可达，B1 布点修复不改变该结论——按卡面「随 B1 复核」如实记录。
+- B3 实现口径与卡面措辞不同：箭尖沿**末段方向**投影到圆角轮廓（无交点时径向），不是沿框边法线；位移 ≤2.34px。
+
+### 5.3 A 档两腿口径
+
+- 基线腿 = 主干 `49cf73e`（改前，52 图：classic 20 + longtail 12 + random-n10 20）；改后腿 = 分支 `a9f71fc`（同机，4 并行子进程，`python -m stdraw layout` 子进程）。比对面同 #1（layout.json / certificate.json / geometry_report.json / demo-2d.html 的 sha256）。
+- 无字体渲染字节一致快门：8 金标准图 `textmetrics._load_font=None` 子进程与正常渲染 5 产物逐个 sha256 相同（0 差异）。
+
+### 5.4 汇总
+
+| 项 | 数 |
+|---|---|
+| 两腿 rc=0（进入逐字节比对） | 52 图 |
+| rc 差异 | 无 |
+| 逐字节相同 | 0 图 |
+| 漂移（预期：B3 改 `arrow` 字段 → certificate / demo 全量漂移） | 52 图（certificate 52 / demo 52 / layout 41 / geometry_report 3） |
+| grade best 两腿 | 29 → 29 |
+| 丢失的 best | [] |
+| 丢失的门 | 无 |
+| crossings 变差 | 无 |
+| 视觉指标变差 | 无 |
+| 布点变化 | 无 |
+| 引擎变化 | 无 |
+| 箭尖悬空 两腿 | 94 → 0 |
+| 互指对：改后闭环 / 如实豁免 / 未闭环 | 5 / 10 / 0 |
+
+### 5.5 逐图表（rc 两腿一致的已交付图）
+
+| graph | engine | grade b->a | gates b->a | cross | line kinds | pairs (kinds, vertex min dist) | tips outside b->a | files same/total | mutual_lens after |
+|---|---|---|---|---|---|---|---|---|---|
+| classic__arms-race | ring-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 4} -> {"arc": 4} |  | 2 -> 0 | 4/7 |  |
+| classic__brand-flywheel | ring-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 8} -> {"arc": 8} | ad_effect<->awareness arc/arc 20.9 | 1 -> 0 | 4/7 | ad_effect<->awareness tilt closed=None sep=None w/c=None |
+| classic__bullwhip | column-construct | best -> best | 13 -> 14  | 0 -> 0 | {"arc": 5, "line": 1} -> {"arc": 5, "line": 1} |  | 0 -> 0 | 5/7 |  |
+| classic__burnout-attrition | column-construct | best -> best | 13 -> 14  | 0 -> 0 | {"arc": 6} -> {"arc": 6} |  | 1 -> 0 | 4/7 |  |
+| classic__classic-cld-growth-and-burden | spine-construct | best -> best | 14 -> 15  | 0 -> 0 | {"arc": 8, "line": 5} -> {"arc": 8, "line": 5} | crowding<->quickfix line/line 19.0; crowding<->fundamental arc/arc 16.5 | 4 -> 0 | 4/7 | crowding<->fundamental slim closed=True sep=16.5 w/c=None; crowding<->quickfix tilt closed=None sep=None w/c=None |
+| classic__debt-spiral | ring-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 6} -> {"arc": 6} |  | 2 -> 0 | 4/7 |  |
+| classic__eroding-goals | bowtie-construct | best -> best | 12 -> 13  | 0 -> 0 | {"line": 6} -> {"line": 6} |  | 2 -> 0 | 4/7 |  |
+| classic__fishing-collapse | ring-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 7, "line": 2} -> {"arc": 7, "line": 2} | catch_amount<->fish_stock arc/arc 23.5; catch_amount<->quota line/line 9.0 | 2 -> 0 | 4/7 | catch_amount<->fish_stock tilt closed=None sep=None w/c=None; catch_amount<->quota blocked closed=None sep=None w/c=None |
+| classic__fixes-that-fail | sym-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 4, "line": 1} -> {"arc": 4, "line": 1} |  | 0 -> 0 | 5/7 |  |
+| classic__induced-demand | ring-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 7} -> {"arc": 7} | car_trips<->congestion arc/arc 10.6 | 2 -> 0 | 4/7 | car_trips<->congestion claimed closed=None sep=None w/c=None |
+| classic__learning-flywheel | sym-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 4, "line": 1} -> {"arc": 4, "line": 1} |  | 0 -> 0 | 5/7 |  |
+| classic__limits-to-growth | column-construct | best -> best | 13 -> 14  | 0 -> 0 | {"arc": 6, "vg": 1} -> {"arc": 6, "vg": 1} |  | 0 -> 0 | 5/7 |  |
+| classic__population-logistic | column-construct | best -> best | 13 -> 14  | 0 -> 0 | {"arc": 5, "poly": 1} -> {"arc": 5, "poly": 1} | births<->population poly/arc 58.8; deaths<->population arc/arc 38.0 | 0 -> 0 | 3/7 | births<->population frozen closed=None sep=None w/c=None; deaths<->population built closed=True sep=38.0 w/c=1.225 |
+| classic__renewable-resource | column-construct | best -> best | 13 -> 14  | 0 -> 0 | {"arc": 5, "line": 1, "poly": 1} -> {"arc": 7} | harvest<->stock arc/arc 38.0; regeneration<->stock arc/arc 21.2 | 1 -> 0 | 3/7 | harvest<->stock built closed=True sep=38.0 w/c=1.112; regeneration<->stock slim closed=True sep=21.2 w/c=None |
+| classic__shifting-the-burden | bowtie-construct | best -> best | 12 -> 13  | 0 -> 0 | {"line": 8} -> {"line": 8} | problem<->symptom_fix line/line 10.6; fundamental<->problem line/line 10.6 | 3 -> 0 | 4/7 | fundamental<->problem frozen closed=None sep=None w/c=None; problem<->symptom_fix frozen closed=None sep=None w/c=None |
+| classic__soil-erosion | ring-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 8} -> {"arc": 8} | crop_yield<->farming arc/arc 21.2 | 2 -> 0 | 3/7 | crop_yield<->farming built closed=True sep=21.2 w/c=0.434 |
+| classic__success-to-the-successful | ring-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 4, "line": 4, "poly": 2} -> {"arc": 4, "line": 4, "poly": 2} | a_alloc<->a_perf arc/poly 19.0; b_alloc<->b_perf arc/arc 13.6 | 1 -> 0 | 4/7 | a_alloc<->a_perf blocked closed=None sep=None w/c=None; b_alloc<->b_perf tilt closed=None sep=None w/c=None |
+| classic__tragedy-of-the-commons | column-construct | best -> best | 13 -> 14  | 0 -> 0 | {"arc": 5, "line": 1} -> {"arc": 5, "line": 1} |  | 0 -> 0 | 5/7 |  |
+| classic__urban-migration | column-construct | best -> best | 13 -> 14  | 0 -> 0 | {"arc": 8} -> {"arc": 8} |  | 1 -> 0 | 4/7 |  |
+| classic__wage-price-spiral | bowtie-construct | best -> best | 12 -> 13  | 0 -> 0 | {"line": 6} -> {"line": 6} |  | 2 -> 0 | 4/7 |  |
+| longtail__longtail-chain-03 | cp-sat | best -> best | 12 -> 13  | 0 -> 0 | {"line": 2} -> {"line": 2} |  | 0 -> 0 | 5/7 |  |
+| longtail__longtail-chain-06 | cp-sat | best -> best | 12 -> 13  | 0 -> 0 | {"line": 5} -> {"line": 5} |  | 0 -> 0 | 5/7 |  |
+| longtail__longtail-chain-09 | cp-sat | best -> best | 12 -> 13  | 0 -> 0 | {"line": 8} -> {"line": 8} |  | 0 -> 0 | 5/7 |  |
+| longtail__longtail-mixed-chain-cycle | column-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 1, "line": 5} -> {"arc": 1, "line": 5} |  | 0 -> 0 | 5/7 |  |
+| longtail__longtail-mixed-chain-star | cp-sat | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 2, "line": 4} -> {"arc": 2, "line": 4} |  | 1 -> 0 | 4/7 |  |
+| longtail__longtail-mixed-star-cycle | cp-sat | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 2, "line": 4} -> {"arc": 2, "line": 4} |  | 1 -> 0 | 4/7 |  |
+| longtail__longtail-nonplanar-k33 | planarized | crossed-certified -> crossed-certified | 8 -> 8  | 1 -> 1 | {"polyline": 9} -> {"polyline": 9} |  | 2 -> 0 | 4/7 |  |
+| longtail__longtail-nonplanar-k5 | planarized | crossed-certified -> crossed-certified | 8 -> 8  | 1 -> 1 | {"polyline": 10} -> {"polyline": 10} |  | 3 -> 0 | 4/7 |  |
+| longtail__longtail-nonplanar-petersen | planarized | crossed-certified -> crossed-certified | 8 -> 8  | 2 -> 2 | {"polyline": 15} -> {"polyline": 15} |  | 2 -> 0 | 4/7 |  |
+| longtail__longtail-star-05 | cp-sat | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 2, "line": 2} -> {"arc": 2, "line": 2} |  | 1 -> 0 | 4/7 |  |
+| longtail__longtail-star-07 | radial-construct | best -> best | 15 -> 16  | 0 -> 0 | {"line": 6} -> {"line": 6} |  | 4 -> 0 | 4/7 |  |
+| longtail__longtail-star-09 | radial-construct | best -> best | 15 -> 16  | 0 -> 0 | {"line": 8} -> {"line": 8} |  | 0 -> 0 | 5/7 |  |
+| random__random-n10-i00 | cp-sat | uncertified -> uncertified | 11 -> 12 FAIL topology_form_fallback,visual_crossings_zero | 2 -> 2 | {"arc": 3, "line": 10, "vg": 3} -> {"arc": 3, "line": 10, "vg": 3} |  | 3 -> 0 | 4/7 |  |
+| random__random-n10-i01 | cp-sat | uncertified -> uncertified | 10 -> 11 FAIL anchors_standard,topology_form_fallback,visual_crossings_zero | 3 -> 3 | {"arc": 1, "line": 11, "poly": 2, "vg": 2} -> {"arc": 1, "line": 11, "poly": 2, "vg": 2} |  | 1 -> 0 | 4/7 |  |
+| random__random-n10-i02 | ring-construct | uncertified -> uncertified | 10 -> 11 FAIL visual_crossings_zero | 2 -> 2 | {"arc": 2, "line": 14} -> {"arc": 2, "line": 14} |  | 1 -> 0 | 4/7 |  |
+| random__random-n10-i03 | ring-construct | uncertified -> uncertified | 8 -> 9 FAIL anchors_standard,lines_no_coincidence,topology_form_fallback,visual_crossings_zero | 3 -> 3 | {"arc": 2, "line": 14} -> {"arc": 2, "line": 14} |  | 5 -> 0 | 4/7 |  |
+| random__random-n10-i04 | cp-sat | uncertified -> uncertified | 11 -> 12 FAIL topology_form_fallback,visual_crossings_zero | 2 -> 2 | {"arc": 2, "line": 11, "poly": 1, "vg": 2} -> {"arc": 2, "line": 11, "poly": 1, "vg": 2} |  | 1 -> 0 | 4/7 |  |
+| random__random-n10-i05 | cp-sat | uncertified -> uncertified | 11 -> 12 FAIL topology_form_fallback,visual_crossings_zero | 1 -> 1 | {"arc": 2, "line": 12, "vg": 2} -> {"arc": 2, "line": 12, "vg": 2} |  | 3 -> 0 | 4/7 |  |
+| random__random-n10-i06 | cp-sat | uncertified -> uncertified | 10 -> 11 FAIL anchors_standard,topology_form_fallback,visual_crossings_zero | 2 -> 2 | {"arc": 3, "line": 11, "poly": 2} -> {"arc": 3, "line": 11, "poly": 2} |  | 2 -> 0 | 4/7 |  |
+| random__random-n10-i07 | cp-sat | uncertified -> uncertified | 11 -> 12 FAIL topology_form_fallback,visual_crossings_zero | 2 -> 2 | {"arc": 6, "line": 9, "vg": 1} -> {"arc": 6, "line": 9, "vg": 1} |  | 4 -> 0 | 4/7 |  |
+| random__random-n10-i08 | ring-construct | uncertified -> uncertified | 10 -> 11 FAIL topology_form_fallback,visual_crossings_zero | 2 -> 2 | {"arc": 1, "line": 14, "vg": 1} -> {"arc": 1, "line": 14, "vg": 1} |  | 3 -> 0 | 4/7 |  |
+| random__random-n10-i09 | planarized | crossed-certified -> crossed-certified | 8 -> 8  | 1 -> 1 | {"polyline": 16} -> {"polyline": 16} |  | 4 -> 0 | 4/7 |  |
+| random__random-n10-i10 | planarized | crossed-certified -> crossed-certified | 8 -> 8  | 1 -> 1 | {"polyline": 16} -> {"polyline": 16} |  | 3 -> 0 | 4/7 |  |
+| random__random-n10-i11 | ring-construct | uncertified -> uncertified | 11 -> 12 FAIL topology_form_fallback | 0 -> 0 | {"arc": 3, "line": 12, "vg": 1} -> {"arc": 3, "line": 12, "vg": 1} |  | 3 -> 0 | 4/7 |  |
+| random__random-n10-i12 | cp-sat | uncertified -> uncertified | 9 -> 10 FAIL anchors_standard,lines_no_coincidence,topology_form_fallback,visual_crossings_zero | 6 -> 6 | {"arc": 4, "line": 10, "poly": 1, "vg": 1} -> {"arc": 4, "line": 10, "poly": 1, "vg": 1} |  | 2 -> 0 | 4/7 |  |
+| random__random-n10-i13 | ring-construct | uncertified -> uncertified | 9 -> 10 FAIL anchors_standard,visual_crossings_zero | 3 -> 3 | {"arc": 1, "line": 13, "poly": 2} -> {"arc": 1, "line": 13, "poly": 2} |  | 5 -> 0 | 4/7 |  |
+| random__random-n10-i14 | cp-sat | uncertified -> uncertified | 11 -> 12 FAIL topology_form_fallback,visual_crossings_zero | 2 -> 2 | {"arc": 2, "line": 12, "vg": 2} -> {"arc": 2, "line": 12, "vg": 2} |  | 2 -> 0 | 4/7 |  |
+| random__random-n10-i15 | ring-construct | uncertified -> uncertified | 9 -> 10 FAIL anchors_standard,visual_crossings_zero | 1 -> 1 | {"arc": 3, "line": 12, "poly": 1} -> {"arc": 3, "line": 12, "poly": 1} |  | 4 -> 0 | 4/7 |  |
+| random__random-n10-i16 | planarized | crossed-certified -> crossed-certified | 8 -> 8  | 1 -> 1 | {"polyline": 16} -> {"polyline": 16} |  | 4 -> 0 | 4/7 |  |
+| random__random-n10-i17 | ring-construct | uncertified -> uncertified | 10 -> 11 FAIL visual_crossings_zero | 2 -> 2 | {"line": 14, "vg": 2} -> {"line": 14, "vg": 2} |  | 1 -> 0 | 4/7 |  |
+| random__random-n10-i18 | ring-construct | uncertified -> uncertified | 10 -> 11 FAIL topology_form_fallback,visual_crossings_zero | 2 -> 2 | {"arc": 1, "line": 15} -> {"arc": 1, "line": 15} |  | 0 -> 0 | 5/7 |  |
+| random__random-n10-i19 | planarized | crossed-certified -> crossed-certified | 8 -> 8  | 1 -> 1 | {"polyline": 16} -> {"polyline": 16} |  | 3 -> 0 | 4/7 |  |
+
+### 5.6 金标准 8 图如实豁免的互指对（`mutual_pairs_exempt`）
+
+- 金标准 8 图改后的互指对：闭环 4 对（growth-and-underinvestment efforts↔performance 0.529、growth-and-underinvestment limit↔performance 1.193、fixes-that-fail fix↔problem 0.544、limits-to-growth action↔state 0.394；宽÷弦）；success-to-the-successful 走 lens-construct 引擎（既有 `lens_pairs_closed` 门，不在本门）；如实豁免 3 对：
+| 图 | 对 | 状态 | 原因 / 倾角 |
+|---|---|---|---|
+| shifting-the-burden | fundamental<->problem | tilt | 68.2 |
+| shifting-the-burden | problem<->symptomatic | tilt | 68.2 |
+| tragedy-of-the-commons | gain<->usage | tilt | 68.2 |
+
+### 5.7 全语料 52 图的互指对处置（改后腿 `meta.mutual_lens`；lens-construct 图本语料集没有）
+
+| 图 | 对 | 状态 | 相距 / 宽÷弦 |
+|---|---|---|---|
+| classic__classic-cld-growth-and-burden | crowding<->fundamental | slim | sep=16.5 w/c=None |
+| classic__population-logistic | deaths<->population | built | sep=38.0 w/c=1.225 |
+| classic__renewable-resource | harvest<->stock | built | sep=38.0 w/c=1.112 |
+| classic__renewable-resource | regeneration<->stock | slim | sep=21.2 w/c=None |
+| classic__soil-erosion | crop_yield<->farming | built | sep=21.2 w/c=0.434 |
+
+| 图 | 对 | 状态 | 原因 / 倾角 |
+|---|---|---|---|
+| classic__brand-flywheel | ad_effect<->awareness | tilt | corner:tilt:62.9,golden:tilt:62.9 |
+| classic__classic-cld-growth-and-burden | crowding<->quickfix | tilt | corner:tilt:62.9,golden:tilt:62.9 |
+| classic__fishing-collapse | catch_amount<->fish_stock | tilt | corner:tilt:55.7,golden:tilt:55.7 |
+| classic__fishing-collapse | catch_amount<->quota | blocked | corner:claimed,golden:sep:9.0 |
+| classic__induced-demand | car_trips<->congestion | claimed | golden:claimed,corner:claimed |
+| classic__population-logistic | births<->population | frozen |  |
+| classic__shifting-the-burden | fundamental<->problem | frozen |  |
+| classic__shifting-the-burden | problem<->symptom_fix | frozen |  |
+| classic__success-to-the-successful | a_alloc<->a_perf | blocked | corner:angle:2:2.4,angle:3:2.4,golden:ownbox:2,ownbox:3,sep:9.0 |
+| classic__success-to-the-successful | b_alloc<->b_perf | tilt | golden:tilt:53.9,corner:tilt:55.5 |
+
+
+### 5.8 rc 差异与未交付图
+
+- rc 差异：无。未交付图：无。
+
+### 5.9 冻结基线处置（与流程门分开报）
+
+- `tests/baselines/`（ortho-v1）：`--recipe ortho` 冻结路径未改，字节钉不变（`test_delivery_contract` 全量通过）。
+- `tests/golden/baseline.json`：8 图 certificate / layout 指纹变化（B3 改 `arrow` 字段与渲染字节；GaU / FtF / LtG 另有布线 / 布点变化；`gates_passed` 12→13 或 13→14 = 新门），`golden_gate.py` 不更新基线时 0/8 通过、23 条 DRIFT 行全为 sha256 / gates_passed，硬门零失败。**重祝福待 owner 批**，批后 `python tests/golden_gate.py --update-baseline` 并把新指纹回填本节。
+
+### 5.10 byte-pinned 消费方（STDRAW_PIN）
+
+- 8777 STDRAW_PIN 0.8.1 不动；本轮字节漂移登记于此，消费方升级另行裁决。
+
+### 5.11 publishing face 同步
+
+- `README*` / `demos/` / `docs/gallery/` / `skills/stdraw/SKILL.md` 本轮未动；demos 重渲随重祝福一并做（须过 freshness gate + 发布面验收）。
