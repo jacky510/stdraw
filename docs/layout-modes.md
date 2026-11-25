@@ -114,7 +114,7 @@ limits-to-growth）：分层路径 `uncertified` 11/12，唯一 FAIL = spacing C
 
 **摆位**（`place_lens_chain`）：每个互指对摆成一个**透镜**——两框沿链方向相对、
 边到边 `LENS_GAP`=150px，两条有向边构造为 Q 弧、分别鼓向弦的两侧（弧顶偏移
-= `LENS_K`/2 × 弦长 = 0.30 × 弦长），每个二节点回路读作一个闭合「圈」。链在每个
+= `LENS_K`/2 × 弦长 = 0.16 × 弦长），每个二节点回路读作一个闭合「圈」。链在每个
 共享节点**右转**（E→S→W→N），相邻透镜互相垂直、不争抢同一段边框。pendant
 节点挂在父节点**同一行**的外侧（边到边 `LINK_GAP`=48px，行距保持均匀）；多条
 互指链竖向堆叠、左对齐，全部坐标吸附 24px（x）/ 2px（y）栅格。
@@ -145,7 +145,7 @@ coincide_reroute / midband_reanchor / fan_spread 本就不触碰 constructed 路
 
 - `lens_pairs_closed`：每个互指对的两条边都是 Q 弧，且**鼓度**（弧顶到弦的距离 /
   弦长，`gates.arc_bulge`）≥ `LENS_BULGE_MIN`=0.15，且两条弧鼓向弦的**异侧**——
-  构造透镜 = 0.30；被压平的透镜 ≈0.01，不算圈。
+  构造透镜 = 0.16（`LENS_K`=0.32，下限 0.15 之上留余量）；被压平的透镜 ≈0.01，不算圈。
 - `lens_pair_min_sep_ge_12`：两条弧最小间距 ≥12px。
 - 指标：`lens_pair_min_sep`、`lens_pair_min_bulge`。check.py 第 9 门同口径。
 - `rowY` = 实际交付行（本引擎不做二次平移）；`pitch` = None（行距由 card_h +
@@ -153,6 +153,9 @@ coincide_reroute / midband_reanchor / fan_spread 本就不触碰 constructed 路
 
 **实测**（2026-11-25）：limits-to-growth 4 节点原图 `best` 14/14、spacing_cv 0.132、
 净距 76.7、两透镜鼓度 0.30、~0.4s（分层路径 uncertified ~7.3s）；
+2026-11-26 视觉验收返修把透镜收窄（`LENS_K` 0.6 → 0.32）：同一图鼓度 0.16、透镜宽/弦
+0.84 → 0.56，门 15/15 不变；对称角锚的两端间距（44px 卡 = 38px）决定了宽/弦的下限
+≈ 0.30 + 38/弦长，再窄只能拉长弦（`LENS_GAP`）或改锚点口径；
 success-to-the-successful 由分层 3 行改为两透镜竖排：`best` 14/14（原 12/12）、
 spacing_cv 0.0（原 0.022）、最小卡距 144（原 36）、净距 122（原 44）。金标准其余
 7 图逐字节不变。回归测试 `tests/test_lens_chain.py`；CI 把 4 节点原图列入

@@ -94,7 +94,7 @@ chain node (pendant tree, `parents` records it).
 **Placement** (`place_lens_chain`): each mutual pair becomes a **lens** -- the two
 boxes face each other along the chain direction, `LENS_GAP` = 150px edge to edge;
 the two directed edges are constructed Q arcs bowing to opposite sides of the
-chord (apex offset = `LENS_K` / 2 x chord = 0.30 x chord), so each 2-node loop
+chord (apex offset = `LENS_K` / 2 x chord = 0.16 x chord), so each 2-node loop
 reads as one closed ring. The chain **turns right** at every shared node
 (E -> S -> W -> N): adjacent lenses are perpendicular and never contest the same
 border. Pendant nodes hang in the **same row** as their parent (`LINK_GAP` = 48px
@@ -138,7 +138,8 @@ two lens-contract gates + the common hard gates:
 - `lens_pairs_closed`: both edges of every mutual pair are Q arcs, each with
   **bulge** (apex-to-chord distance / chord length, `gates.arc_bulge`) >=
   `LENS_BULGE_MIN` = 0.15, and the two arcs bow to **opposite** sides of the
-  chord -- a constructed lens = 0.30; a flattened lens ~ 0.01 is not a ring.
+  chord -- a constructed lens = 0.16 (`LENS_K` = 0.32, a margin above the
+  0.15 floor); a flattened lens ~ 0.01 is not a ring.
 - `lens_pair_min_sep_ge_12`: the two arcs stay >= 12px apart.
 - Metrics: `lens_pair_min_sep`, `lens_pair_min_bulge`. check.py gate 9 shares
   the caliber.
@@ -150,7 +151,12 @@ two lens-contract gates + the common hard gates:
 (layered path uncertified ~7.3s); success-to-the-successful moves from 3 layered
 rows to two stacked lenses: `best` 14/14 (was 12/12), spacing_cv 0.0 (was
 0.022), min card gap 144 (was 36), clearance 122 (was 44). The other 7 golden
-figures stay byte-identical. Regression tests `tests/test_lens_chain.py`; CI
+figures stayed byte-identical. The 2026-11-26 visual-acceptance rework
+narrowed the lens (`LENS_K` 0.6 -> 0.32): the same figure grades 15/15,
+bulge 0.16, lens width/chord 0.84 -> 0.56. The end gap of the symmetric
+corner anchors (38px on a 44px card) sets the floor width/chord at about
+0.30 + 38 / chord; going narrower needs a longer chord (`LENS_GAP`) or a
+different anchor caliber. Regression tests `tests/test_lens_chain.py`; CI
 lists the 4-node source figure in `AUTO_EXAMPLES` (auto gate set =
 `LENS_HARD_GATES`).
 

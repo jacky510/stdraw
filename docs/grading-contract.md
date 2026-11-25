@@ -171,11 +171,20 @@ Consequently:
 - `loop_labels_clear` -- every certificate of a figure with declared loops
   carries the loop labels (loop id + name + direction glyph; polarity is
   carried by colour only, no `+`/`-` glyphs) in `layout.json`
-  `annotations.loop_labels`. The shipped positions are re-verified on the
-  delivered coordinates: >= 4px from every card and every line, >= 8px from
-  every other label, >= 4px inside the viewBox. A label that cannot be
-  placed is reported `placed: false` (`metrics.loop_labels_unplaced`), is
-  hidden in the export, and never counts as a violation by itself.
+  `annotations.loop_labels`. The glyph follows the loop's circulation as
+  drawn: >= 3-node loops by the signed area of the member centers in
+  member order, 2-node loops by the relative position of the two member
+  arcs; the verdict is recorded per label (`dir` = `cw` / `ccw`,
+  `dir_source` = `polygon` / `ring`) and echoed in the certificate
+  metrics (`loop_labels[].dir`). An undecidable circulation is recorded
+  honestly (`dir` = null, `dir_source` = `kind:collinear` /
+  `kind:no-ring`) and only then does the glyph fall back to the kind
+  default (B = `ccw`, otherwise `cw`). The shipped positions are
+  re-verified on the delivered coordinates: >= 4px from every card and
+  every line, >= 8px from every other label, >= 4px inside the viewBox. A
+  label that cannot be placed is reported `placed: false`
+  (`metrics.loop_labels_unplaced`), is hidden in the export, and never
+  counts as a violation by itself.
 - Label placement order (raises quality, never lowers the floor): the
   candidate centers are concentric rings around the loop centroid (near
   ring up to 160px, then a far ring 168-256px in 24 directions). Slots are
@@ -225,11 +234,16 @@ Consequently:
   default to an arc bulging away from the loop centroid. The record counts
   `preferred` / `arced` / `opposite_side_arcs` / `templated` and lists every
   fallback in `fallbacks[]` with a measured reason re-evaluated on the
-  delivered coordinates. `reports.loop_edges_arced` is true only when every
-  member line is a loop-side arc; a placement mode's constructed template
-  geometry never counts as an arc, so `false` is not a quality failure and
-  never touches `grade`. Caliber original: `docs/edge-placement-rules-v1.md`
-  section 20.
+  delivered coordinates. Mutual-pair members that are not arcs (a
+  straight or polyline member of an a<->b pair) are listed in
+  `fallbacks[]` too, under the separate `mutual_pair_non_arc` count --
+  bookkeeping only: they are not scored against `preferred` (the pair's
+  geometry belongs to the lens / rule-8 contract) and never touch
+  `reports.loop_edges_arced` or `grade`. `reports.loop_edges_arced` is
+  true only when every member line is a loop-side arc; a placement mode's
+  constructed template geometry never counts as an arc, so `false` is not
+  a quality failure and never touches `grade`. Caliber original:
+  `docs/edge-placement-rules-v1.md` section 20.
 - Byte-neutrality (loop arcs): a figure without declared loops, a figure
   whose loops are all mutual pairs, and the `--from-layout` manual path
   carry no `loop_arcs` key and no `loop_edges_arced` report.
