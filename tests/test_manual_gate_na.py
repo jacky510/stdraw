@@ -10,7 +10,8 @@ measured ``false`` that no manual layout can ever satisfy.  This is a
 caliber alignment, NOT a threshold change: the measured values stay in
 ``metrics`` (honest accounting), no other gate is touched, and the AUTO
 path keeps boolean gate values (a 0-crossing hand-drawn layout can now
-reach grade=best, 10/10 applicable gates).
+reach grade=best; 10/10 applicable gates under that ruling, 11/11 since
+the loop-reading layer added the loop-label clearance gate).
 
 Fixture: tests/data/epidemic-feedback-manual-layout.json (a hand-drawn
 0-crossing layout of the tests/data/epidemic-feedback.cld graph; under the
@@ -60,7 +61,10 @@ def test_manual_structural_gates_na(tmp_path):
     assert g["column_snap24_ge_060"] == "N/A", g["column_snap24_ge_060"]
     # a 0-crossing hand-drawn layout now reaches best on the applicable gates
     assert cert["grade"] == "best", cert["grade"]
-    assert cert["gates_passed"] == "10/10", cert["gates_passed"]
+    # 10 applicable P1-2 gates + loop_labels_clear (loop-reading layer: the
+    # loop labels placed on a manual layout are gate-checked as well)
+    assert cert["gates_passed"] == "11/11", cert["gates_passed"]
+    assert cert["gates"]["loop_labels_clear"] is True
     assert cert["blocking_gates"] == [], cert["blocking_gates"]
     assert cert["metrics"]["crossings"] == 0
     assert cert["metrics"]["visual_crossings"] == 0

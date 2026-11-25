@@ -23,6 +23,7 @@ import contextlib
 import os
 import sys
 import unittest
+from unittest import mock
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -102,11 +103,27 @@ class TestFlagOn(unittest.TestCase):
         self.assertEqual(_geo_fail(self.comb_on), 0)
 
     def test_violating_pair_reverted_fail_loud(self):
-        on = _run(BOWTIE, True)
+        # Legacy straight-line caliber (loop-direction arc default switched
+        # off): mirroring the second pair would create a visual crossing, so
+        # the gate re-run must revert it and record it as an exception.
+        with mock.patch("stdraw.routing.loop_arc_context",
+                        lambda loops: contextlib.nullcontext()):
+            on = _run(BOWTIE, True)
         self.assertEqual(_geo_fail(on), 0)
         report = on["meta"]["mirror_symmetry"]
         self.assertTrue(report["exceptions"], "the reverted pair must be "
                         "recorded as an exception")
+
+    def test_arc_default_bowtie_mirrors_both_pairs_clean(self):
+        # Default caliber (loop-member lines are loop-side arcs): the pair
+        # that needed the revert under straight lines now mirrors cleanly,
+        # so nothing is reverted and the exceptions list stays empty.
+        on = _run(BOWTIE, True)
+        self.assertEqual(_geo_fail(on), 0)
+        report = on["meta"]["mirror_symmetry"]
+        self.assertEqual(report["mirror_pairs"], 2)
+        self.assertEqual(report["mirrored"], 2)
+        self.assertEqual(report["exceptions"], [])
 
     def test_mirror_metric_on_mirrored_subset(self):
         """Acceptance caliber: on the MIRRORED subset (the evaluable

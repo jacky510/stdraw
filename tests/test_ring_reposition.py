@@ -5,13 +5,17 @@
 Covers the ring-cycle reposition post-processing (layout_auto._ring_reposition):
 
   1. epidemic-feedback fixture (10 nodes / 14 edges / 5 loops, SIR +
-     capacity-constraint structure): the selected 9-node main ring carries
-     chord crossings under the frozen selection key and the delivery used to
-     grade uncertified with crossings=1 / visual=1. The post-processing must
-     rescue it to grade=best with BOTH crossing calibers at 0, every hard
-     gate passing, and record its decision on the certificate-facing
-     mode_decision_trace (post_layout_reposition).
-  2. success-to-the-successful (the classic corpus fixture): same rescue.
+     capacity-constraint structure): historically the selected 9-node main
+     ring carried a chord crossing (uncertified, crossings=1 / visual=1)
+     and the post-processing rescued it.  Under the loop-reading layer
+     (loop-member lines delivered as loop-side arcs) the 9-node ring
+     arrives at 0 crossings directly, so no reposition is needed: the figure
+     must grade best with BOTH crossing calibers at 0, every hard gate
+     passing, and carry NO post_layout_reposition key.
+  2. success-to-the-successful (the classic corpus fixture): still carries
+     the chord crossing -- the post-processing must rescue it to grade=best
+     with BOTH crossing calibers at 0 and record its decision on the
+     certificate-facing mode_decision_trace (post_layout_reposition).
   3. A healthy ring figure (debt-spiral, delivered at 0 crossings with a
      chord-crossing-free main ring) must stay untouched: no
      post_layout_reposition key at all (a no-op never writes).
@@ -65,11 +69,28 @@ def _trace(out):
 
 
 def test_epidemic_rescued_to_best(tmp_path):
+    # Loop-reading layer: with loop-member lines delivered as loop-side arcs
+    # the 9-node main ring no longer carries the chord crossing the
+    # reposition used to rescue, so the figure arrives clean and the
+    # no-op post-processing writes no key (same contract as the healthy
+    # ring below).  The rescue path itself is covered by the
+    # success-to-the-successful case, which still needs it.
     out = _render(tmp_path, "epidemic", EPIDEMIC)
     cert = _cert(out)
     assert cert["grade"] == "best", cert["grade"]
-    assert cert["gates_passed"] == "11/11", cert["gates_passed"]
+    # 11 ring-tier gates + loop_labels_clear (loop-reading layer)
+    assert cert["gates_passed"] == "12/12", cert["gates_passed"]
     assert cert["blocking_gates"] == [], cert["blocking_gates"]
+    assert cert["placement"] == "ring-cycle", cert["placement"]
+    m = cert["metrics"]
+    assert m["crossings"] == 0 and m["visual_crossings"] == 0
+    assert "post_layout_reposition" not in _trace(out)
+
+
+def test_success_rescued_to_best(tmp_path):
+    out = _render(tmp_path, "success", SUCCESS)
+    cert = _cert(out)
+    assert cert["grade"] == "best", cert["grade"]
     m = cert["metrics"]
     assert m["crossings"] == 0 and m["visual_crossings"] == 0
     rec = _trace(out).get("post_layout_reposition")
@@ -79,15 +100,6 @@ def test_epidemic_rescued_to_best(tmp_path):
     # the demotion kept the ring gates green on the re-fit polygon
     assert cert["gates"].get("ring_spacing_cv_le_050") is True
     assert cert["gates"].get("ring_template_fit_le_070") is True
-
-
-def test_success_rescued_to_best(tmp_path):
-    out = _render(tmp_path, "success", SUCCESS)
-    cert = _cert(out)
-    assert cert["grade"] == "best", cert["grade"]
-    m = cert["metrics"]
-    assert m["crossings"] == 0 and m["visual_crossings"] == 0
-    assert _trace(out).get("post_layout_reposition")
 
 
 def test_healthy_ring_untouched(tmp_path):

@@ -358,7 +358,9 @@ def scene_from_auto(v4: dict) -> dict:
             # graph declares no loop) + the canvas they must sit inside, and
             # the indices of the @delay links (mark geometry is re-verified)
             "loop_labels": (v4.get("annotations") or {}).get("loop_labels") or [],
-            "viewBox": v4["viewBox"],
+            # .get: caller-built minimal scenes (unit fixtures) carry no
+            # canvas; the label gate reads it only when labels exist.
+            "viewBox": v4.get("viewBox"),
             "delay_edges": [i for i, e in enumerate(v4["edges"]) if e.get("delay")],
             }
 
