@@ -219,7 +219,7 @@
 | column-construct | bullwhip | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
 | bowtie-construct | wage-price-spiral | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
 | sym-construct | fixes-that-fail | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
-| ring-2 | arms-race | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
+| ring-construct（第 2 图） | arms-race | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
 | cp-sat-layered | random-n10-i00 | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
 | planarized-L1 | random-n10-i09 | 0/0 | `demo-2d.html`（仅 H1 一行） | 逐字节一致 |
 

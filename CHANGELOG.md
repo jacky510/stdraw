@@ -31,6 +31,21 @@ reproduced here; the engineering version history lives in
   mutual-pair spacing, bbox gap pre-checks) with byte-identical output —
   golden archetype set wall time mean 1.63 s -> 0.99 s and max 4.79 s ->
   2.11 s measured on one Windows machine.
+- **Fact-based line-kind summaries**: the `demo-2d.html` headline and the
+  CLI `[3/5]` summary now print the **delivered** line-kind counts
+  (`metrics.line_kind_counts`, e.g. "line kinds arc 9 / line 1") instead
+  of the `--linestyle` request echo — with the loop-side arc default the
+  request value could contradict the delivered drawing. The certificate
+  `line_style` field keeps its meaning (request); the request-vs-delivery
+  semantics are documented in `docs/grading-contract.md` Appendix B.
+- **`--no-loop-labels` CLI flag**: suppresses the whole annotation layer
+  in the demo page (loop-center labels AND `@delay` marks, one switch —
+  previously only the API parameter `render_html(loop_labels=False)` and
+  the demo toolbar toggle could). The certificate then records
+  `loop_labels_clear` / `delay_marks_clear` as `N/A` (excluded from the
+  pass count, never blocking; grade semantics unchanged). Non-demo
+  products (layout / certificate / audit) of default runs are
+  byte-identical.
 - Consumer note: render output bytes change (label layer, loop-side arcs,
   the new certificate gate rows). Byte-pinned consumers (STDRAW_PIN) must
   regenerate their artifacts and advance the pin per their own release

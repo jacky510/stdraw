@@ -32,7 +32,7 @@ pip install stdraw
 主流图工具全停在「交叉最小化」启发式，并且**没有一个敢对自己的输出做承诺**。stdraw 反过来：
 
 - **auto-v2（默认配方）**：**按结构选模式的模式化排布**——确定性优先级链（领结对对称 → 领结共点 → 纵柱+翼位 → 双侧梳状 → 纵列 → 环形 → 透镜链 → 分层）按图结构选一个排布模板，每个模式带试验闸门（不触发的图逐字节不变）+ 直线/弧线一等布线（CP-SAT 精化可选），带**硬质量门**：框压线=0（任何角度）、边-框净距≥16px、锚点平滑、按模式切换的规律门——详见 [docs/layout-modes.md](docs/layout-modes.md)；
-- **回路识读层**：每个已声明回路带**回路中心标识**（编号 + 名称 + 方向符号；极性仍只用颜色——标识上不加 +/−），默认显示，demo 页 `Loops: on/off` 可关；属于 ≥3 节点回路的边默认画**顺回路弧线**——顺着所在回路弯、背向回路质心鼓出，回路读起来成一个环——直线 / 绕行折线是带评分的兜底，实测原因写入 `certificate.json` → `loop_arcs.fallbacks`；`a -> + b @delay` 在边中点画双短线延迟标记（`graph.cld` 往返一致）。标识与刻线纳入硬门（`loop_labels_clear`、`delay_marks_clear`：不压框、不压线、标识互不重叠）——口径：[docs/grading-contract.md](docs/grading-contract.md) 附录 B 与 [docs/edge-placement-rules-v1.md](docs/edge-placement-rules-v1.md) §20；
+- **回路识读层**：每个已声明回路带**回路中心标识**（编号 + 名称 + 方向符号；极性仍只用颜色——标识上不加 +/−），默认显示，demo 页 `Loops: on/off` 可关；属于 ≥3 节点回路的边默认画**顺回路弧线**——顺着所在回路弯、背向回路质心鼓出，回路读起来成一个环——直线 / 绕行折线是带评分的兜底，实测原因写入 `certificate.json` → `loop_arcs.fallbacks`；`a -> + b @delay` 在边中点画双短线延迟标记（`graph.cld` 往返一致）。标识与刻线纳入硬门（`loop_labels_clear`、`delay_marks_clear`：不压框、不压线、标识互不重叠）；整个标识层（标签 + 延迟标记，同一开关）渲染时可用 `--no-loop-labels` 关掉——此时证书把这两道门如实记为 `N/A`（grade 语义不变）。demo 页标题与 CLI 摘要印的是**交付**线型分布（`metrics.line_kind_counts`），不是 `--linestyle` 的请求值——口径：[docs/grading-contract.md](docs/grading-contract.md) 附录 B 与 [docs/edge-placement-rules-v1.md](docs/edge-placement-rules-v1.md) §20；
 - **回路主导小图环形排布（v0.5.0）**：小图（≤12 节点）存在覆盖 ≥ n−2 节点的主环（或环边占比 ≥90%）时，主环按环序上**正多边形环槽位**（优先声明环序——R/B 极性着色沿环可读）、弦走环内、残节点确定性环内/环外指派；证书切换为**环形口径指标**（环上等间距 CV + 正多边形模板拟合误差），不再拿行对齐门槛误判环形排布；不触发的图保持分层路径逐字节不变；
 - **锚点带内硬门（v0.7.3）**：交付锚点带内口径（边中点 ±1/4 带、转角命中恒 0）落进 CI 逐图硬门——spine-wing 图须 100% 带内；互环对带内钳制过不了硬门时走确定性带内局部重定线（带内锚候选 + 嵌套弧逃生门 + 自家框内部检查）；其余引擎锁 v0.7.2 基线比例（ring 互环走廊 / bowtie ±12px 辐条走廊为在册遗留）——详见 [docs/layout-modes.md](docs/layout-modes.md)；
 - **布局美学 v3.1（v0.7.1，jacky 手拉样本定调）**：**纵柱+翼位模式（spine-wing）**——存在「中枢对」（某条边的两端点共享 ≥3 个公共邻居，构成中线翼位带）且次级簇可镜像配对的图（如 classic-cld 增长极限×转嫁负担，以 jacky 手拉布局为基准）走**纵柱+中线翼位排布**——中枢对严格垂直居轴、翼位压水平中线、翼外镜像对上下对称；确定性触发判定（中枢对公共邻居数 + rest 簇可配对 + 主链长度占比 ≤0.5），等价证书门（纵柱 x 对齐 ≤2px / 中线贴靠 ≤2px / 镜像 ≤2px）；语料 sweep 仅 classic-cld 一张切换，其余 18 张逐字节零漂移——详见 [docs/layout-modes.md](docs/layout-modes.md)；
@@ -105,7 +105,7 @@ stdraw/
 │   ├── dsl.py           #   .cld DSL 解析器
 │   ├── model.py         #   图数据模型
 │   ├── render.py        #   2D HTML 渲染（内联 SVG，v1/v2 双形态）
-│   └── __main__.py      #   CLI：stdraw layout ... [--recipe auto|ortho] [--linestyle straight|arc]
+│   └── __main__.py      #   CLI：stdraw layout ... [--recipe auto|ortho] [--linestyle straight|arc] [--no-loop-labels]
 ├── examples/            # .cld 案例（增长极限 / 增长极限×转嫁负担）
 ├── demos/               # 交付形态：2D demo + 证书 JSON
 ├── skills/stdraw/       # Agent Skill（skills add 即装）

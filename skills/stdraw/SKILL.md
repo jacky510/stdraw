@@ -37,6 +37,10 @@ stdraw layout model.cld --outdir out --pitch 62
 stdraw layout model.cld --outdir out --recipe ortho
 # Arc-prefixed lines (auto recipe)
 stdraw layout model.cld --outdir out --linestyle arc
+# Suppress the annotation layer in the demo (loop-center labels AND @delay
+# marks, one switch); the certificate then records the two annotation gates
+# as N/A (grade semantics unchanged)
+stdraw layout model.cld --outdir out --no-loop-labels
 # Exact crossing-number layer (proven-optimal cr(G), needs stdraw[solver])
 stdraw layout model.cld --outdir out --exact
 # Optional positioning refinement (better uniformity on dense graphs)
@@ -62,7 +66,14 @@ pip install "stdraw[solver]"
   their loop - straight / polyline fallbacks are recorded with measured
   reasons in `certificate.json` -> `loop_arcs.fallbacks`; `@delay` edges carry
   a double-tick delay mark. All hard-gated (`loop_labels_clear`,
-  `delay_marks_clear`).
+  `delay_marks_clear`). The whole annotation layer (labels + delay marks,
+  one switch) can be suppressed at render time with the CLI flag
+  `--no-loop-labels`; the certificate then records the two annotation gates
+  as `N/A` (excluded from the pass count, never blocking; grade semantics
+  unchanged). Note: the certificate field `line_style` (and the CLI
+  `--linestyle` argument) is the REQUEST, not the delivered drawing - the
+  delivered line-kind facts are `metrics.line_kind_counts` (also printed as
+  "line kinds ..." in the demo headline and the CLI summary).
 
 ## Certificate Reading Rules (honest grading — pass through verbatim)
 
