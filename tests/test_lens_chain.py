@@ -221,7 +221,12 @@ def test_cli_ltg4_geometry_report_and_demo_caption():
         with open(os.path.join(tmp, "out", "demo-2d.html"),
                   encoding="utf-8") as f:
             html = f.read()
-        assert "lens arcs constructed" in html
+        # H1 caliber is fact-based now (delivered line-kind counts, never
+        # the --linestyle request echo): the constructed lens arcs must be
+        # visible as delivered "arc" facts, and no "line style <request>"
+        # claim may remain.
+        assert "line kinds arc" in html
+        assert "line style" not in html
         assert geometry_report(layout(parse(LTG4)))["fail"] == 0
 
 

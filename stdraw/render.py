@@ -93,7 +93,7 @@ def _cert_head(grade, sub):
 def render_html(v4: dict, graph_name: str = "", cert: dict = None,
                 loops_report: dict = None, labels: dict = None,
                 values: dict = None, theme: str = DEFAULT_STATIC_THEME,
-                hint: str = None) -> str:
+                hint: str = None, loop_labels: bool = True) -> str:
     T = _get_theme(theme)
     # Dark face only: emit the body foreground (fixes black-on-dark
     # text after the dark palette landed). Light keeps UA default
@@ -101,7 +101,7 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
     _ink = ("color:%s;" % T["body_text"]) if T.get("body_text") else ""
     if v4.get("edges") and "route" in v4["edges"][0]:
         return render_auto_html(v4, graph_name, cert, loops_report, labels,
-                                values, theme, hint)
+                                values, theme, hint, loop_labels=loop_labels)
     W, H = v4["viewBox"][2], v4["viewBox"][3]
     nodes, edges, bars = v4["nodes"], v4["edges"], v4.get("bars", {})
     meta = v4["meta"]
@@ -223,9 +223,11 @@ h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canva
 # definition consumed by the static export and the viewer alike).
 
 
-def _edge_svg(e, labels, values, T):
+def _edge_svg(e, labels, values, T, show_delay=True):
     """One edge -> SVG (line/poly polyline, arc real Bezier, vg exact L+A
-    path); arrow follows the last segment direction."""
+    path); arrow follows the last segment direction.  show_delay=False
+    suppresses the @delay tick mark (annotation layer switched off by
+    request); the line and arrow are untouched."""
     r = e["route"]
     pts = r["points"]
     pol = e.get("polarity", "+")
@@ -247,7 +249,7 @@ def _edge_svg(e, labels, values, T):
     ax, ay = e["arrow"]
     out.append(f'<path d="M 0 0 L -7 -3 L -7 3 Z" fill="{color}" '
                f'transform="translate({ax} {ay}) rotate({ang:.1f})"/>')
-    if e.get("delay"):
+    if e.get("delay") and show_delay:
         # @delay link: the || mark (two ticks at the arc-length midpoint,
         # single source stdraw/annotations.py) rides as the group's 3rd path
         # -- the drag layer addresses paths[0] (line) / paths[1] (arrow) by
@@ -266,6 +268,29 @@ def _edge_svg(e, labels, values, T):
 # synced the same way: the badge replay (refreshMarkers/polGroups) in
 # _interactive_js was removed too, and drag re-routing keeps the static
 # stroke attributes.
+
+
+def line_kind_summary(v4: dict, cert: dict = None) -> str:
+    """Delivered line-kind facts for human-facing summaries (H1 / CLI).
+
+    The request echo (meta.line_style = the --linestyle argument) is NOT
+    what the drawing shows: loop-member lines default to loop-side arcs
+    and placement modes may deliver their own constructed template
+    geometry, so the request value can contradict the delivered drawing
+    (e.g. every edge an arc while the request reads straight).  The
+    delivered counts live on the certificate (metrics.line_kind_counts);
+    this helper falls back to counting the delivered edge routes directly
+    when no certificate rides along.  Deterministic order: count desc,
+    then key asc -- e.g. "arc 9 / line 1".
+    """
+    counts = dict(((cert or {}).get("metrics") or {}).get("line_kind_counts")
+                  or {})
+    if not counts:
+        for _e in v4.get("edges") or []:
+            _k = (_e.get("route") or {}).get("kind") or "line"
+            counts[_k] = counts.get(_k, 0) + 1
+    return " / ".join(f"{_k} {_n}" for _k, _n in
+                      sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])))
 
 
 def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
@@ -297,7 +322,9 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     # Polarity data stays in layout.json / certificate.json.
     for i, e in enumerate(edges):
         e["_idx"] = i
-        parts.append(f'<g data-edge="{i}">' + _edge_svg(e, labels, values, T) + '</g>')
+        parts.append(f'<g data-edge="{i}">' +
+                     _edge_svg(e, labels, values, T, show_delay=loop_labels) +
+                     '</g>')
     # planarization witness markers (contract section 3; L1 output only —
     # L0/L2 scenes carry no planarization key and keep today's bytes).
     # D2 marker spec (UIDesignerBot final): color = per-theme token
@@ -473,8 +500,10 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                    # semantics source for drag re-routing)
                    "via": e["route"].get("via"),
                    "pts": e["route"]["points"],
-                   # @delay link (key present only on delayed edges)
-                   **({"delay": True} if e.get("delay") else {})}
+                   # @delay link (key present only on delayed edges; dropped
+                   # with the rest of the annotation layer when the drawing
+                   # is rendered with loop_labels=False)
+                   **({"delay": True} if (e.get("delay") and loop_labels) else {})}
                   for e in edges],
         # loop labels (annotation layer): size + member nodes so the drag
         # layer's JS port can re-place them; absent without loops
@@ -651,11 +680,11 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                       '</ul><p>' + prob_text + '</p></div>')
 
     engine = meta.get("position_engine", "construct")
-    ls = meta.get("line_style", "straight")
-    if meta.get("placement") == "lens-chain":
-        # the lens arcs are constructed (not a --linestyle choice): the
-        # h1 must not read as if the figure were drawn straight
-        ls = f"{ls} (lens arcs constructed)"
+    # Delivered line-kind facts, never the --linestyle request echo: with
+    # the loop-side arc default (and placement modes' constructed template
+    # geometry) the request value can contradict the delivered drawing.
+    # Semantics documented in docs/grading-contract.md Appendix B.
+    lk = line_kind_summary(v4, cert)
     # contract section 4.5: L1 output must not claim the RT theorem
     # phrasing; L0 keeps today's bytes (interpolation equals the old
     # literals exactly when meta.planarization is absent)
@@ -692,7 +721,7 @@ h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canva
 #stdraw-svg [data-node] rect{{touch-action:none}}
 #stdraw-svg [data-node].dragging{{cursor:grabbing}}
 </style>
-<h1>stdraw 2D layout · {html.escape(graph_name)} ({_h1_caliber}; position engine {engine}, line style {ls})</h1>
+<h1>stdraw 2D layout · {html.escape(graph_name)} ({_h1_caliber}; position engine {engine}, line kinds {lk})</h1>
 {''.join(parts)}
 {cert_html}
 {loops_html}

@@ -22,7 +22,7 @@ from .recipes import run as recipes_run
 from .check import geometry_report_to_file
 from .metrics import certificate, scene_from_planar
 from .loops import loops_audit
-from .render import render_html
+from .render import render_html, line_kind_summary
 from .themes import DEFAULT_STATIC_THEME, THEMES
 from .delivery import strip_delivery_metadata, stamp_cli_deliverable
 
@@ -85,7 +85,15 @@ def main(argv=None):
                          "candidate-v1 = candidate pool (M1: structure analyzer + template sources + orchestrator "
                          "+ three-tier selection, not-worse-than-auto guard)")
     ap.add_argument("--linestyle", default="straight", choices=["straight", "arc"],
-                    help="auto recipe line style (default straight; arc = all-arc preference)")
+                    help="auto recipe line style (default straight; arc = all-arc preference). "
+                         "This is the REQUEST; the delivered line-kind facts are printed "
+                         "as 'line kinds ...' and live in certificate metrics.line_kind_counts")
+    ap.add_argument("--no-loop-labels", dest="loop_labels", action="store_false",
+                    help="suppress the annotation layer in demo-2d.html (loop-center "
+                         "labels AND @delay marks, one switch): the certificate then "
+                         "records loop_labels_clear / delay_marks_clear as N/A (excluded "
+                         "from the pass count, never blocking; grade semantics unchanged)")
+    ap.set_defaults(loop_labels=True)
     ap.add_argument("--pitch", type=int, default=None,
                     help="row pitch px (default 56; raise it for small graphs to pass the clearance gate, parameter is transparent)")
     ap.add_argument("--value-pad", type=float, default=None, metavar="PX",
@@ -261,7 +269,7 @@ def main(argv=None):
         p = w("layout.json", v4)
         meta = v4["meta"]
         print(f"[3/5] 2D layout (auto-v2, engine={meta['position_engine']}, "
-              f"line style={meta['line_style']}): {v4['viewBox'][2]}x{v4['viewBox'][3]}, "
+              f"line kinds {line_kind_summary(v4)}): {v4['viewBox'][2]}x{v4['viewBox'][3]}, "
               f"{meta['rows']} rows -> {p}")
         rc = geometry_report_to_file(
             v4, os.path.join(a.outdir, "geometry_report.json"))
@@ -294,7 +302,8 @@ def main(argv=None):
         cert = certificate_auto(scene_from_auto(v4), graph_name=name, layer="2D",
                                 graph=g, exactness=exactness,
                                 interactive="yes", drag_layer="yes",
-                                deliverable=True)
+                                deliverable=True,
+                                annotation_layer=a.loop_labels)
         p = w("certificate.json", cert)
         m = cert["metrics"]
         print(f"[4/5] certificate: crossings {m['crossings']} / box press {m['box_press_1px']} / "
@@ -303,8 +312,10 @@ def main(argv=None):
               f"grade [{cert['grade']}] -> {p}")
         hp = os.path.join(a.outdir, "demo-2d.html")
         with open(hp, "w", encoding="utf-8") as f:
-            f.write(render_html(v4, name, cert, lr, labels, values, a.theme))
-        print(f"      demo -> {hp} (theme {a.theme})")
+            f.write(render_html(v4, name, cert, lr, labels, values, a.theme,
+                                loop_labels=a.loop_labels))
+        print(f"      demo -> {hp} (theme {a.theme}"
+              + ("" if a.loop_labels else ", annotation layer off") + ")")
         if rc:
             if a.from_layout and a.compare_auto:
                 deferred_exit = 1     # emit the comparison report first, exit code deferred

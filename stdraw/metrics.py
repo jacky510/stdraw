@@ -453,7 +453,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                      notes: Optional[List[str]] = None,
                      graph=None, exactness: Optional[dict] = None,
                      interactive: str = "no", drag_layer: str = "no",
-                     deliverable: bool = False) -> dict:
+                     deliverable: bool = False,
+                     annotation_layer: bool = True) -> dict:
     """v2 quality certificate: five metrics + new hard gates + honest grading.
     All verification runs on delivered coordinates.
 
@@ -1301,6 +1302,12 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # coordinates and tested against the delivered boxes and lines.  Each key
     # is written only when the drawing carries the annotation (trigger writes
     # the key -- corpus bytes stay identical); hard_ok folds both in below.
+    # annotation_layer=False (the CLI --no-loop-labels request): the identity
+    # marks are not part of the delivered face, so their gates honestly read
+    # "N/A" (same caliber as the manual-mode N/A slots: excluded from
+    # gates_passed, never blocking, grade semantics unchanged).  The metrics
+    # rows stay measured -- they describe layout.json, which still carries
+    # the placed annotations.
     from . import annotations as _ann
     _lbls = scene.get("loop_labels") or []
     if _lbls:
@@ -1308,7 +1315,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         _chh = float(next(iter(nodes.values())).get("h", 44))
         _lok, _lbad = _ann.labels_clear(nodes, list(polys.values()), _lbls, _chh,
                                         _vw[2], _vw[3])
-        g["loop_labels_clear"] = _lok
+        g["loop_labels_clear"] = _lok if annotation_layer else "N/A"
         metrics["loop_labels"] = [
             {k: l.get(k) for k in ("id", "kind", "placed", "x", "y", "offset")}
             for l in _lbls]
@@ -1321,11 +1328,16 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             nodes, [polys[i] for i in range(len(edges))], _dly,
             [f"{e['a']}->{e['b']}" for e in edges],
             float(next(iter(nodes.values())).get("h", 44)))
-        g["delay_marks_clear"] = _dok
+        g["delay_marks_clear"] = _dok if annotation_layer else "N/A"
         metrics["delay_mark_min_box"] = _dmin
         metrics["delay_mark_count"] = sum(1 for _ in _dly)
         for _p in _dbad:
             notes.append("delay mark: " + _p)
+    if not annotation_layer and (_lbls or _dly):
+        notes.append("annotation layer suppressed by request "
+                     "(--no-loop-labels): loop_labels_clear / "
+                     "delay_marks_clear recorded N/A (excluded from the "
+                     "pass count, never blocking; grade semantics unchanged)")
     if routing_consistent is not None:
         g["routing_consistent"] = routing_consistent
     if gates:
