@@ -3141,7 +3141,8 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
     _loop_labels = _ann.place_loop_labels(
         {v: {"x": pos[v], "y": y[v], "w": widths[v]} for v in nodes},
         [[tuple(p) for p in e["route"]["points"]] for e in edges_out],
-        graph.loops, card_h, W, H)
+        graph.loops, card_h, W, H,
+        edges=[(e["a"], e["b"]) for e in edges_out])
     v4 = {
         "viewBox": [0, 0, W, H],
         "nodes": {v: {"x": pos[v], "y": y[v], "w": widths[v]} for v in nodes},

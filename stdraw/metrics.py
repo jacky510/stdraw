@@ -1317,7 +1317,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                                         _vw[2], _vw[3])
         g["loop_labels_clear"] = _lok if annotation_layer else "N/A"
         metrics["loop_labels"] = [
-            {k: l.get(k) for k in ("id", "kind", "placed", "x", "y", "offset")}
+            {k: l.get(k) for k in ("id", "kind", "placed", "x", "y", "offset",
+                                   "dir")}
             for l in _lbls]
         metrics["loop_labels_unplaced"] = sum(1 for l in _lbls if not l.get("placed"))
         if _lbad:

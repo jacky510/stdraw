@@ -18,8 +18,12 @@ loop labels
     collision-free slot around that center.  Polarity keeps its two-color
     encoding: the glyph takes the loop kind's own ink (R = reinforcing,
     vermilion / B = balancing, blue); no ``+``/``-`` sign is ever drawn.
-    A loop for which no collision-free slot exists inside the viewBox is
-    reported unplaced -- never drawn on top of a box or a line.
+    The glyph's arrow follows the loop's circulation AS DRAWN (loop_circulation:
+    the signed area of the member route on screen), never the R/B kind -- a
+    reinforcing loop may run either way on the page.  The text is centred
+    between the glyph and the pill's right edge.  A loop for which no
+    collision-free slot exists inside the viewBox is reported unplaced --
+    never drawn on top of a box or a line.
 """
 import math
 
@@ -34,7 +38,8 @@ LABEL_FS = 11.0           # label font size (px)
 LABEL_H = 18              # label pill height
 LABEL_PAD_X = 7           # pill side padding
 GLYPH_BOX = 12            # direction glyph box (px square)
-GLYPH_GAP = 5             # glyph -> text gap
+GLYPH_R = 4.2             # direction glyph arc radius (= the glyph's ink half-width)
+GLYPH_GAP = 5             # slack kept between the glyph and the text slot
 LABEL_BOX_GAP = 4.0       # a label keeps >= 4px from every card and every line (gate)
 LABEL_TARGET_GAP = 8.0    # ... placement first tries >= 8px, the gate gap is the floor
 LABEL_LABEL_GAP = 8.0     # ... and >= 8px from every other label
@@ -207,6 +212,66 @@ def dir_glyph_paths(r, clockwise):
     return arc, head
 
 
+# ── loop circulation (the glyph's direction) ──
+# Screen coordinates (SVG y down): a closed polygon walked in order has a
+# positive shoelace area exactly when it turns CLOCKWISE on screen.
+_RING_AREA_EPS = 1.0      # px^2 -- a ring enclosing less than this is a coincidence
+
+
+def _shoelace(pts):
+    """Signed area of a closed polygon (shoelace); > 0 = clockwise on screen."""
+    a = 0.0
+    for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1]):
+        a += x1 * y2 - x2 * y1
+    return a / 2.0
+
+
+def _node_xy(nodes, v):
+    p = nodes[v]
+    if isinstance(p, dict):
+        return float(p["x"]), float(p["y"])
+    return float(p[0]), float(p[1])
+
+
+def loop_circulation(members, nodes, edge_polys=None):
+    """Direction a traveller follows around the loop AS DRAWN on screen.
+
+    Returns ``('cw' | 'ccw', how)`` or ``(None, why)`` when the drawing does
+    not determine one (the caller then falls back to the loop-kind default).
+
+    members: loop node ids in declaration order (node x / y = centres);
+    edge_polys: {(a, b): [(x, y), ..]} delivered routes (arcs sampled).
+      >= 3 members: signed area of the member-centre polygon walked in member
+        order (``how = 'polygon'``) -- the reading a viewer makes from the
+        arrows; collinear centres (zero area) fall through to the ring.
+      2 members / collinear centres: the delivered RING -- the member routes
+        concatenated in loop order (``how = 'ring'``).
+    """
+    pts = [_node_xy(nodes, v) for v in members if v in nodes]
+    if len(pts) >= 3:
+        area = _shoelace(pts)
+        if abs(area) > 1e-9:
+            return ("cw" if area > 0 else "ccw"), "polygon"
+        why = "kind:collinear"
+    else:
+        why = "kind:no-ring"
+    if not edge_polys or len(members) < 2:
+        return None, why
+    ring = []
+    for u, v in zip(members, members[1:] + members[:1]):
+        poly = edge_polys.get((u, v))
+        if poly is None:
+            rev = edge_polys.get((v, u))
+            poly = None if rev is None else rev[::-1]
+        if poly is None or len(poly) < 2:
+            return None, why
+        ring.extend(poly[:-1])
+    area = _shoelace(ring)
+    if abs(area) < _RING_AREA_EPS:
+        return None, why
+    return ("cw" if area > 0 else "ccw"), "ring"
+
+
 def label_rect_clear(cx, cy, w, h, nodes, polys, others, W, H, card_h,
                      box_gap=LABEL_BOX_GAP):
     """True when the label rect (center cx,cy; size w,h) stays
@@ -271,11 +336,18 @@ def _staged_candidates(cx0, cy0):
             yield cx, cy, gap
 
 
-def place_loop_labels(nodes, polys, loops, card_h, W, H):
+def place_loop_labels(nodes, polys, loops, card_h, W, H, edges=None):
     """Place every loop label; returns the records in loop declaration order
     (empty when the graph declares no loop).  Record keys: id / name / kind /
-    w / h / placed / x / y / offset (distance from the loop centroid) and,
-    when unplaced, ``reason``."""
+    w / h / placed / x / y / offset (distance from the loop centroid),
+    ``dir`` = the glyph's direction ('cw' / 'ccw' = the loop's circulation as
+    drawn, loop_circulation) with ``dir_source`` = how it was read, and,
+    when unplaced, ``reason``.  ``edges`` = [(a, b)] parallel to ``polys``
+    (the delivered routes); without it only the member-centre polygon can be
+    read and every other loop falls back to the kind default."""
+    edge_polys = {}
+    for (a, b), poly in zip(edges or [], polys):
+        edge_polys.setdefault((a, b), [tuple(p) for p in poly])
     out = []
     placed_rects = []
     for lp in loops:
@@ -285,6 +357,12 @@ def place_loop_labels(nodes, polys, loops, card_h, W, H):
                "placed": False, "x": None, "y": None, "offset": None}
         present = [v for v in members if v in nodes]
         rec["members"] = present
+        direction, how = (loop_circulation(present, nodes, edge_polys)
+                          if len(present) >= 2 else (None, "kind:members<2"))
+        if direction is None:
+            direction = "ccw" if kind == "B" else "cw"
+        rec["dir"] = direction
+        rec["dir_source"] = how
         if len(present) < 2:
             rec["reason"] = "loop has fewer than two placed members"
             out.append(rec)
@@ -325,7 +403,10 @@ def label_svg(rec, T):
     lid, name, kind = rec["id"], rec["name"], rec["kind"]
     w, h = rec["w"], rec["h"]
     ink = T["loop_r"] if kind == "R" else T["loop_b"]
-    arc, head = dir_glyph_paths(4.2, kind != "B")
+    # the arrow follows the loop's circulation as drawn (rec['dir'], read by
+    # place_loop_labels); a record without it keeps the kind-based default
+    cw = rec["dir"] == "cw" if rec.get("dir") in ("cw", "ccw") else kind != "B"
+    arc, head = dir_glyph_paths(GLYPH_R, cw)
     gx = -w / 2 + LABEL_PAD_X + GLYPH_BOX / 2
     tx = -w / 2 + LABEL_PAD_X + GLYPH_BOX + GLYPH_GAP
     disp = "" if rec.get("placed") else ' display="none"'
