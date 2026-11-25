@@ -408,7 +408,13 @@ def label_svg(rec, T):
     cw = rec["dir"] == "cw" if rec.get("dir") in ("cw", "ccw") else kind != "B"
     arc, head = dir_glyph_paths(GLYPH_R, cw)
     gx = -w / 2 + LABEL_PAD_X + GLYPH_BOX / 2
-    tx = -w / 2 + LABEL_PAD_X + GLYPH_BOX + GLYPH_GAP
+    # text centred between the glyph's right edge and the pill's right edge:
+    # anchor = middle at the interval midpoint, so the rendered text's own
+    # width splits the slack evenly on both sides (the analytic pill width is
+    # an upper bound of the rendered width, never smaller)
+    # the interval starts at the glyph's INK edge (gx + GLYPH_R), not at the
+    # glyph box's edge: the ink is narrower than its box
+    tx = (LABEL_PAD_X + GLYPH_BOX / 2.0 + GLYPH_R) / 2.0
     disp = "" if rec.get("placed") else ' display="none"'
     # an unplaced label keeps a hidden group at the origin so the
     # interactive layer can still show it once a drag frees a slot
@@ -424,7 +430,8 @@ def label_svg(rec, T):
             f'<g transform="translate({gx:.1f} 0)">'
             f'<path d="{arc}" fill="none" stroke="{ink}" stroke-width="1.3"/>'
             f'<path d="{head}" fill="{ink}"/></g>'
-            f'<text x="{tx:.0f}" y="0" dominant-baseline="middle" font-size="{LABEL_FS:g}"'
+            f'<text x="{tx:.1f}" y="0" text-anchor="middle" dominant-baseline="middle"'
+            f' font-size="{LABEL_FS:g}"'
             f' fill="{T["card_label"]}">'
             f'<tspan font-weight="700" fill="{ink}">{_html.escape(str(lid))}</tspan>'
             + (f' <tspan>{_html.escape(name)}</tspan>' if name else "")
