@@ -146,6 +146,55 @@ two lens-contract gates + the common hard gates:
 - `rowY` = the delivered rows (this engine never shifts twice); `pitch` = None
   (the row pitch is card_h + `LENS_GAP`, not cfg.pitch).
 
+**Closed-ring contract for mutual pairs (non-lens engines; 2026-11-26)**: on every
+mode other than lens-chain (ring-cycle / column-chain / radial / spine-wing /
+comb-bilateral / symmetric / bowtie / the layered fallback) an a<->b pair used to be
+delivered as two separated straight lines -- `mutual_pairs_separated` only asks for
+>= 4px between them, so the two lines of a two-node loop came out as a pair of
+parallels (limits-to-growth R1, width/chord 0.10) or as lines 4.5-7.3px apart
+(fixes-that-fail). The delivery repair pass `Router.mutual_lens_construct` now
+rebuilds every mutual pair as the lens-chain double arc (both arcs bulge >=
+`LENS_BULGE_MIN`, opposite sides, >= `LENS_PAIR_MIN_SEP` = 12px apart; anchor variants
+are tried in order -- a horizontal pair with a long chord (>= 98px) takes the
+symmetric corner anchors first (38px apart on a 44px card), a short chord the golden
+anchors, falling back to the corners whenever the golden tips leave less than 12px; a
+vertical pair takes the N/S golden anchors (21px tips) first, the corners after; a
+variant whose anchors another edge holds, or whose lens fails a gate, hands over to
+the next one), gate-checks each edge against
+`LENS_CONSTRUCT` (own-box press monotone, sibling crossings monotone, arrival angle,
+the two lines >= 12px apart) and restores the original lines (byte-identical,
+`status: blocked` / `claimed` with per-variant `reasons`) when every variant is
+refused. The new hard gate `mutual_pairs_closed`
+re-reads the delivered geometry (never the pass's own claim): both lines Q arcs,
+bulge >= 0.15, opposite sides, >= 12px apart. A chord tilted by more than
+`lens_tilt_max_deg()` (~37.4 deg: the 20 deg arrival floor plus the 0.16 per-arc
+bulge; a steeper chord cannot yield an arrival-compliant arc) is an accounted
+exemption (`status: tilt`); the certificate re-measures that tilt from the node
+centres and from every anchor variant's chord, and fails the pair when the
+exemption does not reproduce. A pair the pass ran on and every gate refused
+(`blocked` / `claimed`, per-variant reasons) is accounted in `mutual_pairs_exempt`
+like `frozen` / `designated` -- an honest non-lens, no grade penalty; the gate
+only catches a non-lens mutual pair delivered without a pass row, and a closed /
+exempt claim the delivered geometry does not reproduce. A **slim lens** already delivered by the
+arrow-normal channel (`mutual_arrival_flip`: both arcs on opposite sides, >= 12px
+apart, every arrow within 10 deg of the border normal -- a fat lens arrives 32
+deg off its chord by construction and cannot meet that contract) is reported
+`slim`, left untouched, and counts as closed once the certificate re-measures
+the arrival deviation from the delivered ctrl. The lens-chain
+mode answers `N/A` (its lenses are constructed before routing; `lens_pairs_closed`
+carries the contract). A figure without a mutual pair keeps the gate true and
+carries no `meta.mutual_lens` key. Metrics: `mutual_pairs_closed_count` /
+`mutual_pairs_exempt` / `mutual_pairs_open`; `meta.mutual_lens.pairs[]` records the
+anchor variant, `status` (`lens` / `slim` / `built` / `tilt` / `claimed` / `blocked` /
+`frozen` / `designated`), `closed`, `sep`, `chord`, `width_over_chord` and `reasons`
+per pair. Measured on the golden set: fixes-that-fail
+problem<->fix two parallels (4.5-7.3px apart) -> a lens 38px wide, width/chord
+0.54; limits-to-growth action<->state width/chord 0.10 -> 0.41;
+growth-and-underinvestment limit<->performance polyline detour 1.68 -> a 42px-chord
+double arc (detour 1.07, width/chord 1.2); the two ring diagonals of
+shifting-the-burden (corner-chord tilt 68 deg) are exempted as measured. Implementation notes: `docs/routing-gates.md`
+section 9.
+
 **Measured** (2026-11-25): the 4-node limits-to-growth source figure grades
 `best` 14/14, spacing_cv 0.132, clearance 76.7, both lenses bulge 0.30, ~0.4s
 (layered path uncertified ~7.3s); success-to-the-successful moves from 3 layered

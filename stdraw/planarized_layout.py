@@ -34,6 +34,7 @@ elimination; every downstream quantity is derived from delivered
 """
 from .delivery import stamp_coordinates_only
 from .themes import THEMES as _THEMES
+from .anchors import rounded_tip as _rounded_tip
 import math
 
 # ── D2 visual constants (FINAL: UIDesignerBot marker spec, 2026-11-14) ──
@@ -886,6 +887,8 @@ def _planarized_l1(graph, cfg, linestyle, cores):
             pts = polys[ei]
             vids = wit_by_idx.get(ei, [])
         a_pt, b_pt = pts[0], pts[-1]
+        _tip = _rounded_tip(pts[-2], pts[-1], node_xy[e.b][0], node_xy[e.b][1],
+                           half_w[e.b], half_h[e.b], _THEMES["light"]["card_radius"])
         _eo = {
             "a": e.a, "b": e.b,
             "polarity": getattr(e, "polarity", "+"),
@@ -895,7 +898,9 @@ def _planarized_l1(graph, cfg, linestyle, cores):
                                  for p in pts]},
             "anchors": {"a": [round(a_pt[0], 1), round(a_pt[1], 1)],
                         "b": [round(b_pt[0], 1), round(b_pt[1], 1)]},
-            "arrow": [round(b_pt[0], 1), round(b_pt[1], 1)],
+            # arrowhead tip on the rounded frame (corner anchors hang outside it;
+            # same caliber as the auto engines: anchors.rounded_tip)
+            "arrow": [round(_tip[0], 1), round(_tip[1], 1)],
             "route_cross_edges": len(vids),
         }
         if getattr(e, "delay", False):

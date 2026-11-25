@@ -288,7 +288,9 @@ from .routing import (sample_polyline, dist_point_rect, seg_cross as _rc_seg_cro
                       min_pair_dist,
                       PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE,
                       DENSE_ANCHOR_MIN_DEG, DENSE_GRID_STEP,
-                      span_one_way_segs, COINCIDE_THR, COINCIDE_SPAN)
+                      span_one_way_segs, COINCIDE_THR, COINCIDE_SPAN,
+                      LENS_PAIR_MIN_SEP, lens_tilt_max_deg,
+                      ARRIVAL_TARGET_DEG, LENS_PAIR_ANCHORS, LENS_SIDE_VEC)
 from .anchors import standard_anchors as _std_anchors
 
 
@@ -314,6 +316,9 @@ def scene_from_auto(v4: dict) -> dict:
             # ref-scrubbed finalize: dense-snap deferral pass-through (None on
             # normal graphs) -- certificate_auto annotates anchors_standard.
             "anchor_snap_deferred": v4["meta"].get("anchor_snap_deferred"),
+            # closed-ring rebuild record for mutual pairs on non-lens engines
+            # (Router.mutual_lens_construct; absent without a mutual pair)
+            "mutual_lens": v4["meta"].get("mutual_lens"),
             # planarization degrade ladder pass-through (L1 witness-marked
             # caliber / L2 honest downgrade record; None/absent on L0)
             "planarization": v4["meta"].get("planarization"),
@@ -595,6 +600,125 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                                         round(md, 1) if md is not None else None]})
     mutual_min_sep = (min(p["pair"][1] for p in pair_infos if p["pair"][1] is not None)
                       if any(p["pair"][1] is not None for p in pair_infos) else None)
+
+    # 1b'. Closed-ring contract for mutual pairs on non-lens engines (B2/B4):
+    # the delivery pass (Router.mutual_lens_construct) rebuilds each mutual
+    # pair as the lens-chain double arc and reports the delivered status per
+    # pair (meta.mutual_lens).  The gate re-reads the DELIVERED geometry --
+    # a pair is closed only when both lines are Q arcs bowing
+    # >= LENS_BULGE_MIN to opposite sides of the chord and staying
+    # >= LENS_PAIR_MIN_SEP apart -- and accepts an exemption only for an
+    # accounted reason: chord tilt beyond lens_tilt_max_deg (re-measured
+    # from the node centres here), a user-frozen route or designated
+    # anchors.  The arrow-normal channel's own closed form (a slim lens:
+    # both arcs on opposite sides, >= LENS_PAIR_MIN_SEP apart, every arrow
+    # within ARRIVAL_TARGET_DEG of its border normal -- re-measured here
+    # from the delivered ctrl) counts as closed too.  No report (no mutual
+    # pair, or the lens engine whose lenses are constructed before routing)
+    # -> the gate holds trivially.
+    _ct = scene.get("ctrls") or {}
+    _ml_rows = (scene.get("mutual_lens") or {}).get("pairs") or []
+    mutual_closed_rows, mutual_exempt_rows, mutual_open_rows = [], [], []
+
+    def _arrival_dev(v, p, ctrl):
+        cx, cy = nodes[v]["x"], nodes[v]["y"]
+        hw, hh = nodes[v]["w"] / 2.0, nodes[v]["h"] / 2.0
+        on_x = abs(abs(p[0] - cx) - hw) <= abs(abs(p[1] - cy) - hh)
+        nx, ny = ((1.0, 0.0) if p[0] > cx else (-1.0, 0.0)) if on_x \
+            else ((0.0, 1.0) if p[1] > cy else (0.0, -1.0))
+        tx, ty = p[0] - ctrl[0], p[1] - ctrl[1]
+        n = math.hypot(tx, ty)
+        if n < 1e-9:
+            return 180.0
+        c = abs(tx * nx + ty * ny) / n
+        return math.degrees(math.acos(max(0.0, min(1.0, c))))
+    for _row in _ml_rows:
+        _A, _B = _row.get("pair", [None, None])
+        _ia = next((k for k, e in enumerate(edges)
+                    if (e["a"], e["b"]) == (_A, _B)), None)
+        _ib = next((k for k, e in enumerate(edges)
+                    if (e["a"], e["b"]) == (_B, _A)), None)
+        _st = _row.get("status")
+        if (_st in ("lens", "built", "slim") and _ia is not None and _ib is not None
+                and _ct.get(_ia) is not None and _ct.get(_ib) is not None):
+            _ra, _sa = arc_bulge(polys[_ia], _ct[_ia])
+            _rb, _sb = arc_bulge(polys[_ib], _ct[_ib], flip=True)
+            _ms = min_pair_dist(sample_polyline(polys[_ia]),
+                                sample_polyline(polys[_ib]))
+            _arcs = (_ra is not None and _rb is not None and _ra > 1e-9
+                     and _rb > 1e-9 and _sa != 0 and _sa != _sb
+                     and _ms is not None and _ms >= LENS_PAIR_MIN_SEP)
+            if _arcs and _ra >= LENS_BULGE_MIN and _rb >= LENS_BULGE_MIN:
+                mutual_closed_rows.append({"pair": [_A, _B], "status": _st,
+                                           "variant": "lens",
+                                           "sep": round(_ms, 1),
+                                           "bulge": [round(_ra, 3), round(_rb, 3)]})
+            elif _arcs and _st == "slim" and _A in nodes and _B in nodes:
+                _dev = max(_arrival_dev(edges[_ia]["a"], polys[_ia][0], _ct[_ia]),
+                           _arrival_dev(edges[_ia]["b"], polys[_ia][-1], _ct[_ia]),
+                           _arrival_dev(edges[_ib]["a"], polys[_ib][0], _ct[_ib]),
+                           _arrival_dev(edges[_ib]["b"], polys[_ib][-1], _ct[_ib]))
+                if _dev <= ARRIVAL_TARGET_DEG + 1e-6:
+                    mutual_closed_rows.append({"pair": [_A, _B], "status": _st,
+                                               "variant": "slim",
+                                               "sep": round(_ms, 1),
+                                               "arrival_dev_deg": round(_dev, 1),
+                                               "bulge": [round(_ra, 3), round(_rb, 3)]})
+                else:
+                    mutual_open_rows.append({"pair": [_A, _B], "status": _st,
+                                             "reason": "slim lens arrival not within target",
+                                             "arrival_dev_deg": round(_dev, 1)})
+            else:
+                mutual_open_rows.append({"pair": [_A, _B], "status": _st,
+                                         "reason": "delivered lines are not a closed lens",
+                                         "sep": round(_ms, 1) if _ms is not None else None})
+        elif _st == "tilt" and _A in nodes and _B in nodes:
+            # reproduce the engine's chord measure: the pair direction from
+            # the node centres, then the facing corner-anchor chord (the
+            # anchors a horizontal pair's rebuild would use -- a steep
+            # corner chord cannot yield an arrival-compliant arc either).
+            _dx = nodes[_B]["x"] - nodes[_A]["x"]
+            _dy = nodes[_B]["y"] - nodes[_A]["y"]
+            _L = max(math.hypot(_dx, _dy), 1e-9)
+            _d = ("E" if _dx >= 0 else "W") if abs(_dx) >= abs(_dy) \
+                else ("S" if _dy >= 0 else "N")
+            _n = LENS_SIDE_VEC[_d]
+            _tilt_c = math.degrees(math.acos(min(1.0, abs(_dx * _n[0] + _dy * _n[1]) / _L)))
+            _anc = {}
+            for _v in (_A, _B):
+                _anc[_v] = {a[0]: (a[1], a[2]) for a in _std_anchors(
+                    nodes[_v]["x"], nodes[_v]["y"],
+                    nodes[_v]["w"] / 2.0, nodes[_v]["h"] / 2.0)}
+            _tilt_k = 0.0
+            for _var in ("corner", "golden"):
+                for _pair in LENS_PAIR_ANCHORS.get(_var, {}).get(_d, ()):
+                    _s, _e = _pair
+                    _ps, _pd = _anc[_A][_s], _anc[_B][_e]
+                    _k = max(math.hypot(_pd[0] - _ps[0], _pd[1] - _ps[1]), 1e-9)
+                    _tilt_k = max(_tilt_k, math.degrees(math.acos(min(1.0, abs(
+                        (_pd[0] - _ps[0]) * _n[0] + (_pd[1] - _ps[1]) * _n[1]) / _k))))
+            _tilt = max(_tilt_c, _tilt_k)
+            if _tilt > lens_tilt_max_deg() + 1e-6:
+                mutual_exempt_rows.append({"pair": [_A, _B], "status": "tilt",
+                                           "tilt_deg": round(_tilt, 1),
+                                           "centre_tilt_deg": round(_tilt_c, 1)})
+            else:
+                mutual_open_rows.append({"pair": [_A, _B], "status": "tilt",
+                                         "reason": "tilt exemption not reproducible",
+                                         "tilt_deg": round(_tilt, 1)})
+        elif _st in ("frozen", "designated"):
+            mutual_exempt_rows.append({"pair": [_A, _B], "status": _st})
+        elif _st in ("blocked", "claimed") and _row.get("reasons"):
+            # the construct ran and refused every anchor variant under the
+            # delivery gates (reasons listed): an honest non-lens, accounted
+            # like the loop-arc fallbacks -- the gate catches pairs delivered
+            # without a construct row and closed claims the geometry denies
+            mutual_exempt_rows.append({"pair": [_A, _B], "status": _st,
+                                       "reasons": _row.get("reasons")})
+        else:
+            mutual_open_rows.append({"pair": [_A, _B], "status": _st,
+                                     "reasons": _row.get("reasons")})
+    mutual_pairs_closed = not mutual_open_rows
 
     # 1c. Line-line visual coincidence pairs: any two edges (including edge
     # pairs sharing a node — endpoint meeting is exempt via the 8px span gate)
@@ -987,6 +1111,12 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "line_kind_counts": line_kind_counts,
         "bbox": [round(W), round(H)],
     }
+    if _ml_rows:
+        # closed-ring accounting rows (B2/B4; trigger-written like the
+        # annotation gates -- graphs without a mutual pair keep their bytes)
+        metrics["mutual_pairs_closed_count"] = len(mutual_closed_rows)
+        metrics["mutual_pairs_exempt"] = mutual_exempt_rows
+        metrics["mutual_pairs_open"] = mutual_open_rows
     if ring_mode:
         metrics["ring_spacing_cv"] = (round(ring_spacing_cv, 4)
                                       if ring_spacing_cv is not None else None)
@@ -1065,6 +1195,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                 and metrics["ring_template_deviation"]
                 <= _ringlayout.RING_TEMPLATE_FIT_MAX),
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "mutual_pairs_closed": mutual_pairs_closed,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     elif radial_mode:
@@ -1107,6 +1238,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                 _fm.get("fit_ratio") is not None
                 and _fm["fit_ratio"] <= _rlg.RADIAL_TOTAL_EDGE_FIT),
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "mutual_pairs_closed": mutual_pairs_closed,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     elif column_mode:
@@ -1121,6 +1253,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                                     and metrics["column_axis_deviation"] <= 2.0),
             "spine_pitch_uniform": pitch_uniform,
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "mutual_pairs_closed": mutual_pairs_closed,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     elif comb_mode:
@@ -1148,6 +1281,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                                     and metrics["hub_symmetry_err"] <= 2.0),
             "hub_edges_straight": _hub_bad == 0,
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "mutual_pairs_closed": mutual_pairs_closed,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     elif sym_mode or bowtie_mode:
@@ -1161,6 +1295,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "symmetry_mirror_le_2px": (metrics["symmetry_mirror_err"] is not None
                                        and metrics["symmetry_mirror_err"] <= 2.0),
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "mutual_pairs_closed": mutual_pairs_closed,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     elif spine_mode:
@@ -1183,6 +1318,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "symmetry_mirror_le_2px": (metrics["symmetry_mirror_err"] is not None
                                        and metrics["symmetry_mirror_err"] <= 2.0),
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "mutual_pairs_closed": mutual_pairs_closed,
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     elif lens_mode:
@@ -1237,6 +1373,9 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "lens_pair_min_sep_ge_12": (metrics["lens_pair_min_sep"] is not None
                                         and metrics["lens_pair_min_sep"] >= 12.0),
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            # lens engine constructs its lenses before routing (lens_pairs_closed
+            # above carries the contract); the non-lens rebuild pass does not run
+            "mutual_pairs_closed": "N/A",
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
         }
     elif plz_l1:
@@ -1250,6 +1389,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "edge_box_clear_ge_16": (metrics["edge_box_min_clear"] or 0) >= CLEARANCE,
             "min_gap_ge_16": metrics["min_card_gap"] >= 16,
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
+            "mutual_pairs_closed": "N/A",
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
             "anchors_smooth": "N/A",
             "anchors_standard": "N/A",
@@ -1275,6 +1415,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "mutual_pairs_separated": mutual_min_sep is None or mutual_min_sep >= 4.0,
             # Hard gate: line-line visual coincidence pairs = 0
             "lines_no_coincidence": metrics["line_line_coincident_pairs"] == 0,
+            # closed-ring contract (mutual_pairs_closed; True without a mutual pair)
+            "mutual_pairs_closed": mutual_pairs_closed,
         }
     # ref-scrubbed: visual crossings (all-edge-pair caliber incl.
     # shared-endpoint fan pairs) is a HARD gate in every placement mode --
@@ -1393,7 +1535,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     if ring_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
-                   g["ring_spacing_cv_le_050"] and g["ring_template_fit_le_070"])
+                   g["ring_spacing_cv_le_050"] and g["ring_template_fit_le_070"] and
+                   g["mutual_pairs_closed"])
     elif radial_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["radial_min_gap_ge_pack_floor"] and
@@ -1402,27 +1545,30 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                    g["radial_azimuth_cv_le_050"] and
                    g["radial_radius_cv_le_015"] and
                    g["radial_long_edge_rate_zero"] and
-                   g["radial_total_edge_fit_le_125"])
+                   g["radial_total_edge_fit_le_125"] and
+                   g["mutual_pairs_closed"])
     elif comb_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
                    g["column_axis_aligned"] and g["column_pitch_uniform"] and
-                   g["hub_symmetry_le_2px"] and g["hub_edges_straight"])
+                   g["hub_symmetry_le_2px"] and g["hub_edges_straight"] and
+                   g["mutual_pairs_closed"])
     elif column_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
                    g["cv_le_035"] and g["column_axis_aligned"] and
-                   g["spine_pitch_uniform"])
+                   g["spine_pitch_uniform"] and g["mutual_pairs_closed"])
     elif sym_mode or bowtie_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
-                   g["cv_le_035"] and g["symmetry_mirror_le_2px"])
+                   g["cv_le_035"] and g["symmetry_mirror_le_2px"] and
+                   g["mutual_pairs_closed"])
     elif spine_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
                    g["cv_le_035"] and g["spine_axis_le_2px"] and
                    g["midline_adherence_le_2px"] and
-                   g["symmetry_mirror_le_2px"])
+                   g["symmetry_mirror_le_2px"] and g["mutual_pairs_closed"])
     elif lens_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
@@ -1432,7 +1578,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     else:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"] and
-                   (manual_mode or g["pitch_uniform"]))
+                   (manual_mode or g["pitch_uniform"]) and g["mutual_pairs_closed"])
     # ref-scrubbed finalize (approved 2026-11-09): honest dense-snap
     # deferral annotation -- the anchors_standard gate value stays MEASURED
     # (False when endpoints remain off-anchor on a deferred dense graph);

@@ -151,6 +151,35 @@ coincide_reroute / midband_reanchor / fan_spread 本就不触碰 constructed 路
 - `rowY` = 实际交付行（本引擎不做二次平移）；`pitch` = None（行距由 card_h +
   `LENS_GAP` 决定，不是 cfg.pitch）。
 
+**互指对闭环合同（非 lens 引擎；2026-11-26）**：lens-chain 之外的模式（ring-cycle /
+column-chain / radial / spine-wing / comb-bilateral / symmetric / bowtie / 分层兜底）里，互指对
+a<->b 原按「两条分离的直线」交付——`mutual_pairs_separated` 只要求两线相距 ≥4px，于是两节点回路的
+往返线成了一对平行线（limits-to-growth R1 宽/弦 0.10），甚至相隔 4.5–7.3px 的叠线
+（fixes-that-fail）。现由交付层修复道 `Router.mutual_lens_construct` 把每个互指对按 lens-chain
+同一配方重建成双弧透镜（两弧鼓度 ≥ `LENS_BULGE_MIN`、异侧、相距 ≥ `LENS_PAIR_MIN_SEP` = 12px；
+锚变体按序试：水平对长弦（≥98px）先角锚——44px 卡两端相距 38px，短弦先金锚，金锚两尖端不足
+12px 时回角锚；竖直对先 N/S 金锚（尖端 21px）再角锚；某变体的锚被其它边占着或过不了门就试
+下一个变体），逐边过 `LENS_CONSTRUCT` 门（压框单调、同胞交叉单调、到达角、两线相距 ≥12），全部
+变体被拒才恢复原线（字节不变）并逐变体记原因（`status: blocked` / `claimed`，`reasons`）。证书新增硬门 `mutual_pairs_closed`：从交付几何重读
+（不读修复道的自报），两线都是 Q 弧、鼓度 ≥0.15、异侧、相距 ≥12px 才算闭环；弦与轴的倾角 >
+`lens_tilt_max_deg()`（≈37.4°：由到达角下限 20° 与每弧鼓度 0.16 推出，再斜的弦构造不出
+到达角合规的弧）的对按 `tilt` 豁免，证书按节点中心与各锚变体的弦重新量倾角、复现不出即判不过；修复道跑过并被门
+拒掉的对（`blocked` / `claimed`，带逐变体原因）与 `frozen` / `designated` 一样记入
+`mutual_pairs_exempt`——如实记账的未透镜化，不扣 grade；门只抓「交付了非透镜互指对却没有修复道
+记录」与「自报闭环 / 豁免但几何复现不出」；
+箭头法线通道（`mutual_arrival_flip`）已交付的**细透镜**（两弧异侧、相距 ≥12、四个箭头都在
+法线 10° 内——胖透镜的端切线天然偏离弦 32°，做不到这个合同）记 `slim`、原样保留，证书按
+交付 ctrl 复量到达偏差后同样算闭环；
+`lens-chain` 模式记 `N/A`（其透镜在路由前构造，由 `lens_pairs_closed` 承担）；无互指对的图
+门恒为 true、`layout.json` 不出现 `meta.mutual_lens`。指标：`mutual_pairs_closed_count` /
+`mutual_pairs_exempt` / `mutual_pairs_open`；`meta.mutual_lens.pairs[]` 逐对记锚变体、
+`status`（`lens` / `slim` / `built` / `tilt` / `claimed` / `blocked` / `frozen` / `designated`）、
+`closed`、`sep`、`chord`、`width_over_chord`、`reasons`。
+实测（金标准集）：fixes-that-fail problem↔fix 两条平行线（相隔 4.5–7.3）→ 透镜相隔 38px、
+宽/弦 0.54；limits-to-growth action↔state 宽/弦 0.10 → 0.41；growth-and-underinvestment
+limit↔performance 折线绕行 1.68 → 弦 42px 双弧（绕行 1.07、宽/弦 1.2）；shifting-the-burden
+两条环对角线（角锚弦倾角 68°）如实豁免。实现约定见 `docs/routing-gates.md` §9。
+
 **实测**（2026-11-25）：limits-to-growth 4 节点原图 `best` 14/14、spacing_cv 0.132、
 净距 76.7、两透镜鼓度 0.30、~0.4s（分层路径 uncertified ~7.3s）；
 2026-11-26 视觉验收返修把透镜收窄（`LENS_K` 0.6 → 0.32）：同一图鼓度 0.16、透镜宽/弦

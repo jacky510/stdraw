@@ -227,6 +227,19 @@ Consequently:
   gate set = the layered regularity gates + `lens_pairs_closed` +
   `lens_pair_min_sep_ge_12` (14 gates). A figure without a mutual pair
   keeps its pre-lens mode trace byte-for-byte.
+- Mutual pairs on every non-lens placement mode (2026-11-26): the delivery
+  pass `Router.mutual_lens_construct` rebuilds each a<->b pair as the
+  lens-chain double arc (gate-checked per edge; a rejected rebuild restores
+  the original lines byte-for-byte and is reported as `status: blocked`).
+  The hard gate `mutual_pairs_closed` re-reads the delivered geometry (both
+  lines Q arcs, bulge >= 0.15, opposite sides, >= 12px apart); a chord tilt
+  beyond `lens_tilt_max_deg()` (~37.4 deg) is an accounted exemption
+  (`status: tilt`, re-measured from the node centres by the certificate). The
+  lens-chain mode answers `N/A` (its lenses are constructed before routing;
+  `lens_pairs_closed` carries the contract). The non-lens gate sets grow by
+  this one gate (only added, nothing relaxed); grade semantics are unchanged.
+  A figure without a mutual pair keeps the gate true and carries no
+  `meta.mutual_lens` key in `layout.json`.
 - Byte-neutrality: a figure without declared loops and without `@delay`
   carries no `annotations` key and no `delay` edge key.
 - `loop_arcs` (a report item, not a gate): loop-member lines (both ends

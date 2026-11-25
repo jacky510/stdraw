@@ -110,6 +110,14 @@ LENS_JOINT = GatePolicy(name="lens_joint_reassign", clearance_margin=None,
 LENS_PAIR = GatePolicy(name="lens_pair_joint_snap", clearance_margin=None,
                        own_check="press", check_msep=False, sibling=True,
                        cert_angle=True)
+# G-LENS-CONSTRUCT mutual_lens_construct acceptance (closed-ring rebuild of
+# non-lens mutual pairs on every non-lens engine): constructed arcs carry no
+# coincidence by design, the pair separation is a standalone >= 12px check
+# (LENS_PAIR_MIN_SEP); press / clearance (CI raw accounting) / anchor angle
+# / non-adjacent crossings / own-box press / fan-pair crossings monotone.
+LENS_CONSTRUCT = GatePolicy(name="mutual_lens_construct", clearance_margin=None,
+                            own_check="press", check_msep=False, sibling=True,
+                            cert_angle=True)
 # G-SNAP anchor_snap tier-1 + _snap_joint_detour tier-2 (coincide-no-worse).
 # clearance_margin=None -> cl-PRESS_MARGIN-1e-6 = the CI/certificate raw-border
 # accounting (_edge_stats measures the 1px-inflated rect, so the inflated

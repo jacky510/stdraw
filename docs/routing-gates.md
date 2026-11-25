@@ -105,6 +105,34 @@ python t4_sweep.py <leg> <abs_out_dir>     # 脚本随卡归档；core 循环 = 
 偏移 / 弦长（有控制点时精确 = 0.5×|ctrl − 弦中点|；无控制点按折线顶点取）≥ `gates.LENS_BULGE_MIN`
 （0.15），且两弧鼓向弦的异侧。`gates.arc_bulge(pts, ctrl=None, flip=False)` 是鼓度与侧别的单一来源。
 
+## §9 互指对闭环重建（2026-11-26，`Router.mutual_lens_construct`，policy `LENS_CONSTRUCT`）
+
+口径正本 `docs/layout-modes.md`「透镜链」节的「互指对闭环合同」，本节只登记路由侧的实现约定：
+
+- 位置：repair chain 中 `lens_joint_reassign` 之后、`final_crossing_pairs` 之前；`_delivery_chain_probe`
+  同步接入。只在非 lens 引擎且无用户预置锚（`er_presets is None`）时跑；lens-chain 引擎与 ortho
+  冻结路径不进。
+- 每对互指对：已闭环（两弧、鼓度 ≥ 下限、异侧、相距 ≥12）跳过；否则按序试锚变体——水平对
+  （E/W）角锚弦 ≥ `LENS_CORNER_MIN_CHORD` = 98 先角锚，否则先金锚，金锚两尖端距 <
+  `LENS_PAIR_MIN_SEP` = 12 时先角锚；竖直对先 N/S 金锚再角锚。某变体弦倾角 >
+  `lens_tilt_max_deg()` 记 `tilt`，锚被其它边占着记 `claimed`，都换下一个变体试。
+- 跳过：箭头法线通道已闭环的**细透镜**（两弧异侧、相距 ≥12、四端到达偏差 ≤
+  `ARRIVAL_TARGET_DEG` = 10°）记 `slim` 不动——胖透镜端切线偏离弦 atan(2K) = 32°，与 10° 合同
+  几何上互斥（`mutual_arrival_flip` 文档同此结论）。
+- 构造：每弧控制点放弦中点的法线方向、距弦中点 `LENS_K` × **两弧平均弦长**（任意倾角鼓度恒
+  ≥0.16，倾斜弦若用轴向量会带沿弦分量、鼓度掉到下限之下；取平均弦长使两弧绝对鼓度相等，
+  透镜镜像对称）；反向弧从 B 的角锚到 A 的角锚。
+- 验收：两条弧各过 `edge_gate_check(..., policy=LENS_CONSTRUCT)`（`GatePolicy(name=
+  "mutual_lens_construct", clearance_margin=None, own_check="press", check_msep=False,
+  sibling=True, cert_angle=True)`；两线相距 ≥12 由修复道单独用 `min_pair_dist(…, step=4)` 判）。
+  任一条不过 → 恢复该对两条线的备份（points / ctrl 逐项拷贝）、试下一个变体；全部被拒才定案：
+  全是倾角 → `status: tilt`，非倾角的尝试全被占 → `claimed`，否则 `blocked`；`reasons` 逐变体
+  记（`变体:tilt:度数` / `变体:claimed` / `变体:门名:边:值,…`）。
+- 证书不读修复道的自报，按交付几何重算闭环与豁免（`metrics.certificate_auto` 1b'）：闭环 = 胖透镜
+  （两弧鼓度 ≥0.15 异侧、相距 ≥12）或细透镜（两弧异侧、相距 ≥12、四端到达偏差 ≤10° 按 ctrl 复量）；
+  `tilt` 豁免按节点中心倾角与各锚变体弦倾角的较大者复现；`blocked` / `claimed`（带 `reasons`）
+  与 `frozen` / `designated` 记入 `mutual_pairs_exempt`，不扣 grade。
+
 ## §8 回路方向弧线默认的候选序（2026-11-25）
 
 口径正本 `docs/edge-placement-rules-v1.md` §20，本节只登记路由侧的实现约定：

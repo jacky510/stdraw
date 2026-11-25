@@ -49,6 +49,46 @@ def _r6(v):
     return round(v + 0.0, 6)
 
 
+def rounded_tip(p_prev, p_last, cx, cy, hw, hh, radius):
+    """Arrow tip on the rounded card outline for a route ending at ``p_last``.
+
+    Anchors sit on the border rectangle; with a rounded frame (render
+    ``card_radius``) the four corner anchors hang outside the visible
+    outline by the corner sagitta (measured on the golden set: 16 of 48
+    arrowheads floated 1.1-1.9px off the frame).  A tip inside the straight
+    part of a side is returned unchanged; a tip in a corner zone (within
+    ``radius`` of both adjoining sides) is moved onto the corner arc along
+    the last-segment ray (the arrowhead keeps its heading), falling back to
+    the radial direction from the corner centre when the ray misses the
+    arc.  Pure geometry: the route points / anchors are not touched, so
+    the certificate caliber (which reads them) is unchanged.
+    """
+    x, y = p_last
+    if radius <= 0 or hw <= radius or hh <= radius:
+        return (x, y)
+    if abs(x - cx) <= hw - radius or abs(y - cy) <= hh - radius:
+        return (x, y)
+    ccx = cx + (hw - radius) * (1.0 if x >= cx else -1.0)
+    ccy = cy + (hh - radius) * (1.0 if y >= cy else -1.0)
+    ux, uy = x - p_prev[0], y - p_prev[1]
+    n = math.hypot(ux, uy)
+    if n > 1e-9:
+        ux, uy = ux / n, uy / n
+        fx, fy = x - ccx, y - ccy
+        b = fx * ux + fy * uy
+        disc = b * b - (fx * fx + fy * fy - radius * radius)
+        if disc >= 0:
+            s = math.sqrt(disc)
+            for t in (-b - s, -b + s):
+                if t >= -1e-9:
+                    t = max(t, 0.0)
+                    return (x + t * ux, y + t * uy)
+    d = math.hypot(x - ccx, y - ccy)
+    if d < 1e-9:
+        return (x, y)
+    return (ccx + (x - ccx) * radius / d, ccy + (y - ccy) * radius / d)
+
+
 def standard_anchors(cx, cy, hw, hh, inset=ANCHOR_INSET):
     """The 16 standard anchor points of one box.
 

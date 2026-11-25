@@ -120,7 +120,7 @@ CRASH_REGRESSION_SAMPLES = [
 HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
               "min_gap_ge_16", "cv_le_035", "pitch_uniform",
               "column_snap24_ge_060",
-              "mutual_pairs_separated", "lines_no_coincidence",
+              "mutual_pairs_separated", "mutual_pairs_closed", "lines_no_coincidence",
                       "anchors_standard",
                       "visual_crossings_zero")
 # ref-scrubbed ring placement (placement=ring-cycle): regularity gates switch
@@ -128,7 +128,7 @@ HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
 # misjudge a ring under row criteria)
 RING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "min_gap_ge_16", "ring_spacing_cv_le_050",
-                   "ring_template_fit_le_070", "mutual_pairs_separated",
+                   "ring_template_fit_le_070", "mutual_pairs_separated", "mutual_pairs_closed",
                    "lines_no_coincidence",
                       "anchors_standard",
                       "visual_crossings_zero")
@@ -139,13 +139,13 @@ RING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
 # line crossings are acceptable; order and elegance come first).
 COLUMN_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                      "min_gap_ge_16", "cv_le_035", "column_axis_aligned",
-                     "spine_pitch_uniform", "mutual_pairs_separated",
+                     "spine_pitch_uniform", "mutual_pairs_separated", "mutual_pairs_closed",
                      "lines_no_coincidence",
                       "anchors_standard",
                       "visual_crossings_zero")
 SYM_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                   "min_gap_ge_16", "cv_le_035", "symmetry_mirror_le_2px",
-                  "mutual_pairs_separated", "lines_no_coincidence",
+                  "mutual_pairs_separated", "mutual_pairs_closed", "lines_no_coincidence",
                       "anchors_standard",
                       "visual_crossings_zero")
 # ref-scrubbed (aesthetics v3) bowtie shared vertex: regularity gate = mirror-axis error (same criteria as symmetric)
@@ -154,7 +154,7 @@ BOWTIE_HARD_GATES = SYM_HARD_GATES
 SPINE_WING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16",
                          "anchors_smooth", "min_gap_ge_16", "cv_le_035",
                          "spine_axis_le_2px", "midline_adherence_le_2px",
-                         "symmetry_mirror_le_2px", "mutual_pairs_separated",
+                         "symmetry_mirror_le_2px", "mutual_pairs_separated", "mutual_pairs_closed",
                          "lines_no_coincidence",
                       "anchors_standard",
                       "visual_crossings_zero")
@@ -164,18 +164,21 @@ SPINE_WING_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16",
 COMB_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                    "min_gap_ge_16", "column_axis_aligned",
                    "column_pitch_uniform", "hub_symmetry_le_2px",
-                   "hub_edges_straight", "mutual_pairs_separated",
+                   "hub_edges_straight", "mutual_pairs_separated", "mutual_pairs_closed",
                    "lines_no_coincidence",
                       "anchors_standard",
                       "visual_crossings_zero")
-# lens-chain (pure 2-cycle figures): the layered regularity set PLUS the
-# lens contract (every mutual pair a closed arc ring, arcs >= 12px apart)
-LENS_HARD_GATES = HARD_GATES + ("lens_pairs_closed", "lens_pair_min_sep_ge_12")
+# lens-chain (pure 2-cycle figures): the layered regularity set (without the
+# mutual_pairs_closed rebuild pass -- the lens engine constructs its lenses
+# before routing and answers N/A there) PLUS the lens contract (every mutual
+# pair a closed arc ring, arcs >= 12px apart)
+LENS_HARD_GATES = tuple(g for g in HARD_GATES if g != "mutual_pairs_closed") + (
+    "lens_pairs_closed", "lens_pair_min_sep_ge_12")
 # radial (hub-centered spokes): HUB center deviation + azimuth equal-spacing
 # CV replace the row/pitch calibers (same shape as the ring gate set)
 RADIAL_HARD_GATES = ("box_press_zero", "edge_box_clear_ge_16", "anchors_smooth",
                      "min_gap_ge_16", "radial_hub_center_le_2px",
-                     "radial_spacing_cv_le_005", "mutual_pairs_separated",
+                     "radial_spacing_cv_le_005", "mutual_pairs_separated", "mutual_pairs_closed",
                      "lines_no_coincidence",
                       "anchors_standard",
                       "visual_crossings_zero")

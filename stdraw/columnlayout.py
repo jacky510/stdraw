@@ -442,11 +442,23 @@ def place_column(plan, widths, card_h, cfg, adj, edges):
             return y[anch[0]]
         return (y[anch[0]] + y[anch[-1]]) / 2
 
+    def _member_order(comp):
+        """Row-slot order inside a group: members with a spine neighbor take
+        the anchor row first (then id order), the rest follow in id order.
+        Rationale: a member wired to the anchor must sit on the anchor's row
+        so the pair gets the straight channel (a mutual pair there closes as
+        a lens); id order alone put the unconnected sibling on the row and
+        pushed the wired one a pitch off (growth-and-underinvestment:
+        performance wired to limit landed one pitch up, forcing the
+        performance -> limit detour 1.68x and a stacked arrowhead)."""
+        return sorted(comp, key=lambda v: (0 if adj[v] & spine_set else 1, v))
+
     def _try_place(anch, comp, side):
         """Place the whole group into the `side` column: members expand from base
         by whole pitches downward/upward (pitch >= card_h+SIDE_GAP,
         guaranteeing in-group clearance); slot conflict -> None."""
         base = _base_y(anch)
+        order = _member_order(comp)
         offsets = []
         for i in range(len(comp)):
             offsets.append(((i + 1) // 2) * pitch * (1 if i % 2 == 0 else -1))
@@ -455,11 +467,12 @@ def place_column(plan, widths, card_h, cfg, adj, edges):
             if any(abs(yy - q) < card_h + SIDE_GAP for q in col_slots[side]):
                 return None
         out = {}
-        for v, yy in zip(comp, ys):
+        for v, yy in zip(order, ys):
             out[v] = (int((side * side_x) / 2) * 2, int(round(yy / 2) * 2))
         return out
 
     for anch, comp in groups:
+        order = _member_order(comp)
         placed = None
         for side in (1, -1):
             cand = _try_place(anch, comp, side)
@@ -477,7 +490,7 @@ def place_column(plan, widths, card_h, cfg, adj, edges):
                 if all(not any(abs(yy - q) < card_h + SIDE_GAP
                                for q in col_slots[1]) for yy in ys):
                     placed = {v: (int(side_x / 2) * 2, int(round(yy / 2) * 2))
-                              for v, yy in zip(comp, ys)}
+                              for v, yy in zip(order, ys)}
                     break
         if placed is None:
             raise InfeasibleColumn(f"branch group {comp} has no feasible column slots")

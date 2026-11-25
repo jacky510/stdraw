@@ -322,6 +322,45 @@ PAIR_SEP_W = 600.0     # coincidence penalty weight (linear in the gap; full coi
 PAIR_VG_OFF = 12       # tangential anchor offset for mutual-pair vg/detour candidates (opposite signs for the two directions -> parallel corridors)
 ROUND_GUARD = 0.15     # conservative margin for delivery rounding (0.1px): border-hugging within <0.15px counts as a violation
 
+# Closed-ring caliber for mutual pairs outside the lens-chain engine
+# (Router.mutual_lens_construct).  A pair is rebuilt as the constructed
+# lens-chain double arc when the delivered lines fail the closed-ring
+# contract (gates.arc_bulge on both arcs + separation); the anchor pair
+# follows lenslayout._LENS_ANCHORS (horizontal pair: facing corners,
+# vertical pair: golden anchors).  On a SHORT horizontal chord the corner
+# pair (38px apart on a 44px card) makes the eye rounder than the
+# lens-chain caliber (width/chord = LENS_K + 38/chord vs the chain's 0.56):
+# below LENS_CORNER_MIN_CHORD the golden pair (9px apart) is the closer
+# ratio (crossover: 38/c - 0.24 = 0.24 - 9/c -> c = 98).  The chord tilt
+# limit is geometric: the outer arc of a lens meets its border at
+# atan(2*LENS_K) = 32.6 deg off the chord, so the certificate's
+# ANCHOR_MIN_DEG floor (<= 70 deg from the normal) bounds the tilt of the
+# facing-normal chord by 90 - ANCHOR_MIN_DEG - atan(2*LENS_K).
+LENS_CORNER_MIN_CHORD = 98.0
+LENS_PAIR_MIN_SEP = 12.0   # closed-lens separation floor (lens_pair_min_sep_ge_12 caliber)
+LENS_SIDE_VEC = {"N": (0.0, -1.0), "S": (0.0, 1.0), "E": (1.0, 0.0), "W": (-1.0, 0.0)}
+LENS_LEFT_TURN = {"E": "N", "N": "W", "W": "S", "S": "E"}
+LENS_RIGHT_TURN = {"E": "S", "S": "W", "W": "N", "N": "E"}
+# ((left-of-travel chord A id, B id), (right-of-travel chord A id, B id))
+# per travel direction A -> B; corners only exist for horizontal pairs.
+LENS_PAIR_ANCHORS = {
+    "corner": {"E": (("ne", "nw"), ("se", "sw")),
+               "W": (("sw", "se"), ("nw", "ne")),
+               "S": (("se", "ne"), ("sw", "nw")),
+               "N": (("nw", "sw"), ("ne", "se"))},
+    "golden": {"E": (("e-g1", "w-g2"), ("e-g2", "w-g1")),
+               "W": (("w-g1", "e-g2"), ("w-g2", "e-g1")),
+               "S": (("s-g1", "n-g2"), ("s-g2", "n-g1")),
+               "N": (("n-g1", "s-g2"), ("n-g2", "s-g1"))},
+}
+
+
+def lens_tilt_max_deg():
+    """Chord tilt (off the facing border normal) up to which a constructed
+    lens can still meet ANCHOR_MIN_DEG on its outer arc."""
+    from .lenslayout import LENS_K
+    return 90.0 - ANCHOR_MIN_DEG - math.degrees(math.atan(2.0 * LENS_K))
+
 # Line-line visual-coincidence targeted re-routing accounting (ref-scrubbed): the random n10 fan-out edges run through the same
 # inter-row corridor candidates (stair/lane, y = row center +/- pitch/2) with per-segment <1px adherence. The authoritative accounting = this
 # module's span_one_way_segs; the certificate side's metrics._coincidence_span delegates both directions to the same source.
@@ -3127,6 +3166,298 @@ class Router:
                     routes[i]["points"] = best[1][i][0]
                     routes[i]["ctrl"] = best[1][i][1]
         return routes
+
+    # -- closed-ring rebuild of mutual pairs on every non-lens engine (B2/B4) --
+    def _arrival_dev(self, v, p, ctrl):
+        """Deviation (deg) between the arrival tangent (p - ctrl) and the
+        outward normal of the border the endpoint p sits on (the
+        test_mutual_lens_arrow_normal caliber)."""
+        cx, cy, hw, hh = self.N[v]
+        on_x = abs(abs(p[0] - cx) - hw) <= abs(abs(p[1] - cy) - hh)
+        if on_x:
+            nx, ny = (1.0, 0.0) if p[0] > cx else (-1.0, 0.0)
+        else:
+            nx, ny = (0.0, 1.0) if p[1] > cy else (0.0, -1.0)
+        tx, ty = p[0] - ctrl[0], p[1] - ctrl[1]
+        n = math.hypot(tx, ty)
+        if n < 1e-9:
+            return 180.0
+        c = abs(tx * nx + ty * ny) / n
+        return math.degrees(math.acos(max(0.0, min(1.0, c))))
+
+    def _pair_arrival_dev(self, i1, i2, routes):
+        """Largest arrival deviation (deg) over the four ends of the two
+        routes; None when a route carries no ctrl (not a Q arc)."""
+        worst = 0.0
+        for i in (i1, i2):
+            r = routes.get(i)
+            if not r or not r.get("points") or r.get("ctrl") is None:
+                return None
+            pts = r["points"]
+            worst = max(worst, self._arrival_dev(self.edges[i][0], pts[0], r["ctrl"]),
+                        self._arrival_dev(self.edges[i][1], pts[-1], r["ctrl"]))
+        return worst
+
+    def _pair_lens_state(self, i1, i2, routes):
+        """Closed-lens accounting of one mutual pair on the delivered geometry.
+
+        Returns (closed, sep, slim): closed iff both routes are Q arcs whose
+        apex offset reaches LENS_BULGE_MIN of the chord on opposite sides
+        (the metrics.lens_pairs_closed caliber, measured along the pair
+        direction); slim iff both routes are Q arcs on opposite sides staying
+        >= LENS_PAIR_MIN_SEP apart with every arrow arriving within
+        ARRIVAL_TARGET_DEG of its border normal -- the arrow-normal channel's
+        (mutual_arrival_flip) own closed form, left untouched by the rebuild;
+        sep = routing-caliber minimum distance between the two lines (None
+        on an empty route).
+        """
+        from .gates import arc_bulge, LENS_BULGE_MIN
+        r1, r2 = routes.get(i1), routes.get(i2)
+        if (not r1 or not r2 or not r1.get("points") or not r2.get("points")):
+            return False, None, False
+        sep = min_pair_dist(sample_polyline(r1["points"], step=4),
+                            sample_polyline(r2["points"], step=4))
+        closed = slim = False
+        if (r1.get("kind") == "arc" and r2.get("kind") == "arc"
+                and r1.get("ctrl") is not None and r2.get("ctrl") is not None):
+            ra, sa = arc_bulge(r1["points"], r1["ctrl"])
+            rb, sb = arc_bulge(r2["points"], r2["ctrl"], flip=True)
+            if (ra is not None and rb is not None and ra > 1e-9 and rb > 1e-9
+                    and sa != 0 and sa != sb and sep is not None
+                    and sep >= LENS_PAIR_MIN_SEP):
+                if ra >= LENS_BULGE_MIN and rb >= LENS_BULGE_MIN:
+                    closed = True
+                else:
+                    dev = self._pair_arrival_dev(i1, i2, routes)
+                    slim = dev is not None and dev <= ARRIVAL_TARGET_DEG + 1e-6
+        return closed, sep, slim
+
+    def mutual_lens_construct(self, routes, frozen=()):
+        """Rebuild non-lens mutual pairs as the constructed lens-chain double arc.
+
+        Scope: every engine but lens-construct (whose lenses are constructed
+        before routing).  The ring / column / spine / bowtie engines route a
+        mutual pair through the generic candidate set and the arrival flip
+        then flattens the two arcs toward the border normal (measured:
+        limits-to-growth R1 reads as two near-straight lines 21px apart,
+        width/chord 0.10; fixes-that-fail problem<->fix bows 3.0px / -0.2px,
+        lines 4.5-7.3px apart).  This pass runs LAST in the delivery chain.
+        For each unfrozen pair whose delivered lines fail the closed-ring
+        contract it re-derives both arcs on the facing standard anchors
+        (LENS_PAIR_ANCHORS, the lenslayout.lens_arcs caliber; K = LENS_K so
+        bulge/chord = LENS_K / 2 by construction).  The candidate is kept
+        only when every delivery gate holds (gates.LENS_CONSTRUCT) and the
+        two arcs stay >= LENS_PAIR_MIN_SEP apart; otherwise the pair is
+        returned byte-for-byte.  Anchor variants are tried in order (a
+        horizontal pair: corner anchors first on a long chord, golden
+        first on a short one; a vertical pair: golden first, corner
+        after); a variant whose anchors another edge holds, or whose
+        lens fails a gate, hands over to the next.  A pair the arrow-normal channel already
+        closed as a slim lens (arcs >= LENS_PAIR_MIN_SEP apart, every arrow
+        within ARRIVAL_TARGET_DEG of the border normal) is reported slim
+        and left untouched: a fat lens arrives 32 deg off its chord and
+        cannot meet that contract.
+
+        Returns (routes, report); report["pairs"] carries one row per mutual
+        pair with the delivered status so the certificate can account honest
+        non-lenses: lens (already closed) / slim (closed by the arrow-normal
+        channel) / built / frozen / designated / tilt (every variant's
+        chord tilt beyond lens_tilt_max_deg: the outer arc cannot meet
+        ANCHOR_MIN_DEG) / claimed (every non-tilted variant's anchors are
+        held by other edges) / blocked (gate-checked, per-variant reasons).
+        """
+        from .lenslayout import LENS_K
+        tilt_max = lens_tilt_max_deg()
+        report = {"pairs": [], "k": LENS_K, "tilt_max_deg": round(tilt_max, 1)}
+
+        def _pt(v, aid):
+            for a in self._box_anchors(v):
+                if a[0] == aid:
+                    return [a[1], a[2]]
+            return None
+
+        def _arc(p0, p1, side, c):
+            # ctrl on the chord normal (not the axis side vector): on a
+            # tilted chord the axis vector has an along-chord component
+            # that skews the apex (measured: limits-to-growth 0.132 < 0.15);
+            # the normal keeps apex/chord = LENS_K / 2 on any tilt.  c = the
+            # pair's mean chord so both arcs bow by the same absolute offset
+            # (mirror-symmetric lens even when the two chords differ a little).
+            nx, ny = -(p1[1] - p0[1]) / c, (p1[0] - p0[0]) / c
+            sv = LENS_SIDE_VEC[side]
+            if nx * sv[0] + ny * sv[1] < 0:
+                nx, ny = -nx, -ny
+            ctrl = [(p0[0] + p1[0]) / 2.0 + nx * LENS_K * c,
+                    (p0[1] + p1[1]) / 2.0 + ny * LENS_K * c]
+            return {"kind": "arc", "points": quad_points(p0, ctrl, p1),
+                    "ctrl": ctrl}
+
+        for key in sorted(self.mutual):
+            i1 = self.eidx.get((key[0], key[1]))
+            i2 = self.eidx.get((key[1], key[0]))
+            if i1 is None or i2 is None or i1 == i2:
+                continue
+            r1, r2 = routes.get(i1), routes.get(i2)
+            if not r1 or not r2:
+                continue
+            row = {"pair": [key[0], key[1]]}
+            report["pairs"].append(row)
+            closed, sep0, slim0 = self._pair_lens_state(i1, i2, routes)
+            if closed and sep0 is not None and sep0 >= LENS_PAIR_MIN_SEP:
+                row["status"] = "lens"
+                continue
+            if slim0:
+                # the arrow-normal channel already closed this pair as a
+                # slim lens (arcs within ARRIVAL_TARGET_DEG of the border
+                # normal): a fat lens arrives atan(2 K) = 32 deg off its
+                # chord and would break that contract -- leave it.
+                row.update(status="slim", closed=True, sep=round(sep0, 1),
+                           arrival_dev_deg=round(self._pair_arrival_dev(i1, i2, routes), 1))
+                continue
+            if i1 in frozen or i2 in frozen:
+                row["status"] = "frozen"
+                continue
+            if r1.get("ua_ends") or r2.get("ua_ends"):
+                row["status"] = "designated"
+                continue
+            A, B = key[0], key[1]
+            dx = self.N[B][0] - self.N[A][0]
+            dy = self.N[B][1] - self.N[A][1]
+            if abs(dx) >= abs(dy):
+                d = "E" if dx >= 0 else "W"
+            else:
+                d = "S" if dy >= 0 else "N"
+            # anchor variants in priority order; a variant whose anchors
+            # another edge holds, or whose lens fails a delivery gate, hands
+            # over to the next one (measured: ring edges hold the corner
+            # anchors on fishing-collapse catch<->quota and the N/S golden
+            # anchors on induced-demand trips<->congestion).  Horizontal
+            # pairs: long chord -> corner first (flat lens), short chord ->
+            # golden first unless its tips sit closer than the pair
+            # separation floor (E/W golden tips are 9px apart on a 44px
+            # card -> corner, a round eye with 38px tips).  Vertical pairs:
+            # N/S golden anchors (21px tips) first, corner chords after.
+            variants = ["golden", "corner"]
+            if d in ("E", "W"):
+                (ca, cb), _ = LENS_PAIR_ANCHORS["corner"][d]
+                pc = _pt(A, ca), _pt(B, cb)
+                corner_chord = (math.hypot(pc[1][0] - pc[0][0], pc[1][1] - pc[0][1])
+                                if pc[0] is not None and pc[1] is not None else 0.0)
+                (ga, gb), (gra, grb) = LENS_PAIR_ANCHORS["golden"][d]
+                tg = _pt(A, ga), _pt(A, gra)
+                golden_tips = (math.hypot(tg[1][0] - tg[0][0], tg[1][1] - tg[0][1])
+                               if tg[0] is not None and tg[1] is not None else 0.0)
+                if corner_chord >= LENS_CORNER_MIN_CHORD or golden_tips < LENS_PAIR_MIN_SEP:
+                    variants = ["corner", "golden"]
+            # anchors held by OTHER edges keep their claims
+            held = set()
+            for j in sorted(routes):
+                if j in (i1, i2):
+                    continue
+                pj = routes[j]["points"]
+                for v, p in ((self.edges[j][0], pj[0]), (self.edges[j][1], pj[-1])):
+                    aid = self._anchor_at(v, p)
+                    if aid is not None:
+                        held.add((v, aid))
+            saved = {}
+            for i in (i1, i2):
+                c = dict(routes[i])
+                c["points"] = [list(q) for q in routes[i]["points"]]
+                if routes[i].get("ctrl") is not None:
+                    c["ctrl"] = list(routes[i]["ctrl"])
+                saved[i] = c
+            base = _gates.GateBaseline(
+                stats={i: self._edge_stats(i, routes) for i in (i1, i2)},
+                own={i: self._own_press(i, routes) for i in (i1, i2)},
+                sib={i: self._sibling_cross(i, routes) for i in (i1, i2)})
+            attempts, tilts, claimed = [], [], 0
+            for variant in variants:
+                (la, lb), (ra, rb) = LENS_PAIR_ANCHORS[variant][d]
+                ps, pd, qs, qd = _pt(A, la), _pt(B, lb), _pt(A, ra), _pt(B, rb)
+                if ps is None or pd is None or qs is None or qd is None:
+                    attempts.append(variant + ":noanchor")
+                    continue
+                chord = math.hypot(pd[0] - ps[0], pd[1] - ps[1])
+                if chord < 1e-6:
+                    attempts.append(variant + ":degenerate")
+                    continue
+                normal = LENS_SIDE_VEC[d]
+                tilt = math.degrees(math.acos(max(0.0, min(1.0, abs(
+                    ((pd[0] - ps[0]) * normal[0] + (pd[1] - ps[1]) * normal[1])
+                    / chord)))))
+                row.setdefault("chord_tilt_deg", round(tilt, 1))
+                if tilt > tilt_max + 1e-9:
+                    tilts.append(round(tilt, 1))
+                    attempts.append("%s:tilt:%.1f" % (variant, tilt))
+                    continue
+                if any((v, aid) in held for v, aid in ((A, la), (B, lb), (A, ra), (B, rb))):
+                    claimed += 1
+                    attempts.append(variant + ":claimed")
+                    continue
+                pb_, pa_ = _pt(B, rb), _pt(A, ra)
+                chord2 = math.hypot(pa_[0] - pb_[0], pa_[1] - pb_[1])
+                cmean = (chord + chord2) / 2.0
+                routes[i1] = _arc(ps, pd, LENS_LEFT_TURN[d], cmean)
+                routes[i2] = _arc(pb_, pa_, LENS_RIGHT_TURN[d], cmean)
+                ok = True
+                for i in (i1, i2):
+                    if not _gates.edge_gate_check(self, i, routes, base,
+                                                  _gates.LENS_CONSTRUCT):
+                        ok = False
+                        break
+                sep = min_pair_dist(sample_polyline(routes[i1]["points"], step=4),
+                                    sample_polyline(routes[i2]["points"], step=4))
+                if sep is None or sep < LENS_PAIR_MIN_SEP:
+                    ok = False
+                if ok:
+                    closed2, _, _ = self._pair_lens_state(i1, i2, routes)
+                    tips = math.hypot(ps[0] - qs[0], ps[1] - qs[1])
+                    row.update(status="built", closed=closed2, sep=round(sep, 1),
+                               chord_tilt_deg=round(tilt, 1), chord=round(chord, 1),
+                               anchors=[variant, [la, lb], [ra, rb]],
+                               width_over_chord=round((tips + LENS_K * chord) / chord, 3))
+                    break
+                reasons = []
+                for i in (i1, i2):
+                    st = self._edge_stats(i, routes)
+                    st0 = base.stats[i]
+                    if st[0] > st0[0]:
+                        reasons.append("press:%d" % i)
+                    if st[3] > st0[3]:
+                        reasons.append("cross:%d" % i)
+                    if st[1] is not None and st[1] < self.cl - PRESS_MARGIN - 1e-6:
+                        reasons.append("clearance:%d:%.1f" % (i, st[1]))
+                    if st[2] < ANCHOR_MIN_DEG:
+                        reasons.append("angle:%d:%.1f" % (i, st[2]))
+                    if self._own_press(i, routes) > base.own[i]:
+                        reasons.append("ownbox:%d" % i)
+                    if self._sibling_cross(i, routes) > base.sib[i]:
+                        reasons.append("sibling:%d" % i)
+                    if not self._cert_angle_ok(i, routes):
+                        reasons.append("cert_angle:%d" % i)
+                if sep is None or sep < LENS_PAIR_MIN_SEP:
+                    reasons.append("sep:%s" % (sep if sep is None else round(sep, 1)))
+                attempts.append(variant + ":" + ",".join(reasons))
+                for i in (i1, i2):
+                    routes[i] = saved[i]
+            else:
+                # every variant refused: tilt-only -> honest tilt exemption;
+                # otherwise the gate-checked reasons travel on the row
+                if tilts and claimed + len(tilts) == len(attempts) and not [
+                        a for a in attempts if a.split(":")[1] not in ("tilt", "claimed")]:
+                    row.update(status="tilt", chord_tilt_deg=max(tilts),
+                               anchors=None, reasons=attempts)
+                else:
+                    row.update(status="blocked", reasons=attempts)
+            if row.get("status") == "built":
+                continue
+            if row.get("status") == "tilt":
+                continue
+            if row.get("status") == "blocked" and claimed == len(
+                    [a for a in attempts if a.split(":")[1] != "tilt"]) and claimed > 0:
+                row.update(status="claimed", reasons=attempts)
+            continue
+        return routes, report
 
     # -- ref-scrubbed: default endpoint snapping to the 16 standard anchors --
     ANCHOR_SNAP_TOL = 0.51    # px: an endpoint within this of an anchor IS on that anchor (delivery rounds to 0.1px)

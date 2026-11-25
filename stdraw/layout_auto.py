@@ -26,6 +26,7 @@ from . import routing as _routing
 from . import timing as _timing
 from .visibility import reset_caches as _reset_route_caches
 from .anchors import ANCHOR_IDS, standard_anchors as _standard_anchors
+from .anchors import rounded_tip as _rounded_tip
 from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
                       ANCHOR_MIN_DEG, border_point, EvalCache)
 from .anchors import nearest_anchor as _nearest_anchor
@@ -1177,7 +1178,8 @@ def _delivery_chain_probe(nodes_px, edges, cfg):
     Keep in sync with the routing/repair sequence in layout(): coincide ->
     midband (legacy band) -> fan_spread -> arrival flip -> anchor_snap
     (density-gated revert / deferral) -> lens joint reassign + enhanced
-    arrival flip. Inputs are only read; returned routes are fresh objects.
+    arrival flip -> mutual lens construct. Inputs are only read; returned
+    routes are fresh objects.
     """
     density = len(edges) / max(len(nodes_px), 1)
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch)
@@ -1208,6 +1210,8 @@ def _delivery_chain_probe(nodes_px, edges, cfg):
         routes = router.lens_joint_reassign(routes,
                                             snap.get("lens_pairs", []))
         routes = router.mutual_arrival_flip(routes, enhanced_gates=True)
+    # closed-ring rebuild of mutual pairs (same last repair as layout())
+    routes, _ = router.mutual_lens_construct(routes, frozen=set())
     return router, routes, snap
 
 
@@ -2863,6 +2867,19 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
         _timing.mark("repair:lens_joint_reassign")
         routes = router.mutual_arrival_flip(routes, enhanced_gates=True)
         _timing.mark("repair:arrival_flip_post")
+    # closed-ring caliber for mutual pairs on every non-lens engine (B2/B4):
+    # the generic routing + arrival flip leave a mutual pair as two
+    # near-parallel lines (measured: limits-to-growth R1 width/chord 0.10,
+    # fixes-that-fail lines 4.5-7.3px apart); the last repair re-derives such
+    # pairs as the lens-chain double arc, gate-checked per pair (a blocked
+    # candidate keeps the delivered lines byte-for-byte).  The per-pair
+    # report rides on the router into meta.mutual_lens for the certificate.
+    if er_presets is None and engine != "lens-construct":
+        routes, _lens_report = router.mutual_lens_construct(
+            routes, frozen=_frozen)
+        if _lens_report.get("pairs"):
+            router.lens_report = _lens_report
+        _timing.mark("repair:mutual_lens_construct")
     router_pairs = router.final_crossing_pairs(routes)
     return routes, router, router_pairs, er_report, _snap_deferred
 
@@ -2925,6 +2942,9 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
     # share one source again; light tier = vermilion / drafting blue).
     from .themes import LIGHT as _THEME_LIGHT
     _LOOP_COLORS = {"R": _THEME_LIGHT["loop_r"], "B": _THEME_LIGHT["loop_b"]}
+    # frame corner radius the arrowhead tip is projected onto (anchors.rounded_tip)
+    from .themes import DEFAULT_STATIC_THEME as _THEME_STATIC, get as _theme_get
+    _CARD_RADIUS = float(_theme_get(_THEME_STATIC)["card_radius"])
 
     edges_out = []
     for i, (a, b) in enumerate(edges):
@@ -2932,6 +2952,13 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
         kinds = sorted(_edge_loops.get((a, b), ()))
         loop_color = (_LOOP_COLORS[kinds[0]] if len(set(kinds)) == 1
                       else None)
+        # arrowhead tip: a corner anchor hangs outside the rounded frame
+        # (radius = theme card_radius), so the delivered tip is the route
+        # end projected onto the frame outline along the last segment;
+        # route points / anchors stay as routed (certificate caliber)
+        _pts_i = info["points"]
+        _tip = _rounded_tip(_pts_i[-2], _pts_i[-1], pos[b], y[b],
+                           widths[b] / 2.0, card_h / 2.0, _CARD_RADIUS)
         e = {"a": a, "b": b, "polarity": getattr(graph.edges[i], "polarity", "+"),
              "loop_kinds": kinds,
              "loop_color": loop_color,
@@ -2939,7 +2966,7 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
                        "points": [[round(px, 1), round(py, 1)]
                                   for px, py in info["points"]]},
              "anchors": {"a": list(info["points"][0]), "b": list(info["points"][-1])},
-             "arrow": [round(info["points"][-1][0], 1), round(info["points"][-1][1], 1)],
+             "arrow": [round(_tip[0], 1), round(_tip[1], 1)],
              "route_cross_edges": int(info.get("cross_edges", 0))}  # diagnostic value from the evaluation period
         if getattr(graph.edges[i], "delay", False):
             e["delay"] = True   # @delay link: the render layer draws the || mark at the arc-length midpoint
@@ -3171,6 +3198,12 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
             # ref-scrubbed finalize: honest dense-snap deferral record (None
             # when snap applied) -- certificate annotates the gate with it.
             "anchor_snap_deferred": _snap_deferred,
+            # closed-ring rebuild record for mutual pairs on non-lens engines
+            # (Router.mutual_lens_construct): per-pair delivered status --
+            # the certificate's mutual_pairs_closed gate reads it (absent
+            # when the graph has no mutual pair).
+            **({"mutual_lens": router.lens_report}
+               if getattr(router, "lens_report", None) else {}),
             # edge placement rules v1 certificate block (spec §6): rule
             # violations recorded honestly; v1 does NOT enter the grading.
             "edge_rules": er_report,

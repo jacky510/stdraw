@@ -491,6 +491,7 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
         "name": graph_name,
         "viewBox": [0, 0, W, H],
         "cardH": card_h,
+        "cardRadius": T["card_radius"],   # drag layer: arrow tip on the rounded frame (anchors.rounded_tip)
         "nodes": [{"id": v, "x": p["x"], "y": p["y"], "w": p.get("w", 140)}
                   for v, p in nodes.items()],
         "edges": [{"a": e["a"], "b": e["b"], "pol": e.get("polarity", "+"),

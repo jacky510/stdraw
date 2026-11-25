@@ -102,6 +102,7 @@ if (!dataEl) return;
 var D = JSON.parse(dataEl.textContent);
 var svg = document.getElementById('stdraw-svg');
 var VB = D.viewBox, cardH = D.cardH;
+var CARD_R = +D.cardRadius || 0;   // frame corner radius (arrow tip projection, mirrors anchors.rounded_tip)
 var CL = 16, VG_C = 17.5, VEPS = 1e-6;   // same caliber as routing.CLEARANCE / +VG_PAD
 var nodes = {};
 D.nodes.forEach(function (n) { nodes[n.id] = {x: n.x, y: n.y, w: n.w, h: cardH, bx: n.x, by: n.y, g: null}; });
@@ -293,7 +294,8 @@ function updateEdge(i) {
   if (paths[1]) {
     var n = e.pts.length, a = e.pts[n - 2], b = e.pts[n - 1];
     var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
-    paths[1].setAttribute('transform', 'translate(' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
+    var tip = roundedTip(a, b, e.b);   // corner anchors: tip on the rounded frame
+    paths[1].setAttribute('transform', 'translate(' + tip[0].toFixed(1) + ' ' + tip[1].toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
   }
   if (e.delay && e.dm) e.dm.setAttribute('d', annDelayMarkD(e.pts));   // @delay mark follows the route
   updateEndpointHandles(i);   // ref-scrubbed: endpoint handles track every redraw
@@ -323,6 +325,35 @@ function borderPoint(c, hw, hh, toward) {
 // instead of the global planned cardH, so anchors always match the frame the
 // user actually sees.
 function nHH(n) { return (n.h || cardH) / 2; }
+// Arrow tip on the rounded frame (mirrors anchors.rounded_tip): a corner
+// anchor hangs outside the r=CARD_R outline by the corner sagitta; the
+// route end is projected onto the outline along the last segment (the
+// arrowhead keeps its heading). Pure geometry on live node coordinates.
+function roundedTip(a, b, v) {
+  var n = nodes[v];
+  if (!n || !CARD_R) return b;
+  var hw = n.w / 2, hh = nHH(n), cx = n.x, cy = n.y, r = CARD_R;
+  var x = b[0], y = b[1];
+  if (hw <= r || hh <= r) return b;
+  if (Math.abs(x - cx) <= hw - r || Math.abs(y - cy) <= hh - r) return b;
+  var ccx = cx + (hw - r) * (x >= cx ? 1 : -1);
+  var ccy = cy + (hh - r) * (y >= cy ? 1 : -1);
+  var ux = x - a[0], uy = y - a[1], nn = Math.hypot(ux, uy);
+  if (nn > 1e-9) {
+    ux /= nn; uy /= nn;
+    var fx = x - ccx, fy = y - ccy, bq = fx * ux + fy * uy;
+    var disc = bq * bq - (fx * fx + fy * fy - r * r);
+    if (disc >= 0) {
+      var sq = Math.sqrt(disc), ts = [-bq - sq, -bq + sq];
+      for (var k = 0; k < 2; k++) {
+        if (ts[k] >= -1e-9) return [x + Math.max(ts[k], 0) * ux, y + Math.max(ts[k], 0) * uy];
+      }
+    }
+  }
+  var d = Math.hypot(x - ccx, y - ccy);
+  if (d < 1e-9) return b;
+  return [ccx + (x - ccx) * r / d, ccy + (y - ccy) * r / d];
+}
 function anchor(n, toward) { return borderPoint([n.x, n.y], n.w / 2, nHH(n), toward); }
 // ── ref-scrubbed standard per-box anchor set (16 points) ──
 // Mirror of stdraw/anchors.py (authoritative Python caliber; the probe
@@ -2051,7 +2082,8 @@ function reset() {
     if (paths[1]) {
       var n2 = e.pts.length, a = e.pts[n2 - 2], b = e.pts[n2 - 1];
       var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
-      paths[1].setAttribute('transform', 'translate(' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
+      var tip2 = roundedTip(a, b, e.b);   // corner anchors: tip on the rounded frame
+      paths[1].setAttribute('transform', 'translate(' + tip2[0].toFixed(1) + ' ' + tip2[1].toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
     }
     var h = hitP(i);
     if (h) h.setAttribute('d', edgeD(e.pts));
