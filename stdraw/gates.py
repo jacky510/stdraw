@@ -214,8 +214,8 @@ def edge_gate_check(router, i, routes, baseline, policy, msep_floor=None,
 # ---- lens-chain closed-ring caliber (metrics.lens_pairs_closed, check.py
 # gate 9): a lens pair is a closed ring only if BOTH arcs visibly bow.  The
 # sampled arc's apex offset from its chord as a fraction of the chord length
-# must reach LENS_BULGE_MIN on each arc (constructed lenses sit at 0.30 =
-# LENS_K 0.6 / 2; a flattened pair reads ~0.01 = two near-straight lines)
+# must reach LENS_BULGE_MIN on each arc (constructed lenses sit at 0.16 =
+# LENS_K 0.32 / 2; a flattened pair reads ~0.01 = two near-straight lines)
 # AND the two arcs bow to opposite sides of the chord.  Pure function on
 # delivered coordinates -- one source for the certificate and the geometry
 # report.

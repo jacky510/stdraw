@@ -10,6 +10,7 @@ Coverage:
      to a pair / a node in three pairs / too many nodes;
   3. layout() integration: engine lens-construct, certificate grade best
      with every gate true, both lenses closed arc rings (bulge floor),
+     the lenses slim (each arc 0.16 x chord, width <= 0.60 x chord),
      every endpoint on the 16-anchor set, the pendant link a straight
      segment, rowY = the delivered rows, deterministic two runs;
   4. closed-ring caliber: arc_bulge flattening / same-side detection;
@@ -17,6 +18,7 @@ Coverage:
      line-style caption.
 """
 import json
+import math
 import os
 import subprocess
 import sys
@@ -113,7 +115,7 @@ def test_ltg4_figure_is_best_on_the_lens_tier():
     assert m["box_press_1px"] == 0 and m["anchor_violations"] == 0
     assert m["anchor_standard_violations"] == 0
     assert m["spacing_cv"] <= 0.35
-    # both lenses are closed rings (constructed bulge 0.30 >= the floor)
+    # both lenses are closed rings (constructed bulge 0.16 >= the floor)
     assert m["lens_pair_min_bulge"] >= LENS_BULGE_MIN
     assert m["lens_pair_min_sep"] >= 12.0
 
@@ -167,6 +169,51 @@ def test_s2s_golden_figure_is_best_on_the_lens_tier():
     assert m["lens_pair_min_bulge"] >= LENS_BULGE_MIN
 
 
+def _lens_fat(v4, A, B):
+    """width / chord of the lens A<->B on the delivered routes: both arcs
+    resampled by arc length in the SAME traversal direction (A -> B), width
+    = the largest separation of corresponding points (the acceptance
+    report's lens-width caliber)."""
+    def resample(pts, n=200):
+        L = [0.0]
+        for p, q in zip(pts, pts[1:]):
+            L.append(L[-1] + math.hypot(q[0] - p[0], q[1] - p[1]))
+        out, j = [], 0
+        for i in range(n + 1):
+            t = L[-1] * i / n
+            while j < len(L) - 2 and L[j + 1] < t:
+                j += 1
+            seg = L[j + 1] - L[j]
+            u = 0.0 if seg == 0 else (t - L[j]) / seg
+            out.append((pts[j][0] + u * (pts[j + 1][0] - pts[j][0]),
+                        pts[j][1] + u * (pts[j + 1][1] - pts[j][1])))
+        return out
+    rt = _routes(v4)
+    P = resample([tuple(p) for p in rt[(A, B)]["points"]])
+    Q = resample([tuple(p) for p in rt[(B, A)]["points"]])[::-1]
+    width = max(math.dist(p, q) for p, q in zip(P, Q))
+    return width / math.dist(P[0], P[-1])
+
+
+def test_constructed_lenses_stay_slim():
+    # lens-chain acceptance caliber: each arc bows LENS_K/2 = 0.16 x chord
+    # (gentle; just above the 0.15 closed-ring floor) and the lens width
+    # (largest separation of the two arcs at corresponding arc-length
+    # points) stays <= 0.60 x its chord -- was 0.81-0.85 with LENS_K 0.6
+    for path, name in ((FIXTURE, "ltg4"), (S2S, "success-to-the-successful")):
+        g = parse(open(path, encoding="utf-8").read())
+        v4, cert = _cert(g, name)
+        assert cert["grade"] == "best" and all(cert["gates"].values()), name
+        assert cert["gates"]["lens_pair_min_sep_ge_12"], name
+        for A, B, _d in v4["meta"]["lens"]["pairs"]:
+            fat = _lens_fat(v4, A, B)
+            assert fat <= 0.60, (name, A, B, fat)
+            for e in ((A, B), (B, A)):
+                r = _routes(v4)[e]
+                ratio, _side = arc_bulge(r["points"], r.get("ctrl"))
+                assert 0.15 <= ratio <= 0.20, (name, e, ratio)
+
+
 def test_layout_is_deterministic():
     g = parse(LTG4)
     a = json.dumps(layout(g), sort_keys=True, ensure_ascii=False)
@@ -187,8 +234,9 @@ def test_arc_bulge_floor_and_sides():
     # flattened: ctrl on the chord -> ratio ~0 (not a ring)
     r, s = arc_bulge([(0, 0), (100, 0)], (50, 1))
     assert r < 0.01 and s != 0
-    # constructed lens: ctrl offset 0.6 x chord -> apex ratio 0.30; the
-    # arc above the chord (negative y) reads side +1
+    # apex ratio = 1/2 the ctrl offset: ctrl offset 0.6 x chord -> 0.30
+    # (the constructed lens uses LENS_K 0.32 -> 0.16); the arc above the
+    # chord (negative y) reads side +1
     r, s = arc_bulge([(0, 0), (100, 0)], (50, -60))
     assert abs(r - 0.30) < 1e-9 and s == 1
     # reverse arc (chord runs b -> a) bowing BELOW the chord: measured

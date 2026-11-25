@@ -50,7 +50,9 @@ from .metrics import rect_gap
 from .routing import quad_points
 
 LENS_GAP = 150          # border-to-border gap between the two boxes of a lens (px)
-LENS_K = 0.6            # Q-arc curvature coefficient x chord (lens half-width = LENS_K/2 x chord)
+LENS_K = 0.32           # Q-arc curvature coefficient x chord (lens half-width = LENS_K/2 x chord
+                        # = 0.16, just above the LENS_BULGE_MIN 0.15 closed-ring floor: gentle
+                        # arcs, the lens width / chord ratio is then set by the anchor gap)
 LINK_GAP = 48           # border-to-border gap for pendant (non-lens) links
 MAX_LENS_N = 12         # trigger upper bound: small graphs (structural-tier caliber)
 X_GRID = 24             # column snap grid of the auto pipeline
