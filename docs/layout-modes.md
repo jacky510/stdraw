@@ -97,9 +97,10 @@
 
 **消费方（广度冻结 triage，2026-11-25）**：回路上只有二环（互指对 a<->b）的图——
 CLD 经典的「增强回路 + 调节回路共享一个变量」族（limits-to-growth、
-success-to-the-successful 等）。既有结构层全部要求存在长度 ≥3 的回路
-（模式链 symmetric → bowtie-vertex → spine-wing → comb-bilateral →
-column-chain → ring-cycle），这类图此前一律落到分层路径：44px 卡上互指双方的连接点挤在边框
+success-to-the-successful 等）。除本层外各结构层全部要求存在长度 ≥3 的回路
+（完整模式链 symmetric → bowtie-vertex → spine-wing → comb-bilateral →
+column-chain → ring-cycle → lens-chain → 分层），本层加入前这类图一律落到
+分层路径：44px 卡上互指双方的连接点挤在边框
 中点附近，透镜被压成近直线，间距规整度过不了门。实测（文档原图 4 节点
 limits-to-growth）：分层路径 `uncertified` 11/12，唯一 FAIL = spacing CV 0.387 >
 0.35，~7.3s。调分层 / 构造式摆位满足不了「每个二节点回路自成一圈 + 间距规整」，

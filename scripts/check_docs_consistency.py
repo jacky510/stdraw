@@ -29,10 +29,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# Canonical mode ids, in evaluation order (derived from code at runtime).
+# Canonical mode ids, in evaluation order (derived from code at runtime;
+# kept in sync by hand -- unknown code rules now WARN in code_chain()).
 CHAIN_IDS = [
     "symmetric", "bowtie-vertex", "spine-wing", "comb-bilateral",
-    "column-chain", "ring-cycle", "layered",
+    "column-chain", "ring-cycle", "lens-chain", "layered",
 ]
 
 # Alias tokens per canonical id. Longest / most specific alternatives first.
@@ -51,6 +52,8 @@ TOKEN_PATTERNS = [
      r"column-chain|\bcolumn\b|纵列"),
     ("ring-cycle",
      r"ring-cycle|\bring\b|环形"),
+    ("lens-chain",
+     r"lens-chain|lens chain|透镜链"),
     ("layered",
      r"\blayered\b|\b分层\b"),
 ]
@@ -59,12 +62,13 @@ INSERT_NAMES_EN = {
     "symmetric": "symmetric", "bowtie-vertex": "bowtie-vertex",
     "spine-wing": "spine-wing", "comb-bilateral": "comb-bilateral",
     "column-chain": "column-chain", "ring-cycle": "ring-cycle",
-    "layered": "layered",
+    "lens-chain": "lens-chain", "layered": "layered",
 }
 INSERT_NAMES_ZH = {
     "symmetric": "领结对对称", "bowtie-vertex": "领结共点",
     "spine-wing": "纵柱+翼位", "comb-bilateral": "双侧梳状",
-    "column-chain": "纵列", "ring-cycle": "环形", "layered": "分层",
+    "column-chain": "纵列", "ring-cycle": "环形",
+    "lens-chain": "透镜链", "layered": "分层",
 }
 
 COMBINED = re.compile("|".join("(%s)" % pat for _, pat in TOKEN_PATTERNS),
@@ -109,10 +113,20 @@ def code_chain() -> list[str]:
     """Derive the mode priority chain from the implementation."""
     src = (ROOT / "stdraw" / "layout_auto.py").read_text(encoding="utf-8")
     seen: list[str] = []
+    unknown: list[str] = []
     for m in re.finditer(r'_rule_hit\(\s*"([^"]+)"', src):
         name = m.group(1).split(" (")[0].strip()
-        if name in CHAIN_IDS and name not in seen:
+        if name not in CHAIN_IDS:
+            if name not in unknown:
+                unknown.append(name)
+            continue
+        if name not in seen:
             seen.append(name)
+    if unknown:
+        print(f"WARN  code rule(s) {', '.join(unknown)} missing from "
+              f"CHAIN_IDS -- docs are not checked for them; extend "
+              f"CHAIN_IDS / TOKEN_PATTERNS when the mode joins the "
+              f"documented chain")
     if "layered" not in seen:
         seen.append("layered")
     if set(seen) != set(CHAIN_IDS):
@@ -365,9 +379,10 @@ def main() -> int:
                     f"{path}: mode chain order drift "
                     f"{' -> '.join(seq)} (code: {' -> '.join(chain)})")
         # markdown mode-selection tables must list the full chain in order
+        # (sub-lettered priority cells like "5b" count too)
         rows = []
         for line in text.splitlines():
-            if not re.match(r"\|\s*\d+\s*\|", line):
+            if not re.match(r"\|\s*\d+[a-z]?\s*\|", line):
                 continue
             # prefer the meta.placement cell (a backticked canonical id);
             # fall back to the first alias token in the row

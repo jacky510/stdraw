@@ -125,7 +125,8 @@ content.
    -> comb-bilateral
    -> column (3<=n<=12 AND longest simple cycle 3<=k<=4 AND k<n)
    -> ring (pure cycle / main cycle covering >= n-2 or cycle-edge share
-   >= 0.9 AND k>=5 or covering the whole graph) -> layered; every mode has a
+   >= 0.9 AND k>=5 or covering the whole graph)
+   -> lens-chain (pure 2-loop figures, 2<=n<=12) -> layered; every mode has a
    **trial gate** (after construction, placement re-runs the same router's
    hard-gate proxies for review), and any failure **silently falls back** to
    the next tier, with negative cases byte-identical — exception:

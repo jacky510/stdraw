@@ -71,10 +71,11 @@ a `mode_decision_trace` in `meta` (`layout.json`) and in the certificate
 **Consumer (breadth-freeze triage, 2026-11-25)**: figures whose only loops are
 2-loops (mutual pairs a<->b) -- the classic CLD "reinforcing loop + balancing loop
 sharing one variable" family (limits-to-growth, success-to-the-successful, ...).
-Every earlier structural tier requires a loop of length >= 3 (the chain
-symmetric -> bowtie-vertex -> spine-wing -> comb-bilateral -> column-chain ->
-ring-cycle), so these
-figures always fell through to the layered path: on 44px cards the two endpoints
+Every structural tier except this one requires a loop of length >= 3 (full
+chain: symmetric -> bowtie-vertex -> spine-wing -> comb-bilateral ->
+column-chain -> ring-cycle -> lens-chain -> layered), so before this tier was
+added these figures always fell through to the layered path: on 44px cards
+the two endpoints
 of a mutual pair crowd the border midpoint, the lens collapses into near-straight
 lines, and the spacing regularity gate fails. Measured (the 4-node limits-to-growth
 source figure): layered path `uncertified` 11/12, the only FAIL = spacing CV 0.387
