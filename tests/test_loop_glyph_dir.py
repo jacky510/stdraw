@@ -191,6 +191,25 @@ def test_circulation_falls_back_when_the_drawing_does_not_decide():
     assert ann.loop_circulation(["a", "b", "c"], nodes) == (None, "kind:collinear")
 
 
+def test_circulation_two_member_loop_of_straight_lines_keeps_both_end_points():
+    # quota loop of the fishing-collapse corpus graph: a mutual pair
+    # delivered as two parallel straight lines 9 px apart.  Each route has
+    # only its two end points; dropping the last one collapsed the ring and
+    # the glyph fell back to the kind default, which pointed the wrong way.
+    nodes = _nodes((106, 202), (224, 210))
+    fwd = [(151.0, 197.5), (179.0, 205.5)]
+    back = [(179.0, 214.5), (151.0, 206.5)]
+    polys = {("a", "b"): fwd, ("b", "a"): back}
+    assert ann.loop_circulation(["a", "b"], nodes, polys) == ("cw", "ring")
+    # the arrows fix the circulation: listing the two members the other way
+    # round reads the same ring (right along the upper line, back left)
+    assert ann.loop_circulation(["b", "a"], nodes, polys) == ("cw", "ring")
+    # the same two lines with no offset enclose nothing: no reading
+    flat = {("a", "b"): [(151.0, 205.5), (179.0, 205.5)],
+            ("b", "a"): [(179.0, 205.5), (151.0, 205.5)]}
+    assert ann.loop_circulation(["a", "b"], nodes, flat) == (None, "kind:no-ring")
+
+
 def test_kind_default_only_when_undetermined():
     nodes = _nodes((0, 0), (100, 0))
 

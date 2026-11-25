@@ -245,7 +245,8 @@ def loop_circulation(members, nodes, edge_polys=None):
         order (``how = 'polygon'``) -- the reading a viewer makes from the
         arrows; collinear centres (zero area) fall through to the ring.
       2 members / collinear centres: the delivered RING -- the member routes
-        concatenated in loop order (``how = 'ring'``).
+        concatenated in loop order (``how = 'ring'``); straight-line members
+        keep both end points, so two offset lines read as a thin ring.
     """
     pts = [_node_xy(nodes, v) for v in members if v in nodes]
     if len(pts) >= 3:
@@ -265,7 +266,15 @@ def loop_circulation(members, nodes, edge_polys=None):
             poly = None if rev is None else rev[::-1]
         if poly is None or len(poly) < 2:
             return None, why
-        ring.extend(poly[:-1])
+        # A route's last point is where the loop turns towards the next
+        # member; drop it only when the next route starts there.  Arcs
+        # end on a card edge and the next member starts on another, so
+        # the implicit jump cuts the card; a straight line has just its
+        # two end points and must keep both or the ring collapses.
+        if ring and abs(ring[-1][0] - poly[0][0]) < 1e-6 and abs(ring[-1][1] - poly[0][1]) < 1e-6:
+            ring.extend(poly[1:])
+        else:
+            ring.extend(poly)
     area = _shoelace(ring)
     if abs(area) < _RING_AREA_EPS:
         return None, why
