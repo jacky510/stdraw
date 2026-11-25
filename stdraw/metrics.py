@@ -1383,8 +1383,12 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             % (_la.get("arced", 0), _la.get("preferred", 0),
                _la.get("templated", 0),
                len(_la.get("fallbacks") or []) - _la.get("opposite_side_arcs", 0)
-               - _la.get("templated", 0),
-               _la.get("opposite_side_arcs", 0)))
+               - _la.get("templated", 0) - _la.get("mutual_pair_non_arc", 0),
+               _la.get("opposite_side_arcs", 0))
+            + ("; %d mutual-pair loop member(s) delivered as a non-arc "
+               "(lens / rule-8 contract, not scored)"
+               % _la.get("mutual_pair_non_arc", 0)
+               if _la.get("mutual_pair_non_arc", 0) else ""))
 
     if ring_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and

@@ -155,6 +155,25 @@ def _candidate_defects(info, clearance):
     return "; ".join(bad) if bad else "clean"
 
 
+def mutual_pair_members(edges, loops):
+    """Edge indices of loop-member lines that belong to a mutual pair (a<->b):
+    the part of the loop-member scope the loop-direction arc default leaves to
+    the lens / rule-8 contract (loop_arc_sides keeps them out of arc_pref)."""
+    if not loops:
+        return set()
+    have = set(edges)
+    out = set()
+    for lp in loops:
+        seq = list(getattr(lp, "nodes", None) or [])
+        if len(seq) < 2:
+            continue
+        for u, v in zip(seq, seq[1:] + seq[:1]):
+            if (u, v) in have and (v, u) in have:
+                out.update(i for i, e in enumerate(edges)
+                           if e == (u, v) or e == (v, u))
+    return out
+
+
 def loop_arc_audit(nodes, edges, loops, routes, clearance=CLEARANCE, pitch=80,
                    templated=()):
     """Honest record of the loop-direction arc default on the DELIVERED
@@ -165,7 +184,12 @@ def loop_arc_audit(nodes, edges, loops, routes, clearance=CLEARANCE, pitch=80,
     that is not, the preferred-side arc (and, when the delivery is a
     detour, the straight line) is re-scored against the delivered routes
     of all OTHER lines and its hard-gate defects are recorded verbatim --
-    the fallback reason is measured, never assumed.  ``templated``: edge
+    the fallback reason is measured, never assumed.  A mutual-pair loop
+    member is outside that scope (its geometry belongs to the lens / rule-8
+    contract, so there is no preferred side to score); when it is delivered
+    as a non-arc it is still listed in ``fallbacks`` and counted in
+    ``mutual_pair_non_arc``, so the record accounts for every non-arc
+    loop-member route that line_kind_counts reports.  ``templated``: edge
     indices whose geometry a constructed placement engine delivers by its
     own mode template (the candidate pool is skipped there); they are
     recorded as template geometry.  Returns None when the scope has no
@@ -198,12 +222,28 @@ def loop_arc_audit(nodes, edges, loops, routes, clearance=CLEARANCE, pitch=80,
 
     arced, opposite, fallbacks = 0, 0, []
     templated_n = 0
-    for i in sorted(pref):
+    mutual_non_arc = 0
+    mutual = mutual_pair_members(edges, loops) - set(pref)
+    for i in sorted(set(pref) | mutual):
         a, b = edges[i]
         info = routes.get(i)
         if not info:
             continue
         kind = info.get("kind")
+        if i in mutual:
+            # mutual-pair loop member delivered as a non-arc: outside the
+            # arc default's scope, so nothing is scored -- only the delivery
+            # is recorded (accounting only, the drawing is untouched)
+            if kind == "arc":
+                continue
+            mutual_non_arc += 1
+            fallbacks.append({
+                "edge": "%s->%s" % (a, b),
+                "delivered": "%s%s" % (kind or "unknown",
+                                       " (mode template)" if i in templated else ""),
+                "preferred_arc": ("not scored: mutual pair -- its geometry "
+                                  "belongs to the lens / rule-8 contract")})
+            continue
         pts = info.get("points") or []
         want = pref[i]
         sides = (want,) if want else (1, -1)
@@ -257,6 +297,7 @@ def loop_arc_audit(nodes, edges, loops, routes, clearance=CLEARANCE, pitch=80,
                      "loops; straight / polyline are scored fallbacks"),
             "preferred": len(pref), "arced": arced,
             "opposite_side_arcs": opposite, "templated": templated_n,
+            "mutual_pair_non_arc": mutual_non_arc,
             "fallbacks": fallbacks}
 
 
