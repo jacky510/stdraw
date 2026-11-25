@@ -59,6 +59,15 @@ def _analytic(s: str, fs: float) -> float:
     return w
 
 
+def analytic_width(s: str, fs: float) -> float:
+    """Font-independent width bound: the analytic estimate (CJK 1.10x fs / others 0.62x fs)
+    times the safety factor. Use it for drawn containers whose bytes must not depend on the
+    measuring font: with a font file the measurement can exceed the analytic estimate for
+    Latin text, which makes the output differ between a machine that has the font and a
+    fontless checkout."""
+    return _analytic(s, fs) * SAFETY
+
+
 def text_width(s: str, fs: float, bold: bool = False) -> float:
     """Rendered width of a single line of text (px, conservative upper bound). Empty string returns 0."""
     if not s:

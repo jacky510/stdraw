@@ -174,9 +174,13 @@ def _loop_fields(lp):
 
 
 def label_size(lid, name):
-    """Pill size (w, h) of a loop label: [glyph 12] + gap + bold id + name."""
-    from .textmetrics import text_width
-    text_w = text_width(lid, LABEL_FS, bold=True) + text_width(" " + name, LABEL_FS)
+    """Pill size (w, h) of a loop label: [glyph 12] + gap + bold id + name.
+
+    Font-independent by construction (analytic widths only): a font-measured width
+    differs between a machine that has the measuring font and a fontless checkout,
+    which made every labelled figure's delivered bytes platform-dependent."""
+    from .textmetrics import analytic_width
+    text_w = analytic_width(lid, LABEL_FS) + analytic_width(" " + name, LABEL_FS)
     w = LABEL_PAD_X + GLYPH_BOX + GLYPH_GAP + int(math.ceil(text_w)) + LABEL_PAD_X
     return w, LABEL_H
 

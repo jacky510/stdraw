@@ -16,6 +16,7 @@ Coverage:
      the demo carries the label pills, the delay ticks and the toggle.
 """
 import json
+import math
 import os
 import subprocess
 import sys
@@ -103,6 +104,23 @@ def test_delay_gate_clearance_from_every_box():
     ok2, problems2, dist2 = ann.delays_clear(blocked, [poly], [0], ["a->b"], card_h)
     assert not ok2 and dist2 < 16 and any("box c" in p for p in problems2)
     assert ann.delays_clear(nodes, [poly], [], ["a->b"], card_h) == (True, [], None)
+
+
+def test_label_size_is_font_independent(monkeypatch):
+    # the pill width must not depend on the measuring font: a fontless checkout
+    # (Linux CI) and a machine with the font (Windows) must deliver identical bytes
+    import stdraw.textmetrics as tm
+    monkeypatch.setattr(tm, "_load_font", lambda px: None)
+    tm._cache.clear()
+    want = ann.label_size("R1", "Growth loop")
+    monkeypatch.undo()
+    tm._cache.clear()
+    assert ann.label_size("R1", "Growth loop") == want
+    # and it equals the documented analytic rule (CJK 1.10 fs / others 0.62 fs, x1.06)
+    fs = ann.LABEL_FS
+    exp = (ann.LABEL_PAD_X + ann.GLYPH_BOX + ann.GLYPH_GAP
+           + math.ceil((2 * 0.62 * fs + 12 * 0.62 * fs) * 1.06) + ann.LABEL_PAD_X, ann.LABEL_H)
+    assert want == exp
 
 
 def test_label_gate_clearance():
