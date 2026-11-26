@@ -78,8 +78,9 @@ def test_epidemic_rescued_to_best(tmp_path):
     out = _render(tmp_path, "epidemic", EPIDEMIC)
     cert = _cert(out)
     assert cert["grade"] == "best", cert["grade"]
-    # 11 ring-tier gates + loop_labels_clear (loop-reading layer)
-    assert cert["gates_passed"] == "12/12", cert["gates_passed"]
+    # 12 ring-tier gates (closed-ring mutual pairs included) +
+    # loop_labels_clear (loop-reading layer)
+    assert cert["gates_passed"] == "13/13", cert["gates_passed"]
     assert cert["blocking_gates"] == [], cert["blocking_gates"]
     assert cert["placement"] == "ring-cycle", cert["placement"]
     m = cert["metrics"]

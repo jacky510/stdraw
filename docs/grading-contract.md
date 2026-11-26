@@ -234,6 +234,7 @@ Consequently:
   The hard gate `mutual_pairs_closed` re-reads the delivered geometry (both
   lines Q arcs, bulge >= 0.15, opposite sides, >= 12px apart); a chord tilt
   beyond `lens_tilt_max_deg()` (~37.4 deg) is an accounted exemption
+`LENS_TILT_MAX_DEG` (a routing module constant; default `None` = the derived ceiling above) narrows the rebuild scope when set to a number: a pair tilted more than that stays the delivered parallel lines and is recorded `tilt`; the certificate re-measures with the same function.
   (`status: tilt`, re-measured from the node centres by the certificate). The
   lens-chain mode answers `N/A` (its lenses are constructed before routing;
   `lens_pairs_closed` carries the contract). The non-lens gate sets grow by

@@ -168,6 +168,7 @@ refused. The new hard gate `mutual_pairs_closed`
 re-reads the delivered geometry (never the pass's own claim): both lines Q arcs,
 bulge >= 0.15, opposite sides, >= 12px apart. A chord tilted by more than
 `lens_tilt_max_deg()` (~37.4 deg: the 20 deg arrival floor plus the 0.16 per-arc
+`LENS_TILT_MAX_DEG` (a routing module constant; default `None` = the derived ceiling above) narrows the rebuild scope when set to a number: a pair tilted more than that stays the delivered parallel lines and is recorded `tilt`; the certificate re-measures with the same function.
 bulge; a steeper chord cannot yield an arrival-compliant arc) is an accounted
 exemption (`status: tilt`); the certificate re-measures that tilt from the node
 centres and from every anchor variant's chord, and fails the pair when the

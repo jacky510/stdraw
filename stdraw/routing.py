@@ -355,10 +355,22 @@ LENS_PAIR_ANCHORS = {
 }
 
 
+# Closed-ring rebuild scope (mutual_lens_construct): chord-tilt ceiling of the
+# pairs rebuilt as a lens.  None = derived ceiling (every pair whose outer arc
+# can still meet ANCHOR_MIN_DEG, ~37.4 deg); a number caps the scope -- pairs
+# tilted more than that stay the delivered parallel lines and are recorded
+# "tilt" (accounted exemption).  Read at call time, so the certificate
+# re-measures with the same value as the router.
+LENS_TILT_MAX_DEG = None
+
+
 def lens_tilt_max_deg():
     """Chord tilt (off the facing border normal) up to which a constructed
-    lens can still meet ANCHOR_MIN_DEG on its outer arc."""
+    lens can still meet ANCHOR_MIN_DEG on its outer arc (LENS_TILT_MAX_DEG
+    caps it when set)."""
     from .lenslayout import LENS_K
+    if LENS_TILT_MAX_DEG is not None:
+        return float(LENS_TILT_MAX_DEG)
     return 90.0 - ANCHOR_MIN_DEG - math.degrees(math.atan(2.0 * LENS_K))
 
 # Line-line visual-coincidence targeted re-routing accounting (ref-scrubbed): the random n10 fan-out edges run through the same

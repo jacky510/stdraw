@@ -469,7 +469,7 @@
 
 ### 5.5 逐图表（rc 两腿一致的已交付图）
 
-| graph | engine | grade b->a | gates b->a | cross | line kinds | pairs (kinds, vertex min dist) | tips outside b->a | files same/total | mutual_lens after |
+| 图 | 引擎 | grade 前→后 | 门 前→后 | 交叉 | 线型 | 互指对（线型，顶点最小距） | 轮廓外箭尖 前→后 | 相同文件/总文件 | 改后 mutual_lens |
 |---|---|---|---|---|---|---|---|---|---|
 | classic__arms-race | ring-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 4} -> {"arc": 4} |  | 2 -> 0 | 4/7 |  |
 | classic__brand-flywheel | ring-construct | best -> best | 12 -> 13  | 0 -> 0 | {"arc": 8} -> {"arc": 8} | ad_effect<->awareness arc/arc 20.9 | 1 -> 0 | 4/7 | ad_effect<->awareness tilt closed=None sep=None w/c=None |

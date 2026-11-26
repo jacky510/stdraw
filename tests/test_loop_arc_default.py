@@ -225,28 +225,43 @@ def test_mutual_pair_non_arc_members_are_listed_in_fallbacks():
     """A loop member of a mutual pair (a <-> b) is outside the arc default's
     scoring scope (its geometry belongs to the lens / rule-8 contract), but
     when it is delivered as a non-arc the record still lists it: every
-    non-arc loop-member route of line_kind_counts has a fallback entry."""
-    path = os.path.join(os.path.dirname(RING), "growth-and-underinvestment.cld")
-    g = parse(open(path, encoding="utf-8").read())
-    v4 = layout(g)
-    cert = certificate_auto(scene_from_auto(v4), graph_name="gau", graph=g)
-    rec = cert["loop_arcs"]
-    member_pairs = {(u, v) for lp in g.loops
-                    for u, v in zip(lp.nodes, lp.nodes[1:] + lp.nodes[:1])}
-    non_arc = sorted("%s->%s" % (e["a"], e["b"]) for e in v4["edges"]
-                     if e["route"]["kind"] != "arc"
-                     and (e["a"], e["b"]) in member_pairs)
-    assert len(non_arc) == 2, non_arc        # a polyline + a straight line
-    assert sorted(f["edge"] for f in rec["fallbacks"]) == non_arc
-    assert rec["mutual_pair_non_arc"] == len(non_arc)
-    assert rec["arced"] == rec["preferred"]          # scoring scope unchanged
-    assert rec["opposite_side_arcs"] == 0 and rec["templated"] == 0
-    assert all("not scored: mutual pair" in f["preferred_arc"]
-               for f in rec["fallbacks"])
-    assert {f["delivered"] for f in rec["fallbacks"]} == {"poly", "line"}
-    note = cert["reports"]["loop_arcs_note"]
-    assert "0 straight/detour fallback" in note
-    assert "2 mutual-pair loop member(s) delivered as a non-arc" in note
+    non-arc loop-member route of line_kind_counts has a fallback entry.
+
+    population-logistic still delivers one mutual-pair member as a non-arc
+    (the pair is frozen by the column layout, recorded under
+    mutual_pairs_exempt); growth-and-underinvestment has its mutual pair
+    rebuilt as a closed lens, so no non-arc member is left and the record is
+    empty."""
+    classic = os.path.join(ROOT, "benchmarks", "corpus", "classic")
+    cases = ((os.path.join(classic, "population-logistic.cld"), {"poly"}),
+             (os.path.join(os.path.dirname(RING), "growth-and-underinvestment.cld"),
+              set()))
+    for path, delivered in cases:
+        g = parse(open(path, encoding="utf-8").read())
+        v4 = layout(g)
+        cert = certificate_auto(scene_from_auto(v4),
+                                graph_name=os.path.basename(path)[:-4], graph=g)
+        rec = cert["loop_arcs"]
+        member_pairs = {(u, v) for lp in g.loops
+                        for u, v in zip(lp.nodes, lp.nodes[1:] + lp.nodes[:1])}
+        non_arc = sorted("%s->%s" % (e["a"], e["b"]) for e in v4["edges"]
+                         if e["route"]["kind"] != "arc"
+                         and (e["a"], e["b"]) in member_pairs)
+        assert len(non_arc) == len(delivered), (path, non_arc)
+        assert sorted(f["edge"] for f in rec["fallbacks"]) == non_arc
+        assert rec["mutual_pair_non_arc"] == len(non_arc)
+        assert rec["arced"] == rec["preferred"]          # scoring scope unchanged
+        assert rec["opposite_side_arcs"] == 0 and rec["templated"] == 0
+        assert {f["delivered"] for f in rec["fallbacks"]} == delivered
+        assert all("not scored: mutual pair" in f["preferred_arc"]
+                   for f in rec["fallbacks"])
+        note = cert["reports"]["loop_arcs_note"]
+        assert "0 straight/detour fallback" in note
+        clause = "%d mutual-pair loop member(s) delivered as a non-arc" % len(non_arc)
+        if non_arc:
+            assert clause in note
+        else:
+            assert "mutual-pair loop member" not in note
 
 
 # -- 6. edge placement rules v1 amend ------------------------------------------

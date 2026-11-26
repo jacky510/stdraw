@@ -116,6 +116,7 @@ python t4_sweep.py <leg> <abs_out_dir>     # 脚本随卡归档；core 循环 = 
   （E/W）角锚弦 ≥ `LENS_CORNER_MIN_CHORD` = 98 先角锚，否则先金锚，金锚两尖端距 <
   `LENS_PAIR_MIN_SEP` = 12 时先角锚；竖直对先 N/S 金锚再角锚。某变体弦倾角 >
   `lens_tilt_max_deg()` 记 `tilt`，锚被其它边占着记 `claimed`，都换下一个变体试。
+`LENS_TILT_MAX_DEG`（routing 模块常量，默认 `None` = 上述推导上限）设成数值即收窄重建范围：弦倾角大于它的互指对保持原交付的平行线并记 `tilt` 豁免（如 20.0：只放过近水平的对）；证书侧按同一函数取值复量。
 - 跳过：箭头法线通道已闭环的**细透镜**（两弧异侧、相距 ≥12、四端到达偏差 ≤
   `ARRIVAL_TARGET_DEG` = 10°）记 `slim` 不动——胖透镜端切线偏离弦 atan(2K) = 32°，与 10° 合同
   几何上互斥（`mutual_arrival_flip` 文档同此结论）。
