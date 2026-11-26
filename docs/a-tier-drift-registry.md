@@ -380,3 +380,43 @@
 - 逐格验收 14 / 14 通过；publishing face 文本文件 9 个，卡号 / 本机路径 / worktree 路径 / 内部审批用语 0 命中。
 - README.md / README_zh-CN.md / skills/stdraw/SKILL.md / CHANGELOG.md 本登记未动（版本收尾另有流程）。`docs/grading-contract.md` 附录 B 与 `docs/layout-modes.md`（中 / 英）已按新口径写明。
 
+
+## 4. 登记 #4：药丸「图标 + 文字」整块居中（2026-11-26）
+
+### 4.1 批准来源与变更内容
+
+- **来源**：P1 返修视觉终审（2026-11-26）A2 复验——药丸「内容」= 图标 + 文字整块，左留白（药丸左内缘 → 图标最左墨迹）与右留白（文字最右墨迹 → 药丸右内缘）逐枚差 ≤ 2 px（目标 ≤ 1）。登记 #3 的 ② 只把**文字槽**居中（图标 → 文字间隙 = 文字 → 右内缘），整块内容仍偏右。
+- **变更内容**：`label_svg` 改三等分构造——左留白 = 图标 → 文字间隙 = 右留白 = (药丸宽 − 图标墨迹宽 − 文字渲染墨迹宽) / 3；图标按箭头尖（墨迹左缘）定位；文字改 `text-anchor: start`，起点 = 图标墨迹右缘 + 留白；奇数宽药丸以 rect 实际左缘（`%.0f` 取整值）为基准（此前取整使内容整体偏 0.5 单位）；坐标精度 0.1 → 0.01。文字渲染墨迹宽由冻结标定表估算（`stdraw/textmetrics.py`：Microsoft YaHei 400 / 700、ASCII 32–126，每字 advance + 单字墨迹右缘 + 左墨迹；非表内 CJK 取 1 em、墨迹中值 ± 0.5），生成时不读字体文件。
+- **不动**：`label_size` 药丸宽度解析式、布局、落位、方向符号、透镜、门阈值、grade 语义；金标准 8 图指纹未变，**未重祝福**。
+- **不取的两个方案**（预演后否决）：按字面把文字平移「余量的一半」会让文字槽留白差劣化到 2–3.4 px；`textLength` 拉字距约 1.5–2 px / 字距且字体回退不可控。
+
+### 4.2 验收数字（改前主干 vs 改后，同机同浏览器，程序现读）
+
+浏览器真实几何（Edge headless，图标 path 的 bbox、文字 canvas 逐字墨迹），每枚 \|左留白 − 右留白\|（B）与文字槽留白差（S），单位 = SVG 用户单位：
+
+| 组 | 枚数 | B 改前 | B 改后（验收方量具） | B 改后（Range 矩形） | S 改前 | S 改后 |
+|---|---|---|---|---|---|---|
+| 金标准 8 图 + 四节点靶图 + 延迟变体 | 22 | 4.03–6.76（0 / 22 ≤ 2） | 0.00–0.50（22 / 22 ≤ 1） | 0.00–0.50 | 0.03–0.94 | 0.03–0.52 |
+| 语料（classic 20 图） | 57 | 4.03–8.66（0 / 57） | 0.04–1.14（57 / 57 ≤ 2） | 0.49–0.51 | 0.03–1.31 | 0.03–1.16 |
+| examples（4 图） | 12 | 4.68–11.80（0 / 12） | 0.01–1.14（12 / 12 ≤ 2） | 0.01–0.51 | 0.19–1.31 | 0.01–1.16 |
+
+- **两套量具的差别只在文字盒**：验收方量具把 canvas 墨迹锚在 tspan **元素矩形**，Chromium 对 SVG tspan 的 `getBoundingClientRect()` 按 CSS 像素外扩取整（91 枚里 25 枚左缘早 0.36–0.67 单位、右缘晚至 0.9）；Range 矩形（卡面口径）91 / 91 与字形前进宽度零偏差。两套读法 91 枚全部 ≤ 2。
+- **独立复核**：DSF 4 像素列扫描（无 canvas、无 DOM 墨迹模型，按亮度找墨迹）B 改前 5.05–12.26 CSS px（0 / 91 ≤ 2）→ 改后 0.36–1.14 CSS px（91 / 91 ≤ 2，折合 ≤ 0.73 单位）。
+- 残差来源：非表内 CJK 的墨迹中值假设（真值 10 / 11 / 12 取中值 11.5）→ 末字为 CJK 的药丸 B = 0.50；ASCII 文字 B ≤ 0.17。
+
+### 4.3 指纹与产物
+
+- 两腿（基线 = 主干 `49cf73e`）各渲 34 图（金标准 8 + 靶图 2 + 语料 20 + examples 4）：`graph.json` / `graph.cld` / `layout.json` / `geometry_report.json` / `certificate.json` / `loops_audit.json` 逐字节全等；`demo-2d.html` 33 图只变药丸行（图标 translate、文字 x 与锚点），无回路标签的 1 图不变。
+- `python tests/golden_gate.py`：8 / 8 ALL GREEN，8 图 baseline identical，未重祝福。
+- `tests/baselines/`（ortho-v1 冻结）：未动。
+
+### 4.4 byte-pinned 消费方（STDRAW_PIN）
+
+- 消费方现网 pin 仍为 `0.8.1`，未随本登记移动。
+- **升级 pin 时的预期变化**：带回路标签的图，`demo-2d.html` 药丸内图标与文字位置变（rect、药丸宽、落位不变）；其余 6 个产物逐字节不变。届时须走消费侧复现重验，不静默。
+
+### 4.5 publishing face 同步
+
+- `demos/` 三页同配方重渲：`demos/classic-certificate.json`、`demos/classic-loops-audit.json` 逐字节不变（未动）；三页 HTML 唯一 diff = 药丸行。
+- `docs/gallery/` 三张截图重截。配方：Playwright 自带 Chromium 153、保留滚动条、视口 = PNG 尺寸、缩放 1；该配方在主干上对已提交三张 PNG 100% 复现。重截图与已提交图的差异像素 100% 落在药丸框内（classic 7640 / debt-spiral 6190 / debt-spiral-en 4388 px，框外 0）。`certificate.png` 为证书面板裁剪、不含药丸，未动。
+- README.md / README_zh-CN.md / skills/stdraw/SKILL.md / CHANGELOG.md 本登记未动（版本收尾另有流程）。
