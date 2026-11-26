@@ -38,7 +38,9 @@ LABEL_FS = 11.0           # label font size (px)
 LABEL_H = 18              # label pill height
 LABEL_PAD_X = 7           # pill side padding
 GLYPH_BOX = 12            # direction glyph box (px square)
-GLYPH_R = 4.2             # direction glyph arc radius (= the glyph's ink half-width)
+GLYPH_R = 4.2             # direction glyph arc radius
+GLYPH_INK_LEFT = -5.5     # glyph ink: the head tip (dir_glyph_paths path coordinates)
+GLYPH_INK_RIGHT = GLYPH_R + 0.65   # ... the arc's right extreme plus half its 1.3 stroke
 GLYPH_GAP = 5             # slack kept between the glyph and the text slot
 LABEL_BOX_GAP = 4.0       # a label keeps >= 4px from every card and every line (gate)
 LABEL_TARGET_GAP = 8.0    # ... placement first tries >= 8px, the gate gap is the floor
@@ -416,14 +418,22 @@ def label_svg(rec, T):
     # place_loop_labels); a record without it keeps the kind-based default
     cw = rec["dir"] == "cw" if rec.get("dir") in ("cw", "ccw") else kind != "B"
     arc, head = dir_glyph_paths(GLYPH_R, cw)
-    gx = -w / 2 + LABEL_PAD_X + GLYPH_BOX / 2
-    # text centred between the glyph's right edge and the pill's right edge:
-    # anchor = middle at the interval midpoint, so the rendered text's own
-    # width splits the slack evenly on both sides (the analytic pill width is
-    # an upper bound of the rendered width, never smaller)
-    # the interval starts at the glyph's INK edge (gx + GLYPH_R), not at the
-    # glyph box's edge: the ink is narrower than its box
-    tx = (LABEL_PAD_X + GLYPH_BOX / 2.0 + GLYPH_R) / 2.0
+    # the content (icon + text) is centred as ONE block: three equal gaps --
+    # pill left edge -> head tip, arc outer stroke -> text ink, text ink ->
+    # pill right edge.  The icon is placed by its ink, the text by its
+    # calibrated rendered ink (a frozen table in textmetrics: no font read, so
+    # the bytes stay font-independent) with a start anchor; the only residual
+    # between the block's left and right gaps is the calibration error
+    from .textmetrics import rendered_ink_extent
+    runs = [(str(lid), True)] + ([(" " + name, False)] if name else [])
+    tl, tr = rendered_ink_extent(runs, LABEL_FS)
+    # the pill rect's x as formatted below: an odd width rounds -w/2 to a whole
+    # pixel, so the real pill is not symmetric about the origin -- the gaps are
+    # measured from the real edges
+    px0 = float("%.0f" % (-w / 2))
+    pad = ((px0 + w) - px0 - (GLYPH_INK_RIGHT - GLYPH_INK_LEFT) - (tr - tl)) / 3.0
+    gx = px0 + pad - GLYPH_INK_LEFT
+    tx = gx + GLYPH_INK_RIGHT + pad - tl
     disp = "" if rec.get("placed") else ' display="none"'
     # an unplaced label keeps a hidden group at the origin so the
     # interactive layer can still show it once a drag frees a slot
@@ -434,12 +444,12 @@ def label_svg(rec, T):
     return (f'<g class="stdraw-looplabel" data-loop="{_html.escape(str(lid), quote=True)}"'
             f' transform="translate({lx:.0f} {ly:.0f})"'
             f' pointer-events="none"{disp}>'
-            f'<rect x="{-w / 2:.0f}" y="{-h / 2:.0f}" width="{w}" height="{h}" rx="{h / 2:.0f}"'
+            f'<rect x="{px0:.0f}" y="{-h / 2:.0f}" width="{w}" height="{h}" rx="{h / 2:.0f}"'
             f' fill="{T["card_fill"]}" fill-opacity="0.92"/>'
-            f'<g transform="translate({gx:.1f} 0)">'
+            f'<g transform="translate({gx:.2f} 0)">'
             f'<path d="{arc}" fill="none" stroke="{ink}" stroke-width="1.3"/>'
             f'<path d="{head}" fill="{ink}"/></g>'
-            f'<text x="{tx:.1f}" y="0" text-anchor="middle" dominant-baseline="middle"'
+            f'<text x="{tx:.2f}" y="0" text-anchor="start" dominant-baseline="middle"'
             f' font-size="{LABEL_FS:g}"'
             f' fill="{T["card_label"]}">'
             f'<tspan font-weight="700" fill="{ink}">{_html.escape(str(lid))}</tspan>'

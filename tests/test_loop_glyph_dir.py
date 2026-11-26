@@ -15,9 +15,11 @@ A1  The direction glyph follows the loop's circulation AS DRAWN, never the
     The glyph is read back from the shipped SVG (arc sweep flag, 1 =
     clockwise).  Covers the 8 golden figures and the lens-chain target
     figure with its delay variant.
-A2  The pill's text is centred on the slot between the glyph's ink right
-    edge and the pill's right edge (text-anchor middle at the midpoint), so
-    a rendered text splits the slack evenly whatever its real width.
+A2  The pill's content (icon + text) is centred as ONE block: three equal
+    gaps -- pill left edge -> head tip, arc outer stroke -> text ink, text
+    ink -> pill right edge.  The text is placed by a frozen calibration table
+    of the rendering font (never a font read) with a start anchor, so the
+    block's left and right gaps differ by the calibration error only.
 """
 import os
 import re
@@ -43,7 +45,9 @@ FIGURES = sorted(
 _T = _get_theme(DEFAULT_STATIC_THEME)
 _SWEEP = re.compile(r'<g transform="translate\([^"]*\)"><path d="M [^"]*? '
                     r'A [\d.]+ [\d.]+ \d+ [01] ([01]) ')
-_TEXT_X = re.compile(r'<text x="(-?[\d.]+)" y="0" text-anchor="middle"')
+_TEXT_X = re.compile(r'<text x="(-?[\d.]+)" y="0" text-anchor="start"')
+_GLYPH_GX = re.compile(r'<g transform="translate\((-?[\d.]+) 0\)"><path d="M [^"]*? A ')
+_PILL_RECT = re.compile(r'<rect x="(-?[\d.]+)" y="-?\d+" width="(\d+)"')
 
 
 def _shoelace(pts):
@@ -227,23 +231,90 @@ def test_kind_default_only_when_undetermined():
                        "placed": False}) == "ccw"
 
 
-# -- A2: the pill's text is centred in its slot --------------------------------
+# -- A2: the pill's content (icon + text) is centred as one block --------------
+def _pill_gaps(svg):
+    """(left gap, icon-text gap, right gap) of one label's content block, from the
+    delivered SVG coordinates and the calibrated text ink."""
+    from stdraw.textmetrics import rendered_ink_extent
+    m = _PILL_RECT.search(svg)
+    px0, w = float(m.group(1)), float(m.group(2))
+    gx = float(_GLYPH_GX.search(svg).group(1))
+    tx = float(_TEXT_X.search(svg).group(1))
+    # the shipped markup: <tspan font-weight="700">id</tspan> <tspan>name</tspan>
+    # (a literal space text node between the two spans)
+    runs = [(t, True) for t in re.findall(r'<tspan font-weight="700"[^>]*>([^<]*)</tspan>', svg)]
+    runs += [(" " + t, False) for t in re.findall(r' <tspan>([^<]*)</tspan>', svg)]
+    tl, tr = rendered_ink_extent(runs, ann.LABEL_FS)
+    return ((gx + ann.GLYPH_INK_LEFT) - px0,
+            (tx + tl) - (gx + ann.GLYPH_INK_RIGHT),
+            (px0 + w) - (tx + tr))
+
+
+def test_glyph_ink_constants_match_the_shipped_paths():
+    for cw in (True, False):
+        arc, head = ann.dir_glyph_paths(ann.GLYPH_R, cw)
+        toks = head.replace("M", "").replace("L", "").replace("Z", "").split()
+        xs = [float(toks[i]) for i in range(0, len(toks), 2)]
+        assert abs(min(xs) - ann.GLYPH_INK_LEFT) < 1e-9          # the head tip
+        radius = float(arc.split("A ")[1].split()[0])
+        assert abs(radius + 0.65 - ann.GLYPH_INK_RIGHT) < 1e-9    # arc + half stroke
+
+
 @pytest.mark.parametrize("lid,name", [("R1", "Growth"), ("B1", "Limit"),
-                                      ("R12", ""), ("B2", "Balancing loop")])
-def test_pill_text_is_centred_between_glyph_and_pill_edge(lid, name):
+                                      ("R12", ""), ("B2", "Balancing loop"),
+                                      ("R1", "\u519b\u5907\u5347\u7ea7")])
+def test_pill_content_block_is_centred(lid, name):
     w, h = ann.label_size(lid, name)
     rec = {"id": lid, "name": name, "kind": lid[0], "w": w, "h": h,
            "placed": True, "x": 100, "y": 100, "dir": "cw"}
     svg = ann.label_svg(rec, _T)
-    tx = float(_TEXT_X.search(svg).group(1))
-    gx = -w / 2.0 + ann.LABEL_PAD_X + ann.GLYPH_BOX / 2.0
-    slot_left, slot_right = gx + ann.GLYPH_R, w / 2.0
-    assert abs(tx - (slot_left + slot_right) / 2.0) <= 0.06   # one decimal
-    assert 'text-anchor="middle"' in svg
-    # the slot is wider than the analytic text by a fixed slack: a real
-    # text (never wider than the analytic estimate) keeps >= half of it on
-    # each side, so its visual left and right gaps differ by < 2 px
-    text_w = w - 2 * ann.LABEL_PAD_X - ann.GLYPH_BOX - ann.GLYPH_GAP
-    assert slot_right - slot_left - text_w >= 10.0
-    # the glyph sits left of the slot, inside the pill's padding
-    assert -w / 2.0 + ann.LABEL_PAD_X <= gx - ann.GLYPH_R < slot_left
+    assert 'text-anchor="start"' in svg
+    left, mid, right = _pill_gaps(svg)
+    # three equal gaps (two decimals in the delivered coordinates)
+    assert abs(left - right) <= 0.02 and abs(mid - left) <= 0.02, (left, mid, right)
+    # every gap keeps at least the design padding: label_size's analytic width
+    # is an upper bound of the calibrated rendered width for these labels
+    assert min(left, mid, right) >= ann.LABEL_PAD_X, (left, mid, right)
+
+
+def test_pill_content_block_is_centred_in_the_delivered_html():
+    """The same three gaps on every label of a rendered figure: the static export
+    and the interactive layer share label_svg, so one reading covers both."""
+    from stdraw.render import render_auto_html
+    g = parse(open(TARGET, encoding="utf-8").read())
+    html = render_auto_html(layout(g), "target")
+    blocks = html.split('<g class="stdraw-looplabel"')[1:]
+    assert len(blocks) == 2
+    for b in blocks:
+        left, mid, right = _pill_gaps(b.split("</text></g>")[0])
+        assert abs(left - right) <= 0.02 and abs(mid - left) <= 0.02, (left, mid, right)
+
+
+def test_label_svg_never_reads_a_measuring_font(monkeypatch):
+    """The pill geometry must not depend on the fonts of the generating machine."""
+    from stdraw import textmetrics
+
+    def _boom(px):
+        raise AssertionError("label_svg must not read a measuring font")
+    monkeypatch.setattr(textmetrics, "_load_font", _boom)
+    w, h = ann.label_size("R1", "\u519b\u5907\u5347\u7ea7")
+    rec = {"id": "R1", "name": "\u519b\u5907\u5347\u7ea7", "kind": "R", "w": w, "h": h,
+           "placed": True, "x": 100, "y": 100, "dir": "ccw"}
+    left, mid, right = _pill_gaps(ann.label_svg(rec, _T))
+    assert abs(left - right) <= 0.02 and abs(mid - left) <= 0.02
+
+
+def test_calibration_table_matches_browser_measurements():
+    from stdraw import textmetrics as tm
+    assert len(tm._CAL["regular"]) == 95 and len(tm._CAL["bold"]) == 95
+    # tabular digits: one advance per weight
+    assert len({tm._CAL["regular"][d][0] for d in "0123456789"}) == 1
+    assert len({tm._CAL["bold"][d][0] for d in "0123456789"}) == 1
+    # text ink widths of delivered golden labels as measured in Edge headless
+    # (device scale 2, canvas ink bounds + tspan boxes) by the acceptance
+    # review: within the half-pixel CJK edge rule plus rounding
+    for lid, name, measured in (("R1", "\u519b\u5907\u5347\u7ea7", 62.724),
+                                ("B1", "Limit", 44.368),
+                                ("R1", "Growth", 56.725)):
+        l, r = tm.rendered_ink_extent([(lid, True), (" " + name, False)], 11.0)
+        assert abs((r - l) - measured) <= 0.6, (lid, name, r - l, measured)
