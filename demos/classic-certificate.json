@@ -445,8 +445,8 @@
   "midline_deviation": 0,
   "mirror_err": 0
  },
- "interactive": "yes",
- "drag_layer": "yes",
+ "interactive": "no",
+ "drag_layer": "no",
  "caliber": "v2-hardgates",
  "grade_semantics": "v2-hardgates caliber: best = 0 line crossings AND all placement-specific hard gates AND anchors_standard AND visual_crossings_zero AND dual crossing accounting; else uncertified (honest no-grade). Soft targets (crossings <= 2, row alignment) are layout objective-function report items, NOT certificate gates. Tokens: best | uncertified (2D certificate field); the 3d tier in the docs describes the 3D delivery path. second was removed in v0.7.15+ (logically unreachable). Single source: docs/grading-contract.md",
  "blocking_gates": [],

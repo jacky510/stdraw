@@ -17,29 +17,29 @@
   "rebless": "only under an approved card: python tests/golden_gate.py --update-baseline"
  },
  "timing_ref": {
-  "avg": 1.04,
-  "max": 2.21,
+  "avg": 1.08,
+  "max": 2.22,
   "platform": "Windows-11-10.0.26300-SP0",
   "per_graph": {
-   "eroding-goals": 0.83,
-   "escalation": 0.82,
-   "fixes-that-fail": 0.82,
-   "growth-and-underinvestment": 1.06,
-   "limits-to-growth": 2.21,
-   "shifting-the-burden": 0.94,
-   "success-to-the-successful": 0.76,
-   "tragedy-of-the-commons": 0.92
+   "eroding-goals": 0.87,
+   "escalation": 0.84,
+   "fixes-that-fail": 0.86,
+   "growth-and-underinvestment": 1.13,
+   "limits-to-growth": 2.22,
+   "shifting-the-burden": 0.91,
+   "success-to-the-successful": 0.75,
+   "tragedy-of-the-commons": 1.07
   }
  },
  "graphs": {
   "eroding-goals": {
    "cld": "eroding-goals.cld",
-   "seconds": 0.83,
+   "seconds": 0.87,
    "sha256": {
     "cld": "c784caa7f3b89233f04d339622b0c13dcf29b69788748caf3d82b0188a677ac5",
-    "certificate": "3c8d3ab97bfd0beb54616f62e812fa112eac7c33628820039ff1b0dd1add686b",
+    "certificate": "077af414e901a18df7f8167f17dd5feff8200159ded62d1e9e25ecdc1719512e",
     "loops_audit": "ed451a10da2d72d26130995c1dd7d168298eaa7a2d6966d2574bcd6db56376ed",
-    "layout": "15adef85bde2f8945b8ed83234a463af79db143ee40879582aa66f93bd996ec8"
+    "layout": "8ef9f6c43620dc20fed9f2634437420b8a92f741437e808b6f9bded337679b42"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -58,12 +58,12 @@
   },
   "escalation": {
    "cld": "escalation.cld",
-   "seconds": 0.82,
+   "seconds": 0.84,
    "sha256": {
     "cld": "a78ba0dacc6f665abc9ef9fbbc7e4fe00d89fcba62f59142bcbc2029935a2719",
-    "certificate": "021476a208f432fc3f0cf7256bf4ceab20c89a568695919debe115d9774c9bb4",
+    "certificate": "bdbf7f402230c8d7cf42507498178eaada72762d0a9ecf607ac8040fd4c5c148",
     "loops_audit": "7cbb9c104143a09554bdb7190bac6bdac145b17c46e9fbc797c2a524785ce846",
-    "layout": "da023f20b7d40b026cb469f2b830e11d8f5bf3242665453f41bb6cf66afd048f"
+    "layout": "555fe1377e3e82d50e023a17909df14192fd8bad81d969a208f616e114e89849"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -82,12 +82,12 @@
   },
   "fixes-that-fail": {
    "cld": "fixes-that-fail.cld",
-   "seconds": 0.82,
+   "seconds": 0.86,
    "sha256": {
     "cld": "ecd6d76a2751b968ac6e531207fd31e13cf01f9e5cc74187f11bb290eda567f4",
-    "certificate": "1d9cafd8748322c2fa753a1ccd053063f3011bb2e174c69b0f1e4227f3662247",
+    "certificate": "c6aa88a5afe68c2105a06a7c7f4ba975a8684424bc4259af42befb7d9b837996",
     "loops_audit": "a2ebafb9b0c0856b19c158cae5fa6383d14406155b6ba336c3deab6c6082c75c",
-    "layout": "0d4b2223cf4cf415085022b2ef11b0280ceb84673b35bfdc1e2d61fb04b0b82f"
+    "layout": "efd05280f8ec9ec4d4d1365953261468b4565cacffe21350ead700e82b18287a"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -106,12 +106,12 @@
   },
   "growth-and-underinvestment": {
    "cld": "growth-and-underinvestment.cld",
-   "seconds": 1.06,
+   "seconds": 1.13,
    "sha256": {
     "cld": "e0c89ae4cf2c8177760e45be0db9e34ce4745b0395aadbfe95d1d0812493d5f7",
-    "certificate": "c7752750ac94b3ca256b5c07b917a10581b0de4c57c3c8b5306a73d15723f354",
+    "certificate": "10d6a97c3d0bb3d2725b0632895464f976f81f49fac9589c0c746e15344da82e",
     "loops_audit": "971651dc619ed422ccd1ebb15bc39ab47af38f9a7540c627103a64cdb54933b9",
-    "layout": "ec810337ce3dbc67d55c6950b57a56c8d6ff166bae81aa96f0075c5cff07b536"
+    "layout": "f8a7653f92c676aa3c9b7bdc991196926a236d8a17ef52d64241267426d66f8e"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -130,12 +130,12 @@
   },
   "limits-to-growth": {
    "cld": "limits-to-growth.cld",
-   "seconds": 2.21,
+   "seconds": 2.22,
    "sha256": {
     "cld": "96c4f0d9b3f2e01a86fe30b7c92c7f156de49ca66bb0df2248813a382b4131a3",
-    "certificate": "27312bae0ad088b97478afa68e5892f901a0ffc1cb5aa0599fd2c0b82c0261a5",
+    "certificate": "f0a810ec440caf9572d4be9ecf7cad560844076497ef9f4d781dddf25bae80e1",
     "loops_audit": "1d3a446146801b2c5da2f284f6119bfaa9a00e06bfb05ad2d5fed122eb3c73dd",
-    "layout": "bdac4270a51fcc4d7849cd8d67553a9a00db9736d29268e9d2f9c919d9af968e"
+    "layout": "783d684719e46f639132d9b4ce1fc8e51bfeb7783087c148920a1e1d4827da24"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -154,12 +154,12 @@
   },
   "shifting-the-burden": {
    "cld": "shifting-the-burden.cld",
-   "seconds": 0.94,
+   "seconds": 0.91,
    "sha256": {
     "cld": "63220b16ecbe670c028dd6619dd4fc9237c8afebf7fdc1dde0dcae236383ca83",
-    "certificate": "6e81c58755bde297fcf659d8a8032be2d42d42997046ca0b7284e9d345518541",
+    "certificate": "0713bf52aca7ca9ee532f4d8b7016134f6f4302c7cae551b8d4f5adaa414ebbf",
     "loops_audit": "2ed57eb657c5a44bb50c254ca13b3e2a8cf850895f801cec3f26cf1deca86146",
-    "layout": "f8bbf041b491b4982260c514cf41522c37c76f600054c7cc2290401ac8c1b881"
+    "layout": "c9bc669207fcb406d64e38db2021d4d98671af0bbc103318b21c332d83abb86f"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -178,12 +178,12 @@
   },
   "success-to-the-successful": {
    "cld": "success-to-the-successful.cld",
-   "seconds": 0.76,
+   "seconds": 0.75,
    "sha256": {
     "cld": "0cdd8879bf187c4f42e4b256790974226ababac2ae6f44c13079a68348d49161",
-    "certificate": "e952667bedb76a48187554c593c679246d67979dc681958bc1801dd1b30f2429",
+    "certificate": "c976883badf2cc3b380e3abdfb72207795d01a3dc4ce776a1086691d842d171d",
     "loops_audit": "132463ee14dc9e24a8c1c904f90ce0e24b3e66f2baa1443a752cdc4bb13a220b",
-    "layout": "d75351bae6fe4b5a99e602fdd88a81d5167009731bfb72c5834e0debbd012759"
+    "layout": "47106da82e96f4fd3fd8e96cab1c99f58d45dcbf2dd59014463a3fe107f48856"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -202,12 +202,12 @@
   },
   "tragedy-of-the-commons": {
    "cld": "tragedy-of-the-commons.cld",
-   "seconds": 0.92,
+   "seconds": 1.07,
    "sha256": {
     "cld": "99c64cce9c1ba3491f389dd4137a30a1e2d4744254ef9db1ef462d8278dc905d",
-    "certificate": "5cd1fe86b897e5669ea0ad8de80605df8b5c2de0eac5ef31993ac47a06683b3a",
+    "certificate": "545031a2afb13b4a0e3edc53a0afd3f2e8b420f88a1b6eb2b4f1423653a3b69a",
     "loops_audit": "d04319aea4a3cf933efd014aae0bc0f4139b87e778b1a52aa579fd363c522e49",
-    "layout": "e87ee61b2dd837db84330dc6e5b1772544a53c045e049abe596072c8ac1ac5b7"
+    "layout": "c2b4b8966d9d13cd95552bdf52559fa916d498f9d7409a8c10d545397cef27ae"
    },
    "caliber": "v2-hardgates",
    "grade": "best",

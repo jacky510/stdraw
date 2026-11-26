@@ -132,10 +132,11 @@ stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62
 
 ### 手动微调闭环（拖拽 → 导出 → 复算证书）
 
-每份 `demo-2d.html`（auto 配方）都内置微调层——直接拖卡片（鼠标/触摸），
-顶栏指标实时复算，然后：
+微调层走 `--interactive` 显式 opt-in（CLI 默认输出=静态图+证书，不带交互层）：
+拖卡片（鼠标/触摸），顶栏指标实时复算，然后：
 
 ```bash
+stdraw layout input.cld --outdir out --interactive
 # 1. 打开 out/demo-2d.html，拖动卡片，点「Export layout（导出布局）」按钮
 #    -> 下载 graph-manual-layout.json（layout.json 兼容子集）
 
@@ -143,18 +144,19 @@ stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62
 #    （手动布局绝不因「是人排的」就放水）：
 stdraw layout input.cld --outdir out-manual --from-layout graph-manual-layout.json
 
-# 3. （可选）auto vs manual 双证书对照（差距即引擎与人的审美距离）：
-stdraw layout input.cld --outdir out-manual \
-    --from-layout graph-manual-layout.json --compare-auto
+# 3. （可选）auto vs manual 双证书对照（差距即引擎与人的审美距离）
+#    ——仓内开发量具，不随安装包发布：
+python tools/compare_auto.py input.cld \
+    --from-layout graph-manual-layout.json --outdir out-manual
 
 # 4. 三层 diff（节点位移 / 结构指标 / 回路语义）——从人工编辑里
-#    归纳审美规律的数据源：
-stdraw layout-diff out/layout.json out-manual/layout.json --cld input.cld --diff-out diff.json
+#    归纳审美规律的数据源（仓内开发量具，不随安装包发布）：
+python tools/layoutdiff.py out/layout.json out-manual/layout.json --cld input.cld --out diff.json
 ```
 
 ### 折点把手（绕障折点可拖，不再固定死）
 
-v0.5.3 起拖拽期间对**全部线型实时重布线**（直线/弧线/可见性图折线一视同
+v0.5.3 起微调层（`--interactive` 页面）在拖拽期间对**全部线型实时重布线**（直线/弧线/可见性图折线一视同
 仁——折点逐帧按当前障碍重算，不再有钉死的中间点）。绕障折线的每个折点渲
 染为小圆把手（hover 显示 move 光标）：
 
@@ -293,26 +295,29 @@ loop R1 "采纳扩散" "R" [rate, adopters, word]
 静态 SVG——交付物随即退化：不可拖拽、无折叠点手柄、失去「导出→重算」闭环，也没有诚实
 证书。坐标输出自带交付契约元数据（`stdraw/delivery.py`）：坐标-only 模式带
 `"delivery": "coordinates-only"`、`"interactive": false`、`"engine_version"` 及一行
-警告；CLI 全量交付时改标 `"delivery": "stdraw-cli"`、`"interactive": true`。
+警告；CLI 全量交付时改标 `"delivery": "stdraw-cli"`，`"interactive"` 仅当页面带
+拖拽微调层（CLI `--interactive`）才为 `true`——CLI 默认页为静态图、如实标注
+`"interactive": false`。
 `certificate.json` 新增交付面自白栏 `"interactive"` / `"drag_layer"`，宿主 CI 可直接
 拿它做门禁：
 
 | 你要什么 | 用什么 | 若仍走最后一行，失去什么 |
 |---|---|---|
-| 一张完成的图（拖拽修饰 + 证书） | `stdraw layout model.cld` → 交付 **`demo-2d.html`** | — |
-| 把图嵌进自己的页面 | 内嵌 `demo-2d.html`（iframe）+ 持久化导出布局 + `--from-layout`（见下） | — |
+| 一张完成的图（证书） | `stdraw layout model.cld` → 交付 **`demo-2d.html`** | — |
+| 一张可拖拽修饰的完成图 | `stdraw layout model.cld --interactive` → 交付 **`demo-2d.html`** | — |
+| 把图嵌进自己的页面 | 内嵌 `demo-2d.html`（iframe；要修饰能力渲染时加 `--interactive`）+ 持久化导出布局 + `--from-layout`（见下） | — |
 | 给自建渲染器喂坐标 | `layout.json`——自我声明坐标-only 并附警告；确要坐标可显式关警告：`recipes.run(..., suppress_delivery_warning=True)` | 实时拖拽重布线、折叠点手柄、导出→重算闭环、质量证书、CI 门禁 |
 
 ### 最小嵌入（官方姿势）
 
 ```html
-<!-- 嵌交付页面，不是嵌坐标 -->
+<!-- 嵌交付页面，不是嵌坐标（要拖拽修饰能力，渲染时加 --interactive） -->
 <iframe src="demo-2d.html" style="width:100%;height:820px;border:0"
         title="stdraw 图（可拖拽修饰）"></iframe>
 ```
 
 ```bash
-# 在 demo-2d.html 里手工修饰后："Export layout" -> manual-layout.json
+# 在 --interactive 的 demo-2d.html 里手工修饰后："Export layout" -> manual-layout.json
 stdraw layout model.cld --from-layout manual-layout.json --outdir out-manual
 # -> 修饰后坐标上重渲染的 demo-2d.html + 重新评分的证书
 ```

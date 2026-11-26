@@ -158,7 +158,7 @@ def main():
             demo = os.path.abspath(sys.argv[1])
         else:
             out = os.path.join(tmp, "out")
-            r = run_cli(["layout", EX, "--outdir", out])
+            r = run_cli(["layout", EX, "--outdir", out, "--interactive"])
             if r.returncode != 0:
                 print("FAIL self-built demo failed:", r.stderr[-300:])
                 return 1
@@ -622,7 +622,7 @@ def main():
                         json.dump(exp, f, ensure_ascii=False)
                     out_free = os.path.join(tmp, "wp-free")
                     r_free = run_cli(["layout", EX, "--outdir", out_free,
-                                      "--from-layout", wp_free])
+                                      "--from-layout", wp_free, "--interactive"])
                     geo_free = (load(os.path.join(out_free,
                                                   "geometry_report.json"))
                                 if r_free.returncode == 0 else {"fail": -1})
@@ -646,7 +646,7 @@ def main():
 
             # == ref-scrubbed: vg polyline follow + bend handles + full waypoints chain ==
             out_a = os.path.join(tmp, "auto")
-            run_cli(["layout", EX, "--outdir", out_a])
+            run_cli(["layout", EX, "--outdir", out_a, "--interactive"])
             lay = load(os.path.join(out_a, "layout.json"))
             # fixture: a straight/arc edge (a,b) + third node c pressed onto the segment midpoint -> CLI yields vg
             found = None
@@ -669,7 +669,7 @@ def main():
                         json.dump(manual, f, ensure_ascii=False)
                     out_m = os.path.join(tmp, "fixture")
                     run_cli(["layout", EX, "--outdir", out_m,
-                             "--from-layout", mpth])
+                             "--from-layout", mpth, "--interactive"])
                     lay_m = load(os.path.join(out_m, "layout.json"))
                     vg = [(i, x) for i, x in enumerate(lay_m["edges"])
                           if x["route"]["kind"] == "vg"]
@@ -796,7 +796,7 @@ def main():
                     json.dump(exp, f, ensure_ascii=False)
                 out_wp = os.path.join(tmp, "wp")
                 r_wp = run_cli(["layout", EX, "--outdir", out_wp,
-                                "--from-layout", wp_out])
+                                "--from-layout", wp_out, "--interactive"])
                 geo_wp = load(os.path.join(out_wp, "geometry_report.json"))
                 lay_wp = load(os.path.join(out_wp, "layout.json"))
                 e_wp = next(x for x in lay_wp["edges"]
@@ -1406,7 +1406,7 @@ def main():
             # == arc graph: all Bezier vertices follow (arcFollow) ==
             out_arc = os.path.join(tmp, "arc")
             r_arc = run_cli(["layout", EX, "--outdir", out_arc,
-                             "--linestyle", "arc"])
+                             "--linestyle", "arc", "--interactive"])
             if r_arc.returncode == 0:
                 pg.goto("file://" +
                         os.path.join(out_arc, "demo-2d.html").replace("\\", "/"))

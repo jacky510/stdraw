@@ -169,7 +169,7 @@ def main():
         return 2
     tmp = tempfile.mkdtemp(prefix="stdraw-domtruth-")
     out = os.path.join(tmp, "out")
-    r = run_cli(["layout", CLD, "--outdir", out])
+    r = run_cli(["layout", CLD, "--outdir", out, "--interactive"])
     if r.returncode not in (0, 1):
         print("FAIL self-built demo failed:", r.stderr[-300:])
         return 1

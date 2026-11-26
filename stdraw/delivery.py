@@ -20,9 +20,11 @@ quality certificate -- the warning says so at the point of consumption.
 Layering:
   - the pipeline core (layout_auto.layout) stamps coordinates-only
     metadata;
-  - the CLI re-stamps to "stdraw-cli" / interactive=true when the full
-    deliverable set (demo-2d.html + certificate.json) was produced, and
-    omits the warning.
+  - the CLI re-stamps to "stdraw-cli" when the full deliverable set
+    (demo-2d.html + certificate.json) was produced, and omits the
+    warning. `interactive` is true only when the page shipped the drag
+    touch-up layer (CLI --interactive); the default CLI page is static
+    and stamps interactive=false honestly.
 
 Consumers who truly need raw coordinates can silence the warning via
 stdraw.recipes.run(..., suppress_delivery_warning=True) -- an explicit,
@@ -59,11 +61,14 @@ def stamp_coordinates_only(v4: dict, warning: bool = True) -> dict:
     return v4
 
 
-def stamp_cli_deliverable(v4: dict) -> dict:
+def stamp_cli_deliverable(v4: dict, interactive: bool = True) -> dict:
     """Re-stamp a layout dict produced alongside the full CLI deliverable
-    (demo-2d.html + certificate.json): interactive, no warning."""
+    (demo-2d.html + certificate.json): no warning. `interactive` reflects
+    whether the shipped page carries the drag touch-up layer (library
+    default True = unchanged behavior for direct callers; the CLI passes
+    the --interactive opt-in through)."""
     v4["delivery"] = "stdraw-cli"
-    v4["interactive"] = True
+    v4["interactive"] = bool(interactive)
     v4["engine_version"] = __version__
     v4.pop("delivery_warning", None)
     return v4

@@ -12,7 +12,8 @@ below) and a CHANGELOG entry:
 1. **DSL syntax** — the `.cld` grammar documented in
    `docs/dsl-spec-v0.1.md` (+ zh-CN edition). Additive grammar extensions are
    minor; anything that changes the meaning of existing input is breaking.
-2. **CLI surface** — subcommands (`layout`, `layout-diff`), positional
+2. **CLI surface** — subcommands (`layout`; the `layout-diff` gauge moved to
+   `tools/layoutdiff.py`, 2026-11-26), positional
    argument semantics, and every documented flag of
    `python -m stdraw`. New flags are minor; removing/renaming a flag or
    changing a documented default is breaking.

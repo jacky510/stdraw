@@ -130,10 +130,12 @@ A ready-made deliverable ships in the repo: open [`demos/classic-cld-2d.html`](d
 
 ### Manual touch-up loop (drag → export → re-certify)
 
-Every `demo-2d.html` (auto recipe) ships with a built-in touch-up layer — drag
-nodes (mouse or touch), live metrics recompute in the toolbar, then:
+Ship the page with the built-in touch-up layer via the `--interactive`
+opt-in (the default CLI page is the static diagram + certificate):
+drag nodes (mouse or touch), live metrics recompute in the toolbar, then:
 
 ```bash
+stdraw layout input.cld --outdir out --interactive
 # 1. Open out/demo-2d.html, drag cards, click "Export layout"
 #    -> downloads graph-manual-layout.json (layout.json-compatible subset)
 
@@ -142,18 +144,21 @@ nodes (mouse or touch), live metrics recompute in the toolbar, then:
 stdraw layout input.cld --outdir out-manual --from-layout graph-manual-layout.json
 
 # 3. (optional) Side-by-side auto-vs-manual certificate comparison
-#    (the gap is the engine-vs-human aesthetic distance):
-stdraw layout input.cld --outdir out-manual \
-    --from-layout graph-manual-layout.json --compare-auto
+#    (the gap is the engine-vs-human aesthetic distance) — a repo tool,
+#    not part of the installed package:
+python tools/compare_auto.py input.cld \
+    --from-layout graph-manual-layout.json --outdir out-manual
 
 # 4. Three-layer diff (node-level moves / structural metrics / loop semantics)
-#    — the data source for distilling aesthetic rules from human edits:
-stdraw layout-diff out/layout.json out-manual/layout.json --cld input.cld --diff-out diff.json
+#    — the data source for distilling aesthetic rules from human edits
+#    (repo tool, not part of the installed package):
+python tools/layoutdiff.py out/layout.json out-manual/layout.json --cld input.cld --out diff.json
 ```
 
 ### Waypoint handles (detour fold points are draggable, not fixed)
 
-Since v0.5.3 the touch-up layer re-routes **all line styles live** while you drag
+Since v0.5.3 the touch-up layer (`--interactive` pages) re-routes **all line
+styles live** while you drag
 (straight / arc / visibility-graph fold lines alike — fold vertices are
 recomputed every frame against current obstacles; nothing is pinned). Edges that
 detour around obstacles render each fold point as a small **drag handle**
@@ -320,26 +325,29 @@ handles, the export→recompute loop, the honest certificate). Coordinate
 outputs carry an explicit delivery contract (`stdraw/delivery.py`):
 `"delivery": "coordinates-only"`, `"interactive": false`,
 `"engine_version"` and a one-line warning on coordinates-only outputs;
-the CLI marks full deliverables `"delivery": "stdraw-cli"`,
-`"interactive": true`. The certificate confesses its delivery face via
-`"interactive"` / `"drag_layer"` (usable as a host CI gate):
+the CLI marks full deliverables `"delivery": "stdraw-cli"`, and
+`"interactive"` is `true` only when the page shipped the drag touch-up
+layer (CLI `--interactive`; the default CLI page is static and stamps
+`"interactive": false` honestly). The certificate confesses its delivery
+face via `"interactive"` / `"drag_layer"` (usable as a host CI gate):
 
 | You want | Use | If you take the last row anyway, you lose |
 |---|---|---|
-| One finished diagram (touch-up + certificate) | `stdraw layout model.cld` → deliver **`demo-2d.html`** | — |
-| The diagram inside your own page | embed `demo-2d.html` (iframe) + persist the exported layout + `--from-layout` (below) | — |
+| One finished diagram (certificate) | `stdraw layout model.cld` → deliver **`demo-2d.html`** | — |
+| One finished diagram with touch-up (drag / export) | `stdraw layout model.cld --interactive` → deliver **`demo-2d.html`** | — |
+| The diagram inside your own page | embed `demo-2d.html` (iframe; add `--interactive` for touch-up) + persist the exported layout + `--from-layout` (below) | — |
 | Coordinates for your own renderer | `layout.json` — self-declares coordinates-only + warning; explicit opt-out: `stdraw.recipes.run(..., suppress_delivery_warning=True)` | live drag re-routing, waypoint handles, export→recompute loop, quality certificate, CI gate |
 
 ### Minimal embed (official posture)
 
 ```html
-<!-- embed the deliverable page, not the coordinates -->
+<!-- embed the deliverable page (add --interactive at render time for the touch-up layer) -->
 <iframe src="demo-2d.html" style="width:100%;height:820px;border:0"
         title="stdraw diagram (drag to touch up)"></iframe>
 ```
 
 ```bash
-# after manual touch-up in demo-2d.html: "Export layout" -> manual-layout.json
+# after manual touch-up in an --interactive demo-2d.html: "Export layout" -> manual-layout.json
 stdraw layout model.cld --from-layout manual-layout.json --outdir out-manual
 # -> demo-2d.html re-rendered on the touched-up coordinates + re-graded certificate
 ```

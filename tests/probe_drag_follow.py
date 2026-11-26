@@ -217,7 +217,7 @@ def sweep_graph(browser, src_dir, tmp, filt):
         json.dump(manual, f, ensure_ascii=False)
     out = os.path.join(tmp, name)
     r = subprocess.run([PY, "-m", "stdraw", "layout", cld, "--outdir", out,
-                        "--from-layout", mp],
+                        "--from-layout", mp, "--interactive"],
                        capture_output=True, text=True, encoding="utf-8",
                        errors="replace", cwd=ROOT)
     if r.returncode not in (0, 1):
@@ -357,7 +357,7 @@ def main():
                 else:  # corpus fallback: wrap it (use the auto-rendered directory)
                     out = os.path.join(tmp, "auto-" + os.path.basename(src)[:-4])
                     subprocess.run([PY, "-m", "stdraw", "layout", src,
-                                    "--outdir", out],
+                                    "--outdir", out, "--interactive"],
                                    capture_output=True, cwd=ROOT)
                     res = sweep_graph(browser, out, tmp, filt)
                 if res is None:

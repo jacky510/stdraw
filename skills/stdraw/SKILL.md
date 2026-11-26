@@ -92,14 +92,17 @@ deliverables). Single source:
 
 **Do**
 
-- Deliver `demo-2d.html` — it *is* the deliverable (drag touch-up layer +
-  embedded certificate). Embed it, e.g. `<iframe src="demo-2d.html">`.
-- Persist manual touch-ups: "Export layout" in `demo-2d.html` writes a
+- Deliver `demo-2d.html` — it *is* the deliverable (embedded certificate;
+  add `--interactive` to ship the drag touch-up layer). Embed it, e.g.
+  `<iframe src="demo-2d.html">`.
+- Persist manual touch-ups: render with `--interactive`, "Export layout"
+  in `demo-2d.html` writes a
   layout JSON; re-run `stdraw layout model.cld --from-layout <that.json>`
   to re-route and re-grade on the same coordinates.
-- Gate embedded deliverables on the certificate's delivery face:
+- Gate embedded deliverables on the certificate's delivery face: when the
+  page must carry the touch-up layer (rendered with `--interactive`),
   `certificate.json` must carry `"interactive": "yes"` and
-  `"drag_layer": "yes"`.
+  `"drag_layer": "yes"` (the default static page stamps `"no"`).
 
 **Don't**
 
@@ -119,6 +122,7 @@ deliverables). Single source:
 B drafting blue `#1e6fae`; dark theme `#ffb454` / `#6ec6ff` - single source
 `stdraw/themes.py`; mixed/acyclic neutral, negative edges dashed) - no
 letter badges; the loop-center labels carry the loop id + name only. Manual
-touch-up loop: drag nodes in `demo-2d.html`, export layout,
+touch-up loop: render with `--interactive`, drag nodes in `demo-2d.html`,
+export layout,
 re-run with `--from-layout` (waypoints included) - see AGENTS.md.
 - All outputs are deterministic — safe to commit; re-runs diff clean.

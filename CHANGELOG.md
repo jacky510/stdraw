@@ -6,6 +6,27 @@ reproduced here; the engineering version history lives in
 
 ## Unreleased
 
+- **BREAKING: the interactive drag layer is now an opt-in (`--interactive`)**:
+  the default CLI deliverable page (`demo-2d.html`) is the STATIC diagram +
+  certificate (no toolbar / payload / drag script); pass `--interactive` to
+  ship the touch-up layer (drag re-routing, waypoint handles, style cycling,
+  Export layout). `layout.json` / `certificate.json` honestly declare the
+  delivery face either way (`interactive` true/false, `drag_layer` yes/no);
+  the layout geometry itself is byte-identical in both modes, and a
+  `--interactive` run reproduces the previous default output byte-for-byte
+  (golden 8-figure set + a manual-layout replay cross-checked).
+  The library API (`render_html`) keeps its previous behavior by default;
+  only the CLI default changed.
+- **BREAKING: `layout-diff` / `--compare-auto` moved out of the CLI into
+  repo tools** (development gauges, not shipped in the wheel):
+  `stdraw layout-diff a.json b.json --cld x.cld --diff-out d.json` becomes
+  `python tools/layoutdiff.py a.json b.json --cld x.cld --out d.json`, and
+  the `--compare-auto` flag becomes
+  `python tools/compare_auto.py input.cld --from-layout manual.json
+  --outdir out` (same dual-certificate comparison JSON). `--from-layout`
+  stays a core CLI flag (the manual-calibration loop is a first-class
+  feature). Both tools keep in-repo regression tests.
+
 - **BREAKING: ortho-v1 external entry removed** (owner ruling 2026-11-24, A-item:
   the freeze is lifted): the CLI `--recipe ortho` option, `recipes.ortho_v1()`
   and the `run("ortho-v1")` branch, the CLI freeze-compat code (the

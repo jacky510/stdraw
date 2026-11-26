@@ -595,10 +595,11 @@ def main():
                 else:
                     dpath = os.path.join(tmp, "ci-layout-diff.json")
                     r_d = subprocess.run(
-                        [sys.executable, "-m", "stdraw", "layout-diff",
+                        [sys.executable,
+                         os.path.join(root, "tools", "layoutdiff.py"),
                          os.path.join(out_f, "layout.json"),
                          os.path.join(out_f2, "layout.json"),
-                         "--cld", ex, "--diff-out", dpath],
+                         "--cld", ex, "--out", dpath],
                         capture_output=True, text=True)
                     try:
                         with open(dpath, encoding="utf-8") as f:
@@ -609,7 +610,7 @@ def main():
                         failures.append(f"manual-loop layout-diff: {e}\n{r_d.stdout[-300:]}")
                     if not failures or all("manual-loop" not in x for x in failures):
                         print("OK  manual-loop: --from-layout identical replay fail=0 + "
-                              "layout-diff all three layers present")
+                              "tools/layoutdiff.py all three layers present")
 
             # ── F2. ref-scrubbed: --from-layout waypoints identical recompute (polyline-handle full chain) ──
             # Fixture: since ref-scrubbed, polylines carry fixed type costs

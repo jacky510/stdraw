@@ -93,7 +93,8 @@ def _cert_head(grade, sub):
 def render_html(v4: dict, graph_name: str = "", cert: dict = None,
                 loops_report: dict = None, labels: dict = None,
                 values: dict = None, theme: str = DEFAULT_STATIC_THEME,
-                hint: str = None, loop_labels: bool = True) -> str:
+                hint: str = None, loop_labels: bool = True,
+                    interactive: bool = True) -> str:
     T = _get_theme(theme)
     # Dark face only: emit the body foreground (fixes black-on-dark
     # text after the dark palette landed). Light keeps UA default
@@ -101,7 +102,7 @@ def render_html(v4: dict, graph_name: str = "", cert: dict = None,
     _ink = ("color:%s;" % T["body_text"]) if T.get("body_text") else ""
     if v4.get("edges") and "route" in v4["edges"][0]:
         return render_auto_html(v4, graph_name, cert, loops_report, labels,
-                                values, theme, hint, loop_labels=loop_labels)
+                                values, theme, hint, loop_labels=loop_labels, interactive=interactive)
     W, H = v4["viewBox"][2], v4["viewBox"][3]
     nodes, edges, bars = v4["nodes"], v4["edges"], v4.get("bars", {})
     meta = v4["meta"]
@@ -298,7 +299,8 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                      values: dict = None,
                      theme: str = DEFAULT_STATIC_THEME,
                      hint: str = None,
-                     loop_labels: bool = True) -> str:
+                     loop_labels: bool = True,
+                    interactive: bool = True) -> str:
     T = _get_theme(theme)
     # Dark face only: emit the body foreground (fixes black-on-dark
     # text after the dark palette landed). Light keeps UA default
@@ -481,63 +483,64 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
     # inside the svg a raw <div> breaks out of foreign content and pops
     # every later node <g> out of the svg (card loss).
     parts.extend(_overlay)
-    # ── Interactive layer: toolbar + embedded data + script ──
-    # Zero dependencies, zero network; without dragging the initial geometry is
-    # byte-identical to the static rendering (the script only attaches
-    # listeners; the v0.7.9 font-environment sync is a strict no-op whenever
-    # the rendered text fits the planned cards, which the engine's
-    # conservative text-metrics padding guarantees in matching environments).
-    payload = {
-        "name": graph_name,
-        "viewBox": [0, 0, W, H],
-        "cardH": card_h,
-        "cardRadius": T["card_radius"],   # drag layer: arrow tip on the rounded frame (anchors.rounded_tip)
-        "nodes": [{"id": v, "x": p["x"], "y": p["y"], "w": p.get("w", 140)}
-                  for v, p in nodes.items()],
-        "edges": [{"a": e["a"], "b": e["b"], "pol": e.get("polarity", "+"),
-                   "arc": bool(e["route"].get("arc")),
-                   "ctrl": e["route"].get("ctrl"),
-                   # vg polyline corner points (handle positions and the bend
-                   # semantics source for drag re-routing)
-                   "via": e["route"].get("via"),
-                   "pts": e["route"]["points"],
-                   # @delay link (key present only on delayed edges; dropped
-                   # with the rest of the annotation layer when the drawing
-                   # is rendered with loop_labels=False)
-                   **({"delay": True} if (e.get("delay") and loop_labels) else {})}
-                  for e in edges],
-        # loop labels (annotation layer): size + member nodes so the drag
-        # layer's JS port can re-place them; absent without loops
-        **({"loops": [{"id": l["id"], "kind": l["kind"], "w": l["w"], "h": l["h"],
-                       "members": l.get("members") or []} for l in _labels]}
-           if (_labels and loop_labels) else {}),
-    }
-    # Toolbar hint chrome: English default (repo language policy: EN face,
-    # zero CJK in engine chrome); callers override via the `hint` parameter
-    # (byte-pinned consumers pass their own face copy).
-    if hint is None:
-        hint = ('Drag cards to rearrange · double-click a line to cycle its '
-                'style (auto/straight/arc/free) · in free style click a line '
-                'to add fold points (max 8) or drag a segment to shift it · '
-                'hover a card to show its 16 standard anchors (toggle) · '
-                'drag an edge endpoint to snap to the nearest anchor · '
-                'metrics update live; the certificate is authoritative via '
-                'CLI --from-layout')
-    parts.append(
-        '<div class="stdraw-toolbar">'
-        '<span class="stdraw-hint">' + hint + '</span>'
-        '<span id="stdraw-metrics">…</span>'
-        '<button id="stdraw-anchors-toggle" type="button">Anchors: off</button>'
-        + ('<button id="stdraw-loops-toggle" type="button">Loops: on</button>'
-           if (_labels and loop_labels) else '') +
-        '<button id="stdraw-export" type="button">Export layout</button>'
-        '<button id="stdraw-reset" type="button">Reset</button>'
-        '</div>')
-    parts.append('<script id="stdraw-data" type="application/json">' +
-                 json.dumps(payload, ensure_ascii=False,
-                            separators=(",", ":")).replace("</", "<\\/") +
-                 '</script>')
-    parts.append('<scr' + 'ipt>' + _INTERACTIVE_JS + '</scr' + 'ipt>')
+    if interactive:
+        # ── Interactive layer: toolbar + embedded data + script ──
+        # Zero dependencies, zero network; without dragging the initial geometry is
+        # byte-identical to the static rendering (the script only attaches
+        # listeners; the v0.7.9 font-environment sync is a strict no-op whenever
+        # the rendered text fits the planned cards, which the engine's
+        # conservative text-metrics padding guarantees in matching environments).
+        payload = {
+            "name": graph_name,
+            "viewBox": [0, 0, W, H],
+            "cardH": card_h,
+            "cardRadius": T["card_radius"],   # drag layer: arrow tip on the rounded frame (anchors.rounded_tip)
+            "nodes": [{"id": v, "x": p["x"], "y": p["y"], "w": p.get("w", 140)}
+                      for v, p in nodes.items()],
+            "edges": [{"a": e["a"], "b": e["b"], "pol": e.get("polarity", "+"),
+                       "arc": bool(e["route"].get("arc")),
+                       "ctrl": e["route"].get("ctrl"),
+                       # vg polyline corner points (handle positions and the bend
+                       # semantics source for drag re-routing)
+                       "via": e["route"].get("via"),
+                       "pts": e["route"]["points"],
+                       # @delay link (key present only on delayed edges; dropped
+                       # with the rest of the annotation layer when the drawing
+                       # is rendered with loop_labels=False)
+                       **({"delay": True} if (e.get("delay") and loop_labels) else {})}
+                      for e in edges],
+            # loop labels (annotation layer): size + member nodes so the drag
+            # layer's JS port can re-place them; absent without loops
+            **({"loops": [{"id": l["id"], "kind": l["kind"], "w": l["w"], "h": l["h"],
+                           "members": l.get("members") or []} for l in _labels]}
+               if (_labels and loop_labels) else {}),
+        }
+        # Toolbar hint chrome: English default (repo language policy: EN face,
+        # zero CJK in engine chrome); callers override via the `hint` parameter
+        # (byte-pinned consumers pass their own face copy).
+        if hint is None:
+            hint = ('Drag cards to rearrange · double-click a line to cycle its '
+                    'style (auto/straight/arc/free) · in free style click a line '
+                    'to add fold points (max 8) or drag a segment to shift it · '
+                    'hover a card to show its 16 standard anchors (toggle) · '
+                    'drag an edge endpoint to snap to the nearest anchor · '
+                    'metrics update live; the certificate is authoritative via '
+                    'CLI --from-layout')
+        parts.append(
+            '<div class="stdraw-toolbar">'
+            '<span class="stdraw-hint">' + hint + '</span>'
+            '<span id="stdraw-metrics">…</span>'
+            '<button id="stdraw-anchors-toggle" type="button">Anchors: off</button>'
+            + ('<button id="stdraw-loops-toggle" type="button">Loops: on</button>'
+               if (_labels and loop_labels) else '') +
+            '<button id="stdraw-export" type="button">Export layout</button>'
+            '<button id="stdraw-reset" type="button">Reset</button>'
+            '</div>')
+        parts.append('<script id="stdraw-data" type="application/json">' +
+                     json.dumps(payload, ensure_ascii=False,
+                                separators=(",", ":")).replace("</", "<\\/") +
+                     '</script>')
+        parts.append('<scr' + 'ipt>' + _INTERACTIVE_JS + '</scr' + 'ipt>')
 
     cert_html = ""
     if cert:
@@ -704,6 +707,18 @@ def render_auto_html(v4: dict, graph_name: str = "", cert: dict = None,
                         "is an objective-function minimization term, not a "
                         "theorem guarantee; this certificate holds only for "
                         "this graph and this layout.")
+    _toolbar_css = (
+        f'.stdraw-toolbar{{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:8px 12px;background:{T["toolbar_bg"]};border:1px solid {T["toolbar_border"]};border-radius:8px;font-size:13px;max-width:1280px}}\n'
+        f'.stdraw-toolbar button{{padding:4px 14px;border:1px solid {T["btn_border"]};border-radius:6px;background:{T["btn_bg"]};color:{T["btn_text"]};cursor:pointer;font-size:13px}}\n'
+        f'.stdraw-toolbar button:hover{{background:{T["btn_hover_bg"]}}}\n'
+        f'.stdraw-hint{{color:{T["hint_text"]};font-size:12px}}\n'
+        f'#stdraw-metrics{{font-weight:600;color:{T["metrics_text"]}}}'
+    ) if interactive else ''
+    _drag_css = (
+        f'#stdraw-svg [data-node]{{cursor:grab}}\n'
+        f'#stdraw-svg [data-node] rect{{touch-action:none}}\n'
+        f'#stdraw-svg [data-node].dragging{{cursor:grabbing}}'
+    ) if interactive else ''
     return f'''<!doctype html><html lang="en"><meta charset="utf-8">
 <title>stdraw 2D · {html.escape(graph_name)}</title>
 <style>
@@ -712,15 +727,9 @@ h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canva
 {_cert_css(T)}
 .ok{{color:{T["ok"]}}} .bad{{color:{T["bad"]}}} .note{{color:{T["note"]};font-size:12px}}
 .grade{{color:{T["grade"]}}}
-.stdraw-toolbar{{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:8px 12px;background:{T["toolbar_bg"]};border:1px solid {T["toolbar_border"]};border-radius:8px;font-size:13px;max-width:1280px}}
-.stdraw-toolbar button{{padding:4px 14px;border:1px solid {T["btn_border"]};border-radius:6px;background:{T["btn_bg"]};color:{T["btn_text"]};cursor:pointer;font-size:13px}}
-.stdraw-toolbar button:hover{{background:{T["btn_hover_bg"]}}}
-.stdraw-hint{{color:{T["hint_text"]};font-size:12px}}
-#stdraw-metrics{{font-weight:600;color:{T["metrics_text"]}}}
+{_toolbar_css}
 #stdraw-svg{{--stdraw-chrome-b:{T["edge_neg"]};--stdraw-chrome-r:{T["edge_pos"]}}}
-#stdraw-svg [data-node]{{cursor:grab}}
-#stdraw-svg [data-node] rect{{touch-action:none}}
-#stdraw-svg [data-node].dragging{{cursor:grabbing}}
+{_drag_css}
 </style>
 <h1>stdraw 2D layout · {html.escape(graph_name)} ({_h1_caliber}; position engine {engine}, line kinds {lk})</h1>
 {''.join(parts)}

@@ -2,8 +2,10 @@
 """Delivery-contract metadata tests.
 
 Coordinate outputs self-declare "coordinates-only" + a warning; the CLI
-re-stamps interactive when the full deliverable (demo-2d.html) was
-produced. (The retired ortho-v1 byte-freeze tests were removed together
+re-stamps "stdraw-cli" when the full deliverable (demo-2d.html) was
+produced, and `interactive` honestly reflects whether the shipped page
+carries the drag touch-up layer (default static; --interactive opts in).
+(The retired ortho-v1 byte-freeze tests were removed together
 with the recipe's external entry, owner ruling 2026-11-24.)
 """
 import json
@@ -75,7 +77,9 @@ class TestLibraryStamping(unittest.TestCase):
 
 
 class TestCliDelivery(unittest.TestCase):
-    def test_auto_layout_interactive_no_warning(self):
+    def test_cli_default_static_delivery_face(self):
+        # Default CLI page is static: delivery=stdraw-cli, interactive=false,
+        # certificate confesses no/drag_layer no (honest declaration).
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "auto")
             r = _cli([LIMITS, "--outdir", out])
@@ -83,14 +87,37 @@ class TestCliDelivery(unittest.TestCase):
             with open(os.path.join(out, "layout.json"), encoding="utf-8") as f:
                 layout = json.load(f)
             self.assertEqual(layout["delivery"], "stdraw-cli")
-            self.assertIs(layout["interactive"], True)
+            self.assertIs(layout["interactive"], False)
             self.assertNotIn("delivery_warning", layout)
             self.assertEqual(layout["engine_version"], __version__)
             with open(os.path.join(out, "certificate.json"),
                       encoding="utf-8") as f:
                 cert = json.load(f)
+            self.assertEqual(cert["interactive"], "no")
+            self.assertEqual(cert["drag_layer"], "no")
+            with open(os.path.join(out, "demo-2d.html"), encoding="utf-8") as f:
+                html = f.read()
+            self.assertNotIn("stdraw-toolbar", html)
+            self.assertNotIn("__stdrawExportLayout", html)
+
+    def test_cli_interactive_opt_in(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "auto")
+            r = _cli([LIMITS, "--outdir", out, "--interactive"])
+            self.assertEqual(r.returncode, 0, r.stderr)
+            with open(os.path.join(out, "layout.json"), encoding="utf-8") as f:
+                layout = json.load(f)
+            self.assertEqual(layout["delivery"], "stdraw-cli")
+            self.assertIs(layout["interactive"], True)
+            with open(os.path.join(out, "certificate.json"),
+                      encoding="utf-8") as f:
+                cert = json.load(f)
             self.assertEqual(cert["interactive"], "yes")
             self.assertEqual(cert["drag_layer"], "yes")
+            with open(os.path.join(out, "demo-2d.html"), encoding="utf-8") as f:
+                html = f.read()
+            self.assertIn("stdraw-toolbar", html)
+            self.assertIn("__stdrawExportLayout", html)
 
     def test_deterministic_stamping_double_run(self):
         outs = []

@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """Layout diff (aesthetics-collection loop, ref-scrubbed): three-layer comparison of the auto layout vs the manual layout.
 
+Repo development gauge (2026-11-26 T16 subtraction card): moved out of the
+CLI (`stdraw layout-diff ...` -> `python tools/layoutdiff.py ...`), not
+shipped in the wheel; the repo keeps it runnable.
+
 Human drags -> machine diff -> AI distills aesthetic rules -> feeds back into the objective function; this module is the "machine diff" stage,
 outputting both machine-readable (JSON) and human-readable (stdout table) formats:
 
@@ -393,7 +397,7 @@ def _human(diff):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        prog="stdraw layout-diff",
+        prog="tools/layoutdiff.py",
         description="three-layer diff of the auto layout vs the manual layout (data source of the aesthetics-collection loop)")
     ap.add_argument("auto", help="automatic layout layout.json")
     ap.add_argument("manual", help="manual layout layout.json (or an exported subset)")
@@ -406,7 +410,10 @@ def main(argv=None):
 
     graph = None
     if a.cld:
-        from .__main__ import load_graph
+        _here = os.path.dirname(os.path.abspath(__file__))
+        if os.path.dirname(_here) not in sys.path:
+            sys.path.insert(0, os.path.dirname(_here))
+        from stdraw.__main__ import load_graph
         graph = load_graph(a.cld)
 
     auto = _load_layout(a.auto)

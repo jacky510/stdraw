@@ -256,4 +256,16 @@ def test_cli_delayed_fixture_end_to_end():
             html = fh.read()
         assert html.count('class="stdraw-delay"') == 2
         assert html.count('class="stdraw-looplabel"') == 2
-        assert "stdraw-loops-toggle" in html
+        # Default CLI page is static (no toolbar): the annotation elements
+        # themselves are static SVG and must still be present; the toolbar
+        # Loops toggle ships with the --interactive opt-in only.
+        assert "stdraw-toolbar" not in html
+        proc2 = subprocess.run([sys.executable, "-m", "stdraw", "layout", LTG4D,
+                                "--outdir", os.path.join(tmp, "interactive"),
+                                "--interactive"], cwd=ROOT,
+                               capture_output=True, text=True)
+        assert proc2.returncode == 0, proc2.stderr[-800:]
+        with open(os.path.join(tmp, "interactive", "demo-2d.html"),
+                  encoding="utf-8") as fh:
+            html2 = fh.read()
+        assert "stdraw-loops-toggle" in html2

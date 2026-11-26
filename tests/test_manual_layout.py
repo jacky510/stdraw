@@ -7,14 +7,15 @@ A. identical manual layout: auto coordinates fed back verbatim via
    key-for-key (same-pipeline invariant);
 B. perturbed manual layout: engine=manual + from_layout metadata +
    coordinates snapped to 2px + exit-code semantics (rc==1 iff geometry
-   fail>0; with --compare-auto the comparison is emitted before exiting);
+   fail>0) + tools/compare_auto.py dual-certificate comparison;
 C. browser export subset formats (both {x,y} and [x,y]) and id-set
    mismatch -> exit 2;
-D. layout-diff (hypothetical manual layout of debt-spiral): three layers
-   present + numbers reproducible (|d| and loop cohesion cross-checked by
-   in-test independent recompute);
-E. determinism: two --from-layout runs byte-identical; demo-2d.html
-   contains the interactive layer.
+D. tools/layoutdiff.py (hypothetical manual layout of debt-spiral): three
+   layers present + numbers reproducible (|d| and loop cohesion
+   cross-checked by in-test independent recompute);
+E. determinism: two --from-layout runs byte-identical; the default demo
+   page is STATIC (no interactive layer) and the --interactive opt-in
+   demo carries the drag layer.
 
 Stdlib only.
 """
@@ -45,6 +46,12 @@ def run(args):
     return subprocess.run([sys.executable, "-m", "stdraw"] + args,
                           capture_output=True, text=True, encoding="utf-8",
                           errors="replace", cwd=ROOT)
+
+
+def run_tool(script, args):
+    return subprocess.run([sys.executable, os.path.join(ROOT, "tools", script)]
+                          + args, capture_output=True, text=True,
+                          encoding="utf-8", errors="replace", cwd=ROOT)
 
 
 def load(p):
@@ -89,9 +96,17 @@ def main():
                   for fn in ("layout.json", "certificate.json", "demo-2d.html"))
         ok("E1 from-layout deterministic (byte-identical x2)", det)
         html = open(os.path.join(out_i1, "demo-2d.html"), encoding="utf-8").read()
-        ok("E2 demo interactive layer present",
-           all(s in html for s in ('id="stdraw-svg"', "data-node=",
-                                   "stdraw-export", "__stdrawExportLayout")))
+        ok("E2 default demo page is STATIC (no drag layer)",
+           all(s in html for s in ('id="stdraw-svg"', "data-node="))
+           and not any(s in html for s in ("stdraw-toolbar", "stdraw-export",
+                                           "__stdrawExportLayout")))
+        out_i3 = os.path.join(tmp, "ident3")
+        run(["layout", EX, "--outdir", out_i3, "--from-layout", ip,
+             "--interactive"])
+        html3 = open(os.path.join(out_i3, "demo-2d.html"), encoding="utf-8").read()
+        ok("E3 --interactive demo carries the drag layer (opt-in)",
+           all(s in html3 for s in ('id="stdraw-svg"', "data-node=",
+                                    "stdraw-export", "__stdrawExportLayout")))
 
         # B. perturbed manual layout (browser-drag shape: nudge one node +30x)
         first = list(lay_a["nodes"])[0]
@@ -102,7 +117,7 @@ def main():
             json.dump(pert, f, ensure_ascii=False)
         out_p = os.path.join(tmp, "pert")
         r2 = run(["layout", EX, "--outdir", out_p,
-                  "--from-layout", pp, "--compare-auto"])
+                  "--from-layout", pp])
         lay_p = load(os.path.join(out_p, "layout.json"))
         geo_p = load(os.path.join(out_p, "geometry_report.json"))
         ok("B1 perturbed manual honest exit semantics",
@@ -110,8 +125,11 @@ def main():
            f"rc={r2.returncode} fail={geo_p['fail']}")
         ok("B2 perturbed coordinate applied (snapped 2px)",
            lay_p["nodes"][first]["x"] == lay_a["nodes"][first]["x"] + 30)
-        # B3: compare-auto artifacts (occasional directory-visibility lag under Windows/AV, retry 3x1s)
+        # B3: tools/compare_auto.py dual-certificate comparison (moved out of
+        # the CLI by the T16 subtraction card; retry 3x1s for Windows/AV lag)
         import time
+        r_cmp = run_tool("compare_auto.py",
+                         [EX, "--from-layout", pp, "--outdir", out_p])
         cmp_path = os.path.join(out_p, "compare-auto.json")
         cmp_dir2 = os.path.join(tmp, "pert-compare-auto")
         for _ in range(3):
@@ -119,10 +137,11 @@ def main():
                os.path.exists(os.path.join(cmp_dir2, "certificate.json")):
                 break
             time.sleep(1.0)
-        ok("B3 compare-auto artifacts",
+        ok("B3 compare-auto artifacts (tools/compare_auto.py)",
+           r_cmp.returncode == 0 and
            os.path.exists(cmp_path) and
            os.path.exists(os.path.join(cmp_dir2, "certificate.json")),
-           "stdout_tail=" + " | ".join(r2.stdout.strip().splitlines()[-6:]))
+           "stdout_tail=" + " | ".join((r_cmp.stdout or r2.stdout).strip().splitlines()[-6:]))
         cmpj = load(cmp_path)
         ok("B4 compare table has both columns",
            set(cmpj["metrics"]["crossings"].keys()) ==
@@ -171,10 +190,11 @@ def main():
         out_dm = os.path.join(tmp, "debt-manual")
         run(["layout", DEBT, "--outdir", out_dm, "--from-layout", md])
         dpath = os.path.join(tmp, "debt-diff.json")
-        r3 = run(["layout-diff", os.path.join(out_da, "layout.json"),
-                  os.path.join(out_dm, "layout.json"),
-                  "--cld", DEBT, "--diff-out", dpath])
-        ok("D0 layout-diff rc=0", r3.returncode == 0, r3.stderr[-200:])
+        r3 = run_tool("layoutdiff.py",
+                      [os.path.join(out_da, "layout.json"),
+                       os.path.join(out_dm, "layout.json"),
+                       "--cld", DEBT, "--out", dpath])
+        ok("D0 tools/layoutdiff.py rc=0", r3.returncode == 0, r3.stderr[-200:])
         d = load(dpath)
         ok("D1 three layers present",
            d.get("node_level") and d.get("structural") and d.get("semantic"))
@@ -318,10 +338,11 @@ def main():
                f"p0={p0} pl={pl} a={ea} b={eb}")
             # layout-diff works on waypoints layouts (third leg of the full chain)
             dpath_w = os.path.join(tmp, "wp-diff.json")
-            r_dw = run(["layout-diff", os.path.join(out_auto, "layout.json"),
-                        os.path.join(out_w1, "layout.json"),
-                        "--cld", EX, "--diff-out", dpath_w])
-            ok("G5 layout-diff accepts waypoints layout", r_dw.returncode == 0,
+            r_dw = run_tool("layoutdiff.py",
+                            [os.path.join(out_auto, "layout.json"),
+                             os.path.join(out_w1, "layout.json"),
+                             "--cld", EX, "--out", dpath_w])
+            ok("G5 tools/layoutdiff.py accepts waypoints layout", r_dw.returncode == 0,
                r_dw.stderr[-120:])
 
         # H. ref-scrubbed: waypoints honest errors (unknown edge/bad format -> exit 2)
