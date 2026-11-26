@@ -429,6 +429,7 @@
 - **grade 语义与既有门阈值零改动**；`mutual_pairs_separated`（≥4）保留不动，新门是加严方向。
 
 ### 5.2 验收数字（改前主干 `49cf73e` vs 改后 `a9f71fc`，同机同解释器，程序现读）
+- 勘误补注（2026-11-26）：本节「改后 `a9f71fc`」经 rebase 实际落地 = main `3b8e21d..55d0344`；表中数字经终审复量卡在 main `6485774` 复量逐数相同。
 
 | 项 | 改前 | 改后 | 判 |
 |---|---|---|---|
@@ -584,3 +585,50 @@
 ### 5.11 publishing face 同步
 
 - `README*` / `demos/` / `docs/gallery/` / `skills/stdraw/SKILL.md` 本轮未动；demos 重渲随重祝福一并做（须过 freshness gate + 发布面验收）。
+
+## 6. 登记 #6：GaU 版面档1（行距 96）——金标准渲染调用点带参（2026-11-26）
+
+### 6.1 批准来源与变更内容
+
+- **批准**：owner 2026-11-26 19:35 桌面对话回复「按你推荐做吧」（default 同日 19:30 落卡评论代记、引原话与出处）——批准 ① growth-and-underinvestment（GaU）版面采用方案档1（行距 96）；② 金标准 8 图指纹中该图 1/8 重祝福（re-bless），其余 7 张逐字节不变。
+- **变更内容**：`tests/golden_gate.py` 新增 `PER_GRAPH_CLI_ARGS`，GaU 项渲染命令带 `--pitch 96`（渲染调用点带参，方案①，侵入最小）；**引擎 `stdraw/*.py` 零改动**，门表 / 阈值 / grade 语义零改动。金标准基线 `tests/golden/baseline.json` 重祝福 1/8。
+- **T14 deprecated 衔接（过渡用法）**：`--pitch` 已标 deprecated（T14 落地后 CLI 对使用处输出 `[deprecated]` warning 至 stderr）。golden_gate 的渲染走 subprocess capture_output，warning 被捕获、仅在渲染出 problems 时随 stderr tail 透出——实测门输出零污染（改后 8/8 输出无 deprecated 行）；warning 同时如实记入 GaU 证书 notes（deprecated pixel parameter(s) used: --pitch），进 certificate 指纹。**过渡依赖 `--pitch`：迁移到配方级参数须另卡，且须早于 P3 减法卡物理删除 `--pitch`。**
+
+### 6.2 验收数字（改前 = main `d9330b4` 默认渲染 vs 改后 = `--pitch 96`，同机同解释器，程序现读）
+
+| 项 | 口径 | 改前 | 改后 |
+|---|---|---|---|
+| 画布（viewBox） | 宽 × 高 | 416 × 456 | 416 × 520（+64，≤584 一屏档） |
+| R1（efforts↔performance）弦 | 两锚点距离 | 42.0 | 58.0 |
+| R1 宽 / 弦 | 两弧最大间距（采样）÷ 弦 | 22.2 / 42.0 = 0.529 | 22.2 / 58.0 = 0.383（进入人画跨度 0.36–0.97） |
+| R1 药丸距自身环线 | 药丸矩形到两弧最小距 | 50.0 | 16.9 |
+| B2 药丸距自身环线 | 同上 | 22.3 | 9.3 |
+| B2 药丸偏心 | 药丸中心到透镜中心距离 | 95.9 | 44.0 |
+| B3 药丸距自身环线 | 同上 | 14.0 | 15.2（基本持平） |
+| B2 本体（弦 / 宽÷弦） | 水平透镜 | 42.0 / 1.176 | 42.0 / 1.176（不变） |
+| 门 / grade / placement | certificate | 14/14 best column-chain | 14/14 best column-chain |
+| 标签硬口径 | 压框 / 压线 / 重叠 | 0 违例 | 0 违例（gate 14: 3/3 placed, all clear） |
+
+- **明写不解决项**（行距是纵向参数，四项均不触）：R1 鼓量仍 0.5+0.5（近直线读感不变）；B2 眼形比率仍 1.176（弦 42 由列间门隙 36px 决定）；三枚标签入环几何不可达（药丸 104×18 + 两侧 4px 门隙需透镜内宽 ≥88 ⇒ 弦 ≥209，行距档最大 74）；左留白 144px 不变。四项归引擎卡（slim 通道例外化 + 透镜宽度下限 + 列间距档），前置 = owner 对 ruling A 修订的拍板。
+- 数字与方案卡两档实测（`6485774` 之上的 throwaway 树）逐数相同；本登记在 `d9330b4` 复量同值。
+
+### 6.3 重祝福与指纹
+
+- 只读门先跑：改后首跑 = 7 张 baseline identical + GaU 两条 DRIFT（`sha256.certificate` / `sha256.layout`），`loops_audit` / `.cld` 指纹不变；随后 `--update-baseline`、复跑 **8/8 ALL GREEN**。
+- 指纹（程序取自基线 JSON 新旧对照）：
+  - certificate：`e038bbbca07e` → `c7752750ac94`（notes 记 deprecated 用法；`edge_box_min_clear` 记录字段 26.2 → 28.1）
+  - layout：`6454e86611db` → `ec810337ce3d`
+- `--update-baseline` 连带刷新 `timing_ref` 与逐图 `seconds`（全 8 图，WARN-only 不作门）——授权口径是整图重录制，计时刷新如实披露。
+- A 档流程门：本变更不动引擎代码与默认 CLI 行为（非 GaU 图的渲染字节不变——金标准 7/8 baseline identical + demos 新鲜度门 I 腿绿 + debt 中英两页配方对拍逐字节相同为证），无引擎变更可比对面，不跑 A 档两腿。
+
+### 6.4 demos / gallery
+
+- 引擎输出字节不变（见 6.3），demos 三页 + 两 JSON 重渲对拍逐字节相同（classic-cld 三件走 I 腿；debt 中英走配方对拍）；`docs/gallery/` 截图的内容基（页面字节）未变，未重截。GaU 不在 demos / gallery 发布面内。
+
+### 6.5 byte-pinned 消费方（STDRAW_PIN）
+
+- 8777 STDRAW_PIN 不动：引擎默认渲染零变化。**登记提醒**：消费方若渲染 GaU，须同样带 `--pitch 96` 才得到本登记口径的版面；不带参仍输出旧版面（416×456），届时走消费侧复现重验。
+
+### 6.6 验收（另卡）
+
+- 数字验收门（uidesignerbot 真渲染另卡）：golden_gate 8/8 ALL GREEN、GaU 画布高 520、R1 宽/弦 0.383±0.02 / 弦 58、标签硬口径 0 违例、其余 7 图逐字节相同、GaU 四维评分目标 ≥14/20（现 11.00）。
