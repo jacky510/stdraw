@@ -563,10 +563,38 @@ def main():
             except Exception:
                 has_ortools = False
             if has_ortools:
+                # 2026-11-26 CI-speed card: the units lane (phases D,E,H,K)
+                # is dominated by this phase (~14min of ~14.7min job wall on
+                # GH run 45770488045), and inside it the scalability script
+                # (n20 auto-v2 double run) dwarfs crossing/placement. With
+                # STDRAW_CI_UNITS_PARALLEL=1 (set only on the checks-units
+                # lane) the three scripts share a 2-worker thread pool —
+                # scalability starts first and the two short scripts fill
+                # the second slot. Results are collected and printed in the
+                # fixed order below, so stdout ordering and the failures
+                # list are identical to the sequential path. Default
+                # (env unset) keeps the historical sequential behavior.
+                e_scripts = ("test_scalability.py",
+                             "test_crossing_exact.py", "test_placement.py")
+                if os.environ.get("STDRAW_CI_UNITS_PARALLEL") == "1":
+                    from concurrent.futures import ThreadPoolExecutor
+
+                    def _run_e_script(t):
+                        return (t, subprocess.run(
+                            [sys.executable, os.path.join(root, "tests", t)],
+                            capture_output=True, text=True))
+
+                    with ThreadPoolExecutor(max_workers=2) as _ex:
+                        e_results = dict(_ex.map(_run_e_script, e_scripts))
+                else:
+                    e_results = {}
+                    for t in e_scripts:
+                        e_results[t] = subprocess.run(
+                            [sys.executable, os.path.join(root, "tests", t)],
+                            capture_output=True, text=True)
                 for t in ("test_crossing_exact.py", "test_placement.py",
                           "test_scalability.py"):
-                    r = subprocess.run([sys.executable, os.path.join(root, "tests", t)],
-                                       capture_output=True, text=True)
+                    r = e_results[t]
                     if r.returncode != 0:
                         failures.append(f"{t}: exit {r.returncode}\n"
                                         f"{r.stdout}\n{r.stderr}")
