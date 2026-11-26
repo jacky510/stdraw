@@ -292,6 +292,19 @@
    692,
    364
   ],
+  "mutual_pairs_closed_count": 1,
+  "mutual_pairs_exempt": [
+   {
+    "pair": [
+     "crowding",
+     "quickfix"
+    ],
+    "status": "tilt",
+    "tilt_deg": 62.9,
+    "centre_tilt_deg": 27.1
+   }
+  ],
+  "mutual_pairs_open": [],
   "symmetry_mirror_err": 0,
   "spine_axis_deviation": 0,
   "midline_deviation": 0,
@@ -364,12 +377,13 @@
   "midline_adherence_le_2px": true,
   "symmetry_mirror_le_2px": true,
   "mutual_pairs_separated": true,
+  "mutual_pairs_closed": true,
   "lines_no_coincidence": true,
   "visual_crossings_zero": true,
   "loop_labels_clear": true,
   "routing_consistent": true
  },
- "gates_passed": "14/14",
+ "gates_passed": "15/15",
  "reports": {
   "crossings_zero": true,
   "crossings_note": "soft target: <=2 crossings allowed when placement regularity holds (product call: some line intersection is acceptable; order and elegance come first); grading caliber unchanged (best = all hard gates + 0 crossings)",
