@@ -17,34 +17,34 @@
   "rebless": "only under an approved card: python tests/golden_gate.py --update-baseline"
  },
  "timing_ref": {
-  "avg": 1.1,
+  "avg": 1.26,
   "max": 2.36,
   "platform": "Windows-11-10.0.26300-SP0",
   "per_graph": {
-   "eroding-goals": 0.88,
-   "escalation": 0.83,
-   "fixes-that-fail": 0.87,
-   "growth-and-underinvestment": 1.04,
+   "eroding-goals": 1.14,
+   "escalation": 1.03,
+   "fixes-that-fail": 1.04,
+   "growth-and-underinvestment": 1.36,
    "limits-to-growth": 2.36,
-   "shifting-the-burden": 1.03,
-   "success-to-the-successful": 0.87,
-   "tragedy-of-the-commons": 0.93
+   "shifting-the-burden": 1.12,
+   "success-to-the-successful": 0.95,
+   "tragedy-of-the-commons": 1.07
   }
  },
  "graphs": {
   "eroding-goals": {
    "cld": "eroding-goals.cld",
-   "seconds": 0.88,
+   "seconds": 1.14,
    "sha256": {
     "cld": "c784caa7f3b89233f04d339622b0c13dcf29b69788748caf3d82b0188a677ac5",
-    "certificate": "e79b63b19a69966c81d5e58f92851e1c76b882c0737236672da9c337c61a280c",
+    "certificate": "3c8d3ab97bfd0beb54616f62e812fa112eac7c33628820039ff1b0dd1add686b",
     "loops_audit": "ed451a10da2d72d26130995c1dd7d168298eaa7a2d6966d2574bcd6db56376ed",
-    "layout": "abf5b3ff60641d5ced0581a6eea8adfdbe65ffd0b23fcb07bab3e0ea3cec0862"
+    "layout": "15adef85bde2f8945b8ed83234a463af79db143ee40879582aa66f93bd996ec8"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
    "placement": "bowtie-vertex",
-   "gates_passed": "12/12",
+   "gates_passed": "13/13",
    "crossings": 0,
    "visual_crossings": 0,
    "box_press_1px": 0,
@@ -58,17 +58,17 @@
   },
   "escalation": {
    "cld": "escalation.cld",
-   "seconds": 0.83,
+   "seconds": 1.03,
    "sha256": {
     "cld": "a78ba0dacc6f665abc9ef9fbbc7e4fe00d89fcba62f59142bcbc2029935a2719",
-    "certificate": "dbaef1fcc7798d4cd283eed4df98816b7774a994e6507c68b4a4d01affd3fcd7",
+    "certificate": "021476a208f432fc3f0cf7256bf4ceab20c89a568695919debe115d9774c9bb4",
     "loops_audit": "7cbb9c104143a09554bdb7190bac6bdac145b17c46e9fbc797c2a524785ce846",
-    "layout": "917cb5559bfa07519966f8c5a28bdbee5eb1d81c2b9594b8bc93a1047aa8ac96"
+    "layout": "da023f20b7d40b026cb469f2b830e11d8f5bf3242665453f41bb6cf66afd048f"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
    "placement": "ring-cycle",
-   "gates_passed": "12/12",
+   "gates_passed": "13/13",
    "crossings": 0,
    "visual_crossings": 0,
    "box_press_1px": 0,
@@ -82,21 +82,21 @@
   },
   "fixes-that-fail": {
    "cld": "fixes-that-fail.cld",
-   "seconds": 0.87,
+   "seconds": 1.04,
    "sha256": {
     "cld": "ecd6d76a2751b968ac6e531207fd31e13cf01f9e5cc74187f11bb290eda567f4",
-    "certificate": "66502b2570aba65ed4b7f76f4fc315520a8d1292e1ed30cd4aea34aaa6b770e3",
+    "certificate": "1d9cafd8748322c2fa753a1ccd053063f3011bb2e174c69b0f1e4227f3662247",
     "loops_audit": "a2ebafb9b0c0856b19c158cae5fa6383d14406155b6ba336c3deab6c6082c75c",
-    "layout": "77427b675e98f0c2bd2323280bf5e2350a8117c718509e16e46e9636b5e5b7c3"
+    "layout": "0d4b2223cf4cf415085022b2ef11b0280ceb84673b35bfdc1e2d61fb04b0b82f"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
    "placement": "ring-cycle",
-   "gates_passed": "12/12",
+   "gates_passed": "13/13",
    "crossings": 0,
    "visual_crossings": 0,
    "box_press_1px": 0,
-   "edge_box_min_clear": 187.4,
+   "edge_box_min_clear": 157.8,
    "min_card_gap": 164.0,
    "geometry_fail": 0,
    "loops_problems": 0,
@@ -106,21 +106,21 @@
   },
   "growth-and-underinvestment": {
    "cld": "growth-and-underinvestment.cld",
-   "seconds": 1.04,
+   "seconds": 1.36,
    "sha256": {
     "cld": "e0c89ae4cf2c8177760e45be0db9e34ce4745b0395aadbfe95d1d0812493d5f7",
-    "certificate": "d9593eb3815dd78bc1476a199249735d3eb453007638fc21b44338b821b9df53",
+    "certificate": "e038bbbca07e5c4de7058f9078da07cd623263c15af1fc2c3bad7cbba1e75929",
     "loops_audit": "971651dc619ed422ccd1ebb15bc39ab47af38f9a7540c627103a64cdb54933b9",
-    "layout": "eadb2b946a0deb24dd37a0ca8e97c4611d6a4391860146061d97ffa111269273"
+    "layout": "6454e86611dbf6b337c4ae5f3cebf7b357c48b9e83500400336106db3a9a9a6b"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
    "placement": "column-chain",
-   "gates_passed": "13/13",
+   "gates_passed": "14/14",
    "crossings": 0,
    "visual_crossings": 0,
    "box_press_1px": 0,
-   "edge_box_min_clear": 25.5,
+   "edge_box_min_clear": 26.2,
    "min_card_gap": 36.0,
    "geometry_fail": 0,
    "loops_problems": 0,
@@ -133,18 +133,18 @@
    "seconds": 2.36,
    "sha256": {
     "cld": "96c4f0d9b3f2e01a86fe30b7c92c7f156de49ca66bb0df2248813a382b4131a3",
-    "certificate": "c587cdd4c141bfb40bec9443ee9055a752a5f8086558ca3030f180ff05bf29c6",
+    "certificate": "27312bae0ad088b97478afa68e5892f901a0ffc1cb5aa0599fd2c0b82c0261a5",
     "loops_audit": "1d3a446146801b2c5da2f284f6119bfaa9a00e06bfb05ad2d5fed122eb3c73dd",
-    "layout": "5ce2285a837881fd7a7d3aeb5c21c10bf17c14aaf229d22fd4bf33ec85019fd0"
+    "layout": "bdac4270a51fcc4d7849cd8d67553a9a00db9736d29268e9d2f9c919d9af968e"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
    "placement": "ring-cycle",
-   "gates_passed": "12/12",
+   "gates_passed": "13/13",
    "crossings": 0,
    "visual_crossings": 0,
    "box_press_1px": 0,
-   "edge_box_min_clear": 163.5,
+   "edge_box_min_clear": 127.4,
    "min_card_gap": 164.0,
    "geometry_fail": 0,
    "loops_problems": 0,
@@ -154,17 +154,17 @@
   },
   "shifting-the-burden": {
    "cld": "shifting-the-burden.cld",
-   "seconds": 1.03,
+   "seconds": 1.12,
    "sha256": {
     "cld": "63220b16ecbe670c028dd6619dd4fc9237c8afebf7fdc1dde0dcae236383ca83",
-    "certificate": "a27f251e8bf52cbb1c60dd966e3f5883e4c4b48726a7a6404f20b3f7023d58fd",
+    "certificate": "6e81c58755bde297fcf659d8a8032be2d42d42997046ca0b7284e9d345518541",
     "loops_audit": "2ed57eb657c5a44bb50c254ca13b3e2a8cf850895f801cec3f26cf1deca86146",
-    "layout": "158129ae4f353414066f986c2bf4238b4b512ddc388605ec7d0cfe46fde7856e"
+    "layout": "f8bbf041b491b4982260c514cf41522c37c76f600054c7cc2290401ac8c1b881"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
    "placement": "ring-cycle",
-   "gates_passed": "12/12",
+   "gates_passed": "13/13",
    "crossings": 0,
    "visual_crossings": 0,
    "box_press_1px": 0,
@@ -178,12 +178,12 @@
   },
   "success-to-the-successful": {
    "cld": "success-to-the-successful.cld",
-   "seconds": 0.87,
+   "seconds": 0.95,
    "sha256": {
     "cld": "0cdd8879bf187c4f42e4b256790974226ababac2ae6f44c13079a68348d49161",
-    "certificate": "9424e375a7626b530d3495849e3e1f2a4a3ab32e62a8a728c29863feb34699c8",
+    "certificate": "e952667bedb76a48187554c593c679246d67979dc681958bc1801dd1b30f2429",
     "loops_audit": "132463ee14dc9e24a8c1c904f90ce0e24b3e66f2baa1443a752cdc4bb13a220b",
-    "layout": "90cfa3f1e8669791e301a80591faa6537d1dc2a1cf51ee9619f9d6c3b088b145"
+    "layout": "d75351bae6fe4b5a99e602fdd88a81d5167009731bfb72c5834e0debbd012759"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -202,17 +202,17 @@
   },
   "tragedy-of-the-commons": {
    "cld": "tragedy-of-the-commons.cld",
-   "seconds": 0.93,
+   "seconds": 1.07,
    "sha256": {
     "cld": "99c64cce9c1ba3491f389dd4137a30a1e2d4744254ef9db1ef462d8278dc905d",
-    "certificate": "fd7628b54636660ae9e94563e370746003e443d9a9d98f5289e6d4b516ce9b95",
+    "certificate": "5cd1fe86b897e5669ea0ad8de80605df8b5c2de0eac5ef31993ac47a06683b3a",
     "loops_audit": "d04319aea4a3cf933efd014aae0bc0f4139b87e778b1a52aa579fd363c522e49",
-    "layout": "752100417e6ed8c9806ba39e236b415925c777add6dca1827e8fdc34d5653797"
+    "layout": "e87ee61b2dd837db84330dc6e5b1772544a53c045e049abe596072c8ac1ac5b7"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
    "placement": "ring-cycle",
-   "gates_passed": "12/12",
+   "gates_passed": "13/13",
    "crossings": 0,
    "visual_crossings": 0,
    "box_press_1px": 0,

@@ -440,7 +440,7 @@
 | B3 同口径全语料 52 图 | 94 | 0 | — |
 | 金标准 8 图 grade / crossings | 8 best / 0 | 8 best / 0 | 全绿 |
 
-- B4 的 GaU R1（efforts↔performance）：改前已是 21px 相距的金锚透镜（本册量法宽/弦 0.529，验收报告的 0.10 口径未复现），本轮未动（performance 的上角锚被 B2 透镜占用，角锚变体不可用；弦 42px 由 80px 行距决定）——如实记录，不宣称改善。
+- B4 的 GaU R1（efforts↔performance）：改前已是 21px 相距的金锚透镜（本册量法宽/弦 0.529；验收报告的 0.10 口径未复现——0.10 是 **LtG R1（action↔state）的改前值，不是 GaU R1**，对账见目检报告 §2.5），本轮未动（performance 的上角锚被 B2 透镜占用，角锚变体不可用；弦 42px 由 80px 行距决定）——如实记录，不宣称改善。
 - A4（GaU 三枚标签归属）：改后三枚仍不在各自环内（R1/B2 偏心距 80 / 95.9，B3 64）；药丸 18px 高 + 两侧 4px 门隙需要透镜宽 ≥88 → 弦 ≥209，现节距 80 下不可达，B1 布点修复不改变该结论——按卡面「随 B1 复核」如实记录。
 - B3 实现口径与卡面措辞不同：箭尖沿**末段方向**投影到圆角轮廓（无交点时径向），不是沿框边法线；位移 ≤2.34px。
 
@@ -564,7 +564,18 @@
 ### 5.9 冻结基线处置（与流程门分开报）
 
 - `tests/baselines/`（ortho-v1）：`--recipe ortho` 冻结路径未改，字节钉不变（`test_delivery_contract` 全量通过）。
-- `tests/golden/baseline.json`：8 图 certificate / layout 指纹变化（B3 改 `arrow` 字段与渲染字节；GaU / FtF / LtG 另有布线 / 布点变化；`gates_passed` 12→13 或 13→14 = 新门），`golden_gate.py` 不更新基线时 0/8 通过、23 条 DRIFT 行全为 sha256 / gates_passed，硬门零失败。**重祝福待 owner 批**，批后 `python tests/golden_gate.py --update-baseline` 并把新指纹回填本节。
+- `tests/golden/baseline.json`：8 图 certificate / layout 指纹变化（B3 改 `arrow` 字段与渲染字节；GaU / FtF / LtG 另有布线 / 布点变化；`gates_passed` 12→13 或 13→14 = 新门），`golden_gate.py` 不更新基线时 0/8 通过、23 条 DRIFT 行全为 sha256 / gates_passed，硬门零失败。**重祝福已获 owner 批准**（2026-11-26 10:43 飞书，default 12:23 回填批准出处），rebase 到 `60786c4` 后复跑只读门确认 23 条 DRIFT 与首跑逐条相同（无药丸相互作用），随后 `--update-baseline` 执行、复跑 **8/8 ALL GREEN**。新指纹（rebase 后基线）：
+
+| 图 | certificate | layout | gates |
+|---|---|---|---|
+| eroding-goals | 3c8d3ab97bfd | 15adef85bde2 | 13/13 |
+| escalation | 021476a208f4 | da023f20b7d4 | 13/13 |
+| fixes-that-fail | 1d9cafd87483 | 0d4b2223cf4c | 13/13 |
+| growth-and-underinvestment | e038bbbca07e | 6454e86611db | 14/14 |
+| limits-to-growth | 27312bae0ad0 | bdac4270a51f | 13/13 |
+| shifting-the-burden | 6e81c58755bd | f8bbf041b491 | 13/13 |
+| success-to-the-successful | e952667bedb7 | d75351bae6fe | 15/15 |
+| tragedy-of-the-commons | 5cd1fe86b897 | e87ee61b2dd8 | 13/13 |
 
 ### 5.10 byte-pinned 消费方（STDRAW_PIN）
 
