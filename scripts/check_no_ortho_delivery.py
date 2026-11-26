@@ -3,10 +3,12 @@
 
 jacky, 2026-11-11 20:46: vertical-orthogonal diagrams are BANNED as
 deliverables ("box-over-line everywhere, repeatedly unfixable" -- ruling D0,
-WorkBuddy task 2026-11-11).  Isolation, not repair: the ortho-v1 recipe
-itself stays frozen for CI byte-regression (AGENTS.md freeze rule,
-tests/baselines/ untouched); what this scanner blocks is the DELIVERY EXIT --
-any vertical-orthogonal output directory that ships an .html page.
+WorkBuddy task 2026-11-11).  Isolation, not repair: the ortho-v1 recipe's
+external entry was removed (owner ruling, 2026-11-24 -- CLI --recipe ortho,
+recipes.ortho_v1(), the v1-legacy certificate caliber are gone); what this
+scanner blocks is the DELIVERY EXIT -- any vertical-orthogonal output
+directory that ships an .html page (legacy / hand-made products included,
+per the D0 anti-bypass rule).
 
 Signals (any hit marks the directory vertical-orthogonal):
   1  certificate.json .caliber     == "v1-legacy"

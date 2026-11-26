@@ -10,15 +10,19 @@ sync with this contract.
 Canonical facts are the CODE, never the prose:
 - v2 grading: `certificate_auto()` in `stdraw/metrics.py` (caliber
   `v2-hardgates`, recipe `auto-v2`);
-- v1 grading: `certificate()` in `stdraw/metrics.py` (caliber `v1-legacy`,
-  recipe `ortho-v1`).
+- v1 grading: **retired** — the `certificate()` function (caliber
+  `v1-legacy`, recipe `ortho-v1`) was removed by owner ruling, 2026-11-24,
+  together with the ortho recipe's external entry (CLI `--recipe ortho`,
+  `recipes.ortho_v1()`). Historical v1-legacy certificates (archived
+  benchmark evidence, prior deliverables) keep their fields and are read
+  back under the rules in this document.
 
 ## 1. Grade tokens (what `certificate.json.grade` can contain)
 
 | caliber | recipe | tokens emitted by the 2D pipeline |
 |---|---|---|
 | `v2-hardgates` | `auto-v2` | `best`, `crossed-certified` (planarized L1 only), `uncertified` |
-| `v1-legacy` | `ortho-v1` | `best`, `uncertified` (plus a retained legacy `second` branch, logically near-unreachable) |
+| `v1-legacy` (**retired**, historical read-back only) | `ortho-v1` (**entry removed** 2026-11-24) | historically `best`, `uncertified`, `second` — no new v1 certificates can be produced |
 
 `3d` is a **retired documentation-level tier**: it described the 3D delivery
 path (a separate layout3d / render3d module pair and its CLI flags), removed
@@ -26,39 +30,42 @@ from the engine after v0.9.0. It never appeared as a value of the 2D
 `certificate.json.grade` field; the token is kept in the read-back set only so
 historical certificates still validate.
 
-`second` is **v1-legacy only**: the branch still exists in the v1 grading
-code for byte-compatible regression, but it was removed from the v2
-implementation in v0.7.15+ (logically unreachable). No document may present
-`second` as a current tier of the auto-v2 recipe.
+`second` is **v1-legacy only**: it was removed from the v2 implementation in
+v0.7.15+ (logically unreachable), and the v1 grading code that still carried
+it was deleted on 2026-11-24 with the ortho entry removal. No document may
+present `second` as a current tier; existing certificates bearing it are
+historical artifacts.
 
-## 2. The two calibers are different rulers
+## 2. The calibers are different rulers (v1 kept for historical read-back)
 
-Both calibers can emit `grade: "best"`, but the token means different
-things under each. The certificate therefore self-describes (fields are
-additive; consumers read `caliber` **before** interpreting `grade`):
+Historical v1-legacy certificates could also emit `grade: "best"`, but the
+token meant something different there. Current certificates self-describe
+(fields are additive; consumers read `caliber` **before** interpreting
+`grade`):
 
-| field | v1-legacy (ortho-v1) | v2-hardgates (auto-v2) |
+| field | v2-hardgates (auto-v2, current) | v1-legacy (historical artifacts only) |
 |---|---|---|
-| `recipe` | `ortho-v1` | `auto-v2` |
-| `caliber` | `v1-legacy` | `v2-hardgates` |
-| `placement` | `ortho-v1` | placement mode (ring-cycle / spine-wing / ...) |
+| `recipe` | `auto-v2` | `ortho-v1` |
+| `caliber` | `v2-hardgates` | `v1-legacy` |
+| `placement` | placement mode (ring-cycle / spine-wing / ...) | `ortho-v1` |
 | `grade_semantics` | grading formula, in the certificate | grading formula, in the certificate |
 | `blocking_gates` | list of `false` gate keys | list of `false` gate keys |
-| `deliverable` | always `false` (see §4) | reflects the delivery contract (CLI full deliverable: `true`) |
-| `blocked_reason` / `blocked_by` | set (`D0`) | absent |
-| gate count at `best` | 4 legacy gates | 11+ hard gates (placement-specific) |
+| `deliverable` | reflects the delivery contract (CLI full deliverable: `true`) | always `false` (see §4) |
+| `blocked_reason` / `blocked_by` | absent | set (`D0`) |
+| gate count at `best` | 11+ hard gates (placement-specific) | 4 legacy gates |
 
 Grading formulas:
 
 - **v2-hardgates**: `best` = 0 line crossings AND all placement-specific
   hard gates AND `anchors_standard` AND `visual_crossings_zero` AND dual
   crossing accounting; everything else is `uncertified` (honest no-grade).
-- **v1-legacy**: `best` = 0 crossings AND min card gap >= 16 AND spacing
-  CV <= 0.35; `second` (legacy) = placement ok AND <= 2 crossings; else
-  `uncertified`.
+- **v1-legacy (historical)**: `best` = 0 crossings AND min card gap >= 16
+  AND spacing CV <= 0.35; `second` (legacy) = placement ok AND <= 2
+  crossings; else `uncertified`. The code behind this formula is gone;
+  this row exists so archived certificates still read back correctly.
 
-Host rule: **read `caliber` first, then `grade`.** A v1 `best` and a v2
-`best` are not interchangeable claims; and a v1 output is never a
+Host rule: **read `caliber` first, then `grade`.** A historical v1 `best`
+and a v2 `best` are not interchangeable claims; and a v1 output is never a
 deliverable at all (§4).
 
 ## 3. Soft targets vs certificate gates (the caliber split)
@@ -67,8 +74,8 @@ deliverable at all (§4).
 objective function** (report items / soft targets: when placement
 regularity holds, <= 2 crossings may be tolerated — order and elegance
 first). They are **not** certificate gates: the certificate-level `best`
-requires 0 crossings under both calibers, and in v2
-`visual_crossings_zero` is a hard gate. A figure laid out under the soft
+requires 0 crossings (and, in v2, `visual_crossings_zero` as a hard gate).
+A figure laid out under the soft
 target regime with 1-2 crossings is correctly `uncertified` — that is an
 honest result, not a bug, and thresholds must never be tuned to change it.
 
@@ -140,24 +147,27 @@ Engineering basis (isolation, not repair):
 - leader bars span nearly the full canvas width while edges degenerate to
   single-column `{a, b, x, y1, y2}` segments, so cause-and-effect tracing
   through the drawing is broken;
-- the layout is byte-frozen for CI regression (production behavior pin),
-  so any layout-level fix collides with the freeze — the defect is
+- the layout was byte-frozen for CI regression (production behavior pin),
+  so any layout-level fix collided with the freeze — the defect was
   unfixable in place, hence the delivery-exit ban.
 
-Consequently:
+Consequently (updated 2026-11-24, owner ruling A-item: the ortho entry
+removal):
 
-- `recipe=ortho-v1` / `caliber=v1-legacy` outputs carry
-  `deliverable: false`, `blocked_reason`, `blocked_by: "D0"`, and the CLI
-  prints a `[BANNED / D0]` notice;
-- the frozen baseline itself stays in place for CI byte-regression
-  (`tests/baselines/*.layout.json`, gate A) — the ban is on the **exit**,
-  not on the recipe code or its regression data;
-- enforcement: `scripts/check_no_ortho_delivery.py` (wired into
-  `tests/ci_checks.py`) rejects any output directory that ships an `.html`
-  page with vertical-orthogonal signals, using both certificate
-  confessions (`caliber` / `recipe` / `deliverable`) and geometry
-  fallbacks (`meta.method`, leader bars + single-x edges, "all lines
-  strictly vertical") so stripped or hand-made products cannot bypass it.
+- the recipe's external entry (CLI `--recipe ortho`, `recipes.ortho_v1()`,
+  the v1-legacy certificate caliber, `tests/baselines/`) is **removed** —
+  new vertical-orthogonal output can no longer be produced through
+  supported surfaces;
+- historical v1-legacy artifacts carry `deliverable: false`,
+  `blocked_reason`, `blocked_by: "D0"` in their certificates (read-back
+  only; the `[BANNED / D0]` CLI notice is gone with the entry);
+- enforcement stays in place: `scripts/check_no_ortho_delivery.py` (wired
+  into `tests/ci_checks.py`) rejects any output directory that ships an
+  `.html` page with vertical-orthogonal signals — certificate confessions
+  (`caliber` / `recipe` / `deliverable`, kept for historical artifacts)
+  plus geometry fallbacks (`meta.method`, leader bars + single-x edges,
+  "all lines strictly vertical") so stripped or hand-made products cannot
+  bypass it.
 
 ## 5. Change rules
 

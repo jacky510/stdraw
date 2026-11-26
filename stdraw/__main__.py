@@ -17,16 +17,14 @@ import sys
 from . import __version__
 from .model import Graph
 from .dsl import parse, dumps
-from .planar import PlanarLayout, NotPlanarError, LayoutConfig
 from .recipes import run as recipes_run
 from .check import geometry_report_to_file
-from .metrics import certificate, scene_from_planar
 from .loops import loops_audit
 from .limits import MAX_LAYOUT_NODES, HARD_CEILING_NODES, size_refusal
 from .hints import apply_hints, has_hints
 from .render import render_html, line_kind_summary
 from .themes import DEFAULT_STATIC_THEME, THEMES
-from .delivery import strip_delivery_metadata, stamp_cli_deliverable
+from .delivery import stamp_cli_deliverable
 
 
 def load_graph(path: str) -> Graph:
@@ -81,11 +79,11 @@ def main(argv=None):
                     help="layout-diff second argument: manual layout layout.json")
     ap.add_argument("--outdir", default="stdraw-out")
     ap.add_argument("--recipe", default="auto",
-                    choices=["auto", "ortho", "candidate-v1"],
+                    choices=["auto", "candidate-v1"],
                     help="layout recipe: auto = auto-v2 (default, straight/arc lines + new hard gates); "
-                         "ortho = ortho-v1 (orthogonal vertical-line constructive, behavior frozen, pin-safe); "
                          "candidate-v1 = candidate pool (M1: structure analyzer + template sources + orchestrator "
-                         "+ three-tier selection, not-worse-than-auto guard)")
+                         "+ three-tier selection, not-worse-than-auto guard). "
+                         "(The retired ortho-v1 recipe entry was removed by owner ruling, 2026-11-24.)")
     ap.add_argument("--linestyle", default="straight", choices=["straight", "arc"],
                     help="auto recipe line style (default straight; arc = all-arc preference). "
                          "This is the REQUEST; the delivered line-kind facts are printed "
@@ -235,152 +233,105 @@ def main(argv=None):
         print("   hint:", _rh["problem"], "->", _rh["fix"])
 
     # 2D layout
-    if a.recipe == "ortho":
-        cfg = LayoutConfig()
-        if a.pitch:
-            cfg.pitch = a.pitch
-        eng = PlanarLayout(g, cfg)
+    from .layout_auto import AutoConfig
+    from .metrics import certificate_auto, scene_from_auto
+    cfg = AutoConfig()
+    if a.pitch:
+        cfg.pitch = a.pitch
+    if a.value_pad is not None:
+        cfg.value_pad_extra = a.value_pad
+    if a.column_order:
+        cfg.column_order = [v.strip() for v in a.column_order.split(",") if v.strip()]
+    if a.hub_side:
+        cfg.hub_side = {}
+        for _part in a.hub_side.split(","):
+            if "=" in _part:
+                _k, _v = _part.split("=", 1)
+                _v = _v.strip().lower()
+                if _v in ("left", "right"):
+                    cfg.hub_side[_k.strip()] = _v
+    if getattr(a, "mirror_symmetry", False):
+        cfg.mirror_symmetry = True
+    if a.from_layout:
+        # Manual layout: same routing + certificate pipeline; hard-gate
+        # caliber unchanged, graded honestly
+        from .layout_auto import layout as _auto_layout_fn
         try:
-            v4 = eng.run()
-        except NotPlanarError as e:
-            print(f"[3/5] 2D planar layer inapplicable: {e}")
-            print("      honest degradation: skipping the 2D certificate (a replaceable layout-layer implementation is M1+)")
-            v4 = None
-        else:
-            # ortho-v1 freeze-compat: the pipeline stamps delivery-contract
-            # metadata (stdraw/delivery.py), but the CLI ortho layout.json is a
-            # byte-frozen production pin (tests/baselines/, ci_checks gate A),
-            # so the metadata is stripped here; the ortho delivery contract
-            # travels on certificate.json (interactive / drag_layer) instead.
-            v4 = strip_delivery_metadata(v4)
-            labels = {n.id: n.label for n in g.nodes}
-            values = {n.id: n.value for n in g.nodes if n.value}
-            p = w("layout.json", v4)
-            print(f"[3/5] 2D layout (ortho-v1 frozen recipe): {v4['viewBox'][2]}x"
-                  f"{v4['viewBox'][3]}, {v4['meta']['rows']} rows -> {p}")
-            # 11-check geometry self-report (runs on delivered coordinates)
-            rc = geometry_report_to_file(
-                v4, os.path.join(a.outdir, "geometry_report.json"))
-            # Five-metric certificate (legacy caliber, byte-compatible)
-            cert = certificate(scene_from_planar(v4), graph_name=name,
-                               layer="2D",
-                               notes=["unrelated lines piercing cards occlusion-style is allowed by design (cards are opaque)"],
-                               interactive="yes", drag_layer="yes")
-            p = w("certificate.json", cert)
-            m = cert["metrics"]
-            print(f"[4/5] certificate: crossings {m['crossings']} / true card piercings {m['occlusions_true_0px']} / "
-                  f"gap {m['min_card_gap']} / alignment {m['row_align_rate']} / CV "
-                  f"{m['spacing_cv']} -> grade [{cert['grade']}] -> {p}")
-            hp = os.path.join(a.outdir, "demo-2d.html")
-            with open(hp, "w", encoding="utf-8") as f:
-                f.write(render_html(v4, name, cert, lr, labels, values, a.theme))
-            print(f"      demo -> {hp} (theme {a.theme})")
-            print("[BANNED / D0] ortho-v1 output is NOT a deliverable: "
-                  "vertical orthogonal wires, box-over-line / card occlusion, "
-                  "no polarity layer. Use auto-v2. Frozen baseline kept for "
-                  "CI regression only.")
-            if rc:
-                sys.exit(1)
+            _manual = load_manual_layout(a.from_layout)
+            v4 = _auto_layout_fn(g, cfg, a.linestyle, manual=_manual)
+        except ValueError as e:
+            print(f"manual layout unusable: {e}", file=sys.stderr)
+            sys.exit(2)
+    elif a.recipe == "candidate-v1":
+        v4 = recipes_run("candidate-v1", g, cfg, a.linestyle)
     else:
-        from .layout_auto import AutoConfig
-        from .metrics import certificate_auto, scene_from_auto
-        cfg = AutoConfig()
-        if a.pitch:
-            cfg.pitch = a.pitch
-        if a.value_pad is not None:
-            cfg.value_pad_extra = a.value_pad
-        if a.column_order:
-            cfg.column_order = [v.strip() for v in a.column_order.split(",") if v.strip()]
-        if a.hub_side:
-            cfg.hub_side = {}
-            for _part in a.hub_side.split(","):
-                if "=" in _part:
-                    _k, _v = _part.split("=", 1)
-                    _v = _v.strip().lower()
-                    if _v in ("left", "right"):
-                        cfg.hub_side[_k.strip()] = _v
-        if getattr(a, "mirror_symmetry", False):
-            cfg.mirror_symmetry = True
-        if a.from_layout:
-            # Manual layout: same routing + certificate pipeline; hard-gate
-            # caliber unchanged, graded honestly
-            from .layout_auto import layout as _auto_layout_fn
-            try:
-                _manual = load_manual_layout(a.from_layout)
-                v4 = _auto_layout_fn(g, cfg, a.linestyle, manual=_manual)
-            except ValueError as e:
-                print(f"manual layout unusable: {e}", file=sys.stderr)
-                sys.exit(2)
-        elif a.recipe == "candidate-v1":
-            v4 = recipes_run("candidate-v1", g, cfg, a.linestyle)
+        v4 = recipes_run("auto-v2", g, cfg, a.linestyle)
+    labels = {n.id: n.label for n in g.nodes}
+    values = {n.id: n.value for n in g.nodes if n.value}
+    # Full CLI deliverable (demo-2d.html + certificate.json) is produced
+    # below: the layout.json that ships with it is re-stamped interactive
+    # (delivery="stdraw-cli", no warning) per the delivery contract.
+    v4 = stamp_cli_deliverable(v4)
+    p = w("layout.json", v4)
+    meta = v4["meta"]
+    print(f"[3/5] 2D layout (auto-v2, engine={meta['position_engine']}, "
+          f"line kinds {line_kind_summary(v4)}): {v4['viewBox'][2]}x{v4['viewBox'][3]}, "
+          f"{meta['rows']} rows -> {p}")
+    rc = geometry_report_to_file(
+        v4, os.path.join(a.outdir, "geometry_report.json"))
+    exactness = None
+    # D4 (jacky 2026-11-14): L1 planarized drawings default to
+    # --exact (oracle cr UB participates in the three-account
+    # check).  D4 fallback (jacky 2026-11-14 scope ruling, stdraw
+    # range n<=20): --no-exact opts out; the certificate then stays
+    # honestly 'uncertified' (three_account_consistent cannot pass
+    # without the oracle cr UB).  Solve times over budget ->
+    # report, never self-downgrade.
+    _plz_meta = v4["meta"].get("planarization") or {}
+    if (a.exact or _plz_meta.get("mode") == "L1") and not a.no_exact:
+        # reuse the pipeline's oracle run (same computation; avoids a
+        # duplicate B&B solve; falls back to a fresh run for direct
+        # --exact on L0 drawings)
+        exactness = _plz_meta.get("exactness")
+        if exactness is None:
+            from .crossing_exact import crossing_exact
+            exactness = crossing_exact(g)
+        print(f"      [exact] cr={exactness['crossing_number']} "
+              f"proven_optimal={exactness['proven_optimal']} "
+              f"lb={exactness['lb']} gap={exactness['gap']} "
+              f"coverage={exactness['coverage']}")
+    if _plz_meta.get("mode") == "L1":
+        print(f"      [planarized] mode=L1 CAP={_plz_meta.get('cap')} "
+              f"witnesses={_plz_meta.get('witness_count')} "
+              f"(crossed-certified caliber, "
+              "docs/planarization-degrade-contract.md)")
+    cert = certificate_auto(scene_from_auto(v4), graph_name=name, layer="2D",
+                            graph=g, exactness=exactness,
+                            interactive="yes", drag_layer="yes",
+                            deliverable=True,
+                            annotation_layer=a.loop_labels,
+                            notes=(["deprecated pixel parameter(s) used: "
+                                    + ", ".join(_deprecated_used)
+                                    + " — prefer the DSL semantic hints "
+                                      "@main / @order / @pair (removal planned)"]
+                                   if _deprecated_used else None))
+    p = w("certificate.json", cert)
+    m = cert["metrics"]
+    print(f"[4/5] certificate: crossings {m['crossings']} / box press {m['box_press_1px']} / "
+          f"edge-box clearance {m['edge_box_min_clear']} / anchor violations {m['anchor_violations']} / "
+          f"gap {m['min_card_gap']} / CV {m['spacing_cv']} -> "
+          f"grade [{cert['grade']}] -> {p}")
+    hp = os.path.join(a.outdir, "demo-2d.html")
+    with open(hp, "w", encoding="utf-8") as f:
+        f.write(render_html(v4, name, cert, lr, labels, values, a.theme,
+                            loop_labels=a.loop_labels))
+    print(f"      demo -> {hp} (theme {a.theme}"
+          + ("" if a.loop_labels else ", annotation layer off") + ")")
+    if rc:
+        if a.from_layout and a.compare_auto:
+            deferred_exit = 1     # emit the comparison report first, exit code deferred
         else:
-            v4 = recipes_run("auto-v2", g, cfg, a.linestyle)
-        labels = {n.id: n.label for n in g.nodes}
-        values = {n.id: n.value for n in g.nodes if n.value}
-        # Full CLI deliverable (demo-2d.html + certificate.json) is produced
-        # below: the layout.json that ships with it is re-stamped interactive
-        # (delivery="stdraw-cli", no warning) per the delivery contract.
-        v4 = stamp_cli_deliverable(v4)
-        p = w("layout.json", v4)
-        meta = v4["meta"]
-        print(f"[3/5] 2D layout (auto-v2, engine={meta['position_engine']}, "
-              f"line kinds {line_kind_summary(v4)}): {v4['viewBox'][2]}x{v4['viewBox'][3]}, "
-              f"{meta['rows']} rows -> {p}")
-        rc = geometry_report_to_file(
-            v4, os.path.join(a.outdir, "geometry_report.json"))
-        exactness = None
-        # D4 (jacky 2026-11-14): L1 planarized drawings default to
-        # --exact (oracle cr UB participates in the three-account
-        # check).  D4 fallback (jacky 2026-11-14 scope ruling, stdraw
-        # range n<=20): --no-exact opts out; the certificate then stays
-        # honestly 'uncertified' (three_account_consistent cannot pass
-        # without the oracle cr UB).  Solve times over budget ->
-        # report, never self-downgrade.
-        _plz_meta = v4["meta"].get("planarization") or {}
-        if (a.exact or _plz_meta.get("mode") == "L1") and not a.no_exact:
-            # reuse the pipeline's oracle run (same computation; avoids a
-            # duplicate B&B solve; falls back to a fresh run for direct
-            # --exact on L0 drawings)
-            exactness = _plz_meta.get("exactness")
-            if exactness is None:
-                from .crossing_exact import crossing_exact
-                exactness = crossing_exact(g)
-            print(f"      [exact] cr={exactness['crossing_number']} "
-                  f"proven_optimal={exactness['proven_optimal']} "
-                  f"lb={exactness['lb']} gap={exactness['gap']} "
-                  f"coverage={exactness['coverage']}")
-        if _plz_meta.get("mode") == "L1":
-            print(f"      [planarized] mode=L1 CAP={_plz_meta.get('cap')} "
-                  f"witnesses={_plz_meta.get('witness_count')} "
-                  f"(crossed-certified caliber, "
-                  "docs/planarization-degrade-contract.md)")
-        cert = certificate_auto(scene_from_auto(v4), graph_name=name, layer="2D",
-                                graph=g, exactness=exactness,
-                                interactive="yes", drag_layer="yes",
-                                deliverable=True,
-                                annotation_layer=a.loop_labels,
-                                notes=(["deprecated pixel parameter(s) used: "
-                                        + ", ".join(_deprecated_used)
-                                        + " — prefer the DSL semantic hints "
-                                          "@main / @order / @pair (removal planned)"]
-                                       if _deprecated_used else None))
-        p = w("certificate.json", cert)
-        m = cert["metrics"]
-        print(f"[4/5] certificate: crossings {m['crossings']} / box press {m['box_press_1px']} / "
-              f"edge-box clearance {m['edge_box_min_clear']} / anchor violations {m['anchor_violations']} / "
-              f"gap {m['min_card_gap']} / CV {m['spacing_cv']} -> "
-              f"grade [{cert['grade']}] -> {p}")
-        hp = os.path.join(a.outdir, "demo-2d.html")
-        with open(hp, "w", encoding="utf-8") as f:
-            f.write(render_html(v4, name, cert, lr, labels, values, a.theme,
-                                loop_labels=a.loop_labels))
-        print(f"      demo -> {hp} (theme {a.theme}"
-              + ("" if a.loop_labels else ", annotation layer off") + ")")
-        if rc:
-            if a.from_layout and a.compare_auto:
-                deferred_exit = 1     # emit the comparison report first, exit code deferred
-            else:
-                sys.exit(1)
+            sys.exit(1)
 
     # ── compare-auto: automatic-layout comparison for the same graph (dual certificates) ──
     if a.from_layout and a.compare_auto:

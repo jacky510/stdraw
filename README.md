@@ -37,7 +37,6 @@ Mainstream diagram tools stop at "crossing minimization" heuristics, and **none 
 - **Layout aesthetics v3 (v0.7.0)**: **bowtie-vertex mode** — graphs whose topology is exactly two simple cycles sharing one node (e.g. wage-price-spiral, per jacky's hand-drawn reference) get an explicit double-mirror layout (shared node dead-center, one loop per half-plane, symmetric rows, all-straight lines with mutual-pair parallel corridors); **connection-point caliber** — line anchors clamp to each edge's mid-point ±1/4 band (corners excluded entirely, hit count always 0), multiple lines on the same side fan out symmetrically around the mid-point; **adaptive arc curvature** — bulge = min(6 + 0.06·chord, 40) px (short edges bend less, long edges capped), arcs within one symmetric structure share a single unified k for visual evenness — see [docs/layout-modes.md](docs/layout-modes.md) (zh original; self-contained English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md));
 - **Layout aesthetics v2 (v0.6.0)**: regularity first — long-chain / few-loop graphs (main cycle ≤ 4) get a **vertical column layout** (spine aligned on one axis, branches on neighbor side columns, the spine's closing edge drawn as a big side arc for the loop-closure feel); bowtie graphs (two triangles sharing an edge, e.g. learning-flywheel) get an **explicit mirror-symmetric layout** with a strict line-type rule (axis edge straight + mirrored side arcs); loop edges are **colored by polarity** (UI-A light theme: R = vermilion `#c2410c`, B = drafting blue `#1e6fae`; dark theme: `#ffb454` / `#6ec6ff` — single source `stdraw/themes.py`, mixed/acyclic = neutral, negative edges dashed) replacing the old R/B letter badges; isomorphic skeletons map to the same layout template (WL structural colors drive slot assignment, not declared-loop ids); crossings and row alignment are demoted from hard gates to **reported soft targets** (order & beauty first) while arrangement regularity stays hard-gated — see [docs/layout-modes.md](docs/layout-modes.md) (zh original; self-contained English edition: [docs/layout-modes.en.md](docs/layout-modes.en.md));
 - **WS3 routing math**: detours are **provably shortest** — obstacles inflated by the clearance, then an exact Dijkstra shortest path over the corner visibility graph (graph-optimal); polyline corners are smoothed with tangent circular arcs (G1-continuous, bounded curvature, per-arc clearance re-verified); crossings are re-checked in **dual calibers** — the router's theoretical count on final geometry must equal the geometric recount on delivered coordinates, or no certificate is issued; loop polarity is expressed by **edge color** (vermilion = reinforcing R, drafting blue = balancing B in the light theme, dashed = negative edge) with no letter badges cluttering complex graphs; polyline detours carry a fixed type cost (arc > straight > polyline — folded corners are a last resort);
-- **ortho-v1 (classic recipe, optional)**: planar embedding + st-numbering + visibility representation — all wires strictly vertical with a **theorem-level 0-crossing guarantee** on planar graphs (behavior frozen, byte-regression protected, safe for production callers to pin);
 - **Honest grading**: if it can't earn a certificate it says so — **never claims 0 crossings for arbitrary graphs** (in auto-v2, crossings are minimized, not guaranteed);
 - **Two-layer ground-truth box measurement**: the layout side plans box bounds from worst-case real-font metrics; the verification side measures actual DOM bounds in a real browser after rendering — certificates verify rendered reality, not estimates;
 - **Quality certificates**: every deliverable ships with quantified metrics (crossings / box-over-line / clearance / alignment / CV / anchors), verified on the delivered coordinates;
@@ -45,7 +44,7 @@ Mainstream diagram tools stop at "crossing minimization" heuristics, and **none 
 
 ### Recommended scale (≤ 10 nodes, honest boundary)
 
-**Recommended: no more than 10 nodes** — the measured boundary for "CP-SAT proves optimality + full `_polish` refinement + all hard quality gates passing" (classic CLD small-graph domain, n10 ≈ 45–60 s per figure). Up to 12 nodes can trigger the ring-cycle layout (loop-dominated small graphs). n=20–30 do render after the WS5 fix (random sparse family: 20/20 at n20 and n30), but placement degrades from "proven optimal" to "best incumbent within a deterministic budget", box-over-line / clearance are no longer guaranteed at 0, and runtime stays 2–3 orders of magnitude above baselines; n≥50 is not recommended (19/20 at n50; the ortho recipe honestly skips non-planar inputs). Numbers per [benchmarks/REPORT.md](benchmarks/REPORT.md) §4/§5 (Chinese).
+**Recommended: no more than 10 nodes** — the measured boundary for "CP-SAT proves optimality + full `_polish` refinement + all hard quality gates passing" (classic CLD small-graph domain, n10 ≈ 45–60 s per figure). Up to 12 nodes can trigger the ring-cycle layout (loop-dominated small graphs). n=20–30 do render after the WS5 fix (random sparse family: 20/20 at n20 and n30), but placement degrades from "proven optimal" to "best incumbent within a deterministic budget", box-over-line / clearance are no longer guaranteed at 0, and runtime stays 2–3 orders of magnitude above baselines; n≥50 is not recommended (19/20 at n50). Numbers per [benchmarks/REPORT.md](benchmarks/REPORT.md) §4/§5 (Chinese).
 
 ## Gallery
 
@@ -84,7 +83,7 @@ stdraw is agent-native: one `.cld` text file in, a certified diagram out. Tell y
 ```text
 stdraw/
 ├── stdraw/              # Python package
-│   ├── recipes.py       #   recipe registry: auto-v2 (default) / ortho-v1 (frozen, pin-safe)
+│   ├── recipes.py       #   recipe registry: auto-v2 (default) / candidate-v1 (opt-in)
 │   ├── layout_auto.py   #   auto-v2 layout (layering + crossings-in-objective + optional CP-SAT + local refinement)
 │   ├── routing.py       #   straight/arc/detour routing (box-over-line=0, clearance>=16px hard gates)
 │   ├── textmetrics.py   #   ground-truth box bounds (layout side: worst-case real-font metrics)
@@ -96,21 +95,20 @@ stdraw/
 │   ├── ringlayout.py    # v0.5.0: loop-dominated ring layout (trigger detection + main-ring polygon slots + residual assignment)
 │   ├── columnlayout.py  # v0.6.0: column layout (long-chain/few-loop: spine in one column + side branches + closing side arc)
 │   ├── symlayout.py     # v0.6.0: bowtie-pair symmetric layout (two triangles sharing an edge: vertical-axis mirror + consistent line kinds)
-│   ├── planar.py        #   ortho-v1: 2D planar layout (theorem-level 0 crossings, frozen behavior)
-│   ├── metrics.py       #   quality certificates v1/v2 + honest grading
-│   ├── check.py         #   geometry self-checks (CI-gate form: v1 11 checks / v2 hard-gate checks)
+│   ├── planar.py        #   internal planar module (candidate_planar.py dependency; not a recipe)
+│   ├── metrics.py       #   quality certificate + honest grading
+│   ├── check.py         #   geometry self-checks (CI-gate form: hard-gate checks)
 │   ├── loops.py         #   loop-semantics audit (lint)
 │   ├── dsl.py           #   .cld DSL parser
 │   ├── model.py         #   graph data model
 │   ├── render.py        #   2D HTML rendering (inline SVG, v1/v2 forms, --theme light|dark)
 │   ├── themes.py        #   design tokens: single source for the light/dark palettes
-│   └── __main__.py      #   CLI: stdraw layout ... [--recipe auto|ortho] [--linestyle straight|arc] [--no-loop-labels] [--theme light|dark]
+│   └── __main__.py      #   CLI: stdraw layout ... [--recipe auto|candidate-v1] [--linestyle straight|arc] [--no-loop-labels] [--theme light|dark]
 ├── examples/            # .cld cases (limits-to-growth / classic-cld-growth-and-burden)
 ├── demos/               # deliverable form: 2D demos + certificate JSON
 ├── skills/stdraw/       # Agent Skill (installable via skills add)
-├── tests/baselines/     # ortho-v1 byte-regression baselines (frozen-behavior iron gate)
 ├── docs/                # DSL spec (EN + zh-CN) + gallery + OR-Tools comparison + crossing-exact math (WS2)
-└── .github/workflows/   # CI: recipe regression + hard gates + DOM measurement + determinism
+└── .github/workflows/   # CI: hard gates + DOM measurement + determinism
 ```
 
 ## Quickstart
@@ -288,8 +286,8 @@ Honest grading semantics (iron rule: **never pass off a non-certificate as one**
 
 Grade semantics single source: [docs/grading-contract.md](docs/grading-contract.md) —
 auto-v2 emits `best` / `uncertified` only (caliber `v2-hardgates`; `second` was removed in
-v0.7.15+ and survives only in the v1-legacy ortho caliber, whose output is **banned as a
-deliverable**, ruling D0). Crossings ≤ 2 / row alignment remain layout soft targets, not
+v0.7.15+, and the v1-legacy caliber that still carried it was retired outright in
+2026-11-24). Crossings ≤ 2 / row alignment remain layout soft targets, not
 certificate gates.
 
 `geometry_report.json` (geometry self-checks in CI-gate form; the CLI exits 1 on fail) can be used directly as a regression gate.
@@ -311,7 +309,7 @@ symmetry-axis alignment; definitions in docs/crossing-exact.md (Chinese) §7).
 | Recipe | Line style | Guarantee | Use when |
 |---|---|---|---|
 | `auto-v2` (default) | straight/arc first-class (`--linestyle straight\|arc`) | hard quality gates + crossing minimization (optional CP-SAT via `pip install "stdraw[solver]"`); placement modes by structure: ring (loop-dominated) / vertical column (long-chain, few loops) / mirror-symmetric (bowtie) / lens chain (pure two-loop figures), each with mode-caliber regularity gates; loop edges colored R=vermilion / B=drafting blue (light theme), negative dashed | general CLDs / teaching / reports |
-| `ortho-v1` (`--recipe ortho`) | all-vertical orthogonal | theorem-level 0 crossings on planar graphs (**frozen behavior**, byte-regression in CI) | production callers pinning behavior / orthogonal style preference |
+| `candidate-v1` (`--recipe candidate-v1`) | straight/arc | candidate-pool pipeline (structure analyzer + template sources + orchestrator), opt-in with a not-worse-than-auto guard | experimentation / candidate generation |
 
 ## Agent Integration
 
@@ -355,8 +353,8 @@ stdraw layout model.cld --from-layout manual-layout.json --outdir out-manual
 
 ## Limitations (honest boundaries)
 
-- **Never claims 0 crossings for arbitrary graphs**: in auto-v2, crossings are a minimized objective term, not a theorem guarantee; ortho-v1 raises `NotPlanarError` on non-planar input and degrades honestly instead of forcing a drawing.
-- ortho-v1 (frozen recipe) allows "unrelated wires occluded under cards" as legacy design (cards are opaque) and counts it honestly in the certificate — a known v0.1 boundary; **the v0.2 default recipe auto-v2 makes box-over-line a hard gate (= 0)**.
+- **Never claims 0 crossings for arbitrary graphs**: in auto-v2, crossings are a minimized objective term, not a theorem guarantee.
+- The former ortho recipe allowed "unrelated wires occluded under cards" as legacy design — **the default recipe auto-v2 makes box-over-line a hard gate (= 0)**.
 - The layout layer is a replaceable implementation (currently: layering + crossing minimization + straight/arc routing; CP-SAT is an optional refinement layer — without it the engine degrades to the constructive method: full features, construct-tier quality).
 - The local-search neighborhood covers in-row shifts and adjacent swaps, not cross-row moves — the last crossing of some graphs may need a larger neighborhood (roadmap M3).
 

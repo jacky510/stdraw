@@ -33,11 +33,11 @@ Everything not listed above: layout mode internals (mode decision chain,
 per-mode placement math), CP-SAT placement internals, routing/polish
 internals, rendering internals, and every field of `layout.json` `meta` not
 covered by the certificate schema. Layout **byte-level** output is protected
-separately by the frozen-baseline + byte-regression gate mechanism
-(ortho-v1 precedent, gate A) — byte stability is a *per-frozen-artifact*
-contract, not a general semver promise. Downstream consumers needing byte
-stability pin concrete outputs and register drift per
-`docs/consumer-repro.md` (the STDRAW_PIN protocol).
+separately by the frozen-baseline + byte-regression gate mechanism (the
+retired ortho-v1 gate-A precedent; today byte stability is a
+*per-frozen-artifact* contract, not a general semver promise — downstream
+consumers needing byte stability pin concrete outputs and register drift per
+`docs/consumer-repro.md`, the STDRAW_PIN protocol).
 
 ## Deprecation policy
 
@@ -46,9 +46,11 @@ stability pin concrete outputs and register drift per
 2. Removal of a deprecated stable-surface item happens **no earlier than the
    next minor release** after the deannouncement during the 0.x series, and
    only in a **major** release after 1.0.
-3. Frozen baselines (currently: ortho-v1 recipe; layout mode family posture
-   per `docs/breadth-freeze-policy.md`) are never removed — they stop
-   evolving, they are not deleted.
+3. Frozen baselines (layout mode family posture per
+   `docs/breadth-freeze-policy.md`) are never removed while the posture is
+   in force — they stop evolving, they are not deleted. (The ortho-v1
+   recipe baseline was an exception, removed by explicit owner ruling on
+   2026-11-24 together with the recipe's external entry.)
 
 ## Cadence note (0.x reality)
 

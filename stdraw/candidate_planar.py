@@ -21,8 +21,8 @@ near-planar graphs. Construction pipeline (exactly the card's chain):
      enumerating both directions of every real edge covers every face of
      the embedding (either mirror) as the outer face.
   3. Face-constrained drawing: each (D, s, t) construction is finalized
-     through the same row-compaction + pixel-packing stage as the ortho
-     layer (all-integer coordinates, 2px grid).
+     through the same row-compaction + pixel-packing stage as the internal
+     planar layer (all-integer coordinates, 2px grid).
   4. Dual-variant re-insertion: the deleted edges are evaluated as
      straight segments between card centers on each construction --
        variant A: lexicographic minimum of
@@ -219,11 +219,12 @@ def run_planarized(ctx):
         # card metrics must match what the pipeline's stage-1 gate measures
         # (ctx.card_h from the auto text metrics; row/column clearance from
         # cfg.min_gap). The planar module's own defaults (card_h=42,
-        # pitch=56, gap 8) describe the ortho face only -- reusing them here
+        # pitch=56, gap 8) describe the retired ortho face only -- reusing
+        # them here
         # produced candidates structurally eliminated by the card-gap gate
         # (measured min_card_gap=12 < 16 on every trigger graph). This only
-        # parameterizes the CONSTRUCTION: planar.py defaults (the ortho-v1
-        # frozen path) are untouched.
+        # parameterizes the CONSTRUCTION: planar.py defaults (the internal
+        # planar module) are untouched.
         min_gap = getattr(ctx.cfg, "min_gap", 16)
         lc = LayoutConfig(
             card_h=ctx.card_h,

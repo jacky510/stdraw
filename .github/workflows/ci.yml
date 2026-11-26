@@ -48,9 +48,9 @@ jobs:
         run: |
           stdraw --help
           python -m stdraw layout --help
-      - name: "Core gates: ortho byte-regression + auto hard gates + DOM bounds + manual round-trip + ring + demo freshness"
+      - name: "Core gates: auto hard gates + DOM bounds + manual round-trip + ring + demo freshness"
         env:
-          STDRAW_CI_PHASES: A,B,C,F,G,I
+          STDRAW_CI_PHASES: B,C,F,G,I
         run: python tests/ci_checks.py
 
   checks-corpus:
@@ -182,5 +182,5 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[solver,measure,render-check]"
           playwright install chromium
-      - name: "Full checks (all phases): ortho byte-regression + auto hard gates + DOM bounds + determinism"
+      - name: "Full checks (all phases): auto hard gates + DOM bounds + determinism"
         run: python tests/ci_checks.py

@@ -32,9 +32,6 @@ pip install stdraw        # or inside the repo: pip install -e .
 ```bash
 # Layout + certificate + loops audit + demo HTML (auto-v2 recipe, straight/arc lines; 2D only)
 stdraw layout model.cld --outdir out --pitch 62
-# Classic orthogonal recipe (all-vertical wires, provably 0 crossings on planar graphs;
-# behavior frozen — pinned by production callers, byte-regression protected)
-stdraw layout model.cld --outdir out --recipe ortho
 # Arc-prefixed lines (auto recipe)
 stdraw layout model.cld --outdir out --linestyle arc
 # Suppress the annotation layer in the demo (loop-center labels AND @delay
@@ -79,15 +76,16 @@ pip install "stdraw[solver]"
 
 | `grade` | Meaning | What you may tell the user |
 |---|---|---|
-| `best` | hard gates all pass + 0 crossings | "hard gates pass, zero crossings" (auto-v2: crossings are minimized, not theorem-guaranteed; ortho recipe: theorem-guaranteed) |
+| `best` | hard gates all pass + 0 crossings | "hard gates pass, zero crossings" (auto-v2: crossings are minimized, not theorem-guaranteed) |
 | `uncertified` | everything else — honestly ungraded | **never** dress this up as success |
 
 Iron rule: stdraw never claims arbitrary graphs are 0-crossing. Relay grades as-is.
 
 Caliber rule: read `certificate.json.caliber` before interpreting `grade` —
-auto-v2 (`v2-hardgates`) emits only `best` / `uncertified`; `second` exists only in the
-v1-legacy ortho caliber, whose output is **banned as a deliverable** (ruling D0:
-vertical-orthogonal pages are CI-regression baselines only). Single source:
+auto-v2 (`v2-hardgates`) emits only `best` / `uncertified`; `second` existed only in the
+v1-legacy caliber, which was retired outright together with the ortho recipe's external
+entry (owner ruling, 2026-11-24; D0 still bans vertical-orthogonal pages as
+deliverables). Single source:
 [docs/grading-contract.md](docs/grading-contract.md).
 
 ## Integrating Into an Existing Web App

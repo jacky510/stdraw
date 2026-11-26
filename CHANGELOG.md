@@ -6,6 +6,19 @@ reproduced here; the engineering version history lives in
 
 ## Unreleased
 
+- **BREAKING: ortho-v1 external entry removed** (owner ruling 2026-11-24, A-item:
+  the freeze is lifted): the CLI `--recipe ortho` option, `recipes.ortho_v1()`
+  and the `run("ortho-v1")` branch, the CLI freeze-compat code (the
+  delivery-contract strip and the `[BANNED / D0]` notice), the ortho
+  byte-level CI baselines (`tests/baselines/`) and the v1-legacy
+  certificate caliber (`metrics.certificate()` / `scene_from_planar`,
+  `stdraw.certificate` / `stdraw.PlanarLayout` package exports) are gone;
+  `--recipe ortho` now fails as an unknown recipe. The underlying planar
+  module survives as an INTERNAL implementation detail (candidate-v1
+  still calls it) with no freeze/pin promise. The auto-v2 default path is
+  byte-identical. Ruling D0 (vertical-orthogonal pages banned as
+  deliverables) remains in force — `scripts/check_no_ortho_delivery.py`
+  stays wired into CI with a synthetic-fixture flag test.
 - **3D layer removed** (owner ruling 2026-11-24: the 3D deliverable was
   judged low-value and dropped): `layout3d` / `render3d`, the `--solids`,
   `--theme-3d` and `--skip-3d` flags, `positions3d.json`, `demo-3d.html`,

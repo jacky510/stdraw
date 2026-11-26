@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """auto layout layer (② objective-function rework): layering + order/position optimization + crossing count in the objective + regularity terms.
 
-Differences from ortho-v1 (planar.py, plane-embedding construction, used to pin
-production behavior):
+Differences from the internal planar module (planar.py, plane-embedding
+construction; formerly the retired ortho-v1 recipe):
   - No planarity requirement: any CLD can be laid out, and the crossing count
     is explicitly minimized as a **first-class term of the objective function**;
   - Objective = crossing count (weight 60) + sum(|dx|) edge-length term

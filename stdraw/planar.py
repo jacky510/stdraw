@@ -10,6 +10,13 @@ this module carry a delivery contract saying exactly that
 one-line "delivery_warning" -- see stdraw/delivery.py); treat them as
 an internal layout-layer interface, not a rendering deliverable.
 
+No freeze/pin promise: the ortho-v1 recipe entry (CLI --recipe ortho,
+recipes.ortho_v1(), the v1-legacy certificate caliber) was removed by
+owner ruling, 2026-11-24; this module survives only as an internal
+implementation detail (candidate_planar.py still calls PlanarLayout)
+and will be deleted together with candidate-v1 once that pipeline
+decouples from it.
+
 Layout math (Rosenstiehl-Tarjan visibility representation -> all wires strictly vertical, 0 crossings guaranteed by theorem),
 graph data is passed in explicitly through the Graph model, decoupled from any concrete business template.
 

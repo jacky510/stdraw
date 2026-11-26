@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Quality certificate (this project's moat) — five metrics + placement metrics + honest grading.
+"""Quality certificate (this project's moat) — placement metrics + honest grading.
 
 All verification runs on the **delivered coordinates** (the rounded/exported
 copy); this is discipline, not an optimization option.
@@ -7,11 +7,11 @@ Metric implementations: seg_cross / Liang-Barsky seg_hits_rect / rect_gap /
 row alignment rate.
 Plus the first-priority placement metric: spacing coefficient of variation (CV).
 
-Honest grading (never masquerade as a finished product):
-  best = placement requirements met + 0 line crossings
-  second = placement requirements met + 1-2 crossings (certificate records
-           crossing coordinates for human review)
+Honest grading (never masquerade as a finished product), v2-hardgates caliber:
+  best = all placement hard gates pass + 0 line crossings
   uncertified = everything else (stated honestly, never downgraded to fake it)
+  (the retired v1-legacy caliber and its `second` branch were removed by
+   owner ruling, 2026-11-24)
 """
 import json
 import math
@@ -81,19 +81,6 @@ def rect_gap(x1, y1, w1, h1, x2, y2, w2, h2):
     return math.hypot(max(dx, 0.0), max(dy, 0.0))
 
 
-def scene_from_planar(v4: dict, card_h: int = None) -> dict:
-    """Planar layout JSON -> generic scene (segments = vertical lines, y is row center)."""
-    nodes = {}
-    ch = card_h or v4["meta"].get("cardH", 42)
-    for v, p in v4["nodes"].items():
-        nodes[v] = {"x": p["x"], "y": p["y"], "w": p.get("w", 140), "h": ch}
-    edges = [{"a": e["a"], "b": e["b"]} for e in v4["edges"]]
-    segs = {}
-    for i, e in enumerate(v4["edges"]):
-        segs[i] = ((e["x"], e["y1"]), (e["x"], e["y2"]))
-    return {"nodes": nodes, "edges": edges, "segments": segs}
-
-
 def scene_from_grid(nodes: dict, edges: list, card_h: int) -> dict:
     """Center-coordinate graph (viewer grid/ring forms) -> generic scene
     (segments = center-to-center lines)."""
@@ -103,169 +90,6 @@ def scene_from_grid(nodes: dict, edges: list, card_h: int) -> dict:
         segs[i] = ((a["x"], a["y"]), (b["x"], b["y"]))
     return {"nodes": {v: dict(p, h=card_h) for v, p in nodes.items()},
             "edges": edges, "segments": segs}
-
-
-def certificate(scene: dict, graph_name: str = "", layer: str = "2D",
-                gates: Optional[dict] = None,
-                notes: Optional[List[str]] = None,
-                interactive: str = "no", drag_layer: str = "no") -> dict:
-    nodes: Dict[str, dict] = scene["nodes"]
-    edges: List[dict] = scene["edges"]
-    segs: dict = scene["segments"]
-    ids = list(nodes)
-    notes = list(notes or [])
-
-    # 1. Straight-line crossings
-    crossings = []
-    for i in range(len(edges)):
-        for j in range(i + 1, len(edges)):
-            ei, ej = edges[i], edges[j]
-            if ei["a"] in (ej["a"], ej["b"]) or ei["b"] in (ej["a"], ej["b"]):
-                continue
-            si, sj = segs[i], segs[j]
-            if seg_cross(si[0], si[1], sj[0], sj[1]):
-                crossings.append({"edges": [f"{ei['a']}->{ei['b']}",
-                                            f"{ej['a']}->{ej['b']}"],
-                                  "at": si[1] if si[0] == sj[0] and si[1] == sj[1]
-                                  else _interpolate(si, sj)})
-
-    # 2. Line piercing unrelated cards (Liang-Barsky): INFLATE caliber +
-    #    true 0px piercing caliber
-    occ_inflated, occ_true = [], []
-    for i in range(len(edges)):
-        s = segs[i]
-        for v in ids:
-            if v in (edges[i]["a"], edges[i]["b"]):
-                continue
-            p = nodes[v]
-            if seg_hits_rect(s[0][0], s[0][1], s[1][0], s[1][1],
-                             p["x"], p["y"], p["w"] / 2 + INFLATE, p["h"] / 2 + INFLATE):
-                occ_inflated.append({"edge": f"{edges[i]['a']}->{edges[i]['b']}", "card": v})
-            if seg_hits_rect(s[0][0], s[0][1], s[1][0], s[1][1],
-                             p["x"], p["y"], p["w"] / 2, p["h"] / 2):
-                occ_true.append({"edge": f"{edges[i]['a']}->{edges[i]['b']}", "card": v})
-
-    # 3. Average edge length (center distance)
-    avg_len = (sum(math.dist(segs[i][0], segs[i][1]) for i in segs) / len(segs)) if segs else 0.0
-
-    # 4. Row alignment rate (visual same row: grouped counting with y diff <= ROW_EPS)
-    ysorted = sorted(p["y"] for p in nodes.values())
-    aligned, i = 0, 0
-    while i < len(ysorted):
-        j = i
-        while j + 1 < len(ysorted) and ysorted[j + 1] - ysorted[j] <= ROW_EPS:
-            j += 1
-        if j > i:
-            aligned += j - i + 1
-        i = j + 1
-    row_rate = aligned / len(ids) if ids else 0.0
-
-    # 5. Card gap (minimum over all pairs)
-    gaps = []
-    for a in range(len(ids)):
-        for b in range(a + 1, len(ids)):
-            va, vb = nodes[ids[a]], nodes[ids[b]]
-            gaps.append(rect_gap(va["x"], va["y"], va["w"], va["h"],
-                                 vb["x"], vb["y"], vb["w"], vb["h"]))
-    min_gap = min(gaps) if gaps else 0.0
-
-    # Placement first priority: spacing CV (std/mean of nearest-neighbor
-    # center distances)
-    nn = []
-    for a in ids:
-        dists = [math.dist((nodes[a]["x"], nodes[a]["y"]),
-                           (nodes[b]["x"], nodes[b]["y"]))
-                 for b in ids if b != a]
-        if dists:
-            nn.append(min(dists))
-    mean_nn = sum(nn) / len(nn) if nn else 0.0
-    cv = (math.sqrt(sum((d - mean_nn) ** 2 for d in nn) / len(nn)) / mean_nn) if nn and mean_nn else 0.0
-
-    W = max(p["x"] + p["w"] / 2 for p in nodes.values()) - min(p["x"] - p["w"] / 2 for p in nodes.values())
-    H = max(p["y"] + p["h"] / 2 for p in nodes.values()) - min(p["y"] - p["h"] / 2 for p in nodes.values())
-
-    metrics = {
-        "crossings": len(crossings),
-        "crossing_details": crossings[:10],
-        "occlusions_inflated4px": len(occ_inflated),
-        "occlusions_true_0px": len(occ_true),
-        "occlusion_details_true": occ_true[:10],
-        "avg_edge_length": round(avg_len, 1),
-        "row_align_rate": round(row_rate, 3),
-        "min_card_gap": round(min_gap, 1),
-        "spacing_cv": round(cv, 3),
-        "bbox": [round(W), round(H)],
-    }
-
-    g = {
-        "crossings_zero": metrics["crossings"] == 0,
-        "min_gap_ge_16": metrics["min_card_gap"] >= 16,
-        "row_align_ge_060": metrics["row_align_rate"] >= 0.60,
-        "cv_le_035": metrics["spacing_cv"] <= 0.35,
-    }
-    if gates:
-        for k, v in gates.items():
-            g[k] = v
-    g_pass = sum(1 for v in g.values() if v)
-
-    # Honest grading
-    arrangement_ok = g["min_gap_ge_16"] and g["cv_le_035"]
-    if metrics["crossings"] == 0 and arrangement_ok:
-        grade = "best"
-        grade_note = "placement requirements met + 0 line crossings"
-    elif arrangement_ok and metrics["crossings"] <= 2:
-        grade = "second"
-        grade_note = ("placement requirements met + <= 2 crossings "
-                      "(coordinates recorded in the certificate for review); "
-                      "on conflict, keep placement, release crossings")
-    else:
-        grade = "uncertified"
-        grade_note = ("placement requirements unmet or crossings > 2 — honestly "
-                      "ungraded; a certificate bought with a relaxed budget "
-                      "never poses as a finished product")
-
-    cert = {
-        "tool": "stdraw", "version": _PKG_VERSION, "layer": layer,
-        "graph": graph_name,
-        "n": len(ids), "m": len(edges),
-        "coords": "delivered/rounded",     # all verification runs on delivered coordinates
-        "metrics": metrics,
-        "gates": g,
-        "gates_passed": f"{g_pass}/{len(g)}",
-        "grade": grade,
-        "grade_note": grade_note,
-        "honest_notes": notes,
-        "no_zero_crossing_claim_for_all_graphs": (
-            "CLDs are often non-planar; 0 crossings has a mathematical "
-            "boundary. This certificate holds only for this graph and this layout"),
-    }
-    # Delivery-face confession: did this certificate ship with the
-    # interactive deliverable (demo-2d.html + its drag touch-up layer)?
-    # CLI passes yes/yes; library callers grading bare coordinates get no/no.
-    cert["interactive"] = interactive
-    cert["drag_layer"] = drag_layer
-    # Caliber confession (D1=C, WorkBuddy task 2026-11-11): additive
-    # self-describing fields only -- no existing key or value is touched.
-    # render.py consumes grade/gates/gates_passed/grade_note/metrics, so the
-    # demo-2d.html bytes do not change (evidence line E8).
-    cert["recipe"] = "ortho-v1"
-    cert["caliber"] = "v1-legacy"
-    cert["grade_semantics"] = (
-        "v1-legacy caliber: best = 0 crossings AND min_gap >= 16 AND "
-        "cv <= 0.35; second = placement ok AND <= 2 crossings (legacy "
-        "branch kept byte-compatible, logically near-unreachable); else "
-        "uncertified. Gate set/count differs from auto-v2 (v2-hardgates): "
-        "read caliber before interpreting grade. Single source: "
-        "docs/grading-contract.md")
-    cert["blocking_gates"] = [k for k, v in g.items() if v is False]
-    cert["placement"] = "ortho-v1"
-    cert["deliverable"] = False
-    cert["blocked_reason"] = (
-        "vertical-orthogonal layout banned (D0): box-over-line / leader-bar "
-        "occlusion is structural in visibility representation and repeatedly "
-        "unfixable; pin-safe CI regression baseline only")
-    cert["blocked_by"] = "D0"
-    return cert
 
 
 def _interpolate(si, sj):
@@ -282,8 +106,8 @@ def _interpolate(si, sj):
 
 
 # ═══ (2) 2026-11-05 six-point rework: auto recipe v2 certificate (new hard gates) ═══
-# v1 certificate() stays byte-compatible (ortho-v1 production behavior pin);
-# auto goes through certificate_auto.
+# (the retired v1-legacy ortho certificate() was removed by owner ruling,
+# 2026-11-24; auto goes through certificate_auto.)
 
 from .routing import (sample_polyline, dist_point_rect, seg_cross as _rc_seg_cross,
                       min_pair_dist,

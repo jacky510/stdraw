@@ -92,8 +92,8 @@ class TestModeDecisionTrace(unittest.TestCase):
         from stdraw.__main__ import load_manual_layout
         g = load("classic-cld-growth-and-burden")
         manual = load_manual_layout(os.path.join(
-            ROOT, "tests", "baselines",
-            "classic-cld-growth-and-burden.layout.json"))
+            ROOT, "tests", "data",
+            "manual-classic-cld-growth-and-burden.layout.json"))
         tr = layout(g, AutoConfig(), manual=manual)[
             "meta"]["mode_decision_trace"]
         self.assertTrue(tr["manual"])

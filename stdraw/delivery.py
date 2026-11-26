@@ -3,8 +3,8 @@
 
 stdraw's deliverable is the interactive demo page (demo-2d.html: drag
 touch-up layer + embedded quality certificate), not bare coordinates.
-Every coordinate dict produced by the layout pipelines (ortho-v1 /
-auto-v2) therefore carries an explicit delivery contract:
+Every coordinate dict produced by the layout pipeline (auto-v2)
+therefore carries an explicit delivery contract:
 
     "delivery"         "coordinates-only" | "stdraw-cli"
     "interactive"      false | true
@@ -18,16 +18,11 @@ re-routing, waypoint handles, the export->recompute loop and the honest
 quality certificate -- the warning says so at the point of consumption.
 
 Layering:
-  - pipeline cores (planar.PlanarLayout.run / layout_auto.layout) stamp
-    coordinates-only metadata;
+  - the pipeline core (layout_auto.layout) stamps coordinates-only
+    metadata;
   - the CLI re-stamps to "stdraw-cli" / interactive=true when the full
     deliverable set (demo-2d.html + certificate.json) was produced, and
-    omits the warning;
-  - the ortho CLI strips the metadata before writing layout.json: the
-    ortho-v1 layout.json artifact is a byte-frozen production pin
-    (tests/baselines/, ci_checks gate A) and must stay byte-stable; its
-    delivery contract travels on certificate.json instead (the
-    "interactive" / "drag_layer" fields).
+    omits the warning.
 
 Consumers who truly need raw coordinates can silence the warning via
 stdraw.recipes.run(..., suppress_delivery_warning=True) -- an explicit,
@@ -71,11 +66,4 @@ def stamp_cli_deliverable(v4: dict) -> dict:
     v4["interactive"] = True
     v4["engine_version"] = __version__
     v4.pop("delivery_warning", None)
-    return v4
-
-
-def strip_delivery_metadata(v4: dict) -> dict:
-    """Remove delivery-contract keys (ortho CLI freeze-compat path)."""
-    for k in DELIVERY_KEYS:
-        v4.pop(k, None)
     return v4

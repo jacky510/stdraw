@@ -2,12 +2,9 @@
 # -*- coding: utf-8 -*-
 """CI checks (2026-11-05 six-point rework revision).
 
-Three assertion layers:
-  A. ortho-v1 frozen recipe regression (production behavior pin):
-     - both examples exit 0, 11 geometric self-checks fail==0;
-     - layout.json byte-identical to tests/baselines/ (planar.py behavior-freeze iron gate);
-     - legacy certificate crossings==0 / grade==best; loops problems==0;
-     - two runs of the same input byte-identical (determinism).
+Assertion layers (the former layer A — the ortho-v1 frozen byte
+regression — was removed by owner ruling, 2026-11-24, together with the
+retired recipe's external entry; tests/baselines/ is gone):
   B. auto-v2 default recipe (product main path) new hard gates:
      - box press=0, edge-box clearance >=16px, smooth anchors, card
        clearance >=16, CV<=0.35, simple-graph regularity all pass;
@@ -59,7 +56,7 @@ def mark(label):
 def _on(pid):
     """Phase selector for CI job splitting (2026-11-10 bottleneck card).
 
-    STDRAW_CI_PHASES="A,B,C" runs only those phases; unset/empty = all
+    STDRAW_CI_PHASES="B,C" runs only those phases; unset/empty = all
     (local default, behavior unchanged). Pure orchestration — assertions
     untouched. Dependencies kept within one job: C needs B outputs, F2
     needs F, G2/G3 follow G, J/H3 reuse H2 outputs.
@@ -73,10 +70,8 @@ EXAMPLES = [
 ]
 # Layer B (auto-v2) blind-spot coverage (F3 rework ref-scrubbed): the original
 # B layer ran only the two EXAMPLES and missed bullwhip's arc bulging past
-# the viewBox (check7 fail). Kept as a separate list, not shared with the
-# layer-A
-# ortho frozen pin (byte-identical baselines), to avoid cascading ortho
-# baseline breakage.
+# the viewBox (check7 fail). Kept as a separate list (formerly not shared
+# with the retired layer-A ortho pin).
 AUTO_EXAMPLES = EXAMPLES + [
     "benchmarks/corpus/classic/bullwhip.cld",
     # v0.7.8 wide-card comb regression (ref-scrubbed): double-ticker cards
@@ -203,11 +198,8 @@ def _hard_gates_for(cert):
     return HARD_GATES
 
 
-def run_cli(path, outdir, extra=(), pitch="62"):
-    # ortho uses --pitch 62 to pass the clearance gate (legacy tuning); auto self-tunes pitch=80, so it is not passed (pitch=None)
+def run_cli(path, outdir, extra=()):
     cmd = [sys.executable, "-m", "stdraw", "layout", path, "--outdir", outdir]
-    if pitch:
-        cmd += ["--pitch", pitch]
     cmd += list(extra)
     return subprocess.run(cmd, capture_output=True, text=True)
 
@@ -253,51 +245,12 @@ def main():
     failures = []
     tmp = tempfile.mkdtemp(prefix="stdraw-ci-")
     try:
-        # ── A. ortho-v1 frozen regression (production behavior pin) ──
-        mark("gate: internal-leak")
-        if _on("A"):
-            for ex in EXAMPLES:
-                name = os.path.splitext(os.path.basename(ex))[0]
-                out1 = os.path.join(tmp, name + "-ortho-1")
-                out2 = os.path.join(tmp, name + "-ortho-2")
-                r1 = run_cli(ex, out1, ("--recipe", "ortho"))
-                if r1.returncode != 0:
-                    failures.append(f"ortho {ex}: CLI exit {r1.returncode}\n{r1.stderr}")
-                    continue
-                run_cli(ex, out2, ("--recipe", "ortho"))
-                geo = load(out1, "geometry_report.json")
-                if geo.get("fail", 0) != 0:
-                    failures.append(f"ortho {ex}: geometry fail={geo['fail']}")
-                cert = load(out1, "certificate.json")
-                if cert["metrics"]["crossings"] != 0 or cert["grade"] != "best":
-                    failures.append(f"ortho {ex}: legacy cert crossings="
-                                    f"{cert['metrics']['crossings']} grade={cert['grade']}")
-                # Production pin iron gate: byte-identical to the committed baseline
-                base = os.path.join(root, "tests", "baselines", name + ".layout.json")
-                with open(base, "rb") as a, \
-                     open(os.path.join(out1, "layout.json"), "rb") as b:
-                    if a.read() != b.read():
-                        failures.append(f"ortho {ex}: layout.json drift vs tests/baselines/"
-                                        f"(production behavior pin broken -- planar.py must stay frozen)")
-                # Determinism (ref-scrubbed: loops_audit.json added to the byte-identical determinism list)
-                for fn in ("layout.json", "demo-2d.html", "loops_audit.json"):
-                    with open(os.path.join(out1, fn), "rb") as a, \
-                         open(os.path.join(out2, fn), "rb") as b:
-                        if a.read() != b.read():
-                            failures.append(f"ortho {ex}: {fn} non-deterministic (two runs differ)")
-                audit = load(out1, "loops_audit.json")
-                if audit["summary"]["problems"] != 0:
-                    failures.append(f"ortho {ex}: loops problems={audit['summary']['problems']}")
-                print(f"OK  ortho {ex}: 11 checks fail=0, baseline byte-identical, deterministic")
-
-            # ── B. auto-v2 new hard gates ──
-        mark("A: ortho byte-regression (2 ex x2 runs)")
         if _on("B"):
             for ex in AUTO_EXAMPLES:
                 name = os.path.splitext(os.path.basename(ex))[0]
                 out1 = os.path.join(tmp, name + "-auto-1")
                 out2 = os.path.join(tmp, name + "-auto-2")
-                r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
+                r1 = run_cli(ex, out1, ("--recipe", "auto"))
                 # auto recipe takes no pitch (self-tuned to 80)
                 if r1.returncode != 0:
                     tail = "\n".join(r1.stdout.strip().splitlines()[-25:])
@@ -313,7 +266,7 @@ def main():
                                     f"stderr={r1.stderr}\nstdout_tail:\n{tail}\n"
                                     f"layout_dump={dump}")
                     continue
-                run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
+                run_cli(ex, out2, ("--recipe", "auto"))
                 geo = load(out1, "geometry_report.json")
                 if geo.get("fail", 0) != 0:
                     failures.append(f"auto {ex}: geometry fail={geo['fail']}")
@@ -348,12 +301,12 @@ def main():
                 name = os.path.splitext(os.path.basename(ex))[0]
                 out1 = os.path.join(tmp, name + "-auto-1")
                 out2 = os.path.join(tmp, name + "-auto-2")
-                r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
+                r1 = run_cli(ex, out1, ("--recipe", "auto"))
                 if r1.returncode != 0:
                     tail = "\n".join(r1.stdout.strip().splitlines()[-10:])
                     failures.append(f"random {ex}: CLI exit {r1.returncode}\n{tail}")
                     continue
-                run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
+                run_cli(ex, out2, ("--recipe", "auto"))
                 geo = load(out1, "geometry_report.json")
                 if geo.get("fail", 0) != 0:
                     failures.append(f"random {ex}: geometry fail={geo['fail']}")
@@ -410,7 +363,7 @@ def main():
             # KeyError legacy).
             for ex in CRASH_REGRESSION_SAMPLES:
                 outd = os.path.join(tmp, os.path.basename(ex).split(".")[0] + "-crashreg")
-                r1 = run_cli(ex, outd, ("--recipe", "auto"), pitch=None)
+                r1 = run_cli(ex, outd, ("--recipe", "auto"))
                 tail = (r1.stderr or "").strip().splitlines()[-5:]
                 if r1.returncode not in (0, 1):
                     failures.append(f"crashreg {ex}: exit {r1.returncode} "
@@ -443,12 +396,12 @@ def main():
                 name = os.path.splitext(os.path.basename(ex))[0]
                 out1 = os.path.join(tmp, name + "-pl-1")
                 out2 = os.path.join(tmp, name + "-pl-2")
-                r1 = run_cli(ex, out1, ("--recipe", "auto"), pitch=None)
+                r1 = run_cli(ex, out1, ("--recipe", "auto"))
                 if r1.returncode != 0:
                     failures.append(f"planarized {ex}: CLI exit {r1.returncode} "
                                     "(crossed-certified target)")
                     continue
-                run_cli(ex, out2, ("--recipe", "auto"), pitch=None)
+                run_cli(ex, out2, ("--recipe", "auto"))
                 cert = load(out1, "certificate.json")
                 m = cert["metrics"]
                 g = cert["gates"]
@@ -478,7 +431,7 @@ def main():
                 # limit; the validation sweep escape keeps this leg's
                 # historical coverage (no output-byte change for the graphs
                 # it lets through)
-                r1 = run_cli(ex, outd, ("--recipe", "auto", "--allow-oversize"), pitch=None)
+                r1 = run_cli(ex, outd, ("--recipe", "auto", "--allow-oversize"))
                 if r1.returncode not in (0, 1):
                     failures.append(f"planarized {ex}: exit {r1.returncode} "
                                     "(want 0/1)")
@@ -510,7 +463,7 @@ def main():
             # sample doubles as the over-limit fixture.
             outd = os.path.join(tmp, "t15-refusal")
             r1 = run_cli("benchmarks/corpus/random/random-n20-i00.cld", outd,
-                         ("--recipe", "auto"), pitch=None)
+                         ("--recipe", "auto"))
             if r1.returncode != 3:
                 failures.append(f"t15 random-n20-i00: exit {r1.returncode} "
                                 "(want 3 = structured refusal)")
@@ -618,7 +571,7 @@ def main():
             ex = EXAMPLES[0]
             name = os.path.splitext(os.path.basename(ex))[0]
             out_f = os.path.join(tmp, name + "-manual-f")
-            r_f = run_cli(ex, out_f, (), pitch=None)          # auto baseline (layer F self-contained)
+            r_f = run_cli(ex, out_f, ())          # auto baseline (layer F self-contained)
             if r_f.returncode != 0:
                 failures.append(f"manual-loop {ex}: auto baseline exit {r_f.returncode}")
             else:
@@ -630,7 +583,7 @@ def main():
                 with open(ipath, "w", encoding="utf-8") as f:
                     json.dump(ident, f, ensure_ascii=False)
                 out_f2 = os.path.join(tmp, name + "-manual-f2")
-                r_f2 = run_cli(ex, out_f2, ("--from-layout", ipath), pitch=None)
+                r_f2 = run_cli(ex, out_f2, ("--from-layout", ipath))
                 geo_f = load(out_f2, "geometry_report.json")
                 lay_f = load(out_f2, "layout.json")
                 if r_f2.returncode != 0 or geo_f.get("fail", 0) != 0:
@@ -688,8 +641,8 @@ def main():
                 json.dump(man_base, f, ensure_ascii=False)
             out_w1 = os.path.join(tmp, name + "-wp-1")
             out_w2 = os.path.join(tmp, name + "-wp-2")
-            r_w1 = run_cli(ex, out_w1, ("--from-layout", ipath2), pitch=None)
-            run_cli(ex, out_w2, ("--from-layout", ipath2), pitch=None)
+            r_w1 = run_cli(ex, out_w1, ("--from-layout", ipath2))
+            run_cli(ex, out_w2, ("--from-layout", ipath2))
             lay_w = load(out_w1, "layout.json")
             e_w = next((x for x in lay_w["edges"]
                         if (x["a"], x["b"]) == (a0n, b0n)), None)
@@ -724,7 +677,7 @@ def main():
             # G2. debt-spiral real run: main loop forms a circle, 0 crossings, all ring-criteria gates pass
             ds = os.path.join(root, "benchmarks/corpus/classic/debt-spiral.cld")
             out_g = os.path.join(tmp, "debt-spiral-ring")
-            r_g = run_cli(ds, out_g, (), pitch=None)
+            r_g = run_cli(ds, out_g, ())
             if r_g.returncode != 0:
                 failures.append(f"ring debt-spiral: CLI exit {r_g.returncode}\n{r_g.stdout[-800:]}")
             else:
@@ -770,7 +723,7 @@ def main():
                 with open(p, "w", encoding="utf-8") as f:
                     f.write(text)
                 out_n = os.path.join(tmp, fn + "-out")
-                r_n = run_cli(p, out_n, (), pitch=None)
+                r_n = run_cli(p, out_n, ())
                 if r_n.returncode not in (0, 1):     # geometry fail is legacy semantics; exit 1 is legal
                     failures.append(f"ring negative {fn}: CLI exit {r_n.returncode}")
                     continue
@@ -804,7 +757,7 @@ def main():
                     continue
                 name = fn[:-4]
                 out_h = os.path.join(tmp, "H-" + name)
-                r_h = run_cli(os.path.join(corpus_dir, fn), out_h, (), pitch=None)
+                r_h = run_cli(os.path.join(corpus_dir, fn), out_h, ())
                 if r_h.returncode != 0:
                     failures.append(f"corpus {name}: CLI exit {r_h.returncode}\n"
                                     f"{r_h.stdout[-500:]}")
@@ -948,7 +901,7 @@ def main():
             corpus_dir = os.path.join(root, "benchmarks", "corpus", "classic")
             out_w = os.path.join(tmp, "H-wage")
             run_cli(os.path.join(corpus_dir, "wage-price-spiral.cld"), out_w,
-                    (), pitch=None)
+                    ())
             lay_w = load(out_w, "layout.json")
             by_pair = {(e["a"], e["b"]): e for e in lay_w["edges"]}
             for pr, kinds, color in (
@@ -989,7 +942,7 @@ def main():
             #    byte-exact pin is valid).
             fresh_out = os.path.join(tmp, "I-fresh-demo")
             r_f = run_cli("examples/classic-cld-growth-and-burden.cld", fresh_out,
-                          ("--name", "classic-cld"), pitch=None)
+                          ("--name", "classic-cld"))
             if r_f.returncode != 0:
                 failures.append(f"demo freshness: CLI exit {r_f.returncode}\n"
                                 f"{r_f.stderr[-500:]}")
@@ -1074,9 +1027,12 @@ def main():
 
         # ── L. D0 delivery gate: no vertical-orthogonal page may ship ──
         # (WorkBuddy task 2026-11-11, jacky's ortho ban, ruling D0.)  The
-        # ortho-v1 recipe itself stays frozen for gate A; this gate blocks
-        # the DELIVERY EXIT: scripts/check_no_ortho_delivery.py must pass
-        # demos/ (all auto-v2) and must FLAG a fresh ortho output dir.
+        # ortho-v1 recipe's external entry was removed (owner ruling,
+        # 2026-11-24); this gate blocks the DELIVERY EXIT:
+        # scripts/check_no_ortho_delivery.py must pass demos/ (all
+        # auto-v2) and must FLAG a synthetic vertical-orthogonal output
+        # dir (the retired entry cannot render a live control anymore;
+        # the fixture exercises the scanner's flag logic directly).
         if _on("L"):
             scan = os.path.join(root, "scripts", "check_no_ortho_delivery.py")
             r_d = subprocess.run(
@@ -1091,26 +1047,30 @@ def main():
                 print("OK  D0 gate: demos/ clean (no vertical-orthogonal "
                       "deliverable)")
             ortho_out = os.path.join(tmp, "L-ortho-d0-scan")
-            r_o = run_cli("examples/limits-to-growth.cld", ortho_out,
-                          ("--recipe", "ortho"))
-            if r_o.returncode != 0:
-                failures.append(f"D0 gate: ortho control render exit "
-                                f"{r_o.returncode}\n{r_o.stderr[-300:]}")
+            os.makedirs(ortho_out, exist_ok=True)
+            with open(os.path.join(ortho_out, "certificate.json"), "w",
+                      encoding="utf-8") as f:
+                json.dump({"caliber": "v1-legacy", "recipe": "ortho-v1",
+                           "deliverable": False}, f)
+            with open(os.path.join(ortho_out, "demo-2d.html"), "w",
+                      encoding="utf-8") as f:
+                f.write("<html><body>synthetic vertical-orthogonal "
+                        "fixture</body></html>")
+            r_s = subprocess.run(
+                [sys.executable, scan, "--dir", ortho_out],
+                capture_output=True, text=True, encoding="utf-8",
+                errors="replace")
+            if r_s.returncode != 1:
+                failures.append(
+                    "D0 gate: scanner must FLAG a synthetic "
+                    "vertical-orthogonal output dir with an .html page "
+                    f"(exit {r_s.returncode}, expected 1)\n"
+                    + r_s.stdout + r_s.stderr)
             else:
-                r_s = subprocess.run(
-                    [sys.executable, scan, "--dir", ortho_out],
-                    capture_output=True, text=True, encoding="utf-8",
-                    errors="replace")
-                if r_s.returncode != 1:
-                    failures.append(
-                        "D0 gate: scanner must FLAG a fresh ortho output "
-                        f"dir (exit {r_s.returncode}, expected 1)\n"
-                        + r_s.stdout + r_s.stderr)
-                else:
-                    print("OK  D0 gate: fresh ortho output dir correctly "
-                          "flagged as non-deliverable (exit 1)")
+                print("OK  D0 gate: synthetic vertical-orthogonal output "
+                      "dir correctly flagged as non-deliverable (exit 1)")
 
-        mark("L: D0 no-ortho-delivery gate (2 scans + 1 ortho render)")
+        mark("L: D0 no-ortho-delivery gate (demos scan + synthetic fixture flag)")
         mark("END")
         total = sum(d for _, d in _PHASES)
         print("\nPhase timing (local machine baseline / compare with GH runner):")

@@ -2,39 +2,34 @@
 """Recipe registry — the versioned interface to the engine's outward behavior.
 
 Callers **must specify the recipe explicitly** (the stdraw CLI defaults to auto-v2):
-  - ortho-v1: visibility-representation construction (planar.py, orthogonal
-    vertical lines). **Behavior frozen**;
-    production callers explicitly pin this recipe — stdraw CI protects it with
-    byte-for-byte regression against tests/baselines/
-    (any change to planar.py must pass this gate first).
-    Known limitations (legacy, declared honestly): unrelated lines may pass
-    through cards and occlude them; the 16px clearance gate is left for
-    callers to tune via --pitch. Future quality fixes evolve only in auto-v2,
-    never backported to the frozen layer.
   - auto-v2: layered + crossing count in the objective + straight/arc
     first-class routing + new hard gates
     (box press=0, edge-box clearance>=16px, anchor smoothing, simple-graph
     regularity). Default recipe.
+  - candidate-v1: candidate-pool pipeline (opt-in, auto-v2 untouched).
+
+(The retired ortho-v1 recipe — vertical-orthogonal constructive layout —
+had its external entry removed (owner ruling, 2026-11-24): the CLI
+`--recipe ortho` option, `recipes.ortho_v1()` and the `run("ortho-v1")`
+branch are gone. The underlying planar module survives as an INTERNAL
+implementation detail (candidate_planar.py still calls it); it carries no
+freeze or pin promise anymore.)
 
 Usage (import form):
     import stdraw
-    v4 = stdraw.recipes.run("ortho-v1", graph, config)      # production behavior pin
     v4 = stdraw.recipes.run("auto-v2", graph, linestyle="arc")
 
 Delivery contract (stdraw/delivery.py): coordinate dicts returned by
-both recipes carry "delivery": "coordinates-only", "interactive":
+recipes carry "delivery": "coordinates-only", "interactive":
 false, "engine_version" and a one-line "delivery_warning" (coordinates
 are not the stdraw deliverable; the deliverable is demo-2d.html). Pass
 suppress_delivery_warning=True only when you truly consume raw
 coordinates. The CLI re-stamps interactive=true (no warning) when the
-full deliverable was produced; the ortho CLI layout.json stays
-byte-frozen (production pin) and carries its contract on
-certificate.json ("interactive" / "drag_layer") instead.
+full deliverable was produced.
 """
 from . import __version__
 
 RECIPE_VERSIONS = {
-    "ortho-v1": "1 (frozen 2026-11-05, byte-stable, pin-safe)",
     "auto-v2": "2 (2026-11-05: hard gates + straight/arc routing; "
                "2026-11-05 WS3: visibility-graph Dijkstra detour + arc fillet "
                "smoothing + crossing dual-caliber + R/B markers)",
@@ -43,14 +38,6 @@ RECIPE_VERSIONS = {
                     "routing-in-the-loop, not-worse-than-v0.8.2 guard; "
                     "opt-in, auto-v2 untouched)",
 }
-
-
-def ortho_v1(graph, config=None, suppress_delivery_warning: bool = False) -> dict:
-    from .planar import PlanarLayout
-    v4 = PlanarLayout(graph, config).run()
-    if suppress_delivery_warning:
-        v4.pop("delivery_warning", None)
-    return v4
 
 
 def auto_v2(graph, config=None, linestyle: str = "straight",
@@ -82,8 +69,6 @@ def candidate_v1(graph, config=None, linestyle: str = "straight",
 
 def run(recipe: str, graph, config=None, linestyle: str = "straight",
         suppress_delivery_warning: bool = False) -> dict:
-    if recipe == "ortho-v1":
-        return ortho_v1(graph, config, suppress_delivery_warning)
     if recipe == "auto-v2":
         return auto_v2(graph, config, linestyle, suppress_delivery_warning)
     if recipe == "candidate-v1":
