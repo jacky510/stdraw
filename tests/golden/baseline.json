@@ -17,24 +17,24 @@
   "rebless": "only under an approved card: python tests/golden_gate.py --update-baseline"
  },
  "timing_ref": {
-  "avg": 1.26,
-  "max": 2.36,
+  "avg": 1.04,
+  "max": 2.21,
   "platform": "Windows-11-10.0.26300-SP0",
   "per_graph": {
-   "eroding-goals": 1.14,
-   "escalation": 1.03,
-   "fixes-that-fail": 1.04,
-   "growth-and-underinvestment": 1.36,
-   "limits-to-growth": 2.36,
-   "shifting-the-burden": 1.12,
-   "success-to-the-successful": 0.95,
-   "tragedy-of-the-commons": 1.07
+   "eroding-goals": 0.83,
+   "escalation": 0.82,
+   "fixes-that-fail": 0.82,
+   "growth-and-underinvestment": 1.06,
+   "limits-to-growth": 2.21,
+   "shifting-the-burden": 0.94,
+   "success-to-the-successful": 0.76,
+   "tragedy-of-the-commons": 0.92
   }
  },
  "graphs": {
   "eroding-goals": {
    "cld": "eroding-goals.cld",
-   "seconds": 1.14,
+   "seconds": 0.83,
    "sha256": {
     "cld": "c784caa7f3b89233f04d339622b0c13dcf29b69788748caf3d82b0188a677ac5",
     "certificate": "3c8d3ab97bfd0beb54616f62e812fa112eac7c33628820039ff1b0dd1add686b",
@@ -58,7 +58,7 @@
   },
   "escalation": {
    "cld": "escalation.cld",
-   "seconds": 1.03,
+   "seconds": 0.82,
    "sha256": {
     "cld": "a78ba0dacc6f665abc9ef9fbbc7e4fe00d89fcba62f59142bcbc2029935a2719",
     "certificate": "021476a208f432fc3f0cf7256bf4ceab20c89a568695919debe115d9774c9bb4",
@@ -82,7 +82,7 @@
   },
   "fixes-that-fail": {
    "cld": "fixes-that-fail.cld",
-   "seconds": 1.04,
+   "seconds": 0.82,
    "sha256": {
     "cld": "ecd6d76a2751b968ac6e531207fd31e13cf01f9e5cc74187f11bb290eda567f4",
     "certificate": "1d9cafd8748322c2fa753a1ccd053063f3011bb2e174c69b0f1e4227f3662247",
@@ -106,12 +106,12 @@
   },
   "growth-and-underinvestment": {
    "cld": "growth-and-underinvestment.cld",
-   "seconds": 1.36,
+   "seconds": 1.06,
    "sha256": {
     "cld": "e0c89ae4cf2c8177760e45be0db9e34ce4745b0395aadbfe95d1d0812493d5f7",
-    "certificate": "e038bbbca07e5c4de7058f9078da07cd623263c15af1fc2c3bad7cbba1e75929",
+    "certificate": "c7752750ac94b3ca256b5c07b917a10581b0de4c57c3c8b5306a73d15723f354",
     "loops_audit": "971651dc619ed422ccd1ebb15bc39ab47af38f9a7540c627103a64cdb54933b9",
-    "layout": "6454e86611dbf6b337c4ae5f3cebf7b357c48b9e83500400336106db3a9a9a6b"
+    "layout": "ec810337ce3dbc67d55c6950b57a56c8d6ff166bae81aa96f0075c5cff07b536"
    },
    "caliber": "v2-hardgates",
    "grade": "best",
@@ -120,7 +120,7 @@
    "crossings": 0,
    "visual_crossings": 0,
    "box_press_1px": 0,
-   "edge_box_min_clear": 26.2,
+   "edge_box_min_clear": 28.1,
    "min_card_gap": 36.0,
    "geometry_fail": 0,
    "loops_problems": 0,
@@ -130,7 +130,7 @@
   },
   "limits-to-growth": {
    "cld": "limits-to-growth.cld",
-   "seconds": 2.36,
+   "seconds": 2.21,
    "sha256": {
     "cld": "96c4f0d9b3f2e01a86fe30b7c92c7f156de49ca66bb0df2248813a382b4131a3",
     "certificate": "27312bae0ad088b97478afa68e5892f901a0ffc1cb5aa0599fd2c0b82c0261a5",
@@ -154,7 +154,7 @@
   },
   "shifting-the-burden": {
    "cld": "shifting-the-burden.cld",
-   "seconds": 1.12,
+   "seconds": 0.94,
    "sha256": {
     "cld": "63220b16ecbe670c028dd6619dd4fc9237c8afebf7fdc1dde0dcae236383ca83",
     "certificate": "6e81c58755bde297fcf659d8a8032be2d42d42997046ca0b7284e9d345518541",
@@ -178,7 +178,7 @@
   },
   "success-to-the-successful": {
    "cld": "success-to-the-successful.cld",
-   "seconds": 0.95,
+   "seconds": 0.76,
    "sha256": {
     "cld": "0cdd8879bf187c4f42e4b256790974226ababac2ae6f44c13079a68348d49161",
     "certificate": "e952667bedb76a48187554c593c679246d67979dc681958bc1801dd1b30f2429",
@@ -202,7 +202,7 @@
   },
   "tragedy-of-the-commons": {
    "cld": "tragedy-of-the-commons.cld",
-   "seconds": 1.07,
+   "seconds": 0.92,
    "sha256": {
     "cld": "99c64cce9c1ba3491f389dd4137a30a1e2d4744254ef9db1ef462d8278dc905d",
     "certificate": "5cd1fe86b897e5669ea0ad8de80605df8b5c2de0eac5ef31993ac47a06683b3a",

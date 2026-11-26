@@ -62,6 +62,17 @@ ENGINE_CALIBER = "cp-sat-layered"
 RAW_PINNED = ("certificate.json", "loops_audit.json")
 TIMING_WARN_FACTOR = 2.0
 
+# Option 1 (row pitch 96) of the GaU layout plan, approved 2026-11-26:
+# the one archetype whose ring column reads too narrow is re-tuned at
+# the render call site; the engine itself stays untouched.  The baseline
+# entry for this graph is the fingerprint of the --pitch 96 render
+# (re-blessed under that approval; see docs/a-tier-drift-registry.md).
+# Transitional: --pitch is deprecated (T14); migration to a recipe-level
+# parameter is a separate card, due before the P3 physical removal.
+PER_GRAPH_CLI_ARGS = {
+    "growth-and-underinvestment": ["--pitch", "96"],
+}
+
 
 def sha256_bytes(data):
     return hashlib.sha256(data).hexdigest()
@@ -128,9 +139,12 @@ def ortools_version():
 def run_graph(cld, outdir):
     """Run the full CLI pipeline (same entry as docs quickstart) on one graph."""
     os.makedirs(outdir, exist_ok=True)
+    name = os.path.splitext(os.path.basename(cld))[0]
+    cmd = [sys.executable, "-m", "stdraw", "layout", cld, "--outdir", outdir]
+    cmd += PER_GRAPH_CLI_ARGS.get(name, [])
     t0 = time.time()
     r = subprocess.run(
-        [sys.executable, "-m", "stdraw", "layout", cld, "--outdir", outdir],
+        cmd,
         cwd=ROOT, capture_output=True, text=True, encoding="utf-8",
         errors="replace")
     return r, time.time() - t0
