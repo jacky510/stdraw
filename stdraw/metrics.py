@@ -19,6 +19,7 @@ from typing import Dict, List, Optional
 
 from . import __version__ as _PKG_VERSION
 from .gates import LENS_BULGE_MIN, arc_bulge
+from .repair import certificate_repair_hints, hints_block
 
 EPS = 1e-9
 ROW_EPS = 4          # visual same-row test: y difference <= 4px counts as one row
@@ -1683,6 +1684,9 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         # when the decision layer ran (auto path); violations recorded,
         # grading untouched (D4-A).
         **({"edge_rules": scene["edge_rules"]} if scene.get("edge_rules") else {}),
+        # T14: DSL semantic hints record — emitted only when the graph
+        # declares hints (hints-free graphs keep their bytes byte-for-byte)
+        **({"hints": _hints_blk} if (_hints_blk := hints_block(graph)) else {}),
         # loop-direction arc default record (emitted only when the scope has
         # a loop-member line): honest delivery counts + fallback reasons
         **({"loop_arcs": scene["loop_arcs"]} if scene.get("loop_arcs") else {}),
@@ -1866,6 +1870,12 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         tr = dict(out.get("mode_decision_trace") or {})
         tr["ring_candidates"] = cand
         out["mode_decision_trace"] = tr
+    # T13: structured repair hints for every failing gate / report item —
+    # emitted only when something failed (all-pass certificates keep their
+    # bytes byte-for-byte)
+    _rh = certificate_repair_hints(g, scene)
+    if _rh:
+        out["repair_hints"] = _rh
     return out
 
 

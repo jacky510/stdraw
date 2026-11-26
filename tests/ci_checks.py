@@ -474,7 +474,11 @@ def main():
             for ex in PL_L2_SAMPLES:
                 name = os.path.splitext(os.path.basename(ex))[0]
                 outd = os.path.join(tmp, name + "-pl")
-                r1 = run_cli(ex, outd, ("--recipe", "auto"), pitch=None)
+                # --allow-oversize: the n20 sample exceeds the T15 CLI size
+                # limit; the validation sweep escape keeps this leg's
+                # historical coverage (no output-byte change for the graphs
+                # it lets through)
+                r1 = run_cli(ex, outd, ("--recipe", "auto", "--allow-oversize"), pitch=None)
                 if r1.returncode not in (0, 1):
                     failures.append(f"planarized {ex}: exit {r1.returncode} "
                                     "(want 0/1)")
@@ -499,6 +503,34 @@ def main():
                         print(f"OK  planarized {ex}: L2 honest downgrade "
                               f"(reason={'; '.join(defer['reason'])[:90]})")
         mark("B2-P: planarized L1 goldens + L2 honesty")
+        if _on("B2-T15"):
+            # ── B2-T15. Size-limit structured refusal (T15): the CLI refuses
+            # a graph above MAX_LAYOUT_NODES BEFORE any layout attempt —
+            # structured refusal.json, exit 3, no layout.json. The n20 corpus
+            # sample doubles as the over-limit fixture.
+            outd = os.path.join(tmp, "t15-refusal")
+            r1 = run_cli("benchmarks/corpus/random/random-n20-i00.cld", outd,
+                         ("--recipe", "auto"), pitch=None)
+            if r1.returncode != 3:
+                failures.append(f"t15 random-n20-i00: exit {r1.returncode} "
+                                "(want 3 = structured refusal)")
+            elif not os.path.exists(os.path.join(outd, "refusal.json")):
+                failures.append("t15 random-n20-i00: refusal.json missing")
+            elif os.path.exists(os.path.join(outd, "layout.json")):
+                failures.append("t15 random-n20-i00: layout attempted "
+                                "despite the refusal")
+            else:
+                ref = load(outd, "refusal.json")
+                if not (ref.get("rejected") is True
+                        and ref.get("reason") == "node_limit_exceeded"
+                        and isinstance(ref.get("limit"), int)
+                        and ref.get("nodes") == 20):
+                    failures.append(f"t15 random-n20-i00: refusal payload "
+                                    f"malformed: {list(ref)}")
+                else:
+                    print("OK  t15 random-n20-i00: structured refusal "
+                          "(exit 3, no layout attempted, payload well-formed)")
+        mark("B2-T15: size-limit structured refusal")
         if _on("C"):
             r = subprocess.run(
                 [sys.executable, "-m", "stdraw.rendercheck",

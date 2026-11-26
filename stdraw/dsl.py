@@ -8,6 +8,9 @@ Syntax (line-oriented, # starts a comment, blank lines ignored):
     <a> -> <+|-> <b> [@loops <id1>,<id2>] [@delay]
     loop <id> "<label>" "<R|B>" [<n1>, <n2>, ...]
     group <gid> "<group label>"
+    @main <loopid>[,<loopid>...]      # semantic hint (T14): main loop(s) to center
+    @order <loopid>[,<loopid>...]     # semantic hint (T14): loop reading order
+    @pair <var1>,<var2>               # semantic hint (T14): adjacent variables
 
 - Variables must be declared before use; polarity edge pairs are the input to
   layout and certificates;
@@ -18,6 +21,11 @@ Syntax (line-oriented, # starts a comment, blank lines ignored):
   that keeps parse(dumps(g)) == g);
 - Groups are optional and do not participate in layout (tension handling is
   discussed in the model.py module docstring).
+- Semantic hints (T14) are line-oriented directives starting with "@";
+  dumps() always emits them AFTER the groups in the canonical order
+  @main lines, then @order, then @pair lines (the order that keeps
+  parse(dumps(g)) == g; a hand-written file may list them in any order —
+  parse is order-tolerant, dumps is canonical).
 
 Parsing is deterministic: the same text always yields the same Graph.
 """
@@ -39,6 +47,10 @@ _LOOP_RE = re.compile(
     r'^loop\s+(\w+)\s+' + _QSTR + r'\s*"?([RB])"?\s*\[([^\]]*)\]\s*$')
 _GROUP_RE = re.compile(r'^group\s+(\w+)\s+' + _QSTR + r'\s*$')
 _GRAPH_RE = re.compile(r'^graph\s+' + _QSTR + r'\s*$')
+# Semantic hints (T14): line-oriented directives "@main/@order/@pair".
+# ids are comma-separated word tokens; @pair takes exactly two variables.
+_HINT_IDLIST_RE = re.compile(r'^@(main|order)\s+([\w]+(?:\s*,\s*[\w]+)*)\s*$')
+_PAIR_RE = re.compile(r'^@pair\s+(\w+)\s*,\s*(\w+)\s*$')
 
 
 def _unescape(s: str) -> str:
@@ -140,6 +152,18 @@ def parse(text: str) -> Graph:
         if m:
             g.groups.append(Group(id=m.group(1), label=_unescape(m.group(2))))
             continue
+        m = _HINT_IDLIST_RE.match(line)
+        if m:
+            ids = [x.strip() for x in m.group(2).split(",") if x.strip()]
+            if m.group(1) == "main":
+                g.hints.main.extend(ids)
+            else:
+                g.hints.order.extend(ids)
+            continue
+        m = _PAIR_RE.match(line)
+        if m:
+            g.hints.pairs.append((m.group(1), m.group(2)))
+            continue
         raise ValueError(f"DSL line {lineno} cannot be parsed: {raw.strip()!r}")
     problems = g.validate()
     if problems:
@@ -176,4 +200,13 @@ def dumps(g: Graph) -> str:
         out.append(f'loop {lp.id} "{_escape(lp.label)}" "{lp.kind}" [{", ".join(lp.nodes)}]')
     for gr in g.groups:
         out.append(f'group {gr.id} "{_escape(gr.label)}"')
+    # semantic hints (T14), canonical order: @main lines, then @order, then
+    # @pair lines — emitted only when present (graphs without hints keep
+    # their historical bytes byte-for-byte)
+    for hid in g.hints.main:
+        out.append(f"@main {hid}")
+    if g.hints.order:
+        out.append("@order " + ",".join(g.hints.order))
+    for (a, b) in g.hints.pairs:
+        out.append(f"@pair {a},{b}")
     return "\n".join(out) + "\n"

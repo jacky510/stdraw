@@ -41,6 +41,8 @@ def loops_audit(graph: Graph) -> dict:
     declared = {lp.id: lp for lp in graph.loops}
     report = {"loops": [], "problems": [], "extra_cycles": []}
     walk_by_id = {}   # loop id -> closed walk found by the DFS below (if any)
+    repair_hints = []   # T13: actionable fixes for the problems below
+    unclosed = []       # (lid, lp) with closure problems — fixed after §3
 
     # ── 1+2. Audit each declared ring ──
     for lid, lp in declared.items():
@@ -85,10 +87,15 @@ def loops_audit(graph: Graph) -> dict:
         if not closed:
             report["problems"].append(
                 f"loop {lid} ({lp.label}) not closed: tagged edges cannot walk from {start} back to itself")
+            unclosed.append((lid, lp))
         if not kind_ok:
             report["problems"].append(
                 f"loop {lid} ({lp.label}) declares {lp.kind} but polarity parity is actually {parity_kind}"
                 f" (negative edges {neg})")
+            repair_hints.append({
+                "problem": f"loop {lid} kind {lp.kind} != polarity parity {parity_kind}",
+                "fix": _declaration_line(lid, lp.label, parity_kind, lp.nodes),
+            })
         report["loops"].append(item)
 
     # case where a declared ring has no tagged edges
@@ -96,6 +103,11 @@ def loops_audit(graph: Graph) -> dict:
         tagged = sum(1 for e in graph.edges if lid in e.loops)
         if tagged == 0:
             report["problems"].append(f"loop {lid} ({lp.label}) has no edges tagged with it")
+            repair_hints.append({
+                "problem": f"loop {lid} has no tagged edges",
+                "fix": (f"add @loops {lid} to the edges of its cycle "
+                        f"({', '.join(lp.nodes)})"),
+            })
 
     # ── 3. Independently enumerate all simple loops ──
     # loops are stored as canonical directed tuples (path order with the smallest node rotated to the front): a frozenset would fold
@@ -154,6 +166,55 @@ def loops_audit(graph: Graph) -> dict:
             report["problems"].append(
                 f"undeclared cycle {'->'.join(cyc)} ({kind}, negative edges {negs})")
 
+    # ── T13: structured repair suggestions ──
+    # Pasteable `loop ...` declaration lines for undeclared cycles (with the
+    # correctly determined R/B from polarity parity), and closure fixes for
+    # unclosed declared loops (when an enumerated cycle covers the same node
+    # set). Suggestions are deterministic (cycles in sorted tuple order,
+    # suggestion ids xauto1, xauto2, ... skipping declared ids); the keys are
+    # added ONLY when non-empty, so clean audits keep their bytes.
+    if report["problems"]:
+        used_ids = set(declared)
+        auto_no = 0
+        suggestions = []
+        for cyc in sorted(cycles):
+            kind, negs = cycle_kind(cyc)
+            ccanon = canon_cycle(list(cyc))
+            if any(dc == ccanon for _lid, dc in declared_canon):
+                continue
+            auto_no += 1
+            while f"xauto{auto_no}" in used_ids:
+                auto_no += 1
+            sid = f"xauto{auto_no}"
+            used_ids.add(sid)
+            line = _declaration_line(sid, "undeclared cycle (auto)", kind, list(cyc))
+            suggestions.append(line)
+            repair_hints.append({
+                "problem": f"undeclared cycle {'->'.join(cyc)} ({kind})",
+                "fix": (line + " — then tag the cycle's edges with "
+                        "@loops " + sid),
+            })
+        for (lid, lp) in unclosed:
+            want = set(lp.nodes)
+            cover = next((list(c) for c in sorted(cycles) if set(c) == want), None)
+            if cover:
+                kind, _negs = cycle_kind(cover)
+                repair_hints.append({
+                    "problem": f"loop {lid} not closed",
+                    "fix": (_declaration_line(lid, lp.label, kind, cover)
+                            + " — re-declare over the enumerated closed walk, "
+                            "then tag its edges with @loops " + lid),
+                })
+            else:
+                repair_hints.append({
+                    "problem": f"loop {lid} not closed",
+                    "fix": (f"tag the missing edges of the cycle through "
+                            f"({', '.join(lp.nodes)}) with @loops {lid} so "
+                            "the walk closes"),
+                })
+        if suggestions:
+            report["suggested_declarations"] = suggestions
+
     report["summary"] = {
         "declared": len(declared),
         "closed": sum(1 for it in report["loops"] if it["closed"]),
@@ -164,4 +225,13 @@ def loops_audit(graph: Graph) -> dict:
         "problems": len(report["problems"]),
     }
     report["pass"] = report["summary"]["problems"] == 0
+    if repair_hints:
+        report["repair_hints"] = repair_hints
     return report
+
+
+def _declaration_line(lid: str, label: str, kind: str, nodes) -> str:
+    """A pasteable `loop ...` declaration line (T13) with the R/B determined
+    from polarity parity by the caller."""
+    from .dsl import _escape
+    return f'loop {lid} "{_escape(label)}" "{kind}" [{", ".join(nodes)}]'

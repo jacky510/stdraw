@@ -22,6 +22,8 @@ from .recipes import run as recipes_run
 from .check import geometry_report_to_file
 from .metrics import certificate, scene_from_planar
 from .loops import loops_audit
+from .limits import MAX_LAYOUT_NODES, HARD_CEILING_NODES, size_refusal
+from .hints import apply_hints, has_hints
 from .render import render_html, line_kind_summary
 from .themes import DEFAULT_STATIC_THEME, THEMES
 from .delivery import strip_delivery_metadata, stamp_cli_deliverable
@@ -95,17 +97,29 @@ def main(argv=None):
                          "from the pass count, never blocking; grade semantics unchanged)")
     ap.set_defaults(loop_labels=True)
     ap.add_argument("--pitch", type=int, default=None,
-                    help="row pitch px (default 56; raise it for small graphs to pass the clearance gate, parameter is transparent)")
+                    help="DEPRECATED pixel parameter (removal planned): row pitch px "
+                         "(default 56; raise it for small graphs to pass the clearance gate, "
+                         "parameter is transparent). Prefer the DSL semantic hints "
+                         "@main / @order / @pair — see docs/agent-interface.md")
+    ap.add_argument("--allow-oversize", action="store_true",
+                    help="VALIDATION-SWEEP ESCAPE ONLY (benchmarks/tools/sweep_tiers.py): "
+                         "extend the CLI size limit from %d to the engine capability "
+                         "ceiling %d nodes. Nothing beyond %d nodes is ever laid out "
+                         "(n<=20 scope ruling); agent callers should keep the default "
+                         "structured refusal" % (MAX_LAYOUT_NODES, HARD_CEILING_NODES,
+                                                 HARD_CEILING_NODES))
     ap.add_argument("--value-pad", type=float, default=None, metavar="PX",
                     help="extra per-side padding px for the value (second) text line "
                          "(default: historical baseline; raise it when long ticker/price "
                          "value strings overflow the planned card width)")
     ap.add_argument("--column-order", default=None, metavar="V1,V2,...",
-                    help="v0.7.11 deterministic constraint (comb layouts): explicit "
+                    help="DEPRECATED pixel parameter (removal planned; prefer @order): "
+                         "v0.7.11 deterministic constraint (comb layouts): explicit "
                          "source-column internal order, top->bottom, as a hard "
                          "constraint (components keep their internal DFS order)")
     ap.add_argument("--hub-side", default=None, metavar="NODE=left|right,...",
-                    help="v0.7.11 deterministic constraint (comb layouts): explicit "
+                    help="DEPRECATED pixel parameter (removal planned): "
+                         "v0.7.11 deterministic constraint (comb layouts): explicit "
                          "hub side assignment, e.g. wdc=left,stx=right")
     ap.add_argument("--name", default="", help="graph name (default: the DSL graph name)")
     ap.add_argument("--theme", default=DEFAULT_STATIC_THEME, choices=sorted(THEMES),
@@ -157,6 +171,45 @@ def main(argv=None):
         print("Structural validation failed:", *problems, sep="\n  ", file=sys.stderr)
         sys.exit(2)
 
+    # T14: apply the semantic hints (@order reading order) — BEFORE the loop
+    # audit and the graph.json write, so every delivered artifact follows the
+    # declared reading sequence. Idempotent; hints-free graphs unchanged.
+    if has_hints(g):
+        g, _hint_applied = apply_hints(g)
+
+    # T15: explicit size limit — refuse BEFORE any layout attempt (a
+    # structured refusal instead of a costly run that ends in an honest but
+    # late "uncertified"). --allow-oversize extends the service limit to the
+    # engine capability ceiling for the validation sweeps; nothing beyond
+    # the ceiling is ever laid out.
+    limit = HARD_CEILING_NODES if a.allow_oversize else MAX_LAYOUT_NODES
+    if len(g.nodes) > limit:
+        refusal = size_refusal(g, limit=limit)
+        rp = os.path.join(a.outdir, "refusal.json")
+        with open(rp, "w", encoding="utf-8") as f:
+            json.dump(refusal, f, ensure_ascii=False, indent=1)
+        print(json.dumps(refusal, ensure_ascii=False, indent=1))
+        print(f"[refused] {len(g.nodes)} nodes exceed the "
+              f"{'capability ceiling' if a.allow_oversize else 'size limit'} "
+              f"({limit}): structured refusal -> {rp} (split the graph by "
+              "loops; see docs/agent-interface.md)", file=sys.stderr)
+        sys.exit(3)
+
+    # T14: deprecation warnings for the pixel-level parameters (kept working
+    # this card; physical removal is the P3 subtraction card)
+    _deprecated_used = []
+    if a.pitch:
+        _deprecated_used.append("--pitch")
+    if a.column_order:
+        _deprecated_used.append("--column-order")
+    if a.hub_side:
+        _deprecated_used.append("--hub-side")
+    if _deprecated_used:
+        print("[deprecated] " + ", ".join(_deprecated_used)
+              + ": pixel-level parameter(s), kept working but scheduled for "
+              "removal — prefer the DSL semantic hints @main / @order / @pair "
+              "(docs/agent-interface.md)", file=sys.stderr)
+
     def w(fn, obj):
         p = os.path.join(a.outdir, fn)
         with open(p, "w", encoding="utf-8") as f:
@@ -178,6 +231,8 @@ def main(argv=None):
           f"problems {lr['summary']['problems']} -> {p}")
     for pr in lr["problems"]:
         print("   lint:", pr)
+    for _rh in lr.get("repair_hints") or []:
+        print("   hint:", _rh["problem"], "->", _rh["fix"])
 
     # 2D layout
     if a.recipe == "ortho":
@@ -303,7 +358,12 @@ def main(argv=None):
                                 graph=g, exactness=exactness,
                                 interactive="yes", drag_layer="yes",
                                 deliverable=True,
-                                annotation_layer=a.loop_labels)
+                                annotation_layer=a.loop_labels,
+                                notes=(["deprecated pixel parameter(s) used: "
+                                        + ", ".join(_deprecated_used)
+                                        + " — prefer the DSL semantic hints "
+                                          "@main / @order / @pair (removal planned)"]
+                                       if _deprecated_used else None))
         p = w("certificate.json", cert)
         m = cert["metrics"]
         print(f"[4/5] certificate: crossings {m['crossings']} / box press {m['box_press_1px']} / "

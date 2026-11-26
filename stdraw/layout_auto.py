@@ -138,8 +138,17 @@ class AutoConfig:
     # - hub_side: {node_id: "left"|"right"} for the comb's bilateral hubs;
     #   a single explicit side is enough to fix the assignment, contradicting
     #   specs degrade deterministically (first left wins, then first right).
+    # T14 DSL semantic hints (all default empty = hints-free graphs keep
+    # every downstream expression and its output bytes byte-for-byte):
+    # - hints_main: loop ids declared via "@main" (record);
+    # - hints_main_nodes: node ids of those loops (placement centering term);
+    # - hints_pairs: (a, b) variable pairs declared via "@pair" (same-row
+    #   pairs gain an adjacency term in the placement objective).
     column_order: list = None
     hub_side: dict = None
+    hints_main: list = None
+    hints_main_nodes: list = None
+    hints_pairs: list = None
     target_w: int = 1280
     target_h: int = 680
     aspect_min: float = 1.5
@@ -311,7 +320,26 @@ def _cpsat_positions(nodes, rows, widths, cfg, einfo, max_x, grid, det_budget=No
         d = m.NewIntVar(0, max_x, "")
         m.AddAbsEquality(d, xs[a] - xs[b])
         lens.append(d)
-    m.Minimize(60 * sum(cross_vars) + sum(lens))
+    # T14 semantic hints (gated on hint presence — a hints-free graph keeps
+    # the historical objective expression and its bytes byte-for-byte):
+    # - @main: pull the main-loop nodes toward the canvas center
+    # - @pair (same row): minimize the pair's horizontal distance (the
+    #   clearance constraints floor it at the adjacent-packing distance)
+    hint_terms = []
+    main_nodes = [v for v in (getattr(cfg, "hints_main_nodes", None) or [])
+                  if v in xs]
+    if main_nodes:
+        center = max_x // 2
+        for v in main_nodes:
+            dv = m.NewIntVar(0, max_x, "")
+            m.AddAbsEquality(dv, xs[v] - center)
+            hint_terms.append(2 * dv)
+    for (a, b) in (getattr(cfg, "hints_pairs", None) or []):
+        if a in xs and b in xs and row_of[a] == row_of[b]:
+            dp = m.NewIntVar(0, max_x, "")
+            m.AddAbsEquality(dp, xs[a] - xs[b])
+            hint_terms.append(8 * dp)
+    m.Minimize(60 * sum(cross_vars) + sum(lens) + sum(hint_terms))
     solver = cp_model.CpSolver()
     solver.parameters.num_workers = 1        # determinism iron rule
     solver.parameters.random_seed = 42
@@ -348,6 +376,15 @@ def _construct_positions(nodes, rows, widths, cfg, edges):
                        for u in neigh[v]]
                 key[v] = (sum(ups) / len(ups)) if ups else order[r].index(v)
             order[r] = sorted(vs, key=lambda v: (key[v], v))
+    # T14 @pair (construct path): same-row pairs packed adjacently — b moves
+    # right after a in its row order (gated on hint presence; hints-free
+    # graphs keep the historical order expression and bytes)
+    for (a, b) in (getattr(cfg, "hints_pairs", None) or []):
+        if a in row_of and b in row_of and row_of[a] == row_of[b]:
+            orow = order[row_of[a]]
+            if a in orow and b in orow and orow.index(b) != orow.index(a) + 1:
+                orow.remove(b)
+                orow.insert(orow.index(a) + 1, b)
     for r, vs in enumerate(rows):
         xs, cursor = [], 0
         for v in order[r]:
@@ -357,6 +394,23 @@ def _construct_positions(nodes, rows, widths, cfg, edges):
         shift = (max(0, _content_w(rows, widths, cfg)) - total) / 2
         for v, x in zip(vs, xs):
             pos[v] = int(round((x + shift) / cfg.grid)) * cfg.grid
+    # T14 @main (construct path): rigid integer shift of the whole placement
+    # so the main-loop node centroid lands on the content center (deterministic;
+    # clamped to keep the left margin)
+    main_nodes = [v for v in (getattr(cfg, "hints_main_nodes", None) or [])
+                  if v in pos]
+    if main_nodes:
+        content_w = _content_w(rows, widths, cfg)
+        target = content_w // 2
+        centroid = sum(pos[v] for v in main_nodes) / len(main_nodes)
+        delta = int(round((target - centroid) / cfg.grid)) * cfg.grid
+        if delta:
+            min_x = min(pos.values())
+            if min_x + delta < cfg.margin:
+                delta = (cfg.margin - min_x) // cfg.grid * cfg.grid
+            if delta:
+                for v in pos:
+                    pos[v] += delta
     return pos
 
 
@@ -3276,6 +3330,30 @@ def layout(graph, config: AutoConfig = None, linestyle: str = "straight",
     unchanged).
     """
     cfg = config or AutoConfig()
+    # T14 semantic hints: reorder loops per @order (reading order — the
+    # loop-arc scope below and every downstream consumer follow this
+    # sequence) and copy the hint node sets onto the config. The caller's
+    # AutoConfig is never mutated (shallow replace); hints-free graphs skip
+    # all hinted paths (bytes byte-for-byte). The manual path consumes no
+    # hints (coordinates are given); hints still ride on the caller's graph
+    # for the certificate record.
+    if manual is None:
+        from copy import copy as _copy
+        from .hints import apply_hints, has_hints
+        if has_hints(graph):
+            graph, _applied = apply_hints(graph)
+            _id2loop = {lp.id: lp for lp in graph.loops}
+            _main_nodes = []
+            for _hid in (graph.hints.main or []):
+                _lp = _id2loop.get(_hid)
+                if _lp:
+                    _main_nodes.extend(_lp.nodes)
+            cfg = _copy(cfg)          # shallow copy: caller's config untouched
+            cfg.hints_main = list(dict.fromkeys(graph.hints.main))
+            if _main_nodes:
+                cfg.hints_main_nodes = list(dict.fromkeys(_main_nodes))
+            if graph.hints.pairs:
+                cfg.hints_pairs = list(graph.hints.pairs)
     if manual is not None or not getattr(graph, "loops", None):
         return _layout_pipeline(graph, cfg, linestyle, manual)
     with _routing.loop_arc_context(graph.loops):

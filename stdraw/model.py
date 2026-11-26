@@ -42,12 +42,47 @@ class Group:
 
 
 @dataclass
+class Hints:
+    """DSL semantic hints (T14) — layout INTENT at the loop/variable level,
+    replacing pixel-level CLI parameters (deprecated: --pitch / --hub-side /
+    --column-order). See docs/agent-interface.md.
+
+    - main:  loop ids the engine should center ("@main R1");
+    - order: loop ids in reading order ("@order R1,B1,R2") — the pipeline
+      reorders graph.loops to this sequence at entry (audit listing, loop-arc
+      scope and annotation order follow);
+    - pairs: variable id pairs that should sit adjacent ("@pair a,b").
+    """
+
+    main: List[str] = field(default_factory=list)
+    order: List[str] = field(default_factory=list)
+    pairs: List[Tuple[str, str]] = field(default_factory=list)
+
+    def empty(self) -> bool:
+        return not (self.main or self.order or self.pairs)
+
+    def to_dict(self) -> dict:
+        return {"main": list(self.main), "order": list(self.order),
+                "pairs": [[a, b] for (a, b) in self.pairs]}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "Hints":
+        return cls(
+            main=list(d.get("main", [])),
+            order=list(d.get("order", [])),
+            pairs=[(p[0], p[1]) for p in d.get("pairs", [])
+                   if isinstance(p, (list, tuple)) and len(p) == 2],
+        )
+
+
+@dataclass
 class Graph:
     nodes: List[Node]
     edges: List[Edge]
     loops: List[Loop] = field(default_factory=list)
     groups: List[Group] = field(default_factory=list)
     name: str = ""
+    hints: Hints = field(default_factory=Hints)
 
     # ── Convenience views ──
     def node_ids(self) -> List[str]:
@@ -102,6 +137,18 @@ class Graph:
         for n in self.nodes:
             if n.group and n.group not in {g.id for g in self.groups}:
                 problems.append(f"node {n.id} references undeclared group {n.group}")
+        id2loop = {lp.id for lp in self.loops}
+        for hid in self.hints.main:
+            if hid not in id2loop:
+                problems.append(f"@main references undeclared loop {hid}")
+        for hid in self.hints.order:
+            if hid not in id2loop:
+                problems.append(f"@order references undeclared loop {hid}")
+        for (a, b) in self.hints.pairs:
+            if a not in idset or b not in idset:
+                problems.append(f"@pair references undeclared variable: {a},{b}")
+            elif a == b:
+                problems.append(f"@pair names the same variable twice: {a}")
         return problems
 
     def to_dict(self) -> dict:
@@ -124,6 +171,9 @@ class Graph:
                 for lp in self.loops
             ],
             "groups": [{"id": g.id, "label": g.label} for g in self.groups],
+            # "hints" is emitted only when non-empty: graphs without hints
+            # keep their historical graph.json bytes byte-for-byte
+            **({"hints": self.hints.to_dict()} if not self.hints.empty() else {}),
         }
 
     @classmethod
@@ -142,4 +192,5 @@ class Graph:
                    for lp in d.get("loops", [])],
             groups=[Group(id=g["id"], label=g.get("label", ""))
                     for g in d.get("groups", [])],
+            hints=Hints.from_dict(d.get("hints", {}) or {}),
         )

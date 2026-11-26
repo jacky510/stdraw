@@ -149,7 +149,12 @@ def run_leg(tier, legdir, budget, log):
         outdir = os.path.join(legdir, fam, base)
         t0 = time.time()
         cmd = [sys.executable, "-m", "stdraw", "layout", cld,
-               "--outdir", outdir]
+               "--outdir", outdir,
+               # T15: tier A includes the random-n20 family, above the CLI
+               # size limit (15) — the validation-sweep escape extends it to
+               # the engine capability ceiling (20) without changing any
+               # output byte for the graphs it lets through
+               "--allow-oversize"]
         try:
             p = subprocess.run(cmd, capture_output=True, cwd=REPO, timeout=budget)
             rc = p.returncode

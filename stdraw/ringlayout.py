@@ -326,26 +326,69 @@ def detect_ring(graph, why=None):
                 return None
     best = None
     cand_rows = []                    # D3 observability probe (S2-1)
+    # T14 @main: the declared main loop forces the main-ring selection when
+    # its cycle is among the eligible candidates (intent overrides the
+    # coverage ranking; the caller's trial gate still re-checks the hard
+    # gates and falls back honestly). Gated on hint presence — hints-free
+    # graphs keep the historical ranking byte-for-byte.
+    _hint = getattr(graph, "hints", None)
+    _hint_pick = None                 # (seq, hid, pol)
+    if _hint is not None and getattr(_hint, "main", None):
+        _id2loop = {lp.id: lp for lp in graph.loops}
+        for _hid in _hint.main:
+            _lp = _id2loop.get(_hid)
+            if not _lp:
+                continue
+            _want = set(_lp.nodes)
+            for seq, _lid2, _pol2 in eligible:
+                if set(seq) == _want:
+                    _hint_pick = (seq, _hid, _pol2)
+                    break
+            if _hint_pick:
+                break
     for seq, lid, pol in eligible:
         cross = _crossing_count(_chord_segments(seq, edges))
         # Main ring = max-coverage ring (the truly dominant loop); same coverage: zero chord crossings first -> lexicographic
         key = (-len(seq), cross, _canonical(seq))
         cand_rows.append({"k": len(seq), "chord_crossings": cross,
                           "declared_loop": lid, "ring": list(seq)})
+        if _hint_pick is not None:
+            continue                  # selection is hint-forced below
         if best is None or key < best[0]:
             best = (key, seq, lid, pol, cross)
-    _, ring, lid, pol, cross = best
+    if _hint_pick is not None:
+        _seq, _hid, _pol = _hint_pick
+        ring, lid, pol = list(_seq), _hid, _pol
+        cross = _crossing_count(_chord_segments(ring, edges))
+    else:
+        _, ring, lid, pol, cross = best
+    # T14 @pair: rotate the ring so the hinted variable pair occupies
+    # adjacent (consecutive) ring slots (deterministic rotation; only when
+    # the pair is on the ring and not already adjacent)
+    if _hint is not None and getattr(_hint, "pairs", None) and len(ring) >= 3:
+        for (_pa, _pb) in _hint.pairs:
+            if _pa in ring and _pb in ring:
+                _i, _j, _k = ring.index(_pa), ring.index(_pb), len(ring)
+                if (_j + 1) % _k != _i and (_i + 1) % _k != _j:
+                    _r = (_j - _i - 1) % _k
+                    ring = ring[_r:] + ring[:_r]
+                break
     residuals = [v for v in core if v not in set(ring)]
     if why is not None:
         for row in cand_rows:
             row["selected"] = (row["ring"] == list(ring))
         why["candidates"] = cand_rows
-        why["reason"] = (f"loop-dominated (trigger="
+        why["reason"] = ((f"@main {_hid} forced the main ring; "
+                          if _hint_pick is not None else "")
+                         + f"loop-dominated (trigger="
                          f"{'cover' if cover_ok else 'ratio'}), main ring "
                          f"k={len(ring)}, chord crossings={cross}")
-    return {"ring": list(ring), "k": len(ring), "declared_loop": lid,
+    plan = {"ring": list(ring), "k": len(ring), "declared_loop": lid,
             "polarity": pol, "trigger": "cover" if cover_ok else "ratio",
             "residuals": residuals, "deg0": deg0, "chord_crossings": cross}
+    if _hint_pick is not None:
+        plan["hint_main"] = _hid
+    return plan
 
 
 def _ring_radius(k, ring_widths, n_residuals=0):
@@ -501,6 +544,10 @@ def place_ring(plan, widths, card_h, cfg, adj, edges, rot_deg=0.0):
             "trigger": plan.get("trigger"),
             "chord_crossings": plan.get("chord_crossings", 0),
             "residuals": {v: info for v, info in residual_pos.items()},
+            # T14: the @main-forced ring selection record (absent when the
+            # ranking picked the ring on its own — hints-free bytes unchanged)
+            **({"hint_main": plan["hint_main"]}
+               if plan.get("hint_main") else {}),
         },
     }
     return pos, y, meta

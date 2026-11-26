@@ -77,3 +77,35 @@ line and no other mark). The canonical dump order is `@loops ... @delay`;
 `parse(dumps(g)) == g` holds with and without delay markers. An unknown
 token, a repeated `@delay` or a trailing token after the tags is rejected
 with a DSL error.
+
+## Appendix B. Semantic hints `@main` / `@order` / `@pair` (T14)
+
+Line-oriented directives starting with `@` that declare layout INTENT at the
+loop/variable level — the machine-consumable replacement for the deprecated
+pixel parameters (`--pitch` / `--hub-side` / `--column-order`; see
+docs/agent-interface.md):
+
+```
+@main R1          # main loop(s): the engine centers the declared structure
+                  # (ring mode: forces the main-ring selection; layered mode:
+                  # centering term in the placement objective)
+@order R1,B1,R2   # loop reading order (the pipeline reorders the loop
+                  # sequence; the loop audit listing, the loop-arc scope and
+                  # the annotation order follow)
+@pair a,b         # two variables that should sit adjacent (ring mode:
+                  # consecutive ring slots; layered mode: adjacency term in
+                  # the placement objective / adjacent packing)
+```
+
+- `@main` and `@order` take comma-separated loop ids (multiple `@main`
+  lines accumulate); `@pair` takes exactly two variable ids (multiple lines
+  accumulate). Referencing an undeclared loop/variable is a validation
+  error;
+- The certificate records the hints actually declared (`certificate.json`
+  `hints` block: ids + the mechanism each hint feeds) — emitted only when
+  hints exist, so hints-free graphs keep their bytes byte-for-byte;
+- `dumps` emits the hints after the groups in the canonical order (`@main`
+  lines, then `@order`, then `@pair` lines); `parse(dumps(g)) == g` holds
+  with and without hints (property-tested in tests/test_dsl_hints.py);
+- Cross-row `@pair` pairs cannot be adjacent and are reported unapplied
+  (honest boundary).
