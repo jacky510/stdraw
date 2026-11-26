@@ -95,6 +95,10 @@ jobs:
 
   checks-units:
     runs-on: ubuntu-latest
+    env:
+      # 2026-11-26 CI-speed card: phase E (the units lane's dominant cost)
+      # runs its three test scripts on a 2-worker thread pool (ci_checks.py).
+      STDRAW_CI_UNITS_PARALLEL: "1"
     steps:
       - uses: actions/checkout@v4
       - name: "Internal-leak sanitization gate"
@@ -119,8 +123,14 @@ jobs:
   checks-pytest:
     # Full pytest suite (8de1d15) as its own parallel lane: heavy
     # (~18min locally, scalability wall-clock dominates) and must not
-    # lengthen any other job.
+    # lengthen any other job. 2026-11-26 CI-speed card: xdist 2 workers
+    # (loadscope) + BLAS/OMP pinned to 1 thread per worker — 2 workers x
+    # CP-SAT multithreading would otherwise oversubscribe the 2-core runner.
     runs-on: ubuntu-latest
+    env:
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
     steps:
       - uses: actions/checkout@v4
       - name: "Internal-leak sanitization gate"
@@ -134,7 +144,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[solver,measure,render-check]"
-          pip install pytest
+          pip install pytest pytest-xdist
       - name: "Resolve playwright version"
         id: pwver
         run: echo "ver=$(pip show playwright | awk '/^Version:/ {print $2}')" >> "$GITHUB_OUTPUT"
@@ -145,7 +155,7 @@ jobs:
       - name: "Playwright chromium (skips download on cache hit)"
         run: playwright install chromium
       - name: "Full pytest suite (unit + regression + brute-force + scalability wall-clock + playwright font-env)"
-        run: python -m pytest tests/ -q
+        run: python -m pytest tests/ -q -n 2 --dist=loadscope
 
   checks-py39-weekly:
     # 3.9 full-compatibility sweep: weekly schedule only, never on push/pr
