@@ -446,23 +446,48 @@ def _seg_point(p1, p2, p3, p4):
 
 def _planarized_l1(graph, cfg, linestyle, cores):
     """Build the L1 planarized v4, or return the L2 defer record."""
-    import math
-    import networkx as nx
-    from .routing import (sample_polyline, dist_point_rect, seg_cross,
-                          CLEARANCE)
-    from .textmetrics import card_size
+    ex = _l1_exactness(graph, cores)
+    if _l1_deferred(ex):
+        return ex
+    bands = _l1_core_bands(graph, cfg, ex["core_results"], ex["c_ub"])
+    if _l1_deferred(bands):
+        return bands
+    att = _l1_attach_trees(graph, ex["edges"], ex["core_results"],
+                           bands["core_of_edge"], bands, ex["c_ub"])
+    if _l1_deferred(att):
+        return att
+    norm = _l1_normalize(graph, ex["edges"], bands, att, ex["c_ub"])
+    if _l1_deferred(norm):
+        return norm
+    return _l1_assemble(graph, cfg, linestyle, ex, bands, norm)
+
+
+def _l1_deferred(result):
+    """True when a stage bailed out with the ``("L2", record)`` tuple."""
+    return (isinstance(result, tuple) and len(result) == 2
+            and result[0] == "L2")
+
+
+def _l1_defer(reasons, measured):
+    """The L2 degrade record (identical to the former nested closure)."""
+    return {"mode": "L2",
+            "deferred": {"reason": reasons, "measured": measured},
+            "caliber": ("planarization degrade ladder L2 (docs/"
+                        "planarization-degrade-contract.md): L1 "
+                        "admission failed; generic auto-v2 path kept, "
+                        "grade stays honestly uncertified")}
+
+
+def _l1_exactness(graph, cores):
+    """Stage 1/5 -- per-core oracle, exactness aggregation and the
+    admission budget checks (cap / insertion steps / H vertices).
+
+    Returns the state dict, or the ``("L2", record)`` defer tuple.
+    """
     from .crossing_exact import undirected_edges
 
     n = len(graph.nodes)
     cap = cap_for(n)
-
-    def _defer(reasons, measured):
-        return {"mode": "L2",
-                "deferred": {"reason": reasons, "measured": measured},
-                "caliber": ("planarization degrade ladder L2 (docs/"
-                            "planarization-degrade-contract.md): L1 "
-                            "admission failed; generic auto-v2 path kept, "
-                            "grade stays honestly uncertified")}
 
     edges, selfloops = undirected_edges(graph)
     edge_gidx = [i for i, e in enumerate(graph.edges) if e.a != e.b]
@@ -501,7 +526,7 @@ def _planarized_l1(graph, cfg, linestyle, cores):
         if not planar:
             dr = _core_planarize(cnodes, cedges, r)
             if not dr.get("planar") and "why" in dr:
-                return ("L2", _defer(
+                return ("L2", _l1_defer(
                     [f"no-witness-drawing: core {ci} planarization failed "
                      f"({dr['why']})"], r["ub"]))
             core_results.append((ci, cnodes, cedges, dr))
@@ -535,17 +560,32 @@ def _planarized_l1(graph, cfg, linestyle, cores):
     }
     c_ub = exactness["crossing_number"]
     if c_ub > cap:
-        return ("L2", _defer(
+        return ("L2", _l1_defer(
             [f"cap-exceeded: crossings UB {c_ub} > CAP min(3n,80)={cap}"],
             c_ub))
     if c_ub > BUDGET_INSERT_STEPS:
-        return ("L2", _defer(
+        return ("L2", _l1_defer(
             [f"budget-exceeded: insertion steps {c_ub} > "
              f"{BUDGET_INSERT_STEPS}"], "budget-exceeded"))
     if h_vertices > BUDGET_H_VERTICES:
-        return ("L2", _defer(
+        return ("L2", _l1_defer(
             [f"budget-exceeded: planarized H vertices {h_vertices} > "
              f"{BUDGET_H_VERTICES}"], "budget-exceeded"))
+    return {
+        "edges": edges, "edge_gidx": edge_gidx, "exactness": exactness,
+        "core_results": core_results, "c_ub": c_ub,
+        "h_vertices": h_vertices, "cap": cap,
+    }
+
+
+def _l1_core_bands(graph, cfg, core_results, c_ub):
+    """Stage 2/5 -- card geometry plus one Tutte straight-line band per
+    core (uniform scale, integer even grid, band stacking).
+
+    Returns the state dict, or the ``("L2", record)`` defer tuple.
+    """
+    import networkx as nx
+    from .textmetrics import card_size
 
     # ── card geometry ──
     ids = graph.id2node()
@@ -573,7 +613,7 @@ def _planarized_l1(graph, cfg, linestyle, cores):
             sub = r["H"].subgraph(comp).copy()
             pos = _tutte_positions(sub)
             if pos is None:
-                return ("L2", _defer(
+                return ("L2", _l1_defer(
                     ["drawing-solve-degenerate: Tutte system singular or "
                      "H failed re-planarity (contract section 1: "
                      "impossible -- bug)"], c_ub))
@@ -602,6 +642,28 @@ def _planarized_l1(graph, cfg, linestyle, cores):
             off_y += max(p[1] for p in sp.values()) + BAND_GAP_PX
         for ei, (a, b) in enumerate(cedges):
             core_of_edge[(a, b)] = (ci, ei)
+    return {
+        "sizes": sizes, "card_h": card_h, "half_w": half_w,
+        "half_h": half_h, "marker_xy": marker_xy, "node_xy": node_xy,
+        "core_of_edge": core_of_edge, "markers_all": markers_all,
+    }
+
+
+def _l1_attach_trees(graph, edges, core_results, core_of_edge, bands,
+                     c_ub):
+    """Stage 3/5 -- attachment-tree placement for the safe-reduction
+    leftovers (escape-ray tested BFS around already-placed parents).
+
+    Returns the state dict, or the ``("L2", record)`` defer tuple.
+    """
+    import math
+    from .routing import dist_point_rect, seg_cross, CLEARANCE
+
+    node_xy = bands["node_xy"]
+    marker_xy = bands["marker_xy"]
+    half_w = bands["half_w"]
+    half_h = bands["half_h"]
+    card_h = bands["card_h"]
 
     # ── attachment trees (safe-reduction leftovers) ──
     core_node_set = set()
@@ -777,52 +839,80 @@ def _planarized_l1(graph, cfg, linestyle, cores):
         if not progressed:
             break
     if unplaceable:
-        return ("L2", _defer(
+        return ("L2", _l1_defer(
             ["attachment-placement: no escape-ray direction for tree "
              f"node(s) {sorted(unplaceable)[:3]}"], c_ub))
     if pending:
-        return ("L2", _defer(
+        return ("L2", _l1_defer(
             ["attachment-placement: unreachable tree node(s) "
              f"{pending[:3]}"], c_ub))
+    return {
+        "node_xy": node_xy, "attach_edges": attach_edges,
+        "chain_of": chain_of, "core_edge_map": core_edge_map,
+    }
 
-    def _build_polys(node_xy, marker_xy):
-        """Delivered polylines from current integer positions (pure
-        function of coordinates + chains — reusable for the clearance
-        scale-up retry)."""
-        polys, wit_by_idx = {}, {}
-        for (idx, ci, ei, a, b) in core_edge_map:
-            vids = chain_of.get((ci, ei), [])
-            wit_by_idx[idx] = vids
-            raw = [(node_xy[a][0], node_xy[a][1])]
-            raw += [marker_xy[v] for v in vids]
-            raw.append((node_xy[b][0], node_xy[b][1]))
-            pts = _straight_through(raw)
-            s0 = (_ray_border(node_xy[a][0], node_xy[a][1], pts[1][0],
-                              pts[1][1], half_w[a], half_h[a])
-                  if len(pts) > 1 else (node_xy[a][0], node_xy[a][1]))
-            s1 = (_ray_border(node_xy[b][0], node_xy[b][1], pts[-2][0],
-                              pts[-2][1], half_w[b], half_h[b])
-                  if len(pts) > 1 else (node_xy[b][0], node_xy[b][1]))
-            pts = [s0] + pts[1:-1] + [s1]
-            polys[idx] = [[float(p[0]), float(p[1])] for p in pts]
-        for (i, a, b) in attach_edges:
-            wit_by_idx[i] = []
-            s0 = _ray_border(node_xy[a][0], node_xy[a][1], node_xy[b][0],
-                             node_xy[b][1], half_w[a], half_h[a])
-            s1 = _ray_border(node_xy[b][0], node_xy[b][1], node_xy[a][0],
-                             node_xy[a][1], half_w[b], half_h[b])
-            polys[i] = [[float(s0[0]), float(s0[1])],
-                        [float(s1[0]), float(s1[1])]]
-        seen_pair = {}
-        for i, (a, b) in enumerate(edges):
-            if i not in polys:
-                continue
-            key = tuple(sorted((a, b)))
-            k = seen_pair.get(key, 0)
-            seen_pair[key] = k + 1
-            if k:
-                polys[i] = _offset_poly(polys[i], k)
-        return polys, wit_by_idx
+
+def _l1_build_polys(node_xy, marker_xy, core_edge_map, chain_of,
+                    attach_edges, edges, half_w, half_h):
+    """Delivered polylines from current integer positions (pure
+    function of coordinates + chains -- reusable for the clearance
+    scale-up retry)."""
+    """Delivered polylines from current integer positions (pure
+    function of coordinates + chains — reusable for the clearance
+    scale-up retry)."""
+    polys, wit_by_idx = {}, {}
+    for (idx, ci, ei, a, b) in core_edge_map:
+        vids = chain_of.get((ci, ei), [])
+        wit_by_idx[idx] = vids
+        raw = [(node_xy[a][0], node_xy[a][1])]
+        raw += [marker_xy[v] for v in vids]
+        raw.append((node_xy[b][0], node_xy[b][1]))
+        pts = _straight_through(raw)
+        s0 = (_ray_border(node_xy[a][0], node_xy[a][1], pts[1][0],
+                          pts[1][1], half_w[a], half_h[a])
+              if len(pts) > 1 else (node_xy[a][0], node_xy[a][1]))
+        s1 = (_ray_border(node_xy[b][0], node_xy[b][1], pts[-2][0],
+                          pts[-2][1], half_w[b], half_h[b])
+              if len(pts) > 1 else (node_xy[b][0], node_xy[b][1]))
+        pts = [s0] + pts[1:-1] + [s1]
+        polys[idx] = [[float(p[0]), float(p[1])] for p in pts]
+    for (i, a, b) in attach_edges:
+        wit_by_idx[i] = []
+        s0 = _ray_border(node_xy[a][0], node_xy[a][1], node_xy[b][0],
+                         node_xy[b][1], half_w[a], half_h[a])
+        s1 = _ray_border(node_xy[b][0], node_xy[b][1], node_xy[a][0],
+                         node_xy[a][1], half_w[b], half_h[b])
+        polys[i] = [[float(s0[0]), float(s0[1])],
+                    [float(s1[0]), float(s1[1])]]
+    seen_pair = {}
+    for i, (a, b) in enumerate(edges):
+        if i not in polys:
+            continue
+        key = tuple(sorted((a, b)))
+        k = seen_pair.get(key, 0)
+        seen_pair[key] = k + 1
+        if k:
+            polys[i] = _offset_poly(polys[i], k)
+    return polys, wit_by_idx
+
+
+def _l1_normalize(graph, edges, bands, att, c_ub):
+    """Stage 4/5 -- clearance scale ladder, deg0 parking lane and the
+    global shift into the positive quadrant.
+
+    Returns the state dict, or the ``("L2", record)`` defer tuple.
+    """
+    from .routing import (sample_polyline, dist_point_rect, seg_cross,
+                          CLEARANCE)
+
+    node_xy = bands["node_xy"]
+    marker_xy = bands["marker_xy"]
+    half_w = bands["half_w"]
+    half_h = bands["half_h"]
+    sizes = bands["sizes"]
+    attach_edges = att["attach_edges"]
+    chain_of = att["chain_of"]
+    core_edge_map = att["core_edge_map"]
 
     wit_by_idx = {}
     failures = []
@@ -840,14 +930,16 @@ def _planarized_l1(graph, cfg, linestyle, cores):
         else:
             node_xy = {v: _even_scale(p, mul) for v, p in node_xy0.items()}
             marker_xy = {v: _even_scale(p, mul) for v, p in marker_xy0.items()}
-        polys, wit_by_idx = _build_polys(node_xy, marker_xy)
+        polys, wit_by_idx = _l1_build_polys(
+            node_xy, marker_xy, core_edge_map, chain_of, attach_edges,
+            edges, half_w, half_h)
         failures, diag = _verify(edges, polys, node_xy, half_w, half_h,
                                  marker_xy, sample_polyline,
                                  dist_point_rect, seg_cross, CLEARANCE)
         if not failures:
             break
     if failures:
-        return ("L2", _defer(
+        return ("L2", _l1_defer(
             [f"drawing-verification: {'; '.join(failures[:3])}"], c_ub))
 
     # ── deg0 parking lane (deterministic) ──
@@ -875,6 +967,34 @@ def _planarized_l1(graph, cfg, linestyle, cores):
     marker_xy = {k: (p[0] + dx, p[1] + dy) for k, p in marker_xy.items()}
     polys = {i: [[p[0] + dx, p[1] + dy] for p in pl_]
              for i, pl_ in polys.items()}
+    return {
+        "node_xy": node_xy, "marker_xy": marker_xy, "polys": polys,
+        "wit_by_idx": wit_by_idx, "deg0": deg0,
+    }
+
+
+def _l1_assemble(graph, cfg, linestyle, ex, bands, norm):
+    """Stage 5/5 -- edges_out + marker payload + viewBox + the auto-schema
+    meta block, then the coordinate stamp.
+
+    Returns the final ``("L1", v4)`` result.
+    """
+    exactness = ex["exactness"]
+    core_results = ex["core_results"]
+    c_ub = ex["c_ub"]
+    h_vertices = ex["h_vertices"]
+    cap = ex["cap"]
+    edge_gidx = ex["edge_gidx"]
+    sizes = bands["sizes"]
+    card_h = bands["card_h"]
+    half_w = bands["half_w"]
+    half_h = bands["half_h"]
+    node_xy = norm["node_xy"]
+    marker_xy = norm["marker_xy"]
+    markers_all = bands["markers_all"]
+    polys = norm["polys"]
+    wit_by_idx = norm["wit_by_idx"]
+    deg0 = norm["deg0"]
 
     # ── edges_out ──
     edges_out = []
@@ -982,6 +1102,8 @@ def _planarized_l1(graph, cfg, linestyle, cores):
         },
     }
     return ("L1", stamp_coordinates_only(v4))
+
+
 
 
 def _match_edge(edges, used, a, b):
