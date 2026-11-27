@@ -117,6 +117,10 @@ def g_anchors_smooth(c):
 
 
 def g_anchors_standard(c):
+    """anchors_standard criterion (jacky 2026-11-26, multi-slot vocabulary
+    card): every delivered endpoint sits ON its box border and meets the
+    anchor-angle floor -- the legacy 16-set membership requirement is
+    retired (W9: it blocked ~80% of manually calibrated figures)."""
     return c.metrics["anchor_standard_violations"] == 0
 
 

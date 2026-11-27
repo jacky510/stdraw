@@ -26,6 +26,8 @@ from . import routing as _routing
 from . import timing as _timing
 from .visibility import reset_caches as _reset_route_caches
 from .anchors import ANCHOR_IDS, standard_anchors as _standard_anchors
+from .anchors import is_anchor_id as _is_anchor_id
+from .anchors import anchor_point as _anchor_point
 from .anchors import rounded_tip as _rounded_tip
 from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
                       ANCHOR_MIN_DEG, border_point, EvalCache)
@@ -819,8 +821,9 @@ def _manual_anchors(manual, edges):
     sel = {"src": aid | (absent), "dst": aid | (absent)} — the export
     artifact of the demo-2d endpoint drag / anchor click (edges[].anchors,
     viewer userAnchored semantics). Validation mirrors _manual_waypoints:
-    (a,b) must be a graph edge and every anchor id must be in
-    anchors.ANCHOR_IDS; entries with neither src nor dst are dropped.
+    (a,b) must be a graph edge and every anchor id must be in the
+    anchors.py vocabulary (is_anchor_id: legacy 16-point set + numbered
+    side slots g3..g7); entries with neither src nor dst are dropped.
     Deterministic: same input, same output.
     """
     out = {}
@@ -846,7 +849,7 @@ def _manual_anchors(manual, edges):
             aid = anc.get(end_key)
             if aid is None:
                 continue
-            if aid not in ANCHOR_IDS:
+            if not _is_anchor_id(aid):
                 raise ValueError(f"unknown anchor id for edge {a}->{b} ({end_key}): {aid!r}")
             sel[end_key] = aid
         if sel:
@@ -2297,6 +2300,10 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
     Pure code motion out of layout() (byte-equivalent refactor): every
     statement below is the original body verbatim."""
     nodes = cand["nodes"]
+    # DSL-designated anchors (@anchors): the same user-authority/gate-fallback
+    # accounting as --from-layout (breaching designations fall back to the
+    # engine's own delivery)
+    _has_dsl_anchors = any(getattr(_e, "anchors", None) for _e in graph.edges)
     pos = cand["pos"]
     y = cand["y"]
     widths = cand["widths"]
@@ -2392,7 +2399,8 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
     # user styles are honored untouched, so benign manual layouts stay
     # byte-for-byte identical.
     _manual_base = ({i: _clone_route(r) for i, r in routes.items()}
-                    if manual is not None else None)
+                    if (manual is not None or _has_dsl_anchors)
+                    else None)
     if er_presets is not None:
         # spec §5 step 7: bounded deterministic local re-enumeration for
         # edges still involved in crossings (<= 3 rounds; each round's
@@ -2576,14 +2584,22 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
     manual_anchors = {}
     if manual is not None:
         manual_anchors = _manual_anchors(manual, edges)
+    # DSL-designated anchors (@anchors src=..,dst=..): the same vocabulary
+    # and the same user-designation channel as the manual-layout export.
+    # --from-layout entries win on conflict (the more specific intent).
+    for _e in graph.edges:
+        _ua = getattr(_e, "anchors", None)
+        if _ua:
+            manual_anchors.setdefault((_e.a, _e.b),
+                                      {k: v for k, v in _ua.items() if v})
     if manual_anchors:
         from .routing import quad_points as _quad_points
 
         def _anchor_xy(A, aid):
-            for p in _standard_anchors(A[0], A[1], A[2] / 2.0, A[3] / 2.0):
-                if p[0] == aid:
-                    return (p[1], p[2])
-            raise ValueError(f"anchor id not resolvable: {aid!r}")   # guarded by _manual_anchors
+            p = _anchor_point(A[0], A[1], A[2] / 2.0, A[3] / 2.0, aid)
+            if p is None:
+                raise ValueError(f"anchor id not resolvable: {aid!r}")   # guarded by _manual_anchors / DSL validation
+            return p
 
         for i, (a, b) in enumerate(edges):
             sel = manual_anchors.get((a, b))
@@ -2666,7 +2682,7 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
     # router's mutual-pair lens offset / press avoidance / clearance
     # machinery delivers gate-clean geometry.  Gate-clean user styles are
     # honored untouched -- benign manual layouts stay byte-identical.
-    if manual is not None and _manual_base is not None:
+    if _manual_base is not None:
         _styled = {(a, b) for (a, b) in edges
                    if (manual_styles.get((a, b)) or manual_anchors.get((a, b)))
                    and not manual_wps.get((a, b))}
@@ -2906,6 +2922,13 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
         if _lens_report.get("pairs"):
             router.lens_report = _lens_report
         _timing.mark("repair:mutual_lens_construct")
+    # fan slot competition by SWAP (departure-azimuth φ key; jacky 2026-11-26
+    # approval, stdraw20 lesson §4): last endpoint-moving repair, so the
+    # dual crossing accounting below includes its effect.  Groups without
+    # near-segment crossings are skipped byte-for-byte.
+    if er_presets is None and engine != "lens-construct":
+        routes = router.fan_slot_reorder(routes, frozen=_frozen)
+        _timing.mark("repair:fan_slot_reorder")
     router_pairs = router.final_crossing_pairs(routes)
     return routes, router, router_pairs, er_report, _snap_deferred
 
@@ -2994,6 +3017,14 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
              "anchors": {"a": list(info["points"][0]), "b": list(info["points"][-1])},
              "arrow": [round(_tip[0], 1), round(_tip[1], 1)],
              "route_cross_edges": int(info.get("cross_edges", 0))}  # diagnostic value from the evaluation period
+        # schema sync (multi-slot anchor vocabulary): an edge DELIVERED on a
+        # user-designated anchor (DSL @anchors or --from-layout edges[].anchors;
+        # gate fallback removes the marker when the engine took over) exports
+        # the ids alongside the coordinates. Absent otherwise (bytes unchanged).
+        _ua = info.get("ua_ends")
+        if _ua:
+            e["anchor_ids"] = {("src" if k == 0 else "dst"): v
+                               for k, v in sorted(_ua.items())}
         if getattr(graph.edges[i], "delay", False):
             e["delay"] = True   # @delay link: the render layer draws the || mark at the arc-length midpoint
         if info["kind"] == "arc":

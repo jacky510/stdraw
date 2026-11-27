@@ -21,6 +21,7 @@ var <id> "<标签>" [@value "<数值文本>"]     # 变量（必须先声明后�
                  [@w <补余量px>]           # 可选：混排标题实测补余量（2 的倍数）
 
 <a> -> <+|-> <b> [@loops <id1>,<id2>]      # 极性边；@loops 声明该边参与的回路
+                 [@anchors src=<aid>,dst=<aid>]   # 可选：端点锚位指定（见附录 B）
 
 loop <id> "<标签>" "<R|B>" [<n1>, <n2>, ...]   # 声明回路：节点序列 + 期望类型
 group <gid> "<分组标签>"                   # 可选分组声明
@@ -80,3 +81,16 @@ b -> + a @delay @loops R1
 - 证书如实记录本次声明的提示（`certificate.json` 的 `hints` 块：id + 每条提示馈入的机制）——仅在有提示时输出，无提示图字节级不变；
 - `dumps` 在 groups 之后按规范顺序输出提示（`@main` 行、`@order`、`@pair` 行）；有无提示均满足 `parse(dumps(g)) == g`（属性测试在 tests/test_dsl_hints.py）；
 - 跨行的 `@pair` 无法相邻，会如实报告为未生效（诚实边界）。
+
+## 附录 C. 端点锚位指定 `@anchors`（2026-11-26）
+
+边行可以携带 `@anchors src=<aid>[,dst=<aid>]`（三个边标签 `@loops` / `@anchors` / `@delay` 先后顺序任意、各至多一次；规范导出顺序为 `@loops ... @anchors ... @delay`，`parse(dumps(g)) == g` 保持）：
+
+```
+a -> + b @anchors src=s-g2,dst=n-g3     # 两端都指定
+b -> + c @anchors src=ne                # 只指定一端
+```
+
+`<aid>` 来自 anchors.py 词汇表：边中点（`n`/`e`/`s`/`w`）、四角（`ne`/`se`/`sw`/`nw`）、带序号边槽位（`<边>-g<j>`，j = 1..7，固定且与上下文无关的比例位——g1/g2 是既有黄金位 0.382/0.618，g3 为边中点，g4/g5 为 1/4、3/4 位，g6/g7 为近角位）。一条边框实际使用的槽位数是自适应的（随该框挂线数），但 id → 坐标映射不依赖它，因此 id 在 DSL、导出（`layout.json` 的 `edges[].anchor_ids`）、交互层 manual-layout 导出（`edges[].anchors`）与 `--from-layout` 回放之间全程无歧义。
+
+指定是用户意图、不是豁免：被指定的端点冻结出各修复通道；指定导致的直线交付若违反硬门（压框 / 净距 / 角度），回退为引擎自己的交付（stderr 如实报告，与 `--from-layout` 通道同一记账）。语法错误（未知 id、重复键、未知 token）以 DSL 错误拒绝。

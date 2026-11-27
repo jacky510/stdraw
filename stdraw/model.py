@@ -25,6 +25,7 @@ class Edge:
     polarity: str            # "+" same-sign (reinforcing) / "-" opposite-sign (balancing)
     loops: List[str] = field(default_factory=list)   # tags of loops this edge participates in
     delay: bool = False       # optional: a delay on this link (DSL @delay; rendered as the || mark, gated)
+    anchors: Optional[Dict[str, str]] = None  # optional: per-end anchor designation (DSL @anchors; keys src/dst -> vocabulary id, anchors.py caliber)
 
 
 @dataclass

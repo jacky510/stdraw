@@ -2470,6 +2470,158 @@ class Router:
                         routes[i2]["points"] = pts_b
         return routes
 
+    def fan_slot_reorder(self, routes, frozen=()):
+        """Fan slot competition by SWAP, keyed by the departure azimuth φ.
+
+        jacky 2026-11-26 approval (multi-slot anchor vocabulary card),
+        grounded in the stdraw20 manual-calibration lessons §4: the fan X
+        5→3 fix came from SWAPPING the two competing anchors at the shared
+        node, keyed by the departure azimuth φ rather than the far-end
+        coordinate -- a far-end-monotone slot order still crosses when the
+        routes approach the shared node from opposite sides (detour vs
+        direct), which is exactly the case the azimuth/projection ordering
+        in fan_spread cannot see.
+
+        For every (node, side) group of >= 2 slidable fan members (same
+        membership rules as fan_spread: frozen edges and non-dense arc
+        routes are excluded; dense hub groups keep their own grid machinery
+        and are skipped entirely), count crossings among the members' NEAR
+        segments (anchor -> adjacent polyline point).  On any crossing, try
+        candidate slot orders in fixed order: first the φ order (members
+        sorted by the near-segment direction's projection on the border
+        tangent axis, ascending with slot position; ties by edge index),
+        then each crossing pair's simple swap.  Accept the first candidate
+        that (a) passes every member's FAN_SPREAD edge gates against the
+        pre-change baseline, (b) strictly reduces the near-segment crossing
+        count, and (c) does not increase the route-level crossing count.
+        Unaffected groups and rejected candidates restore the input
+        byte-for-byte (deterministic: sorted traversal, fixed candidate
+        order, no RNG).
+        """
+        groups = {}
+        for i in sorted(routes.keys()):
+            if i in frozen or routes[i].get("kind") == "arc":
+                continue
+            pts = routes[i]["points"]
+            a, b = self.edges[i]
+            for end, p in (("a", pts[0]), ("b", pts[-1])):
+                v = a if end == "a" else b
+                if self.dense and v == self.dense_hub:
+                    continue    # dense hub groups keep their grid machinery
+                groups.setdefault((v, self._side_of(v, p)), []).append(
+                    (i, end, tuple(p)))
+        report = []
+        for (v, side), entries in sorted(groups.items()):
+            k = len(entries)
+            if k < 2:
+                continue
+            cx, cy, hw, hh = self.N[v]
+            vertical = side in ("r", "l")
+            half_len = (hh if vertical else hw) - 3
+            # near segment + φ projection key per member
+            near = {}
+            phi = {}
+            offs = {}
+            for (i2, end2, p2) in entries:
+                pts2 = routes[i2]["points"]
+                if end2 == "a":
+                    q2 = pts2[1]
+                    idx = 0
+                else:
+                    q2 = pts2[-2]
+                    idx = len(pts2) - 1
+                near[i2] = (tuple(pts2[idx]), tuple(q2))
+                # projection of the near-segment direction on the border
+                # tangent axis (the azimuth φ measure; ascending with slot
+                # position = crossing-free assignment)
+                d2 = (q2[0] - p2[0], q2[1] - p2[1])
+                phi[i2] = d2[1] if vertical else d2[0]
+                offs[i2] = p2[1] if vertical else p2[0]
+            cross_pairs = []
+            n_before = 0
+            members = [e[0] for e in entries]
+            for a_i in range(k):
+                for b_i in range(a_i + 1, k):
+                    m1, m2 = members[a_i], members[b_i]
+                    if seg_cross(near[m1][0], near[m1][1],
+                                 near[m2][0], near[m2][1]):
+                        cross_pairs.append((m1, m2))
+                        n_before += 1
+            if not cross_pairs:
+                continue
+            cur_order = list(members)
+            cands = [tuple(sorted(members, key=lambda m: (phi[m], m)))]
+            for (m1, m2) in cross_pairs:
+                o = list(cur_order)
+                o[o.index(m1)], o[o.index(m2)] = o[o.index(m2)], o[o.index(m1)]
+                cands.append(tuple(o))
+            seen, cands_u = set(), []
+            for o in cands:
+                if o not in seen and o != tuple(cur_order):
+                    seen.add(o)
+                    cands_u.append(o)
+            before = {m: [list(p) for p in routes[m]["points"]]
+                      for m in members}
+            stats_before = {m: self._edge_stats(m, routes) for m in members}
+            pre_pairs = self.final_crossing_pairs(routes)
+            baseline = _gates.GateBaseline(stats=stats_before)
+            applied = False
+            for order in cands_u:
+                # restore, then assign sorted offsets in candidate order
+                for m in members:
+                    routes[m]["points"] = [list(p) for p in before[m]]
+                sorted_offs = sorted(offs[m] for m in members)
+                for m, o_new in zip(order, sorted_offs):
+                    _i, _end, _p = next(e for e in entries if e[0] == m)
+                    pts2 = routes[m]["points"]
+                    idx = 0 if _end == "a" else len(pts2) - 1
+                    if vertical:
+                        pts2[idx] = [pts2[idx][0],
+                                     max(cy - half_len,
+                                         min(cy + half_len, o_new))]
+                    else:
+                        pts2[idx] = [max(cx - half_len,
+                                         min(cx + half_len, o_new)),
+                                     pts2[idx][1]]
+                n_after = 0
+                for a_i in range(k):
+                    for b_i in range(a_i + 1, k):
+                        m1, m2 = members[a_i], members[b_i]
+                        p1 = routes[m1]["points"]
+                        p2 = routes[m2]["points"]
+                        s1 = ((tuple(p1[0]), tuple(p1[1]))
+                              if next(e for e in entries if e[0] == m1)[1] == "a"
+                              else (tuple(p1[-2]), tuple(p1[-1])))
+                        s2 = ((tuple(p2[0]), tuple(p2[1]))
+                              if next(e for e in entries if e[0] == m2)[1] == "a"
+                              else (tuple(p2[-2]), tuple(p2[-1])))
+                        if seg_cross(s1[0], s1[1], s2[0], s2[1]):
+                            n_after += 1
+                if n_after >= n_before:
+                    continue
+                if self.final_crossing_pairs(routes) > pre_pairs:
+                    continue
+                ok = True
+                for m in members:
+                    if not _gates.edge_gate_check(
+                            self, m, routes, baseline, _gates.FAN_SPREAD):
+                        ok = False
+                        break
+                if not ok:
+                    continue
+                applied = True
+                report.append({"node": v, "side": side,
+                               "members": [f"{self.edges[m][0]}->{self.edges[m][1]}"
+                                           for m in order],
+                               "near_crossings": [n_before, n_after]})
+                break
+            if not applied:
+                for m in members:
+                    routes[m]["points"] = before[m]
+        if report:
+            self.fan_reorder_report = report
+        return routes
+
     def _pt_in_band(self, v, p):
         """Whether anchor p is already inside the border's +/- 1/4 band (and on the border)."""
         q = self._band_clamp_pt(v, p)

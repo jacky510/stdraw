@@ -256,28 +256,6 @@ def _witness_match(xpts, wit_pts, radius=4.0):
     return True
 
 
-def _on_dense_grid(nd, a0):
-    """Dense slot-grid membership (dense card gate table #0): the point
-    sits in the border band (anchor inset 3px + 0.75px tolerance) and its
-    tangent offset is a multiple of DENSE_GRID_STEP (same 0.75px
-    tolerance; mirrors Router._dense_on_grid on delivered coordinates).
-    Only consulted for dense-mode hub boxes; every other node keeps the
-    16-set membership."""
-    hw, hh = nd["w"] / 2.0, nd["h"] / 2.0
-    band = 3.75
-    on_x = abs(abs(a0[0] - nd["x"]) - hw) <= abs(abs(a0[1] - nd["y"]) - hh)
-    if on_x:
-        if abs(abs(a0[0] - nd["x"]) - hw) > band:
-            return False
-        off = a0[1] - nd["y"]
-    else:
-        if abs(abs(a0[1] - nd["y"]) - hh) > band:
-            return False
-        off = a0[0] - nd["x"]
-    steps = off / DENSE_GRID_STEP
-    return abs(off - round(steps) * DENSE_GRID_STEP) <= 0.75
-
-
 
 
 def _cert_crossing_scan(edges, polys, plz_l1):
@@ -517,10 +495,10 @@ def _cert_coincide_scan(edges, polys, crossings, plz_l1):
 
 def _cert_press_clear_scan(edges, polys, nodes, ids, anchors, dense_on,
                            dense_hub):
-    """Box press / own-box / anchor smoothness / 16-anchor membership scan.
-    Pure move from certificate_auto."""
+    """Box press / own-box / anchor smoothness / anchors_standard scan
+    (criterion: on-border + angle达标).  Pure move from certificate_auto."""
     press, clear_details, anchor_bad = [], [], []
-    anchor_standard_bad = 0          # ref-scrubbed: 16-anchor-set membership gate
+    anchor_standard_bad = 0          # criterion: on-border + angle-met (below)
     anchor_standard_details = []
     min_clear = None
     for i, e in enumerate(edges):
@@ -550,6 +528,7 @@ def _cert_press_clear_scan(edges, polys, nodes, ids, anchors, dense_on,
         # by construction and is exempt -- the same accounting as
         # Router._own_press (anchor_snap gate).  What this gate still catches
         # is the route BODY (beyond the attachment zone) stabbing into the box.
+        std_fail = {}    # end -> "off-border" | "angle" (anchors_standard criterion)
         for v, end_key in ((e["a"], "a"), (e["b"], "b")):
             p = nodes[v]
             hw, hh = p["w"] / 2, p["h"] / 2
@@ -557,6 +536,7 @@ def _cert_press_clear_scan(edges, polys, nodes, ids, anchors, dense_on,
             if a0 is None or dist_point_rect(a0[0], a0[1], p["x"], p["y"], hw, hh) > 0.75:
                 anchor_bad.append({"edge": f"{e['a']}->{e['b']}", "end": end_key,
                                    "why": "anchor off-border"})
+                std_fail[end_key] = "off-border"
                 continue
             q0, q1 = pts[0], pts[-1]
             interior = any(dist_point_rect(px, py, p["x"], p["y"], hw + PRESS_MARGIN, hh + PRESS_MARGIN) <= 0
@@ -584,27 +564,29 @@ def _cert_press_clear_scan(edges, polys, nodes, ids, anchors, dense_on,
             if ang < _ang_floor:
                 anchor_bad.append({"edge": f"{e['a']}->{e['b']}", "end": end_key,
                                    "angle": round(ang, 1)})
-        # ref-scrubbed: endpoint membership in the 16 standard anchor set
-        # (anchors.py caliber; tol 0.75px = the same border tolerance as the
-        # anchor on-border check above).  The default attachment caliber:
-        # every rendered endpoint sits on one of its box's 16 standard
-        # connection points.
+                std_fail.setdefault(end_key, "angle")
+        # anchors_standard criterion (jacky 2026-11-26 approval, grounded in
+        # the stdraw20 manual-calibration lessons §4 / W9 evaluation: the
+        # legacy 16-set membership blocked ~80% of manually calibrated
+        # figures because human g-slot endpoints sit off the 16-point set):
+        # an endpoint is compliant when it sits ON its box border (<= 0.75px,
+        # the same tolerance as the on-border check above) AND its
+        # departure/arrival angle meets the anchor-angle floor recomputed
+        # above.  The 16-set membership requirement and the dense slot-grid
+        # exemption are retired -- dense hubs keep only their relaxed angle
+        # floor.  No threshold loosened: both legs of the criterion are the
+        # pre-existing on-border and anchors_smooth accounting.
         for end_key in ("a", "b"):
-            v = e[end_key]
-            a0 = anchors.get(i, {}).get(end_key)
-            if a0 is None:
+            why = std_fail.get(end_key)
+            if why is None:
                 continue
-            nd = nodes[v]
-            pts16 = _std_anchors(nd["x"], nd["y"], nd["w"] / 2.0, nd["h"] / 2.0)
-            if not any(abs(ax - a0[0]) <= 0.75 and abs(ay - a0[1]) <= 0.75
-                       for _aid, ax, ay in pts16):
-                if not (dense_on and v == dense_hub
-                        and _on_dense_grid(nd, a0)):
-                    anchor_standard_bad += 1
-                    if len(anchor_standard_details) < 10:
-                        anchor_standard_details.append(
-                            {"edge": f"{e['a']}->{e['b']}", "end": end_key,
-                             "anchor": [round(a0[0], 1), round(a0[1], 1)]})
+            anchor_standard_bad += 1
+            if len(anchor_standard_details) < 10:
+                a0 = anchors.get(i, {}).get(end_key)
+                anchor_standard_details.append(
+                    {"edge": f"{e['a']}->{e['b']}", "end": end_key, "why": why,
+                     "anchor": ([round(a0[0], 1), round(a0[1], 1)]
+                                if a0 is not None else None)})
 
     return (press, clear_details, anchor_bad, anchor_standard_bad,
             anchor_standard_details, min_clear)
@@ -1264,28 +1246,6 @@ def _witness_match(xpts, wit_pts, radius=4.0):
     return True
 
 
-def _on_dense_grid(nd, a0):
-    """Dense slot-grid membership (dense card gate table #0): the point
-    sits in the border band (anchor inset 3px + 0.75px tolerance) and its
-    tangent offset is a multiple of DENSE_GRID_STEP (same 0.75px
-    tolerance; mirrors Router._dense_on_grid on delivered coordinates).
-    Only consulted for dense-mode hub boxes; every other node keeps the
-    16-set membership."""
-    hw, hh = nd["w"] / 2.0, nd["h"] / 2.0
-    band = 3.75
-    on_x = abs(abs(a0[0] - nd["x"]) - hw) <= abs(abs(a0[1] - nd["y"]) - hh)
-    if on_x:
-        if abs(abs(a0[0] - nd["x"]) - hw) > band:
-            return False
-        off = a0[1] - nd["y"]
-    else:
-        if abs(abs(a0[1] - nd["y"]) - hh) > band:
-            return False
-        off = a0[0] - nd["x"]
-    steps = off / DENSE_GRID_STEP
-    return abs(off - round(steps) * DENSE_GRID_STEP) <= 0.75
-
-
 def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                      gates: Optional[dict] = None,
                      notes: Optional[List[str]] = None,
@@ -1455,8 +1415,9 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "edge_box_min_clear": round(min_clear, 1) if min_clear is not None else None,
         "anchor_violations": len(anchor_bad),
         "anchor_details": anchor_bad[:10],
-        # ref-scrubbed: delivered endpoints must sit on the box's 16 standard
-        # anchor set (anchors.py caliber) -- the default attachment caliber.
+        # anchors_standard criterion (jacky 2026-11-26): endpoint ON the box
+        # border + departure/arrival angle >= floor -- the vocabulary is the
+        # multi-slot anchors.py set, not a membership table
         "anchor_standard_violations": anchor_standard_bad,
         "anchor_standard_details": anchor_standard_details[:10],
         "avg_edge_length": round(avg_len, 1),
@@ -1619,7 +1580,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                    g["min_gap_ge_16"] and g["lines_no_coincidence"] and
                    g["crossings_witnessed"] and g["three_account_consistent"])
     else:
-        hard_ok = (hard_ok and g["anchors_standard"]       # ref-scrubbed: 16-anchor membership
+        hard_ok = (hard_ok and g["anchors_standard"]       # on-border + angle-met
                    and g["visual_crossings_zero"])
         # annotation gates (present only on drawings that carry the
         # annotation; absent keys are neutral)

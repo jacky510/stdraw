@@ -18,7 +18,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from stdraw import edgerules as er
 from stdraw.routing import (Router, _dense_fan_offsets, DENSE_FAN_STEP,
                             DENSE_GRID_STEP, DENSE_CAP_PER_SLOT)
-from stdraw.metrics import _on_dense_grid
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -184,11 +183,12 @@ def test_validate_presets_dense_angle_floor():
 # dense_mode transport (meta -> scene -> gates annotation)
 # ------------------------------------------------------------------
 
-def test_metrics_on_dense_grid_helper():
-    nd = {"x": 0.0, "y": 0.0, "w": 96.0, "h": 44.0}
-    assert _on_dense_grid(nd, [12.0, -22.0]) is True
-    assert _on_dense_grid(nd, [13.0, -22.0]) is False
-    assert _on_dense_grid(nd, [12.0, 0.0]) is False   # interior
+def test_metrics_dense_angle_floor_constant():
+    from stdraw.routing import DENSE_ANCHOR_MIN_DEG, ANCHOR_MIN_DEG
+    # dense hub boxes keep only their relaxed angle floor under the
+    # on-border + angle-met criterion (the dense slot-grid membership
+    # exemption was retired with the 16-set criterion, 2026-11-26)
+    assert DENSE_ANCHOR_MIN_DEG < ANCHOR_MIN_DEG
 
 
 def test_dense_meta_transport_via_scene_and_certificate():

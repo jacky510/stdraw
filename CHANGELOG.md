@@ -6,6 +6,29 @@ reproduced here; the engineering version history lives in
 
 ## Unreleased
 
+- **anchors: multi-slot anchor vocabulary + anchors_standard criterion change
+  (jacky 2026-11-26 approval; grounded in the stdraw20 manual-calibration
+  lessons §4)**: (1) the anchor vocabulary opens from the fixed 16-point set
+  to numbered side slots `n/s/e/w-g1..g7` (+ corners / midpoints; g1/g2 keep
+  the legacy golden coordinates, slot usage is adaptive, the id -> coordinate
+  mapping is context-free) synced end-to-end — DSL `@anchors src=..,dst=..`
+  (`parse(dumps(g)) == g` preserved, canonical order `@loops -> @anchors ->
+  @delay`), `layout.json` `edges[].anchor_ids` (present only on edges
+  actually delivered on their designation), interactive manual-layout export,
+  `--from-layout` replay (old formats replay unchanged, no warnings); designations
+  travel the `--from-layout` user channel including the hard-gate fallback.
+  (2) `anchors_standard` = endpoint ON the box border + angle >= floor — the
+  16-set membership requirement and the dense slot-grid exemption are retired
+  (W9: membership blocked ~80% of manually calibrated figures); no threshold
+  loosened. (3) fan slot competition settled by swap with the departure-
+  azimuth φ key (`Router.fan_slot_reorder`, repair-chain tail; near-segment
+  crossing detected pairwise, candidates = φ order + per-pair swaps,
+  acceptance = strictly fewer near crossings + route crossings not increased
+  + FAN_SPREAD gates vs baseline; crossing-free groups byte-identical).
+  CI J-phase criterion re-anchored to on-border + angle.  Baseline drift
+  (golden / demos) is the change's declared effect; re-blessing awaits
+  separate approval.
+
 - **refactor: the giant functions are split behind registries (T17), outputs
   byte-identical**: the certificate gate assembly becomes a data registry
   (`stdraw/cert_gates.py`: `MODE_GATE_SETS` in the historical elif order,

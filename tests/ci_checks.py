@@ -860,15 +860,16 @@ def main():
                                 band_in += 1
                             elif len(worst) < 3:
                                 worst.append(f"{e['a']}->{e['b']}:{side}")
-                # ref-scrubbed re-baseline: the +/-1/4 in-band ratio was the PROXY
-                # for "prefer midpoints, avoid corners" under the v0.7.2 caliber.
-                # The default attachment caliber is now the 16 standard anchor set
-                # (anchors.py); the hard gate = every delivered endpoint is a
-                # member of its box's 16-anchor set (certificate anchors_standard
-                # is the per-run gate; this corpus sweep re-asserts it file-by-
-                # file).  The in-band ratio stays REPORT-ONLY as honest evidence
-                # (measured post-snap ratios recorded in the card).
-                from stdraw.anchors import standard_anchors as _sa
+                # criterion (jacky 2026-11-26, multi-slot anchor vocabulary
+                # card): endpoints are asserted ON the box border with an
+                # angle-clean departure (the legacy 16-set membership
+                # assertion was retired -- W9 measured it blocking ~80% of
+                # manually calibrated figures).  The +/-1/4 in-band ratio
+                # above stays REPORT-ONLY as honest evidence (the band was
+                # the old proxy caliber; measured post-snap ratios recorded
+                # in the card).
+                from stdraw.routing import ANCHOR_MIN_DEG as _am
+                import math as _m2
                 eng = lay.get("meta", {}).get("engine", "")
                 ratio = band_in / total if total else 1.0
                 viol = 0
@@ -876,25 +877,38 @@ def main():
                     rt = e["route"]
                     for side, idx in (("a", 0), ("b", len(rt["points"]) - 1)):
                         nd = lay["nodes"][e[side]]
+                        cx2, cy2 = nd["x"], nd["y"]
+                        hw2, hh2 = nd["w"] / 2.0, ch / 2.0
                         p = rt["points"][idx]
-                        pts16 = _sa(nd["x"], nd["y"], nd["w"] / 2.0, ch / 2.0)
-                        if not any(abs(ax - p[0]) <= 0.75 and
-                                   abs(ay - p[1]) <= 0.75
-                                   for _aid, ax, ay in pts16):
+                        off_b = (max(0.0, abs(p[0] - cx2) - hw2),
+                                 max(0.0, abs(p[1] - cy2) - hh2))
+                        on_border = _m2.hypot(*off_b) <= 0.75
+                        j = 1 if side == "a" else len(rt["points"]) - 2
+                        q = rt["points"][j]
+                        dx, dy = q[0] - p[0], q[1] - p[1]
+                        n2 = _m2.hypot(dx, dy) or 1.0
+                        on_x = abs(abs(p[0] - cx2) - hw2) <= \
+                            abs(abs(p[1] - cy2) - hh2)
+                        tx, ty = (0.0, 1.0) if on_x else (1.0, 0.0)
+                        ang = _m2.degrees(_m2.acos(
+                            max(0.0, min(1.0, abs(dx * tx + dy * ty) / n2))))
+                        if not on_border or ang < _am:
                             viol += 1
                 if viol > 0:
-                    failures.append(f"corpus {name}: {viol} endpoint(s) off the "
-                                    f"16 standard anchor set (ref-scrubbed caliber)")
+                    failures.append(f"corpus {name}: {viol} endpoint(s) off "
+                                    f"the anchors_standard criterion "
+                                    f"(on-border + angle, 2026-11-26)")
                 else:
                     n_anchor_ok += 1
                     print(f"OK  anchor criteria {name}: engine={eng} "
-                          f"standard-anchor membership 100% "
+                          f"on-border + angle 100% "
                           f"(in-band report-only {band_in}/{total} = {ratio:.0%}, "
                           f"corners {corner})")
             if n_anchor_ok == 19:
-                print("OK  anchor criteria hard gate: 19/19 endpoints all on the "
-                      "16 standard anchor set (ref-scrubbed; in-band ratio is "
-                      "report-only since the band was the old proxy caliber)")
+                print("OK  anchor criteria hard gate: 19/19 endpoints meet "
+                      "the on-border + angle criterion (2026-11-26; in-band "
+                      "ratio is report-only since the band was the old proxy "
+                      "caliber)")
 
             # H3. R/B coloring criteria: wage R1 amber / B1 sky blue / multi-loop mixed-color neutral + polarity data retained
         mark("J: anchor-criteria sweep (reuses H2 outputs, no re-layout)")

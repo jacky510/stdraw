@@ -15,10 +15,11 @@ every all-pass certificate/audit keeps its historical bytes byte-for-byte.
 # manual-calibration lessons): for cv_le_035 / pitch_uniform /
 # column_snap24_ge_060 / anchors_standard the hints must NOT push agents
 # toward mechanical grid/anchor placement — those gates penalize
-# human-style arrangements (measured: anchors_standard blocked ~80% of
-# manually calibrated drawings). Hints point to the semantic hints and the
-# split-by-loops lever only. Gate thresholds and grade semantics are NOT
-# touched by the wording layer.
+# human-style arrangements (measured: the former 16-anchor-set membership
+# criterion blocked ~80% of manually calibrated drawings; since the
+# 2026-11-26 criterion change anchors_standard = on-border + angle-met).
+# Hints point to the semantic hints and the split-by-loops lever only.
+# Gate thresholds and grade semantics are NOT touched by the wording layer.
 GATE_HINTS = {
     "box_press_zero":
         "a line presses a card: reduce density — declare @main so the main "
@@ -55,8 +56,10 @@ GATE_HINTS = {
         "two lines coincide: use @order to band the loops that share those "
         "edges, or split the graph by loops",
     "anchors_standard":
-        "endpoints off the 16-anchor set (dense-graph deferral): split the "
-        "graph by loops to lower density, then re-run",
+        "an endpoint is off its box border or its arrival angle is too "
+        "shallow (criterion: on-border + angle-met): re-run — anchor "
+        "snapping is density-gated; splitting the graph by loops lowers "
+        "density",
     "visual_crossings_zero":
         "lines cross mid-air: declare @main (center the main structure) and "
         "@order (reading order) to steer placement, or split the graph by "

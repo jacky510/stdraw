@@ -59,6 +59,14 @@ Grading formulas:
 - **v2-hardgates**: `best` = 0 line crossings AND all placement-specific
   hard gates AND `anchors_standard` AND `visual_crossings_zero` AND dual
   crossing accounting; everything else is `uncertified` (honest no-grade).
+  `anchors_standard` criterion (jacky 2026-11-26, multi-slot anchor
+  vocabulary change): every delivered endpoint sits ON its box border
+  (<= 0.75px) AND its departure/arrival angle meets the anchor-angle
+  floor -- the legacy "endpoint ∈ its box's 16-anchor set" membership
+  requirement was retired (W9 evaluation: it blocked ~80% of manually
+  calibrated figures whose human g-slot endpoints sit off the 16-point
+  set).  No threshold was loosened: both legs reuse the pre-existing
+  on-border and anchors_smooth accounting.
 - **v1-legacy (historical)**: `best` = 0 crossings AND min card gap >= 16
   AND spacing CV <= 0.35; `second` (legacy) = placement ok AND <= 2
   crossings; else `uncertified`. The code behind this formula is gone;

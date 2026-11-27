@@ -622,8 +622,53 @@ geometrically equivalent (mirror images).
   / `__stdrawApplyLayout` `edge_anchors`), node drags only **reproject the
   endpoint onto the same anchor slot** (recomputed on live geometry) — no
   drift; exported layout's `edges[].anchors {src,dst}` follows the Export
-  layout semantics (viewer replay; CLI `--from-layout` does not consume that
-  key yet).
+  layout semantics (viewer replay; the CLI `--from-layout` channel consumes
+  the same key).
+
+## Multi-slot anchor vocabulary + anchors_standard criterion change (jacky 2026-11-26 approval)
+
+> This section is the CURRENT criterion; the section below ("Delivery-layer
+> default snapping to the 16 standard anchors") keeps its snapping machinery
+> (`anchor_snap` works unchanged), but its MEMBERSHIP criterion is retired —
+> wherever that section says "endpoint must be one of the 16 anchors" or
+> "anchors_standard = membership", read this section's criterion instead.
+
+Grounded in the stdraw20 manual-calibration lessons §4 (W9 evaluation: the
+16-set membership criterion blocked ~80% of the manually calibrated figures,
+whose human g1/g2 endpoints sit off the 16-point set):
+
+1. **Multi-slot vocabulary**: numbered side slots `n/s/e/w-g1..g7` (g1/g2 =
+   the legacy golden pair 0.382/0.618 unchanged, g3 = side midpoint,
+   g4/g5 = quarter pair, g6/g7 = near-corner pair) + corners + midpoints;
+   the number of slots a side USES is adaptive (it follows the attached
+   line count) while the id -> coordinate mapping never depends on it —
+   ids stay unambiguous across the DSL (`@anchors src=..,dst=..`, canonical
+   order `@loops -> @anchors -> @delay`, `parse(dumps(g)) == g` preserved),
+   `layout.json` (`edges[].anchor_ids`, present only on edges actually
+   delivered on their designation), the interactive manual-layout export
+   and the `--from-layout` replay.  The legacy 16-point set is a subset;
+   the interactive hover/snap layer is untouched.
+2. **Criterion**: `anchors_standard` = endpoint ON the box border
+   (<= 0.75px, the legacy tolerance) + departure/arrival angle >= the
+   angle floor (ANCHOR_MIN_DEG; dense hubs keep their relaxed floor).  The
+   membership requirement and the dense slot-grid exemption are retired;
+   no threshold was loosened (both legs reuse the pre-existing on-border
+   and anchors_smooth accounting).  DSL/replay designations travel the
+   same user channel as `--from-layout`: a designation breaching a hard
+   gate (press / clearance / angle) falls back to the engine's own
+   delivery, reported on stderr.
+3. **Fan slot competition = swap + departure-azimuth φ key**
+   (`Router.fan_slot_reorder`, last repair before the dual crossing
+   accounting): same group membership rules as fan_spread (frozen /
+   non-dense arcs excluded, dense hub groups skipped); near segments
+   (anchor -> adjacent point) are cross-checked pairwise; candidate slot
+   orders = the φ order (departure direction projected on the border
+   tangent axis, ascending with slot position — a far-end-monotone order
+   still crosses; stdraw20 measured fan X 5→3 in exactly this direction)
+   plus each crossing pair's simple swap; acceptance = near-segment
+   crossings strictly reduced + route-level crossings not increased + every
+   member's FAN_SPREAD edge gates pass vs the pre-change baseline; groups
+   without crossings restore the input byte-for-byte.
 
 ## Delivery-layer default snapping to the 16 standard anchors (ref-scrubbed, `Router.anchor_snap`)
 

@@ -27,6 +27,7 @@ var <id> "<标签>" [@value "<数值文本>"]     # variable (must be declared b
                  [@w <补余量px>]           # optional: measured padding for mixed-script titles (multiple of 2)
 
 <a> -> <+|-> <b> [@loops <id1>,<id2>]      # polarity edge; @loops declares the loops this edge participates in
+                 [@anchors src=<aid>,dst=<aid>]   # optional per-end anchor designation (see Appendix C)
 
 loop <id> "<标签>" "<R|B>" [<n1>, <n2>, ...]   # declare a loop: node sequence + expected type
 group <gid> "<分组标签>"                   # optional group declaration
@@ -77,6 +78,35 @@ line and no other mark). The canonical dump order is `@loops ... @delay`;
 `parse(dumps(g)) == g` holds with and without delay markers. An unknown
 token, a repeated `@delay` or a trailing token after the tags is rejected
 with a DSL error.
+
+## Appendix C. Per-end anchor designation `@anchors` (2026-11-26)
+
+An edge line may carry `@anchors src=<aid>[,dst=<aid>]` (the three edge
+tags `@loops` / `@anchors` / `@delay` may appear in any order, each at most
+once; the canonical dump order is `@loops ... @anchors ... @delay` and
+`parse(dumps(g)) == g` holds):
+
+```
+a -> + b @anchors src=s-g2,dst=n-g3     # both ends
+b -> + c @anchors src=ne                # one end only
+```
+
+`<aid>` comes from the anchors.py vocabulary: side midpoints (`n` / `e` /
+`s` / `w`), corners (`ne` / `se` / `sw` / `nw`), and numbered side slots
+(`<side>-g<j>`, j = 1..7 at fixed context-free fractions — g1/g2 are the
+legacy golden pair 0.382 / 0.618, g3 the side midpoint, g4/g5 the quarter
+pair, g6/g7 the near-corner pair). The slot count a side actually uses is
+adaptive (it follows the number of lines attached to that side); the
+id -> coordinate mapping never depends on it, so ids stay unambiguous
+across DSL, exports (`layout.json` `edges[].anchor_ids`), the interactive
+manual-layout export (`edges[].anchors`) and the `--from-layout` replay.
+
+A designation is a user intent, not a license: the designated endpoints
+are frozen out of the repair passes, and a designation whose straight
+delivery would breach a hard gate (box press / clearance / angle) falls
+back to the engine's own delivery (reported on stderr, same accounting as
+the `--from-layout` channel). Syntax errors (unknown id, duplicate key,
+unknown token) are rejected with a DSL error.
 
 ## Appendix B. Semantic hints `@main` / `@order` / `@pair` (T14)
 

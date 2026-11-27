@@ -5,7 +5,7 @@ Syntax (line-oriented, # starts a comment, blank lines ignored):
 
     graph "graph name"
     var <id> "<label>" [@value "<value text>"] [@group <gid>] [@w <extra px>]
-    <a> -> <+|-> <b> [@loops <id1>,<id2>] [@delay]
+    <a> -> <+|-> <b> [@loops <id1>,<id2>] [@anchors src=<aid>,dst=<aid>] [@delay]
     loop <id> "<label>" "<R|B>" [<n1>, <n2>, ...]
     group <gid> "<group label>"
     @main <loopid>[,<loopid>...]      # semantic hint (T14): main loop(s) to center
@@ -16,9 +16,13 @@ Syntax (line-oriented, # starts a comment, blank lines ignored):
   layout and certificates;
 - Loop declarations state semantic loops, validated by loops.lint for closure
   + R/B polarity edge counting;
-- Edge tags may follow in either order (@loops ... / @delay), each at most
-  once; dumps() always writes @loops first, then @delay (the canonical order
-  that keeps parse(dumps(g)) == g);
+- Edge tags may follow in either order (@loops ... / @anchors ... / @delay),
+  each at most once; dumps() always writes @loops first, then @anchors,
+  then @delay (the canonical order that keeps parse(dumps(g)) == g);
+- @anchors designates per-end connection points (keys src/dst; ids from the
+  anchors.py vocabulary: n/e/s/w midpoints, ne/se/sw/nw corners, numbered
+  side slots n-g1..n-g7 etc.); the layout honors them as user-designated
+  anchors (same channel as the interactive export),
 - Groups are optional and do not participate in layout (tension handling is
   discussed in the model.py module docstring).
 - Semantic hints (T14) are line-oriented directives starting with "@";
@@ -31,6 +35,7 @@ Parsing is deterministic: the same text always yields the same Graph.
 """
 import re
 from .model import Graph, Node, Edge, Loop, Group
+from .anchors import is_anchor_id as _is_anchor_id
 
 # A quoted field carries \" and \\ escapes; other backslash pairs are kept
 # verbatim (unknown escapes are not interpreted).
@@ -40,9 +45,13 @@ _VAR_RE = re.compile(
     r'(?:\s+@value\s+' + _QSTR + r')?'
     r'(?:\s+@group\s+(\w+))?(?:\s+@w\s+(\d+))?\s*$')
 _EDGE_RE = re.compile(r'^(\w+)\s*->\s*([+\-])\s*(\w+)(.*)$')
-# one edge tag: "@loops <ids>" or "@delay" (a whole word), followed by
-# whitespace or end of line
-_EDGE_TAG_RE = re.compile(r'^@(?:loops\s+([\w,\s]+)|delay)(?=\s|$)')
+# one edge tag: "@loops <ids>" / "@delay" / "@anchors src=<id>[,dst=<id>]"
+# (a whole word), followed by whitespace or end of line.  Anchor ids are
+# the anchors.py vocabulary (side midpoint / corner / numbered side slot);
+# syntax is validated here, resolvability is guaranteed by the vocabulary.
+_EDGE_TAG_RE = re.compile(
+    r'^@(?:loops\s+([\w,\s]+)|delay|anchors\s+([\w\-=,\s]+))(?=\s|$)')
+_EDGE_ANCHOR_PAIR_RE = re.compile(r'^(src|dst)\s*=\s*([\w\-]+)\s*$')
 _LOOP_RE = re.compile(
     r'^loop\s+(\w+)\s+' + _QSTR + r'\s*"?([RB])"?\s*\[([^\]]*)\]\s*$')
 _GROUP_RE = re.compile(r'^group\s+(\w+)\s+' + _QSTR + r'\s*$')
@@ -120,6 +129,7 @@ def parse(text: str) -> Graph:
         m = _EDGE_RE.match(line)
         if m:
             loops, delay, tail, bad = [], False, m.group(4), False
+            anchors_sel = {}
             while tail.strip():
                 rest = tail.lstrip()
                 t = _EDGE_TAG_RE.match(rest)
@@ -131,6 +141,25 @@ def parse(text: str) -> Graph:
                         bad = True      # a second @loops tag
                         break
                     loops = [x.strip() for x in t.group(1).split(",") if x.strip()]
+                elif t.group(2) is not None:
+                    if anchors_sel:
+                        bad = True      # a second @anchors tag
+                        break
+                    for piece in t.group(2).split(","):
+                        p = _EDGE_ANCHOR_PAIR_RE.match(piece.strip())
+                        if not p:
+                            bad = True  # malformed @anchors pair
+                            break
+                        end_key, aid = p.group(1), p.group(2)
+                        if end_key in anchors_sel:
+                            bad = True  # duplicate src/dst
+                            break
+                        if not _is_anchor_id(aid):
+                            bad = True  # unknown anchor id syntax
+                            break
+                        anchors_sel[end_key] = aid
+                    if bad:
+                        break
                 else:
                     if delay:
                         bad = True      # a second @delay tag
@@ -140,7 +169,8 @@ def parse(text: str) -> Graph:
             if bad:
                 raise ValueError(f"DSL line {lineno} cannot be parsed: {raw.strip()!r}")
             g.edges.append(Edge(a=m.group(1), b=m.group(3),
-                                polarity=m.group(2), loops=loops, delay=delay))
+                                polarity=m.group(2), loops=loops, delay=delay,
+                                anchors=anchors_sel or None))
             continue
         m = _LOOP_RE.match(line)
         if m:
@@ -192,6 +222,11 @@ def dumps(g: Graph) -> str:
     out.append("")
     for e in g.edges:
         tail = f" @loops {','.join(e.loops)}" if e.loops else ""
+        if getattr(e, "anchors", None):
+            # canonical pair order src,dst (keeps parse(dumps(g)) == g)
+            pair = ",".join(f"{k}={e.anchors[k]}"
+                            for k in ("src", "dst") if k in e.anchors)
+            tail += f" @anchors {pair}"
         if e.delay:
             tail += " @delay"
         out.append(f"{e.a} -> {e.polarity} {e.b}{tail}")

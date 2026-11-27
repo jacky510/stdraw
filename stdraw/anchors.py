@@ -32,6 +32,7 @@ interactive JS layer mirrors the same formulas on live node geometry
 pins the Python side and the probe cross-checks JS vs Python equality.
 """
 import math
+import re
 
 ANCHOR_INSET = 3.0          # px, same -3 inner offset as the fan-slot clamp
 GOLDEN_FRACS = (0.382, 0.618)
@@ -141,3 +142,79 @@ def nearest_anchor(cx, cy, hw, hh, px, py, inset=ANCHOR_INSET):
         if best is None or d < best[0] - 1e-9:
             best = (d, p)
     return list(best[1])
+
+
+# ── Multi-slot side vocabulary (jacky 2026-11-26 approval; grounded in the
+#    stdraw20 manual-calibration lessons §4: the manual vocabulary is
+#    multi-slot -- s-g1 / s-g2 / ... -- and a single side may carry many
+#    lines, so the fixed 16-point set cannot express it) ──────────────────
+#
+# Each side carries a numbered slot ladder ``g1..g7`` at fixed, context-free
+# fractions measured clockwise from the side's first endpoint (same clockwise
+# convention as ``standard_anchors`` above):
+#
+#   g1 = 0.382, g2 = 0.618   the legacy golden pair -- byte-stable with the
+#                            16-point set (GOLDEN_FRACS)
+#   g3 = 0.500               midway between the golden pair
+#   g4 = 0.250, g5 = 0.750   outer pair
+#   g6 = 0.125, g7 = 0.875   near-corner pair
+#
+# "Adaptive k" (slot count follows the number of lines attached to that
+# side) decides how many slots are USED, never where they sit: the
+# id -> coordinate mapping is independent of k, so ids stay unambiguous
+# across DSL, exports, replays and engines.  The legacy 16-point set is a
+# subset of this vocabulary (its ids resolve to identical coordinates).
+SLOT_FRACS = ((1, GOLDEN_FRACS[0]), (2, GOLDEN_FRACS[1]),
+              (3, 0.5), (4, 0.25), (5, 0.75), (6, 0.125), (7, 0.875))
+MAX_SLOTS = 7
+
+ANCHOR_ID_RE = re.compile(
+    r"^(?:[nsew]|[nsew]-g[1-7]|ne|se|sw|nw)$")
+
+
+def is_anchor_id(aid):
+    """True when ``aid`` is a vocabulary id: a side midpoint (n/e/s/w),
+    a corner (ne/se/sw/nw), or a numbered side slot (``<side>-g<j>``,
+    j = 1..MAX_SLOTS).  Includes the legacy 16-point set."""
+    return isinstance(aid, str) and bool(ANCHOR_ID_RE.match(aid))
+
+
+def anchor_point(cx, cy, hw, hh, aid, inset=ANCHOR_INSET):
+    """Resolve one vocabulary id to its (x, y) on the box border rectangle
+    (inset by ``inset``; same rectangle as ``standard_anchors``).
+
+    Legacy ids resolve to exactly the ``standard_anchors`` coordinates;
+    slot ids g3..g7 extend the same clockwise fraction formulas.  Returns
+    ``None`` for an unknown id.
+    """
+    if hw <= inset or hh <= inset:
+        raise ValueError("box half extents must exceed the anchor inset")
+    a = hw - inset
+    b = hh - inset
+    m = ANCHOR_ID_RE.match(aid) if isinstance(aid, str) else None
+    if not m:
+        return None
+    aid = m.group(0)
+    if aid in ("ne", "se", "sw", "nw"):
+        sx = 1.0 if "e" in aid else -1.0
+        sy = 1.0 if "s" in aid else -1.0
+        return (_r6(cx + sx * a), _r6(cy + sy * b))
+    side, frac = aid, None
+    if "-g" in aid:
+        side, j = aid.split("-g")
+        frac = dict(SLOT_FRACS).get(int(j))
+        if frac is None:
+            return None
+    elif aid in ("n", "e", "s", "w"):
+        frac = 0.5
+    else:
+        return None
+    if side == "n":
+        return (_r6(cx - a + 2 * a * frac), _r6(cy - b))
+    if side == "e":
+        return (_r6(cx + a), _r6(cy - b + 2 * b * frac))
+    if side == "s":
+        return (_r6(cx + a - 2 * a * frac), _r6(cy + b))
+    if side == "w":
+        return (_r6(cx - a), _r6(cy + b - 2 * b * frac))
+    return None
