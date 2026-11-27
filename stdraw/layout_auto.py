@@ -1303,6 +1303,9 @@ def _reposition_gate_eval(router, routes, nodes_px, edges, cfg):
     dense = {i: sample_polyline([tuple(p) for p in routes[i]["points"]],
                                 step=4.0)
              for i in sorted(routes)}
+    dense_bb = {i: (min(p[0] for p in dense[i]), min(p[1] for p in dense[i]),
+                    max(p[0] for p in dense[i]), max(p[1] for p in dense[i]))
+                for i in sorted(routes)}
     idxs = sorted(routes)
     pairs = router.final_crossing_pairs(routes)
     vis = 0
@@ -1310,6 +1313,13 @@ def _reposition_gate_eval(router, routes, nodes_px, edges, cfg):
         ia = idxs[a]
         for b in range(a + 1, len(idxs)):
             ib = idxs[b]
+            # exact bbox-disjoint reject: strictly disjoint dense-sampled
+            # bboxes cannot produce a seg_cross hit (precedent:
+            # routing._poly_cross_world)
+            abx, aby, abh, abv = dense_bb[ia]
+            bbx, bby, bbh, bbv = dense_bb[ib]
+            if (abx > bbh or bbx > abh or aby > bbv or bby > abv):
+                continue
             hit = False
             pa, pb = dense[ia], dense[ib]
             for s1 in zip(pa[:-1], pa[1:]):
@@ -1331,9 +1341,37 @@ def _reposition_gate_eval(router, routes, nodes_px, edges, cfg):
         pts = dense[i]
         raw = routes[i]["points"]
         q0, q1 = raw[0], raw[-1]
+        il_, ih_ = dense_bb[i][0], dense_bb[i][2]
+        jl_, jh_ = dense_bb[i][1], dense_bb[i][3]
         for v, (cx, cy, hw, hh) in boxes.items():
             if v in (a, b):
                 continue
+            # exact bbox lower bound (WS5 caliber): when the dense-sampled
+            # bbox is farther than the gate threshold from the box, no
+            # sample can violate the clearance and min_clear cannot be
+            # refreshed -- skip without touching either value.
+            gx = cx - hw - ih_
+            g = il_ - cx - hw
+            if g > gx:
+                gx = g
+            gy = cy - hh - jh_
+            g = jl_ - cy - hh
+            if g > gy:
+                gy = g
+            thr = (None if min_clear is None
+                   else max(min_clear, cfg.clearance))
+            if thr is not None:
+                lb2 = 0.0
+                if gx > 0.0:
+                    lb2 = gx * gx
+                if gy > 0.0:
+                    lb2 += gy * gy
+                # skip only when the box can neither violate the clearance
+                # (dd >= clearance) nor refresh min_clear (dd >= max(min_clear,
+                # clearance) keeps the gate dict's min_clear output value
+                # intact -- it feeds the adoption ranking key)
+                if lb2 >= (thr + 1e-6) ** 2:
+                    continue
             dd = min(dist_point_rect(px, py, cx, cy, hw, hh)
                      for px, py in pts)
             min_clear = dd if min_clear is None else min(min_clear, dd)

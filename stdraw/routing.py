@@ -1020,8 +1020,33 @@ class Router:
                 for o in (PAIR_VG_OFF * d, -PAIR_VG_OFF * d):
                     anchor_sets.append(self._offset_anchors(a, b, base_a, base_b, o))
             for sa, sb in anchor_sets:
-                blocked = any(_vis.seg_rect_distance(sa, sb, rect) < c_vg - 1e-6
-                              for rect in rects)
+                # bbox lower bound prefilter (exact, WS5 caliber): when the
+                # anchor segment's bbox is already >= the unblocked threshold
+                # away from a rect's bbox, that rect cannot block -- skip the
+                # exact seg_rect_distance call, verdict unchanged.
+                sl = sa[0] if sa[0] < sb[0] else sb[0]
+                sr = sa[0] if sa[0] > sb[0] else sb[0]
+                st = sa[1] if sa[1] < sb[1] else sb[1]
+                su = sa[1] if sa[1] > sb[1] else sb[1]
+                blocked = False
+                for rect in rects:
+                    rcx, rcy, rhw, rhh = rect
+                    gx = rcx - rhw - sr
+                    g = sl - rcx - rhw
+                    if g > gx:
+                        gx = g
+                    gy = rcy - rhh - su
+                    g = st - rcy - rhh
+                    if g > gy:
+                        gy = g
+                    if (gx > 0.0 or gy > 0.0) and \
+                            math.hypot(gx if gx > 0.0 else 0.0,
+                                       gy if gy > 0.0 else 0.0) >= \
+                            c_vg - 1e-6 + 1e-9:
+                        continue      # cannot block (bbox lower bound)
+                    if _vis.seg_rect_distance(sa, sb, rect) < c_vg - 1e-6:
+                        blocked = True
+                        break
                 if not blocked:
                     continue
                 infls = ((c_vg, c_vg + PAIR_VG_OFF) if key in self.mutual
@@ -1521,8 +1546,15 @@ class Router:
                         continue      # press impossible, min_clr not refreshable
                 p_u, d_u = 0, 1e9
                 for (px, py) in samples:
-                    d = dist_point_rect(px, py, cx, cy,
-                                        hw + PRESS_MARGIN, hh + PRESS_MARGIN)
+                    # inlined dist_point_rect (hot loop): same expression,
+                    # no per-sample function call
+                    ddx = abs(px - cx) - mhw
+                    ddy = abs(py - cy) - mhh
+                    if ddx < 0.0:
+                        ddx = 0.0
+                    if ddy < 0.0:
+                        ddy = 0.0
+                    d = math.hypot(ddx, ddy)
                     if d <= ROUND_GUARD:
                         p_u = 1
                         break
@@ -1637,15 +1669,13 @@ class Router:
                 if ea[0] in eb or ea[1] in eb:
                     continue
                 pa, pb = info_a["points"], info_b["points"]
-                hit = False
-                for s1 in zip(pa[:-1], pa[1:]):
-                    for s2 in zip(pb[:-1], pb[1:]):
-                        if seg_cross(s1[0], s1[1], s2[0], s2[1]):
-                            hit = True
-                            break
-                    if hit:
-                        break
-                if hit:
+                # exact-equivalence acceleration (same caliber as
+                # _edge_stats): _poly_cross_world bboxes each polyline and
+                # walks the opposing seg grid -- a strict bbox-disjoint
+                # pair cannot intersect, and the grid lookup sees every
+                # segment a bbox-overlapping segment could cross; verdicts
+                # identical to the inline double seg_cross loop.
+                if self._poly_cross_world(pa, ib, pb):
                     total += 1
         return total
 
@@ -1816,12 +1846,56 @@ class Router:
                 clr_pen + ang_pen + 0.01 * length)
 
     # -- Line-line visual-coincidence targeted re-routing (ref-scrubbed) --
+    def _pc_geom(self, pts):
+        """Cached coincidence-query world of a polyline: (samples, segs,
+        seg grid, sampled bbox lows/highs), content-keyed.
+
+            _route_coincide_pairs re-derives the same sampled geometry for
+            the same route content on every pre/post-snap gate evaluation
+            (anchor_snap's _coincide_max_span already caches its own copy
+            via _coi_geom).  Pure acceleration: the samples/segs are the
+            same products _pair_coincide_span computed inline, and the grid
+            is the exact-equivalence structure documented on
+            span_one_way_segs_grid (differential-tested against
+            span_one_way_segs).  Bounded clear keeps memory flat.
+        """
+        cache = getattr(self, "_pc_geom_cache", None)
+        if cache is None:
+            cache = self._pc_geom_cache = {}
+        key = tuple(map(tuple, pts))
+        ent = cache.get(key)
+        if ent is None:
+            s = sample_polyline(pts)
+            segs = list(zip(s[:-1], s[1:]))
+            ent = (s, segs, build_seg_grid(segs),
+                   (min(p[0] for p in s), min(p[1] for p in s)),
+                   (max(p[0] for p in s), max(p[1] for p in s)))
+            if len(cache) >= 2048:
+                cache.clear()
+            cache[key] = ent
+        return ent
+
     def _pair_coincide_span(self, pts_a, pts_b):
-        """Adherence span (px) between two polylines, max over both directions -- same source as the certificate's _coincidence_span."""
-        sa = sample_polyline(pts_a)
-        sb = sample_polyline(pts_b)
-        return max(span_one_way_segs(sa, list(zip(sb[:-1], sb[1:]))),
-                   span_one_way_segs(sb, list(zip(sa[:-1], sa[1:]))))
+        """Adherence span (px) between two polylines, max over both directions -- same source as the certificate's _coincidence_span.
+
+            Grid-accelerated with a bbox prefilter (exact-equivalence
+            precedent: _coincide_max_span).  A polyline whose sampled bbox
+            is farther than thr from the other's sampled bbox can carry no
+            sample within thr of any opposing segment, so its one-way span
+            is 0 -- the membership decision span_one_way_segs makes is
+            identical and the returned value bit-identical.
+        """
+        sa, segs_a, grid_a, al, ah = self._pc_geom(pts_a)
+        sb, segs_b, grid_b, bl, bh = self._pc_geom(pts_b)
+        total_a = 0.0
+        if not (al[0] - bh[0] > COINCIDE_THR or bl[0] - ah[0] > COINCIDE_THR
+                or al[1] - bh[1] > COINCIDE_THR or bl[1] - ah[1] > COINCIDE_THR):
+            total_a = span_one_way_segs_grid(sa, segs_b, grid_b)
+        total_b = 0.0
+        if not (bl[0] - ah[0] > COINCIDE_THR or al[0] - bh[0] > COINCIDE_THR
+                or bl[1] - ah[1] > COINCIDE_THR or al[1] - bh[1] > COINCIDE_THR):
+            total_b = span_one_way_segs_grid(sb, segs_a, grid_a)
+        return max(total_a, total_b)
 
     def _route_coincide_pairs(self, routes):
         """Edge pairs among the final routes whose adherence span exceeds COINCIDE_SPAN (deterministic ascending order)."""
@@ -1981,16 +2055,53 @@ class Router:
         pts = routes[i]["points"]
         samples = sample_polyline(pts)
         press, min_clr = 0, None
+        # WS5 performance caliber (same as _evaluate_base): bbox-vs-box gap
+        # lower bound -- if the lower bound > ROUND_GUARD, press is
+        # impossible; if it >= the current min_clr, min_clr cannot be
+        # refreshed.  When both hold the whole box is skipped (exactly
+        # equivalent: sample evaluation order and every kept value
+        # unchanged).
+        bxl = min(p[0] for p in samples)
+        bxh = max(p[0] for p in samples)
+        byl = min(p[1] for p in samples)
+        byh = max(p[1] for p in samples)
         for v, (cx, cy, hw, hh) in self.N.items():
             if v in (a, b):
                 continue
+            mhw = hw + PRESS_MARGIN
+            mhh = hh + PRESS_MARGIN
+            gx = cx - mhw - bxh
+            g = bxl - cx - mhw
+            if g > gx:
+                gx = g
+            gy = cy - mhh - byh
+            g = byl - cy - mhh
+            if g > gy:
+                gy = g
+            if gx > ROUND_GUARD or gy > ROUND_GUARD:
+                mc = min_clr if min_clr is not None else 1e9
+                lb2 = 0.0
+                if gx > 0.0:
+                    lb2 = gx * gx
+                if gy > 0.0:
+                    lb2 += gy * gy
+                if lb2 >= mc * mc:
+                    continue          # press impossible, min_clr not refreshable
             for (px, py) in samples:
-                d = dist_point_rect(px, py, cx, cy, hw + PRESS_MARGIN,
-                                    hh + PRESS_MARGIN)
+                # inlined dist_point_rect (hot loop, WS5 caliber): same
+                # expression, no per-sample function call
+                ddx = abs(px - cx) - mhw
+                ddy = abs(py - cy) - mhh
+                if ddx < 0.0:
+                    ddx = 0.0
+                if ddy < 0.0:
+                    ddy = 0.0
+                d = math.hypot(ddx, ddy)
                 if d <= ROUND_GUARD:
                     press += 1
                     break
-                min_clr = d if min_clr is None else min(min_clr, d)
+                if min_clr is None or d < min_clr:
+                    min_clr = d
         ang_min = min(self._anchor_angle(a, pts[0], pts[0], pts[1]),
                       self._anchor_angle(b, pts[-1], pts[-1], pts[-2]))
         cross = 0
@@ -3516,8 +3627,29 @@ class Router:
                    if math.hypot(s[0] - p0[0], s[1] - p0[1]) > 6.0 and
                    math.hypot(s[0] - p1[0], s[1] - p1[1]) > 6.0]
         n = 0
+        # WS5 press-only bbox skip (exact): if the samples' bbox is farther
+        # than ROUND_GUARD from the inflated box, no sample can press it.
+        if samples:
+            bxl = min(s[0] for s in samples)
+            bxh = max(s[0] for s in samples)
+            byl = min(s[1] for s in samples)
+            byh = max(s[1] for s in samples)
+        else:
+            bxl = bxh = byl = byh = 0.0
         for v in (a, b):
             cx, cy, hw, hh = self.N[v]
+            mhw = hw + PRESS_MARGIN
+            mhh = hh + PRESS_MARGIN
+            gx = cx - mhw - bxh
+            g = bxl - cx - mhw
+            if g > gx:
+                gx = g
+            gy = cy - mhh - byh
+            g = byl - cy - mhh
+            if g > gy:
+                gy = g
+            if gx > ROUND_GUARD or gy > ROUND_GUARD:
+                continue          # press impossible (bbox lower bound)
             for (px, py) in samples:
                 if dist_point_rect(px, py, cx, cy, hw + PRESS_MARGIN,
                                    hh + PRESS_MARGIN) <= ROUND_GUARD:
@@ -4050,7 +4182,7 @@ class Router:
                                                     own={i: own_before},
                                                     sib={i: sib_before},
                                                     coi={i: before_coi}),
-                                _gates.SNAP)
+                                _gates.SNAP, stats=after)
                             def _snap_gate_msg():
                                 _c = dict(p=after[0] <= before[0],
                                           x=after[3] <= before[3],
@@ -4309,7 +4441,7 @@ class Router:
                                             own={i: own_before},
                                             sib={i: sib_before},
                                             coi={i: before_coi}),
-                        _gates.SNAP)
+                        _gates.SNAP, stats=after)
                     _dbg(lambda: f"  [snapdbg] JOINT {a}->{b} end={end} "
                                  f"anchors={aid_a}/{aid_b} infl={c:.1f} "
                                  f"press {after[0]}<={before[0]} "

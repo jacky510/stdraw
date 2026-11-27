@@ -6,6 +6,19 @@ reproduced here; the engineering version history lives in
 
 ## Unreleased
 
+- **perf: exact-equivalence hot-path acceleration in the routing engine**
+  (auto layout wall clock; outputs byte-identical, 40/40 random-corpus
+  graphs cross-checked against the pre-change tree): the coincidence span
+  now runs over a content-keyed sampled-geometry cache with seg-grid spans
+  and a bbox prefilter; `final_crossing_pairs` walks the cached seg grid;
+  the box-press loops (`_edge_stats`, `_own_press`, the cached evaluate
+  path, the reposition gate's clearance accounting) use a bbox-vs-box gap
+  lower bound with the distance math inlined; the reposition gate skips
+  bbox-disjoint pairs for visual crossings; the snap gate reuses the
+  already-computed edge stats; the vg candidate blocked test gets a bbox
+  prefilter. Random-corpus A-tier legs (n10 x20 + n20 x20, cp-sat-layered):
+  n10 median 23.7s -> 21.4s, n10 total wall clock 2.40x, the six slowest
+  ring-construct graphs 2.5-3.0x, n20 total 1.22x.
 - **BREAKING: the interactive drag layer is now an opt-in (`--interactive`)**:
   the default CLI deliverable page (`demo-2d.html`) is the STATIC diagram +
   certificate (no toolbar / payload / drag script); pass `--interactive` to

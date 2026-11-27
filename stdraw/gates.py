@@ -152,7 +152,7 @@ class GateBaseline:
 
 
 def edge_gate_check(router, i, routes, baseline, policy, msep_floor=None,
-                    min_deg=None):
+                    min_deg=None, stats=None):
     """Acceptance check for edge i against its pre-change baseline.
 
     Returns True iff every criterion of ``policy`` passes for the CURRENT
@@ -164,9 +164,12 @@ def edge_gate_check(router, i, routes, baseline, policy, msep_floor=None,
     its derived sep_floor; enhanced leg fixes 12.0).
     min_deg overrides the anchor-smoothness floor when given (None keeps
     routing.ANCHOR_MIN_DEG; dense branches pass the relaxed dense floor).
+    stats overrides the internal _edge_stats(i, routes) recomputation when
+    the caller already computed the identical 5-tuple on the same current
+    geometry (pure dedup -- same values, one computation).
     """
     _r = _rt()
-    st = router._edge_stats(i, routes)
+    st = stats if stats is not None else router._edge_stats(i, routes)
     st0 = baseline.stats.get(i)
     # -- box press: monotone vs before, or absolute zero --
     if policy.press_mode == "zero":
