@@ -58,7 +58,7 @@ def load_manual_layout(path: str) -> dict:
             "source": os.path.basename(path)}
 
 
-def main(argv=None):
+def _build_arg_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         prog="stdraw",
         description="stdraw — planarity-aware systems-thinking diagram engine "
@@ -145,8 +145,15 @@ def main(argv=None):
                          "Default output is the static page (SVG + certificate only); "
                          "layout.json / certificate.json honestly declare the delivery "
                          "face either way")
-    a = ap.parse_args(argv)
+    return ap
 
+
+def _prepare_graph(a):
+    """Load + validate + hints + size refusal + deprecation warnings.
+
+    Returns (g, name, deprecated_used). Exits the process on validation
+    failure (2) or structured size refusal (3) — verbatim CLI behavior.
+    """
     g = load_graph(a.input)
     os.makedirs(a.outdir, exist_ok=True)
     name = a.name or g.name or os.path.splitext(os.path.basename(a.input))[0]
@@ -193,34 +200,12 @@ def main(argv=None):
               + ": pixel-level parameter(s), kept working but scheduled for "
               "removal — prefer the DSL semantic hints @main / @order / @pair "
               "(docs/agent-interface.md)", file=sys.stderr)
+    return g, name, _deprecated_used
 
-    def w(fn, obj):
-        p = os.path.join(a.outdir, fn)
-        with open(p, "w", encoding="utf-8") as f:
-            json.dump(obj, f, ensure_ascii=False, indent=1)
-        return p
 
-    # Graph model + normalized DSL text
-    p = w("graph.json", g.to_dict())
-    with open(os.path.join(a.outdir, "graph.cld"), "w", encoding="utf-8") as f:
-        f.write(dumps(g))
-    print(f"[1/5] graph model OK: {len(g.nodes)} nodes / {len(g.edges)} edges / "
-          f"{len(g.loops)} declared loops -> {p}")
-
-    # Loop semantics audit (lint)
-    lr = loops_audit(g)
-    p = w("loops_audit.json", lr)
-    print(f"[2/5] loop audit: declared {lr['summary']['declared']}, closed "
-          f"{lr['summary']['closed']}, independently enumerated {lr['summary']['enumerated']}, "
-          f"problems {lr['summary']['problems']} -> {p}")
-    for pr in lr["problems"]:
-        print("   lint:", pr)
-    for _rh in lr.get("repair_hints") or []:
-        print("   hint:", _rh["problem"], "->", _rh["fix"])
-
-    # 2D layout
+def _build_config(a):
+    """CLI flags -> AutoConfig (verbatim flag surface)."""
     from .layout_auto import AutoConfig
-    from .metrics import certificate_auto, scene_from_auto
     cfg = AutoConfig()
     if a.pitch:
         cfg.pitch = a.pitch
@@ -238,6 +223,11 @@ def main(argv=None):
                     cfg.hub_side[_k.strip()] = _v
     if getattr(a, "mirror_symmetry", False):
         cfg.mirror_symmetry = True
+    return cfg
+
+
+def _run_layout_request(a, g, cfg):
+    """Dispatch the layout request: manual replay / candidate-v1 / auto-v2."""
     if a.from_layout:
         # Manual layout: same routing + certificate pipeline; hard-gate
         # caliber unchanged, graded honestly
@@ -252,20 +242,13 @@ def main(argv=None):
         v4 = recipes_run("candidate-v1", g, cfg, a.linestyle)
     else:
         v4 = recipes_run("auto-v2", g, cfg, a.linestyle)
-    labels = {n.id: n.label for n in g.nodes}
-    values = {n.id: n.value for n in g.nodes if n.value}
-    # Full CLI deliverable (demo-2d.html + certificate.json) is produced
-    # below: the layout.json that ships with it is re-stamped as the CLI
-    # deliverable (delivery="stdraw-cli", no warning) per the delivery
-    # contract; `interactive` is true only when --interactive opted in.
-    v4 = stamp_cli_deliverable(v4, interactive=a.interactive)
-    p = w("layout.json", v4)
-    meta = v4["meta"]
-    print(f"[3/5] 2D layout (auto-v2, engine={meta['position_engine']}, "
-          f"line kinds {line_kind_summary(v4)}): {v4['viewBox'][2]}x{v4['viewBox'][3]}, "
-          f"{meta['rows']} rows -> {p}")
-    rc = geometry_report_to_file(
-        v4, os.path.join(a.outdir, "geometry_report.json"))
+    return v4
+
+
+def _resolve_exactness(a, v4, g):
+    """Exact-layer resolution (D4: L1 defaults to --exact, --no-exact opts
+    out) + the exact/planarized progress prints. Returns the exactness block
+    or None."""
     exactness = None
     # D4 (jacky 2026-11-14): L1 planarized drawings default to
     # --exact (oracle cr UB participates in the three-account
@@ -292,6 +275,57 @@ def main(argv=None):
               f"witnesses={_plz_meta.get('witness_count')} "
               f"(crossed-certified caliber, "
               "docs/planarization-degrade-contract.md)")
+    return exactness
+
+
+def main(argv=None):
+    a = _build_arg_parser().parse_args(argv)
+
+    g, name, _deprecated_used = _prepare_graph(a)
+
+    def w(fn, obj):
+        p = os.path.join(a.outdir, fn)
+        with open(p, "w", encoding="utf-8") as f:
+            json.dump(obj, f, ensure_ascii=False, indent=1)
+        return p
+
+    # Graph model + normalized DSL text
+    p = w("graph.json", g.to_dict())
+    with open(os.path.join(a.outdir, "graph.cld"), "w", encoding="utf-8") as f:
+        f.write(dumps(g))
+    print(f"[1/5] graph model OK: {len(g.nodes)} nodes / {len(g.edges)} edges / "
+          f"{len(g.loops)} declared loops -> {p}")
+
+    # Loop semantics audit (lint)
+    lr = loops_audit(g)
+    p = w("loops_audit.json", lr)
+    print(f"[2/5] loop audit: declared {lr['summary']['declared']}, closed "
+          f"{lr['summary']['closed']}, independently enumerated {lr['summary']['enumerated']}, "
+          f"problems {lr['summary']['problems']} -> {p}")
+    for pr in lr["problems"]:
+        print("   lint:", pr)
+    for _rh in lr.get("repair_hints") or []:
+        print("   hint:", _rh["problem"], "->", _rh["fix"])
+
+    # 2D layout
+    from .metrics import certificate_auto, scene_from_auto
+    cfg = _build_config(a)
+    v4 = _run_layout_request(a, g, cfg)
+    labels = {n.id: n.label for n in g.nodes}
+    values = {n.id: n.value for n in g.nodes if n.value}
+    # Full CLI deliverable (demo-2d.html + certificate.json) is produced
+    # below: the layout.json that ships with it is re-stamped as the CLI
+    # deliverable (delivery="stdraw-cli", no warning) per the delivery
+    # contract; `interactive` is true only when --interactive opted in.
+    v4 = stamp_cli_deliverable(v4, interactive=a.interactive)
+    p = w("layout.json", v4)
+    meta = v4["meta"]
+    print(f"[3/5] 2D layout (auto-v2, engine={meta['position_engine']}, "
+          f"line kinds {line_kind_summary(v4)}): {v4['viewBox'][2]}x{v4['viewBox'][3]}, "
+          f"{meta['rows']} rows -> {p}")
+    rc = geometry_report_to_file(
+        v4, os.path.join(a.outdir, "geometry_report.json"))
+    exactness = _resolve_exactness(a, v4, g)
     cert = certificate_auto(scene_from_auto(v4), graph_name=name, layer="2D",
                             graph=g, exactness=exactness,
                             interactive="yes" if a.interactive else "no",
