@@ -6,6 +6,21 @@ reproduced here; the engineering version history lives in
 
 ## Unreleased
 
+- **metrics.py: the spliced duplicate copy of the module is gone (code
+  hygiene, no behavior change)**: the T17 split left `stdraw/metrics.py`
+  carrying the module twice — the refactored body (metrics helpers plus the
+  nine per-concern `_cert_*` helpers that `certificate_auto` calls) followed by
+  the full text of the same module. Python's last-definition-wins made the live
+  namespace a mix of both copies (the nine helpers from the first, 13
+  redefinitions plus `certificate_auto` from the second), so the file stated one
+  definition twice and deleting the wrong run of lines would have removed the
+  only definitions of the helpers. The file now carries exactly one definition
+  per top-level name, spliced by AST node ranges (no source text retyped): 259
+  duplicate lines removed, module namespace, every function's compiled code and
+  the module docstring unchanged, and certificates/layouts byte-identical on
+  the A-tier dual-leg sweep.
+
+
 - **refactor: the last two giant functions are split into stage helpers
   (T17 continuation), outputs byte-identical**:
   `layout_auto._layout_optimize_routes` (639 lines on the merge base;
