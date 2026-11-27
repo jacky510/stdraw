@@ -62,13 +62,15 @@ def test_manual_structural_gates_na(tmp_path):
     g = cert["gates"]
     assert g["pitch_uniform"] == "N/A", g["pitch_uniform"]
     assert g["column_snap24_ge_060"] == "N/A", g["column_snap24_ge_060"]
-    # a 0-crossing hand-drawn layout now reaches best on the applicable gates
+    # a 0-crossing hand-drawn layout reaches best on the applicable gates.
+    # 11 applicable gates: the P1-2 N/A slots stay N/A, and since the
+    # 2026-11-27 manual ruling cv_le_035 is demoted to a report item too
+    # (a hand-drawn layout is not a mechanical grid) -- the 2026-11-13
+    # caliber's 12/12 became 11/11 exactly by that one slot.
     assert cert["grade"] == "best", cert["grade"]
-    # 11 applicable P1-2 gates (closed-ring mutual pairs included: the
-    # manual path runs the same last repair) + loop_labels_clear
-    # (loop-reading layer: the loop labels placed on a manual layout are
-    # gate-checked as well)
-    assert cert["gates_passed"] == "12/12", cert["gates_passed"]
+    assert cert["gates_passed"] == "11/11", cert["gates_passed"]
+    assert "cv_le_035" not in cert["gates"]
+    assert isinstance(cert["reports"]["cv_le_035"], bool)
     assert cert["gates"]["loop_labels_clear"] is True
     assert cert["blocking_gates"] == [], cert["blocking_gates"]
     assert cert["metrics"]["crossings"] == 0

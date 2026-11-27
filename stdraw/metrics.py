@@ -1230,22 +1230,45 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                            "veto (hand-pulled samples show row_align delta ~= 0)"),
     }
     if _gctx.demoted_gates:
-        # n>10 regularity demotion transport (owner ruling 2026-11-26,
-        # stdraw20 manual calibration; docs/adr/ADR-0018): the demoted mechanical-grid gates
-        # report their measured boolean here instead of gating; metrics
-        # rows keep the underlying numbers (spacing_cv / snap rate).
+        # regularity demotion transport -- two rulings, one channel:
+        # AUTO n>10 (owner ruling 2026-11-26; docs/adr/ADR-0018) demotes
+        # all three mechanical-grid gates; MANUAL (owner ruling
+        # 2026-11-27; docs/adr/ADR-0019) demotes cv_le_035 only.  Either
+        # way the demoted gate reports its measured boolean here instead of
+        # gating; metrics rows keep the underlying numbers (spacing_cv /
+        # snap rate).
         for _dk, _dv in _gctx.demoted_gates.items():
             reports[_dk] = _dv
-        reports["regularity_demoted_note"] = (
-            "report items (n>10, owner ruling 2026-11-26): the "
-            "mechanical-grid regularity gates cv_le_035 / pitch_uniform / "
-            "column_snap24_ge_060 are demoted from hard gates per the "
-            "stdraw20 manual-calibration evidence (they reward mechanical "
-            "grids and penalize human arrangements); measured values above, "
-            "all other gates and grade semantics unchanged")
-        notes.append("n>10 caliber: mechanical-grid regularity gates "
-                     "(cv_le_035 / pitch_uniform / column_snap24_ge_060) "
-                     "demoted to report items per owner ruling 2026-11-26")
+        if _gctx.manual_mode:
+            # manual caliber (owner ruling 2026-11-27; docs/adr/ADR-0019):
+            # a hand-drawn layout is not a mechanical grid -- the
+            # spacing-CV gate never gates it.  The wording must never read
+            # like the n>10 automatic caliber (two separate rulings,
+            # separate evidence, separate ADRs).
+            reports["regularity_demoted_note"] = (
+                "report item (manual caliber, owner ruling 2026-11-27): the "
+                "mechanical-grid spacing-CV gate cv_le_035 is demoted from a "
+                "hard gate on --from-layout replays per the stdraw20 "
+                "manual-calibration evidence (the gate rewards mechanical "
+                "grids and penalizes human arrangements); measured value "
+                "above, the pitch_uniform / column_snap24_ge_060 slots keep "
+                "their P1-2 N/A caliber, all other gates and grade semantics "
+                "unchanged")
+            notes.append("manual caliber: mechanical-grid spacing-CV gate "
+                         "cv_le_035 demoted to a report item per owner "
+                         "ruling 2026-11-27 (pitch_uniform / "
+                         "column_snap24_ge_060 keep their N/A slots)")
+        else:
+            reports["regularity_demoted_note"] = (
+                "report items (n>10, owner ruling 2026-11-26): the "
+                "mechanical-grid regularity gates cv_le_035 / pitch_uniform / "
+                "column_snap24_ge_060 are demoted from hard gates per the "
+                "stdraw20 manual-calibration evidence (they reward mechanical "
+                "grids and penalize human arrangements); measured values above, "
+                "all other gates and grade semantics unchanged")
+            notes.append("n>10 caliber: mechanical-grid regularity gates "
+                         "(cv_le_035 / pitch_uniform / column_snap24_ge_060) "
+                         "demoted to report items per owner ruling 2026-11-26")
     _la = scene.get("loop_arcs")
     if _la:
         # loop-direction arc default (report item, not a gate): every

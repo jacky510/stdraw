@@ -262,6 +262,18 @@ loop R1 "采纳扩散" "R" [rate, adopters, word]
 （v0.6.0 起：纵列/对称各有模式口径门；交叉与行对齐降为报告项软目标，见 docs/layout-modes.md。环形排布证书：行对齐率/列吸附如实为 `null`——规律性门按排布模式切换为
 环上等间距 CV + 正多边形模板拟合误差；分层布局仍用行对齐口径。）
 
+**n > 10 图（jacky 2026-11-26 裁定，stdraw20 人工校准）**：三道机械网格规律性门
+——`cv_le_035` / `pitch_uniform`（含 `spine_pitch_uniform` / `column_pitch_uniform`
+别名）/ `column_snap24_ge_060`——降级为**报告项**：实测布尔值移入 `reports`
+（同名键 + `regularity_demoted_note`），`gates_passed` 不再计入，也不再阻断评级。
+底层指标行（`spacing_cv` / `column_snap24_rate` 等）照旧实测。n ≤ 10 图（推荐档）
+三门仍是硬门，逐字节不变。
+
+**人工图（`--from-layout`，jacky 2026-11-27 裁定）**：手画布局不是机械网格，因此
+`cv_le_035` 对人工回放**永不做硬门**——按 n > 10 自动口径同样的方式降为报告项，
+其 `regularity_demoted_note` 明写人工口径。`pitch_uniform` / `column_snap24_ge_060`
+保留 P1-2 的 `N/A` 槽位；自动管线（n ≤ 10 与 n > 10）全不变。
+
 诚实分级语义（分级铁律：**绝不冒充成品**）：
 
 | 级别（token） | 定义（auto-v2） |

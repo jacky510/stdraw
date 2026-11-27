@@ -52,7 +52,7 @@ token meant something different there. Current certificates self-describe
 | `blocking_gates` | list of `false` gate keys | list of `false` gate keys |
 | `deliverable` | reflects the delivery contract (CLI full deliverable: `true`) | always `false` (see §4) |
 | `blocked_reason` / `blocked_by` | absent | set (`D0`) |
-| gate count at `best` | 11+ hard gates (placement-specific; n ≤ 10) — n > 10 figures carry fewer: the §3.3 demotion removes the three mechanical-grid regularity slots | 4 legacy gates |
+| gate count at `best` | 11+ hard gates (placement-specific; n ≤ 10) — n > 10 figures carry fewer: the §3.3 demotion removes the three mechanical-grid regularity slots; manual (`--from-layout`) figures carry one fewer than n ≤ 10: the §3.4 demotion removes `cv_le_035` | 4 legacy gates |
 
 Grading formulas:
 
@@ -148,17 +148,48 @@ three mechanical-grid regularity gates — `cv_le_035`, `pitch_uniform` (with it
 `spine_pitch_uniform` / `column_pitch_uniform` mode aliases) and
 `column_snap24_ge_060` — reward mechanical grids and penalize human
 arrangements; on figures they cannot certify they measure nothing. They are
-implemented as registry `when` policies (stdraw/cert_gates.py
-`_regularity_applies`): on the **automatic pipeline they apply only to
-n ≤ 10 figures** — for n > 10 the measured boolean leaves `gates`, lands in
-`reports` (same key name) with an additive `regularity_demoted_note`, is
-excluded from `gates_passed` and `blocking_gates`, and can no longer block
-the grade. All other gates and the grade semantics are unchanged; the
-underlying metrics rows (`spacing_cv`, `column_snap24_rate`, …) stay
-measured. n ≤ 10 certificates are byte-for-byte unchanged (the human-parity
-tier keeps all three as hard gates), and the manual caliber of §3.1 is NOT
-touched by this ruling (manual `cv_le_035` still gates; manual
-`pitch_uniform` / `column_snap24_ge_060` stay `N/A`).
+implemented as registry `when` policies (stdraw/cert_gates.py): on the
+**automatic pipeline they apply only to n ≤ 10 figures** — for n > 10 the
+measured boolean leaves `gates`, lands in `reports` (same key name) with an
+additive `regularity_demoted_note`, is excluded from `gates_passed` and
+`blocking_gates`, and can no longer block the grade. All other gates and the
+grade semantics are unchanged; the underlying metrics rows (`spacing_cv`,
+`column_snap24_rate`, …) stay measured. n ≤ 10 certificates are byte-for-byte
+unchanged (the human-parity tier keeps all three as hard gates).
+
+The two calibers are stated **separately** in the registry, so a ruling on
+one cannot silently move the other: `_auto_regularity_applies` (n ≤ 10) is
+the automatic side; `_manual_cv_never_gates` / `_manual_pitch_family_keeps_slot`
+are the manual side (§3.4).
+
+### 3.4 Manual (`--from-layout`) figures — `cv_le_035` demotes to a report item
+
+Ruling record: [ADR-0019](adr/ADR-0019-manual-cv-gate-demotion.md) (accepted
+2026-11-27); the automatic-tier counterpart is
+[ADR-0018](adr/ADR-0018-2026-11-26-anchor-vocabulary-and-regularity-demotion.md).
+
+jacky's ruling of 2026-11-27 extends the same evidence to the **manual
+caliber**: a hand-drawn layout is not a mechanical grid, so the spacing-CV
+gate never gates a `--from-layout` replay. `cv_le_035` leaves `gates`, its
+measured boolean lands in `reports` (same key name) with an additive
+`regularity_demoted_note` whose wording names the **manual caliber and the
+2026-11-27 ruling** (never the n > 10 automatic one), is excluded from
+`gates_passed` / `blocking_gates`, and cannot block the grade.
+
+Scope is exactly one gate and one caliber:
+
+- **only `cv_le_035`** is demoted on the manual side;
+- `pitch_uniform` / `column_snap24_ge_060` keep their **P1-2 `N/A`
+  applicability slot** (§3.1, jacky 2026-11-13) — they are applicability
+  facts, not measured report items, and are untouched;
+- the **automatic pipeline is untouched**, including n ≤ 10 (all three stay
+  hard gates) and n > 10 (the 2026-11-26 demotion of all three, §3.3).
+
+Rationale (stdraw20 manual-calibration lessons §5.1): on six hand-drawn
+samples with 0 crossings and 0 box press, the CV gate alone rejected the
+certificates; with it demoted those human layouts certify, which is the
+caliber this engine exists to serve. Nothing is relaxed for the automatic
+pipeline.
 
 ## 4. D0 — vertical-orthogonal diagrams are banned as deliverables
 

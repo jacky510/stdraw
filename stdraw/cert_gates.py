@@ -558,19 +558,64 @@ def _gates_layered(c):
 # set applies (first version, replicates the historical branches verbatim).
 # Order of MODE_GATE_SETS = the historical elif order; first match wins.
 
-def _regularity_applies(c):
-    # ``when`` policy (owner ruling 2026-11-26, stdraw20 manual-calibration
-    # lessons doc section 5.1; docs/adr/ADR-0018): the mechanical-grid regularity gates
-    # (``cv_le_035`` / ``pitch_uniform`` family / ``column_snap24_ge_060``)
-    # reward mechanical grids and penalize human arrangements -- on the
-    # automatic pipeline they gate only n<=10 figures (the human-parity
-    # tier); for n>10 they demote to certificate report items (measured
-    # boolean kept in ``reports``, excluded from gates_passed / hard_ok,
-    # grade semantics otherwise unchanged).  The manual (--from-layout)
-    # caliber is NOT touched: manual figures keep today's slots
-    # (pitch_uniform / column_snap24_ge_060 = N/A per the P1-2 ruling,
-    # cv_le_035 still gating).
-    return c.n_nodes <= 10 or c.manual_mode
+# ── effect policies: the two calibers stated separately ──────────────
+# Every regularity gate's ``when`` slot reads ONE criterion per caliber;
+# which pair a gate key uses is the registry entry's data (below).  The
+# two sides are never merged into a single expression, so a ruling on one
+# caliber cannot silently move the other.
+#
+#   AUTO side   (--recipe auto):   the mechanical-grid regularity gates
+#                gate the n<=10 human-parity tier only; n>10 demotes
+#                them to certificate report items (owner ruling
+#                2026-11-26, stdraw20 manual-calibration lessons 5.1;
+#                docs/adr/ADR-0018).
+#   MANUAL side (--from-layout):   a hand-drawn layout is not a
+#                mechanical grid, so the spacing-CV gate never gates it
+#                -- always demoted to a report item (owner ruling
+#                2026-11-27, same evidence; docs/adr/ADR-0019).  The
+#                pitch/snap family keeps the P1-2 "N/A" applicability
+#                slot it has had since 2026-11-13 (docs/adr/ADR-0008):
+#                the manual N/A overlay writes that slot, so its entry
+#                stays in ``gates`` -- demoting it here would move the
+#                same key into ``reports`` while the overlay writes it
+#                back as "N/A", one key in two places.
+
+def _auto_regularity_applies(c):
+    """AUTO caliber (owner ruling 2026-11-26; docs/adr/ADR-0018): the
+    mechanical-grid regularity gates gate the n<=10 human-parity tier
+    only."""
+    return c.n_nodes <= 10
+
+
+def _manual_cv_never_gates(c):
+    """MANUAL caliber (owner ruling 2026-11-27; docs/adr/ADR-0019): the
+    spacing-CV gate never gates a hand-drawn (--from-layout) figure --
+    always demoted to a report item, because the gate rewards mechanical
+    grids and penalizes human arrangements (stdraw20 manual-calibration
+    lessons section 5.1)."""
+    return False
+
+
+def _manual_pitch_family_keeps_slot(c):
+    """MANUAL caliber: the pitch/snap family keeps its P1-2 "N/A"
+    applicability slot (owner ruling 2026-11-13; docs/adr/ADR-0008)."""
+    return True
+
+
+def _caliber_policy(auto_criterion, manual_criterion):
+    """Compose the two caliber criteria into one registry ``when`` slot."""
+    def _when(c):
+        return manual_criterion(c) if c.manual_mode else auto_criterion(c)
+    return _when
+
+
+# pitch/snap family: today's behavior, byte-for-byte (auto n<=10 gates;
+# manual keeps the P1-2 N/A slot the overlay writes)
+_regularity_applies = _caliber_policy(_auto_regularity_applies,
+                                      _manual_pitch_family_keeps_slot)
+# cv_le_035: the manual ruling (ADR-0019) adds the manual-side demotion
+_cv_le_035_applies = _caliber_policy(_auto_regularity_applies,
+                                     _manual_cv_never_gates)
 
 
 def _entry(key, check, when=None):
@@ -604,7 +649,7 @@ COLUMN_SET = _set("column-chain", lambda c: c.column_mode, _gates_column,
                            + [_entry("spine_pitch_uniform", g_spine_pitch_uniform,
                                      when=_regularity_applies),
                               _entry("cv_le_035", g_cv_le_035,
-                                     when=_regularity_applies)])
+                                     when=_cv_le_035_applies)])
 
 COMB_SET = _set("comb-bilateral", lambda c: c.comb_mode, _gates_comb,
                 _entries(("column_axis_aligned", g_column_axis_aligned),)
@@ -617,19 +662,19 @@ SYM_BOWTIE_SET = _set("symmetric|bowtie-vertex",
                       lambda c: c.sym_mode or c.bowtie_mode, _gates_sym_bowtie,
                       _entries(("symmetry_mirror_le_2px", g_symmetry_mirror_le_2px),)
                                + [_entry("cv_le_035", g_cv_le_035,
-                                         when=_regularity_applies)])
+                                         when=_cv_le_035_applies)])
 
 SPINE_SET = _set("spine-wing", lambda c: c.spine_mode, _gates_spine,
                  _entries(("spine_axis_le_2px", g_spine_axis_le_2px),
                           ("midline_adherence_le_2px", g_midline_adherence_le_2px),
                           ("symmetry_mirror_le_2px", g_symmetry_mirror_le_2px))
                           + [_entry("cv_le_035", g_cv_le_035,
-                                    when=_regularity_applies)])
+                                    when=_cv_le_035_applies)])
 
 LENS_SET = _set("lens-chain", lambda c: c.lens_mode, _gates_lens,
                 _entries(("lens_pairs_closed", g_lens_pairs_closed),
                          ("lens_pair_min_sep_ge_12", g_lens_pair_min_sep_ge_12))
-                         + [_entry("cv_le_035", g_cv_le_035, when=_regularity_applies),
+                         + [_entry("cv_le_035", g_cv_le_035, when=_cv_le_035_applies),
                             _entry("pitch_uniform", g_pitch_uniform, when=_regularity_applies),
                             _entry("column_snap24_ge_060", g_column_snap24_ge_060,
                                    when=_regularity_applies)])
@@ -638,7 +683,7 @@ PLZ_L1_SET = _set("planarized-L1", lambda c: c.plz_l1, _gates_plz_l1,
                   _entries())  # N/A slots live in the builder (applicability facts)
 
 LAYERED_SET = _set("layered", lambda c: True, _gates_layered,
-                   [_entry("cv_le_035", g_cv_le_035, when=_regularity_applies),
+                   [_entry("cv_le_035", g_cv_le_035, when=_cv_le_035_applies),
                     _entry("pitch_uniform", g_pitch_uniform, when=_regularity_applies),
                     _entry("column_snap24_ge_060", g_column_snap24_ge_060,
                            when=_regularity_applies)])

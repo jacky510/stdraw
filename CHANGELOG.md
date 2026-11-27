@@ -6,6 +6,23 @@ reproduced here; the engineering version history lives in
 
 ## Unreleased
 
+- **manual (`--from-layout`) caliber: `cv_le_035` demotes to a report item**
+  (jacky's ruling of 2026-11-27, extending the 2026-11-26 automatic-tier
+  ruling): a hand-drawn layout is not a mechanical grid, so the spacing-CV
+  gate never gates a manual replay. `cv_le_035` leaves `gates`, its measured
+  boolean lands in `reports` (same key name) with a `regularity_demoted_note`
+  that names the manual caliber and the 2026-11-27 ruling, is excluded from
+  `gates_passed` / `blocking_gates`, and cannot block the grade. Implemented
+  as registry `when` policies with the two calibers stated **separately**
+  (`stdraw/cert_gates.py`: `_auto_regularity_applies` / `_manual_cv_never_gates`
+  / `_manual_pitch_family_keeps_slot`), so neither caliber can silently move
+  the other. Scope is one gate and one caliber: `pitch_uniform` /
+  `column_snap24_ge_060` keep their P1-2 `N/A` slot, and the whole automatic
+  pipeline (n ≤ 10 three hard gates; n > 10 the 2026-11-26 demotion) is
+  byte-for-byte unchanged. Raw metrics stay measured; grade semantics and every
+  gate threshold untouched. Docs: `docs/grading-contract.md` §3.4 and
+  `docs/adr/ADR-0019-manual-cv-gate-demotion.md`.
+
 - **metrics.py: the spliced duplicate copy of the module is gone (code
   hygiene, no behavior change)**: the T17 split left `stdraw/metrics.py`
   carrying the module twice — the refactored body (metrics helpers plus the

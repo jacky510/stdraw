@@ -290,8 +290,14 @@ are demoted from hard gates to **report items**: their measured booleans move to
 `reports` (with `regularity_demoted_note`), `gates_passed` no longer counts them, and
 they cannot block the grade. The underlying metrics rows (`spacing_cv`,
 `column_snap24_rate`, …) stay measured. n ≤ 10 figures — the recommended domain —
-keep all three as hard gates, byte-for-byte unchanged; manual (`--from-layout`)
-certificates keep their own caliber (P1-2 `N/A` slots, `cv_le_035` still gating).
+keep all three as hard gates, byte-for-byte unchanged.
+
+**Manual (`--from-layout`) figures (jacky ruling 2026-11-27)**: a hand-drawn layout
+is not a mechanical grid, so `cv_le_035` never gates a manual replay — it is demoted
+to a report item exactly like the n > 10 automatic caliber, and its
+`regularity_demoted_note` names the manual ruling. `pitch_uniform` /
+`column_snap24_ge_060` keep their P1-2 `N/A` slot, and the whole automatic pipeline
+(n ≤ 10 and n > 10 alike) is unchanged.
 
 Honest grading semantics (iron rule: **never pass off a non-certificate as one**):
 
