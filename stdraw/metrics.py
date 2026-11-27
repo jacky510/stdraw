@@ -278,87 +278,11 @@ def _on_dense_grid(nd, a0):
     return abs(off - round(steps) * DENSE_GRID_STEP) <= 0.75
 
 
-def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
-                     gates: Optional[dict] = None,
-                     notes: Optional[List[str]] = None,
-                     graph=None, exactness: Optional[dict] = None,
-                     interactive: str = "no", drag_layer: str = "no",
-                     deliverable: bool = False,
-                     annotation_layer: bool = True) -> dict:
-    """v2 quality certificate: five metrics + new hard gates + honest grading.
-    All verification runs on delivered coordinates.
 
-    New hard gates (v0.2 quality rework):
-      box_press_zero      box press = 0 (any edge at any angle, incl. 1px
-                          margin; endpoints only touch their own box border)
-      edge_box_clear_ge16 edge-box clearance >= 16px (non-endpoint boxes,
-                          sampled minimum distance)
-      anchors_smooth      anchor smoothness: departure direction vs border
-                          tangent angle >= ANCHOR_MIN_DEG
-      regularity_simple   simple graph (<=10 nodes) placement regularity:
-                          uniform row pitch + 24px column snap >= 60%
-    """
-    nodes = scene["nodes"]
-    edges = scene["edges"]
-    polys = scene["polylines"]
-    anchors = scene.get("anchors", {})
-    ids = list(nodes)
-    notes = list(notes or [])
-    line_style = scene.get("line_style", "straight")
-    # Ring placement caliber: row alignment / column snap are naturally
-    # inapplicable to ring placement; metrics are picked per placement mode
-    # (ring = on-ring equal spacing CV + regular-polygon template fit error).
-    ring_mode = scene.get("placement") == "ring-cycle"
-    ring_nodes = scene.get("ring_nodes") or []
-    # radial (hub-centered spokes) certificate caliber: HUB center deviation
-    # + azimuth equal-spacing CV (the ring equal-spacing caliber, rotation
-    # invariant)
-    radial_mode = scene.get("placement") == "radial"
-    radial = scene.get("radial") or {}
-    # column-chain / symmetric placement calibers
-    column_mode = scene.get("placement") == "column-chain"
-    sym_mode = scene.get("placement") == "symmetric"
-    # bowtie-vertex mode certificate caliber: mirror-axis error (upper/lower
-    # ring mirrored)
-    bowtie_mode = scene.get("placement") == "bowtie-vertex"
-    # spine-wing mode certificate caliber: spine x alignment + midline
-    # adherence + mirror symmetry error (outer mirror pairs)
-    spine_mode = scene.get("placement") == "spine-wing"
-    spine_wing = scene.get("spine_wing") or {}
-    column_spine = scene.get("column_spine") or []
-    symmetry = scene.get("symmetry") or {}
-    # comb-bilateral mode certificate caliber (v0.7.7): column axis alignment
-    # + constant column pitch + hub-pair mirror symmetry + all-straight fan
-    comb_mode = scene.get("placement") == "comb-bilateral"
-    comb = scene.get("comb") or {}
-    # lens-chain mode certificate caliber: pure 2-cycle figures (every
-    # loop a mutual pair, simple graph a forest) -- each pair a closed arc
-    # ring; gates = the layered regularity set + the lens contract
-    lens_mode = scene.get("placement") == "lens-chain"
-    lens = scene.get("lens") or {}
-    # P1-2 (jacky 2026-11-13 ruling): manual coordinates (--from-layout) are
-    # exempt from the two automatic-pipeline structural checks — same caliber
-    # as check.py 6a/9 ("manual: N/A"). Layered-mode gate slots read "N/A";
-    # the measured values stay in metrics.
-    manual_mode = bool(scene.get("from_layout"))
-    # dense-mode caliber (dense card, Q2/Q3): hub-box endpoints/edges read
-    # the dense-adapted floors (12 deg anchor smoothness / slot-grid
-    # membership); every other node and every non-dense scene keeps the
-    # legacy thresholds byte-for-byte.
-    dense = scene.get("dense_mode") or {}
-    dense_on = bool(dense.get("triggered"))
-    dense_hub = dense.get("hub")
-    layered_mode = not (ring_mode or column_mode or sym_mode or bowtie_mode
-                        or spine_mode or comb_mode or radial_mode or lens_mode)
-    # planarization degrade ladder (docs/planarization-degrade-contract.md):
-    # L1 = witness-marked planarized drawing (crossed-certified caliber);
-    # L2 = generic path + honest planarization_deferred record.  L0 scenes
-    # carry no planarization key and keep every byte of today's behavior.
-    plz = scene.get("planarization") or {}
-    plz_l1 = plz.get("mode") == "L1"
-    plz_l2 = plz.get("mode") == "L2"
 
-    # 1. Crossings (pairwise polyline intersection)
+def _cert_crossing_scan(edges, polys, plz_l1):
+    """Pairwise polyline crossing scan (strict, shared-endpoint exempt).
+    Pure move from certificate_auto."""
     crossings = []
     for i in range(len(edges)):
         for j in range(i + 1, len(edges)):
@@ -391,6 +315,12 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # never masquerade as zero crossings. Strict seg_cross already excludes
     # mere endpoint touch, so edges that only meet at their anchors add
     # nothing here; only real mid-air intersections count.
+    return crossings
+
+
+def _cert_visual_crossing_scan(edges, polys):
+    """All-edge-pair visual crossing scan (incl. fan pairs).
+    Pure move from certificate_auto."""
     visual_crossings = []
     for i in range(len(edges)):
         for j in range(i + 1, len(edges)):
@@ -414,6 +344,12 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
 
     # 1b. Mutual-pair separation (F1): minimum two-line distance for
     # bidirectional edge pairs (counted per "edge pair"; None when no mutual pair)
+    return visual_crossings
+
+
+def _cert_mutual_scan(scene, edges, polys, nodes):
+    """Mutual-pair separation info + closed-ring accounting rows.
+    Pure move from certificate_auto."""
     pair_infos = []
     for i in range(len(edges)):
         for j in range(i + 1, len(edges)):
@@ -544,12 +480,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             mutual_open_rows.append({"pair": [_A, _B], "status": _st,
                                      "reasons": _row.get("reasons")})
     mutual_pairs_closed = not mutual_open_rows
+    return (pair_infos, mutual_min_sep, mutual_closed_rows,
+            mutual_exempt_rows, mutual_open_rows, mutual_pairs_closed,
+            _ml_rows)
 
-    # 1c. Line-line visual coincidence pairs: any two edges (including edge
-    # pairs sharing a node — endpoint meeting is exempt via the 8px span gate)
-    # running in parallel within <1px over >8px on delivered geometry count as
-    # coincident. bbox gap prefilter (coincident pairs must have overlapping
-    # bboxes; an equivalent speedup).
+
+def _cert_coincide_scan(edges, polys, crossings, plz_l1):
+    """Line-line visual coincidence scan. Pure move from certificate_auto."""
     coincide_pairs = []
     _step = 4.0
     # L1 witness caliber: a witnessed pair's thin crossing approaches
@@ -575,6 +512,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                      "span_px": round(span, 1)})
 
     # 2. Box press (1px margin) + edge-box clearance + own-box endpoint compliance
+    return coincide_pairs
+
+
+def _cert_press_clear_scan(edges, polys, nodes, ids, anchors, dense_on,
+                           dense_hub):
+    """Box press / own-box / anchor smoothness / 16-anchor membership scan.
+    Pure move from certificate_auto."""
     press, clear_details, anchor_bad = [], [], []
     anchor_standard_bad = 0          # ref-scrubbed: 16-anchor-set membership gate
     anchor_standard_details = []
@@ -662,6 +606,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                             {"edge": f"{e['a']}->{e['b']}", "end": end_key,
                              "anchor": [round(a0[0], 1), round(a0[1], 1)]})
 
+    return (press, clear_details, anchor_bad, anchor_standard_bad,
+            anchor_standard_details, min_clear)
+
+
+def _cert_distribution(polys, nodes, ids, ring_mode, radial_mode):
+    """Average edge length / row alignment / card gap / spacing CV.
+    Pure move from certificate_auto."""
     # 3. Average edge length / row alignment / card gap / CV (same caliber as v1)
     avg_len = sum(sum(math.dist(polys[i][k], polys[i][k + 1])
                       for k in range(len(polys[i]) - 1))
@@ -696,6 +647,14 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     mean_nn = sum(nn) / len(nn) if nn else 0.0
     cv = (math.sqrt(sum((d - mean_nn) ** 2 for d in nn) / len(nn)) / mean_nn) if nn and mean_nn else 0.0
 
+    return avg_len, row_rate, min_gap, cv
+
+
+def _cert_regularity(scene, nodes, ids, ring_mode, radial_mode, ring_nodes,
+                     radial, column_mode, column_spine, comb_mode, comb,
+                     sym_mode, bowtie_mode, spine_mode, spine_wing, symmetry):
+    """Per-mode regularity calibers (pitch/snap/simple + deviation metrics).
+    Pure move from certificate_auto."""
     # Regularity (simple graph <=10 nodes): uniform row pitch + 24px column
     # snap share (parking-lane nodes excluded from row pitch).
     # Ring placement: regularity caliber switches to on-ring equal spacing CV +
@@ -860,6 +819,584 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         simple = len(ids) <= 10
         regularity_ok = pitch_uniform and (snap_rate >= 0.6 if simple else snap_rate >= 0.0)
 
+    if not comb_mode:
+        hub_sym_err = None          # behavior-neutral init (only read under comb_mode)
+    return (pitch_uniform, snap_rate, simple, regularity_ok, ring_spacing_cv,
+            ring_template_dev, radial_hub_dev, radial_cv, col_axis_dev,
+            sym_mirror_err, sw_spine_axis_dev, sw_midline_dev, hub_sym_err)
+
+
+def _cert_metrics_extensions(metrics, scene, nodes, edges, _ml_rows,
+                             mutual_closed_rows, mutual_exempt_rows,
+                             mutual_open_rows, ring_mode, ring_spacing_cv,
+                             ring_template_dev, radial_mode, radial_hub_dev,
+                             radial_cv, radial, W, H, column_mode,
+                             col_axis_dev, comb_mode, hub_sym_err, sym_mode,
+                             bowtie_mode, spine_mode, sym_mirror_err,
+                             sw_spine_axis_dev, sw_midline_dev):
+    """Mode-triggered metrics rows (trigger-writes-the-key).
+    Pure move from certificate_auto."""
+    if _ml_rows:
+        # closed-ring accounting rows (B2/B4; trigger-written like the
+        # annotation gates -- graphs without a mutual pair keep their bytes)
+        metrics["mutual_pairs_closed_count"] = len(mutual_closed_rows)
+        metrics["mutual_pairs_exempt"] = mutual_exempt_rows
+        metrics["mutual_pairs_open"] = mutual_open_rows
+    if ring_mode:
+        metrics["ring_spacing_cv"] = (round(ring_spacing_cv, 4)
+                                      if ring_spacing_cv is not None else None)
+        metrics["ring_template_deviation"] = (round(ring_template_dev, 4)
+                                              if ring_template_dev is not None else None)
+    if radial_mode:
+        metrics["radial_hub_center_dev"] = (round(radial_hub_dev, 2)
+                                            if radial_hub_dev is not None
+                                            else None)
+        metrics["radial_spacing_cv"] = (round(radial_cv, 4)
+                                        if radial_cv is not None else None)
+        rc = radial.get("center")
+        if isinstance(rc, list) and len(rc) == 2:
+            # report item (not a gate): ring center vs the canvas geometric
+            # center (the read-view centering criterion)
+            metrics["radial_center_offset"] = round(
+                math.hypot(rc[0] - W / 2.0, rc[1] - H / 2.0), 1)
+        # manual-calibrated form battery report items (2026-11-15; the
+        # GATE rows carry the pass/fail — these are the measured values)
+        try:
+            from . import radellayout as _rlr
+            _ch = float(next(iter(nodes.values())).get("h", 44))
+            _fmr = _rlr.form_metrics(nodes, _ch, radial,
+                                     [(e["a"], e["b"]) for e in edges])
+            for _k in ("centroid_dev", "radius_cv", "long_edge_rate",
+                       "min_pair_gap", "fit_ratio"):
+                if _fmr.get(_k) is not None:
+                    metrics[f"radial_{_k}"] = round(_fmr[_k], 4)
+        except Exception:
+            pass
+    if column_mode:
+        metrics["column_axis_deviation"] = (round(col_axis_dev, 2)
+                                            if col_axis_dev is not None else None)
+    if comb_mode:
+        metrics["column_axis_deviation"] = (round(col_axis_dev, 2)
+                                            if col_axis_dev is not None else None)
+        metrics["hub_symmetry_err"] = (round(hub_sym_err, 2)
+                                       if hub_sym_err is not None else None)
+    if sym_mode or bowtie_mode or spine_mode:
+        metrics["symmetry_mirror_err"] = (round(sym_mirror_err, 2)
+                                          if sym_mirror_err is not None else None)
+    if spine_mode:
+        metrics["spine_axis_deviation"] = (round(sw_spine_axis_dev, 2)
+                                           if sw_spine_axis_dev is not None else None)
+        metrics["midline_deviation"] = (round(sw_midline_dev, 2)
+                                        if sw_midline_dev is not None else None)
+
+
+
+def _cert_out_extensions(out, ring_mode, ring_nodes, metrics, manual_mode,
+                         layered_mode, column_mode, column_spine, sym_mode,
+                         symmetry, bowtie_mode, spine_mode, spine_wing,
+                         lens_mode, lens):
+    """Mode caliber honest-notes + out extensions. Pure move from
+    certificate_auto."""
+    if ring_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "Ring placement caliber: row alignment / 24px column snap are "
+            "inapplicable to ring placement; the regularity gates switch to "
+            "on-ring equal spacing CV <= 0.05 + regular-polygon template fit "
+            "error <= 0.05; the main ring follows regular-polygon slots in ring "
+            "order with chords inside the ring, and loop polarity (R/B) badges "
+            "stay readable along the ring"]
+        out["ring"] = {
+            "nodes": list(ring_nodes),
+            "spacing_cv": metrics.get("ring_spacing_cv"),
+            "template_deviation": metrics.get("ring_template_deviation"),
+        }
+    if manual_mode and layered_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "Manual coordinates: uniform row pitch / 24px column snap are "
+            "automatic-pipeline structural checks, not applicable to manual "
+            "layouts (same caliber as the geometry self-check 6a/9 \"manual: "
+            "N/A\"); the gate slots read N/A and the measured values remain "
+            "in metrics"]
+    if column_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "Column placement caliber: the main chain aligns vertically in one "
+            "column (column-axis deviation <= 2px gate) with a uniform "
+            "main-chain row-pitch gate; branches hang on the main chain's "
+            "nearest side (half-row offsets excluded from the main-chain "
+            "row-pitch gate); the main-chain closing edge is constructed as a "
+            "large left arc (loop cohesion / ring feel); row alignment / column "
+            "snap reports inapplicable (honestly None)"]
+        out["column"] = {
+            "spine": list(column_spine),
+            "axis_deviation": metrics.get("column_axis_deviation"),
+            "loop_cohesion_spread": metrics.get("loop_cohesion_spread"),
+        }
+    if sym_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "Symmetric placement caliber: bowtie (two triangles sharing an edge) "
+            "structure made explicitly symmetric — shared-edge endpoints on the "
+            "vertical axis, left/right vertices mirrored (mirror-axis error "
+            "<= 2px gate); line-kind consistency hard rule: axis edges straight "
+            "+ side edges all arcs (no mixing); row alignment / column snap "
+            "reports inapplicable (honestly None)"]
+        out["symmetry"] = {
+            "mirror_pairs": symmetry.get("mirror_pairs"),
+            "mirror_err": metrics.get("symmetry_mirror_err"),
+        }
+    if bowtie_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "Bowtie-vertex caliber (aesthetics v3): two loops sharing a single "
+            "node made explicitly symmetric — shared node centered, the two "
+            "loops occupying the upper/lower half-planes mirrored "
+            "(mirror-axis error <= 2px gate, cross-checked against the "
+            "hand-pulled reference sample wage-price-spiral); detection = "
+            "enumerated simple cycles (exactly 2 loops sharing exactly 1 "
+            "node), declared loops are not a detection input; line-kind "
+            "consistency hard rule: all straight lines (outer edges horizontal "
+            "+ spokes direct, shared-side anchor edges symmetrically spread "
+            "at edge midpoint +/-14px); row alignment / column snap reports "
+            "inapplicable (honestly None)"]
+        out["symmetry"] = {
+            "shared_node": symmetry.get("shared_node"),
+            "mirror_pairs": symmetry.get("mirror_pairs"),
+            "mirror_err": metrics.get("symmetry_mirror_err"),
+        }
+    if spine_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "Spine-wing caliber (v0.7.1): hub pair strictly vertical on the "
+            "spine axis (x alignment <= 2px gate), wings pressed onto the "
+            "midline horizontal band (adherence <= 2px gate), outer mirror "
+            "pairs symmetric top-to-bottom (mirror error <= 2px gate) — "
+            "cross-checked against the hand-pulled reference sample "
+            "classic-cld-growth-and-burden; detection = deterministic "
+            "topological metrics (hub pair with >= 3 common neighbors + "
+            "pairable rest secondary clusters + main-chain length share "
+            "<= 0.5), see docs/layout-modes.md; spine edges constructed as "
+            "vertical straight lines, the rest through the Router; row "
+            "alignment / column snap reports inapplicable (honestly None)"]
+        out["spine_wing"] = {
+            "spine": spine_wing.get("spine"),
+            "wings": spine_wing.get("wings"),
+            "mirror_pairs": spine_wing.get("mirror_pairs"),
+            "rest_single": spine_wing.get("rest_single"),
+            "spine_axis_deviation": metrics.get("spine_axis_deviation"),
+            "midline_deviation": metrics.get("midline_deviation"),
+            "mirror_err": metrics.get("symmetry_mirror_err"),
+        }
+    if lens_mode:
+        out["honest_notes"] = out["honest_notes"] + [
+            "Lens-chain caliber (auto-v2 structural tier): every loop of the "
+            "figure is a mutual pair a<->b over a forest (pure 2-cycle "
+            "figure); each pair is placed as a LENS on constructed "
+            "coordinates and delivered as two Q arcs bowing to opposite "
+            "sides of the chord (one closed ring per 2-node loop: both arcs "
+            "bow >= LENS_BULGE_MIN x chord to opposite sides and stay "
+            ">= 12px apart, gates = lens_pairs_closed + "
+            "lens_pair_min_sep_ge_12), non-lens links are constructed "
+            "straight segments between facing standard anchors; the layered "
+            "regularity set still gates (spacing CV <= 0.35, uniform row "
+            "pitch, 24px column snap >= 0.6); trial gate falls back to the "
+            "layered path silently (docs/layout-modes.md, lens-chain)"]
+        out["lens"] = {
+            "pairs": lens.get("pairs"),
+            "gap": lens.get("gap"),
+            "k": lens.get("k"),
+            "link_gap": lens.get("link_gap"),
+            "lens_pair_min_sep": metrics.get("lens_pair_min_sep"),
+        }
+
+
+# -*- coding: utf-8 -*-
+"""Quality certificate (this project's moat) — placement metrics + honest grading.
+
+All verification runs on the **delivered coordinates** (the rounded/exported
+copy); this is discipline, not an optimization option.
+Metric implementations: seg_cross / Liang-Barsky seg_hits_rect / rect_gap /
+row alignment rate.
+Plus the first-priority placement metric: spacing coefficient of variation (CV).
+
+Honest grading (never masquerade as a finished product), v2-hardgates caliber:
+  best = all placement hard gates pass + 0 line crossings
+  uncertified = everything else (stated honestly, never downgraded to fake it)
+  (the retired v1-legacy caliber and its `second` branch were removed by
+   owner ruling, 2026-11-24)
+"""
+import json
+import math
+from typing import Dict, List, Optional
+
+from . import __version__ as _PKG_VERSION
+from .gates import LENS_BULGE_MIN, arc_bulge
+from .repair import certificate_repair_hints, hints_block
+
+EPS = 1e-9
+ROW_EPS = 4          # visual same-row test: y difference <= 4px counts as one row
+INFLATE = 4          # card-piercing caliber: card box outward inflation px
+                     # (a softened substitute for the 16px inflation caliber)
+
+
+def seg_cross(p1, p2, p3, p4):
+    """Strict intersection test (incl. collinear overlap; endpoint touch excluded)."""
+    def orient(a, b, c):
+        v = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+        return 0 if abs(v) < EPS else (1 if v > 0 else -1)
+    d1, d2 = orient(p3, p4, p1), orient(p3, p4, p2)
+    d3, d4 = orient(p1, p2, p3), orient(p1, p2, p4)
+    if d1 != d2 and d3 != d4 and d1 != 0 and d3 != 0:
+        return True
+    if d1 == 0 and d2 == 0 and d3 == 0 and d4 == 0:
+        def on(a, b, c):
+            return (min(a[0], b[0]) - EPS <= c[0] <= max(a[0], b[0]) + EPS and
+                    min(a[1], b[1]) - EPS <= c[1] <= max(a[1], b[1]) + EPS)
+        if on(p3, p4, p1) or on(p3, p4, p2) or on(p1, p2, p3) or on(p1, p2, p4):
+            near = [q for q in (p3, p4) for p in (p1, p2)
+                    if abs(q[0] - p[0]) < EPS and abs(q[1] - p[1]) < EPS]
+            if len(near) >= 1:
+                return False
+            return True
+    return False
+
+
+def seg_hits_rect(x1, y1, x2, y2, cx, cy, hw, hh):
+    """Liang-Barsky: whether a segment crosses a rectangle (positive-length
+    entry counts; merely touching the border does not)."""
+    dx, dy = x2 - x1, y2 - y1
+    t0, t1 = 0.0, 1.0
+    for p, q in ((-dx, x1 - (cx - hw)), (dx, (cx + hw) - x1),
+                 (-dy, y1 - (cy - hh)), (dy, (cy + hh) - y1)):
+        if abs(p) < EPS:
+            if q < 0:
+                return False
+        else:
+            r = q / p
+            if p < 0:
+                if r > t1:
+                    return False
+                if r > t0:
+                    t0 = r
+            else:
+                if r < t0:
+                    return False
+                if r < t1:
+                    t1 = r
+    return t1 - t0 > EPS
+
+
+def rect_gap(x1, y1, w1, h1, x2, y2, w2, h2):
+    """Rectangular gap between two cards (hypot of components; 0 when overlapping)."""
+    dx = abs(x1 - x2) - (w1 + w2) / 2
+    dy = abs(y1 - y2) - (h1 + h2) / 2
+    return math.hypot(max(dx, 0.0), max(dy, 0.0))
+
+
+def scene_from_grid(nodes: dict, edges: list, card_h: int) -> dict:
+    """Center-coordinate graph (viewer grid/ring forms) -> generic scene
+    (segments = center-to-center lines)."""
+    segs = {}
+    for i, e in enumerate(edges):
+        a, b = nodes[e["a"]], nodes[e["b"]]
+        segs[i] = ((a["x"], a["y"]), (b["x"], b["y"]))
+    return {"nodes": {v: dict(p, h=card_h) for v, p in nodes.items()},
+            "edges": edges, "segments": segs}
+
+
+def _interpolate(si, sj):
+    """Approximate intersection coordinates of two segments (generic for
+    vertical/straight lines: solve the two line equations)."""
+    (x1, y1), (x2, y2) = si
+    (x3, y3), (x4, y4) = sj
+    denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    if abs(denom) < EPS:
+        return [round(si[1][0]), round(si[1][1])]
+    px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
+    py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
+    return [round(px), round(py)]
+
+
+# ═══ (2) 2026-11-05 six-point rework: auto recipe v2 certificate (new hard gates) ═══
+# (the retired v1-legacy ortho certificate() was removed by owner ruling,
+# 2026-11-24; auto goes through certificate_auto.)
+
+from .routing import (sample_polyline, dist_point_rect, seg_cross as _rc_seg_cross,
+                      min_pair_dist,
+                      PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE,
+                      DENSE_ANCHOR_MIN_DEG, DENSE_GRID_STEP,
+                      span_one_way_segs, COINCIDE_THR, COINCIDE_SPAN,
+                      LENS_PAIR_MIN_SEP, lens_tilt_max_deg,
+                      ARRIVAL_TARGET_DEG, LENS_PAIR_ANCHORS, LENS_SIDE_VEC)
+from .anchors import standard_anchors as _std_anchors
+
+
+def scene_from_auto(v4: dict) -> dict:
+    """Auto layout JSON -> v2 scene (polyline/arc discretized sampling + anchors)."""
+    nodes = {}
+    ch = v4["meta"].get("cardH", 44)
+    for v, p in v4["nodes"].items():
+        nodes[v] = {"x": p["x"], "y": p["y"], "w": p.get("w", 140), "h": ch}
+    edges, polylines, anchors, ctrls = [], {}, {}, {}
+    for i, e in enumerate(v4["edges"]):
+        edges.append({"a": e["a"], "b": e["b"]})
+        polylines[i] = [tuple(p) for p in e["route"]["points"]]
+        anchors[i] = e["anchors"]
+        if e["route"].get("ctrl") is not None:
+            ctrls[i] = tuple(e["route"]["ctrl"])
+    return {"nodes": nodes, "edges": edges, "polylines": polylines,
+            "anchors": anchors,
+            # Q-arc control points by edge index (lens closed-ring bulge
+            # accounting; absent on non-arc routes)
+            "ctrls": ctrls,
+            "router_pairs": v4["meta"].get("router_cross_pairs"),
+            # ref-scrubbed finalize: dense-snap deferral pass-through (None on
+            # normal graphs) -- certificate_auto annotates anchors_standard.
+            "anchor_snap_deferred": v4["meta"].get("anchor_snap_deferred"),
+            # closed-ring rebuild record for mutual pairs on non-lens engines
+            # (Router.mutual_lens_construct; absent without a mutual pair)
+            "mutual_lens": v4["meta"].get("mutual_lens"),
+            # planarization degrade ladder pass-through (L1 witness-marked
+            # caliber / L2 honest downgrade record; None/absent on L0)
+            "planarization": v4["meta"].get("planarization"),
+            # dense-mode audit meta pass-through (absent on non-dense
+            # graphs; certificate annotates it, face unchanged)
+            "dense_mode": v4["meta"].get("dense_mode"),
+            # reverse-form gate pass-through (absent unless a structural
+            # form was detected but abandoned; certificate degrades it)
+            "form_fallback": v4["meta"].get("form_fallback"),
+            # edge placement rules v1 pass-through (certificate records it)
+            "edge_rules": v4["meta"].get("edge_rules"),
+            # loop-direction arc default pass-through (absent when no
+            # loop-member line is in scope)
+            "loop_arcs": v4["meta"].get("loop_arcs"),
+            "line_style": v4["meta"].get("line_style", "straight"),
+            "deg0": set(v4["meta"].get("deg0", [])),
+            # ring placement caliber: certificate picks metrics per placement mode
+            "placement": v4["meta"].get("placement"),
+            "ring_nodes": (v4["meta"].get("ring") or {}).get("nodes"),
+            # radial (hub-centered spokes) certificate caliber
+            "radial": v4["meta"].get("radial"),
+            # column-chain / symmetric placement calibers
+            "column_spine": (v4["meta"].get("column") or {}).get("spine"),
+            "symmetry": v4["meta"].get("symmetry"),
+            # spine-wing mode certificate caliber
+            "spine_wing": v4["meta"].get("spine_wing"),
+            # comb-bilateral mode certificate caliber (v0.7.7)
+            "comb": v4["meta"].get("comb"),
+            # lens-chain mode certificate caliber (pure 2-cycle figures)
+            "lens": v4["meta"].get("lens"),
+            # ref-scrubbed: deterministic mode-decision audit trail (which rule
+            # hit, why, trial gate, legacy band exemption)
+            "mode_decision_trace": v4["meta"].get("mode_decision_trace"),
+            # T1: --from-layout provenance (anchor source auto vs user) --
+            # present only on the manual path; the auto path carries None
+            # (scene-level pass-through, output bytes unchanged).
+            "from_layout": v4["meta"].get("from_layout"),
+            # line-kind statistics (arc > straight > polyline hierarchy report)
+            "line_kinds": [e["route"].get("kind") for e in v4["edges"]],
+            # annotation layer pass-through: loop-label positions shipped in
+            # layout.json (re-verified in certificate_auto; empty when the
+            # graph declares no loop) + the canvas they must sit inside, and
+            # the indices of the @delay links (mark geometry is re-verified)
+            "loop_labels": (v4.get("annotations") or {}).get("loop_labels") or [],
+            # .get: caller-built minimal scenes (unit fixtures) carry no
+            # canvas; the label gate reads it only when labels exist.
+            "viewBox": v4.get("viewBox"),
+            "delay_edges": [i for i, e in enumerate(v4["edges"]) if e.get("delay")],
+            }
+
+
+def _anchor_tangent_angle(node, anchor, direction):
+    """Angle (degrees) between the route direction at an anchor and the tangent
+    of the owning box border. Direction is the unit vector leaving the anchor."""
+    cx, cy, hw, hh = node["x"], node["y"], node["w"] / 2, node["h"] / 2
+    on_x_border = abs(abs(anchor[0] - cx) - hw) <= abs(abs(anchor[1] - cy) - hh)
+    tx, ty = (0.0, 1.0) if on_x_border else (1.0, 0.0)
+    c = abs(direction[0] * tx + direction[1] * ty)
+    return math.degrees(math.acos(max(0.0, min(1.0, c))))
+
+
+# ── Line-line visual coincidence (machine-checkable detection) ─────────────
+# Caliber constants (COINCIDE_THR=1.0 within-1px adherence / COINCIDE_SPAN=8.0
+# over-8px counts as coincident, endpoint-meeting exempted) live in
+# routing.py — routing penalty and certificate must share one source.
+
+def _coincidence_span(sa, sb, step, thr=COINCIDE_THR):
+    """Length (px) over which two sampled polylines run in parallel within
+    <thr distance (max of both directions; deterministic).
+
+    Both directions delegate to routing.span_one_way_segs (same source as the
+    routing re-routing caliber; a copy would drift). The momentary adherence
+    at endpoint anchors is only ~1-2px and never crosses the 8px span gate;
+    true coincidence (long-span parallel adherence) is captured stably by
+    either direction.
+    """
+    return max(span_one_way_segs(sa, list(zip(sb[:-1], sb[1:])), step, thr),
+               span_one_way_segs(sb, list(zip(sa[:-1], sa[1:])), step, thr))
+
+
+def _bbox_gap(pa, pb):
+    """Gap between the bounding boxes of two polylines (0 = intersect/overlap)."""
+    ax0 = min(p[0] for p in pa); ax1 = max(p[0] for p in pa)
+    ay0 = min(p[1] for p in pa); ay1 = max(p[1] for p in pa)
+    bx0 = min(p[0] for p in pb); bx1 = max(p[0] for p in pb)
+    by0 = min(p[1] for p in pb); by1 = max(p[1] for p in pb)
+    return max(0.0, max(bx0 - ax1, ax0 - bx1, by0 - ay1, ay0 - by1))
+
+
+def _witness_match(xpts, wit_pts, radius=4.0):
+    """Bijective nearest-match of geometric crossing points to witness
+    marker points (L1 crossings_witnessed caliber, contract section
+    4.6).  Both lists carry [x, y] int-rounded coordinates."""
+    import math as _m
+    if len(xpts) != len(wit_pts) or not wit_pts:
+        return False
+    remaining = list(range(len(wit_pts)))
+    for p in xpts:
+        if p is None:
+            return False
+        best, bi = None, None
+        for ri in remaining:
+            q = wit_pts[ri]
+            d = _m.hypot(p[0] - q[0], p[1] - q[1])
+            if best is None or d < best:
+                best, bi = d, ri
+        if best is None or best > radius:
+            return False
+        remaining.remove(bi)
+    return True
+
+
+def _on_dense_grid(nd, a0):
+    """Dense slot-grid membership (dense card gate table #0): the point
+    sits in the border band (anchor inset 3px + 0.75px tolerance) and its
+    tangent offset is a multiple of DENSE_GRID_STEP (same 0.75px
+    tolerance; mirrors Router._dense_on_grid on delivered coordinates).
+    Only consulted for dense-mode hub boxes; every other node keeps the
+    16-set membership."""
+    hw, hh = nd["w"] / 2.0, nd["h"] / 2.0
+    band = 3.75
+    on_x = abs(abs(a0[0] - nd["x"]) - hw) <= abs(abs(a0[1] - nd["y"]) - hh)
+    if on_x:
+        if abs(abs(a0[0] - nd["x"]) - hw) > band:
+            return False
+        off = a0[1] - nd["y"]
+    else:
+        if abs(abs(a0[1] - nd["y"]) - hh) > band:
+            return False
+        off = a0[0] - nd["x"]
+    steps = off / DENSE_GRID_STEP
+    return abs(off - round(steps) * DENSE_GRID_STEP) <= 0.75
+
+
+def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
+                     gates: Optional[dict] = None,
+                     notes: Optional[List[str]] = None,
+                     graph=None, exactness: Optional[dict] = None,
+                     interactive: str = "no", drag_layer: str = "no",
+                     deliverable: bool = False,
+                     annotation_layer: bool = True) -> dict:
+    """v2 quality certificate: five metrics + new hard gates + honest grading.
+    All verification runs on delivered coordinates.
+
+    New hard gates (v0.2 quality rework):
+      box_press_zero      box press = 0 (any edge at any angle, incl. 1px
+                          margin; endpoints only touch their own box border)
+      edge_box_clear_ge16 edge-box clearance >= 16px (non-endpoint boxes,
+                          sampled minimum distance)
+      anchors_smooth      anchor smoothness: departure direction vs border
+                          tangent angle >= ANCHOR_MIN_DEG
+      regularity_simple   simple graph (<=10 nodes) placement regularity:
+                          uniform row pitch + 24px column snap >= 60%
+    """
+    nodes = scene["nodes"]
+    edges = scene["edges"]
+    polys = scene["polylines"]
+    anchors = scene.get("anchors", {})
+    ids = list(nodes)
+    notes = list(notes or [])
+    line_style = scene.get("line_style", "straight")
+    # Ring placement caliber: row alignment / column snap are naturally
+    # inapplicable to ring placement; metrics are picked per placement mode
+    # (ring = on-ring equal spacing CV + regular-polygon template fit error).
+    ring_mode = scene.get("placement") == "ring-cycle"
+    ring_nodes = scene.get("ring_nodes") or []
+    # radial (hub-centered spokes) certificate caliber: HUB center deviation
+    # + azimuth equal-spacing CV (the ring equal-spacing caliber, rotation
+    # invariant)
+    radial_mode = scene.get("placement") == "radial"
+    radial = scene.get("radial") or {}
+    # column-chain / symmetric placement calibers
+    column_mode = scene.get("placement") == "column-chain"
+    sym_mode = scene.get("placement") == "symmetric"
+    # bowtie-vertex mode certificate caliber: mirror-axis error (upper/lower
+    # ring mirrored)
+    bowtie_mode = scene.get("placement") == "bowtie-vertex"
+    # spine-wing mode certificate caliber: spine x alignment + midline
+    # adherence + mirror symmetry error (outer mirror pairs)
+    spine_mode = scene.get("placement") == "spine-wing"
+    spine_wing = scene.get("spine_wing") or {}
+    column_spine = scene.get("column_spine") or []
+    symmetry = scene.get("symmetry") or {}
+    # comb-bilateral mode certificate caliber (v0.7.7): column axis alignment
+    # + constant column pitch + hub-pair mirror symmetry + all-straight fan
+    comb_mode = scene.get("placement") == "comb-bilateral"
+    comb = scene.get("comb") or {}
+    # lens-chain mode certificate caliber: pure 2-cycle figures (every
+    # loop a mutual pair, simple graph a forest) -- each pair a closed arc
+    # ring; gates = the layered regularity set + the lens contract
+    lens_mode = scene.get("placement") == "lens-chain"
+    lens = scene.get("lens") or {}
+    # P1-2 (jacky 2026-11-13 ruling): manual coordinates (--from-layout) are
+    # exempt from the two automatic-pipeline structural checks — same caliber
+    # as check.py 6a/9 ("manual: N/A"). Layered-mode gate slots read "N/A";
+    # the measured values stay in metrics.
+    manual_mode = bool(scene.get("from_layout"))
+    # dense-mode caliber (dense card, Q2/Q3): hub-box endpoints/edges read
+    # the dense-adapted floors (12 deg anchor smoothness / slot-grid
+    # membership); every other node and every non-dense scene keeps the
+    # legacy thresholds byte-for-byte.
+    dense = scene.get("dense_mode") or {}
+    dense_on = bool(dense.get("triggered"))
+    dense_hub = dense.get("hub")
+    layered_mode = not (ring_mode or column_mode or sym_mode or bowtie_mode
+                        or spine_mode or comb_mode or radial_mode or lens_mode)
+    # planarization degrade ladder (docs/planarization-degrade-contract.md):
+    # L1 = witness-marked planarized drawing (crossed-certified caliber);
+    # L2 = generic path + honest planarization_deferred record.  L0 scenes
+    # carry no planarization key and keep every byte of today's behavior.
+    plz = scene.get("planarization") or {}
+    plz_l1 = plz.get("mode") == "L1"
+    plz_l2 = plz.get("mode") == "L2"
+
+    # 1. Crossings (pairwise polyline intersection)
+    crossings = _cert_crossing_scan(edges, polys, plz_l1)
+
+
+    visual_crossings = _cert_visual_crossing_scan(edges, polys)
+
+
+    (pair_infos, mutual_min_sep, mutual_closed_rows,
+     mutual_exempt_rows, mutual_open_rows, mutual_pairs_closed,
+     _ml_rows) = _cert_mutual_scan(scene, edges, polys, nodes)
+
+
+    coincide_pairs = _cert_coincide_scan(edges, polys, crossings, plz_l1)
+
+
+    (press, clear_details, anchor_bad, anchor_standard_bad,
+     anchor_standard_details, min_clear) = _cert_press_clear_scan(
+        edges, polys, nodes, ids, anchors, dense_on, dense_hub)
+
+
+    avg_len, row_rate, min_gap, cv = _cert_distribution(
+        polys, nodes, ids, ring_mode, radial_mode)
+
+
+    (pitch_uniform, snap_rate, simple, regularity_ok, ring_spacing_cv,
+     ring_template_dev, radial_hub_dev, radial_cv, col_axis_dev,
+     sym_mirror_err, sw_spine_axis_dev, sw_midline_dev,
+     hub_sym_err) = _cert_regularity(
+        scene, nodes, ids, ring_mode, radial_mode, ring_nodes, radial,
+        column_mode, column_spine, comb_mode, comb, sym_mode,
+        bowtie_mode, spine_mode, spine_wing, symmetry)
     W = max(p["x"] + p["w"] / 2 for p in nodes.values()) - min(p["x"] - p["w"] / 2 for p in nodes.values())
     H = max(p["y"] + p["h"] / 2 for p in nodes.values()) - min(p["y"] - p["h"] / 2 for p in nodes.values())
 
@@ -936,59 +1473,13 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "line_kind_counts": line_kind_counts,
         "bbox": [round(W), round(H)],
     }
-    if _ml_rows:
-        # closed-ring accounting rows (B2/B4; trigger-written like the
-        # annotation gates -- graphs without a mutual pair keep their bytes)
-        metrics["mutual_pairs_closed_count"] = len(mutual_closed_rows)
-        metrics["mutual_pairs_exempt"] = mutual_exempt_rows
-        metrics["mutual_pairs_open"] = mutual_open_rows
-    if ring_mode:
-        metrics["ring_spacing_cv"] = (round(ring_spacing_cv, 4)
-                                      if ring_spacing_cv is not None else None)
-        metrics["ring_template_deviation"] = (round(ring_template_dev, 4)
-                                              if ring_template_dev is not None else None)
-    if radial_mode:
-        metrics["radial_hub_center_dev"] = (round(radial_hub_dev, 2)
-                                            if radial_hub_dev is not None
-                                            else None)
-        metrics["radial_spacing_cv"] = (round(radial_cv, 4)
-                                        if radial_cv is not None else None)
-        rc = radial.get("center")
-        if isinstance(rc, list) and len(rc) == 2:
-            # report item (not a gate): ring center vs the canvas geometric
-            # center (the read-view centering criterion)
-            metrics["radial_center_offset"] = round(
-                math.hypot(rc[0] - W / 2.0, rc[1] - H / 2.0), 1)
-        # manual-calibrated form battery report items (2026-11-15; the
-        # GATE rows carry the pass/fail — these are the measured values)
-        try:
-            from . import radellayout as _rlr
-            _ch = float(next(iter(nodes.values())).get("h", 44))
-            _fmr = _rlr.form_metrics(nodes, _ch, radial,
-                                     [(e["a"], e["b"]) for e in edges])
-            for _k in ("centroid_dev", "radius_cv", "long_edge_rate",
-                       "min_pair_gap", "fit_ratio"):
-                if _fmr.get(_k) is not None:
-                    metrics[f"radial_{_k}"] = round(_fmr[_k], 4)
-        except Exception:
-            pass
-    if column_mode:
-        metrics["column_axis_deviation"] = (round(col_axis_dev, 2)
-                                            if col_axis_dev is not None else None)
-    if comb_mode:
-        metrics["column_axis_deviation"] = (round(col_axis_dev, 2)
-                                            if col_axis_dev is not None else None)
-        metrics["hub_symmetry_err"] = (round(hub_sym_err, 2)
-                                       if hub_sym_err is not None else None)
-    if sym_mode or bowtie_mode or spine_mode:
-        metrics["symmetry_mirror_err"] = (round(sym_mirror_err, 2)
-                                          if sym_mirror_err is not None else None)
-    if spine_mode:
-        metrics["spine_axis_deviation"] = (round(sw_spine_axis_dev, 2)
-                                           if sw_spine_axis_dev is not None else None)
-        metrics["midline_deviation"] = (round(sw_midline_dev, 2)
-                                        if sw_midline_dev is not None else None)
-
+    _cert_metrics_extensions(
+        metrics, scene, nodes, edges, _ml_rows, mutual_closed_rows,
+        mutual_exempt_rows, mutual_open_rows, ring_mode,
+        ring_spacing_cv, ring_template_dev, radial_mode, radial_hub_dev,
+        radial_cv, radial, W, H, column_mode, col_axis_dev, comb_mode,
+        hub_sym_err, sym_mode, bowtie_mode, spine_mode, sym_mirror_err,
+        sw_spine_axis_dev, sw_midline_dev)
     # Crossing caliber adjustment: crossings_zero demoted from hard gate to
     # report item (<=2 crossings allowed when placement regularity holds —
     # "some line intersection is acceptable; order and elegance come first");
@@ -1250,113 +1741,10 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "minimization term, not a theorem guarantee. This certificate holds only "
             "for this graph and this layout"),
     }
-    if ring_mode:
-        out["honest_notes"] = out["honest_notes"] + [
-            "Ring placement caliber: row alignment / 24px column snap are "
-            "inapplicable to ring placement; the regularity gates switch to "
-            "on-ring equal spacing CV <= 0.05 + regular-polygon template fit "
-            "error <= 0.05; the main ring follows regular-polygon slots in ring "
-            "order with chords inside the ring, and loop polarity (R/B) badges "
-            "stay readable along the ring"]
-        out["ring"] = {
-            "nodes": list(ring_nodes),
-            "spacing_cv": metrics.get("ring_spacing_cv"),
-            "template_deviation": metrics.get("ring_template_deviation"),
-        }
-    if manual_mode and layered_mode:
-        out["honest_notes"] = out["honest_notes"] + [
-            "Manual coordinates: uniform row pitch / 24px column snap are "
-            "automatic-pipeline structural checks, not applicable to manual "
-            "layouts (same caliber as the geometry self-check 6a/9 \"manual: "
-            "N/A\"); the gate slots read N/A and the measured values remain "
-            "in metrics"]
-    if column_mode:
-        out["honest_notes"] = out["honest_notes"] + [
-            "Column placement caliber: the main chain aligns vertically in one "
-            "column (column-axis deviation <= 2px gate) with a uniform "
-            "main-chain row-pitch gate; branches hang on the main chain's "
-            "nearest side (half-row offsets excluded from the main-chain "
-            "row-pitch gate); the main-chain closing edge is constructed as a "
-            "large left arc (loop cohesion / ring feel); row alignment / column "
-            "snap reports inapplicable (honestly None)"]
-        out["column"] = {
-            "spine": list(column_spine),
-            "axis_deviation": metrics.get("column_axis_deviation"),
-            "loop_cohesion_spread": metrics.get("loop_cohesion_spread"),
-        }
-    if sym_mode:
-        out["honest_notes"] = out["honest_notes"] + [
-            "Symmetric placement caliber: bowtie (two triangles sharing an edge) "
-            "structure made explicitly symmetric — shared-edge endpoints on the "
-            "vertical axis, left/right vertices mirrored (mirror-axis error "
-            "<= 2px gate); line-kind consistency hard rule: axis edges straight "
-            "+ side edges all arcs (no mixing); row alignment / column snap "
-            "reports inapplicable (honestly None)"]
-        out["symmetry"] = {
-            "mirror_pairs": symmetry.get("mirror_pairs"),
-            "mirror_err": metrics.get("symmetry_mirror_err"),
-        }
-    if bowtie_mode:
-        out["honest_notes"] = out["honest_notes"] + [
-            "Bowtie-vertex caliber (aesthetics v3): two loops sharing a single "
-            "node made explicitly symmetric — shared node centered, the two "
-            "loops occupying the upper/lower half-planes mirrored "
-            "(mirror-axis error <= 2px gate, cross-checked against the "
-            "hand-pulled reference sample wage-price-spiral); detection = "
-            "enumerated simple cycles (exactly 2 loops sharing exactly 1 "
-            "node), declared loops are not a detection input; line-kind "
-            "consistency hard rule: all straight lines (outer edges horizontal "
-            "+ spokes direct, shared-side anchor edges symmetrically spread "
-            "at edge midpoint +/-14px); row alignment / column snap reports "
-            "inapplicable (honestly None)"]
-        out["symmetry"] = {
-            "shared_node": symmetry.get("shared_node"),
-            "mirror_pairs": symmetry.get("mirror_pairs"),
-            "mirror_err": metrics.get("symmetry_mirror_err"),
-        }
-    if spine_mode:
-        out["honest_notes"] = out["honest_notes"] + [
-            "Spine-wing caliber (v0.7.1): hub pair strictly vertical on the "
-            "spine axis (x alignment <= 2px gate), wings pressed onto the "
-            "midline horizontal band (adherence <= 2px gate), outer mirror "
-            "pairs symmetric top-to-bottom (mirror error <= 2px gate) — "
-            "cross-checked against the hand-pulled reference sample "
-            "classic-cld-growth-and-burden; detection = deterministic "
-            "topological metrics (hub pair with >= 3 common neighbors + "
-            "pairable rest secondary clusters + main-chain length share "
-            "<= 0.5), see docs/layout-modes.md; spine edges constructed as "
-            "vertical straight lines, the rest through the Router; row "
-            "alignment / column snap reports inapplicable (honestly None)"]
-        out["spine_wing"] = {
-            "spine": spine_wing.get("spine"),
-            "wings": spine_wing.get("wings"),
-            "mirror_pairs": spine_wing.get("mirror_pairs"),
-            "rest_single": spine_wing.get("rest_single"),
-            "spine_axis_deviation": metrics.get("spine_axis_deviation"),
-            "midline_deviation": metrics.get("midline_deviation"),
-            "mirror_err": metrics.get("symmetry_mirror_err"),
-        }
-    if lens_mode:
-        out["honest_notes"] = out["honest_notes"] + [
-            "Lens-chain caliber (auto-v2 structural tier): every loop of the "
-            "figure is a mutual pair a<->b over a forest (pure 2-cycle "
-            "figure); each pair is placed as a LENS on constructed "
-            "coordinates and delivered as two Q arcs bowing to opposite "
-            "sides of the chord (one closed ring per 2-node loop: both arcs "
-            "bow >= LENS_BULGE_MIN x chord to opposite sides and stay "
-            ">= 12px apart, gates = lens_pairs_closed + "
-            "lens_pair_min_sep_ge_12), non-lens links are constructed "
-            "straight segments between facing standard anchors; the layered "
-            "regularity set still gates (spacing CV <= 0.35, uniform row "
-            "pitch, 24px column snap >= 0.6); trial gate falls back to the "
-            "layered path silently (docs/layout-modes.md, lens-chain)"]
-        out["lens"] = {
-            "pairs": lens.get("pairs"),
-            "gap": lens.get("gap"),
-            "k": lens.get("k"),
-            "link_gap": lens.get("link_gap"),
-            "lens_pair_min_sep": metrics.get("lens_pair_min_sep"),
-        }
+    _cert_out_extensions(out, ring_mode, ring_nodes, metrics,
+                         manual_mode, layered_mode, column_mode,
+                         column_spine, sym_mode, symmetry, bowtie_mode,
+                         spine_mode, spine_wing, lens_mode, lens)
     # Delivery-face confession (same caliber as certificate()):
     out["interactive"] = interactive
     out["drag_layer"] = drag_layer
