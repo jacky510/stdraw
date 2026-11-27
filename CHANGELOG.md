@@ -6,6 +6,24 @@ reproduced here; the engineering version history lives in
 
 ## Unreleased
 
+- **refactor: the giant functions are split behind registries (T17), outputs
+  byte-identical**: the certificate gate assembly becomes a data registry
+  (`stdraw/cert_gates.py`: `MODE_GATE_SETS` in the historical elif order,
+  one check function per gate, ordered overlays, a per-entry `when=` effect
+  slot — first version replicates every historical branch, so a future
+  applicability change such as "regularity gates become report items for
+  n>10" is a one-line data change); the layout mode priority chain becomes a
+  registry too (`stdraw/mode_registry.py`: `MODE_CHAIN` detect/trial/guard +
+  `PLACE_CHAIN` placement dispatch, the coupled column/comb/ring tier kept
+  verbatim); `__main__.main`, `check.auto_geometry_report` (per-check
+  helpers), `metrics.certificate_auto` (per-concern scan helpers) and
+  `_layout_candidates` (chain + placement moved out) are split with pure
+  moves. Every move/split is an independent `refactor(move|split):` commit;
+  old-fully-qualified-name -> new-location table in
+  [docs/refactor-move-map.md](docs/refactor-move-map.md). No public API,
+  CLI flag, output schema or delivered byte changed (golden 8-figure set +
+  A-tier frozen baselines + targeted suites green).
+
 - **perf: exact-equivalence hot-path acceleration in the routing engine**
   (auto layout wall clock; outputs byte-identical, 40/40 random-corpus
   graphs cross-checked against the pre-change tree): the coincidence span
