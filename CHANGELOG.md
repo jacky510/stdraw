@@ -6,6 +6,26 @@ reproduced here; the engineering version history lives in
 
 ## Unreleased
 
+- **refactor: the last two giant functions are split into stage helpers
+  (T17 continuation), outputs byte-identical**:
+  `layout_auto._layout_optimize_routes` (639 lines on the merge base;
+  619 before the anchor-vocabulary card grew it) becomes a 45-line
+  orchestrator over six stage helpers (edgerules presets / primary
+  routing / manual injection / repair chain / anchor snap / post-snap
+  lens channel) with `router`/`routes` threaded in call order;
+  `planarized_layout._planarized_l1` (538 lines) becomes a 16-line
+  orchestrator over five stage helpers (exactness aggregation / core
+  bands / attachment trees / normalization / output assembly), with the
+  former nested `_defer` and `_build_polys` lifted to module functions.
+  A test-first commit pins the L1 output surface (four corpus L1
+  fixtures: witness-on-both-routes, attachment escapes, parking lane,
+  viewBox and meta-block invariants -- structural, platform
+  independent), then one `refactor(split):` commit per function. No
+  public API, CLI flag, output schema or delivered byte changed (golden
+  8/8 identical; dual-tree compare identical on 41 inputs including two
+  manual `--from-layout` legs; full A-tier and ci_checks green).
+  Old-name -> new-location table:
+  [docs/refactor-move-map.md](docs/refactor-move-map.md).
 - **anchors: multi-slot anchor vocabulary + anchors_standard criterion change
   (jacky 2026-11-26 approval; grounded in the stdraw20 manual-calibration
   lessons §4)**: (1) the anchor vocabulary opens from the fixed 16-point set

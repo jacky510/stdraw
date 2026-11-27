@@ -114,12 +114,47 @@ placement vocabulary). Extension points (design-only, declared in the
 routing-feedback hook into placement; multi-slot anchor vocabulary
 (n/s/e/w x 1..k, src/dst split) — no signature hard-codes the 16-anchor set.
 
+## layout_auto.py (from `_layout_optimize_routes`, 639 lines -> 45-line orchestrator + 6 stage helpers)
+
+Continuation of T17 (the first card parked this function at 619 lines;
+main grew it to 639 with the DSL-anchor channel, and the continuation
+retired that entry on the current body).  `router` / `routes` are threaded through the stages in
+call order -- the execution order is unchanged.
+
+| old (section of `layout_auto._layout_optimize_routes`) | new |
+|---|---|
+| edgerules preset assignment + the hard-gate drop list | `layout_auto._route_stage_presets` |
+| `Router` construction, `route_all`, manual pre-injection snapshot, the bounded preset re-enumeration rounds, graph-level legacy exemption | `layout_auto._route_stage_primary` |
+| constructed-route freeze, waypoint / style / user-anchor overrides, manual hard-gate fallback | `layout_auto._route_stage_manual` |
+| frozen set, coincide reroute, midband reanchor, fan spread, mutual-straight, pre-snap arrival flip | `layout_auto._route_stage_repair` |
+| anchor snap + the density-gated probe / revert accounting | `layout_auto._route_stage_anchor_snap` |
+| joint anchor re-assign, enhanced arrival flip, mutual lens construct, final crossing pairs | `layout_auto._route_stage_lens_post` |
+| former nested `_er_gate_tuple` / `_er_involved_edges` closures | module-level `layout_auto._er_gate_tuple` (now takes `cfg`) / `layout_auto._er_involved_edges` |
+
+## planarized_layout.py (from `_planarized_l1`, 538 lines -> 16-line orchestrator + 5 stage helpers)
+
+Coordinates are threaded through the stages in call order -- the execution
+order is unchanged.  A test-first commit pins the L1 output surface (four
+corpus L1 fixtures, structural assertions over all five stages) before any
+code moves.
+
+| old (section of `planarized_layout._planarized_l1`) | new |
+|---|---|
+| per-core oracle + exactness aggregation + admission budget checks | `planarized_layout._l1_exactness` |
+| card geometry + one Tutte band per core | `planarized_layout._l1_core_bands` |
+| attachment-tree placement (escape-ray BFS) | `planarized_layout._l1_attach_trees` |
+| clearance scale ladder + deg0 parking lane + global shift | `planarized_layout._l1_normalize` |
+| edges_out + witness payload + viewBox + meta block + coordinate stamp | `planarized_layout._l1_assemble` |
+| former nested `_defer` closure | module-level `planarized_layout._l1_defer` |
+| former nested `_build_polys` | module-level `planarized_layout._l1_build_polys` (inputs explicit) |
+
+Stage helpers return their state dict, or the `("L2", record)` defer tuple;
+`_l1_deferred` tells the two apart.
+
 ## Deliberately NOT split in this card (honest scope record)
 
 | function | lines at card start | reason |
 |---|---|---|
-| `layout_auto._layout_optimize_routes` | 619 | sequential repair chain over shared mutable `router`/`routes` state (presets -> coincide reroute -> arrival flip -> anchor snap phase); a pure-move extraction would thread 6+ pieces of live state through each helper inside the zero-drift envelope — recommend a dedicated card with the same commit discipline |
-| `planarized_layout._planarized_l1` | 538 | L1 pipeline with heavily shared coordinates state and the thinnest test coverage of the giants (L1 fixtures only); same recommendation |
 | `render.render_auto_html` (443) / `layout_auto._layout_assemble_delivery` (364) / the routing lens-fan family (`fan_spread` 351, `anchor_snap` 270, `lens_joint_reassign` 248, `_lens_pair_joint_snap` 235, `mutual_lens_construct` 226, `_candidates` 215, `_snap_retry_conflicts` 212) / `edgerules.assign` (238) / `candidate_pipeline.layout` (230) / `planarized_layout._verify` (200) | — | not in the card's named top-6; cohesive geometry/delivery units where splitting adds indirection without a registry payoff; park for follow-up cards |
 
 ## Effect-policy reconciliation (gate registry <-> code)
