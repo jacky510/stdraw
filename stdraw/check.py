@@ -276,66 +276,15 @@ def run_check_file(layout_path: str, report_path: str) -> int:
 
 
 # ═══ auto-v2 geometry self-report (new hard gates) ═══
-def auto_geometry_report(layout: dict) -> dict:
-    from .routing import (sample_polyline, dist_point_rect, seg_cross,
-                          PRESS_MARGIN, ANCHOR_MIN_DEG, CLEARANCE,
-                          DENSE_ANCHOR_MIN_DEG)
-    nodes, edges = layout["nodes"], layout["edges"]
-    meta = layout["meta"]
-    # --from-layout manual layout: uniform card pitch / simple-graph
-    # regularity are "automatic-pipeline structural checks", inapplicable to
-    # manual coordinates (the certificate's regularity gate still grades
-    # honestly, no leniency because of this).
-    manual_mode = bool(meta.get("from_layout"))
-    # Ring placement: uniform pitch / column snap are likewise row-structure
-    # checks, inapplicable to ring placement (the certificate switches to
-    # on-ring equal spacing CV + regular-polygon template fit error; see
-    # metrics).
-    ring_mode = meta.get("placement") == "ring-cycle"
-    # radial placement (hub-centered spokes): row caliber inapplicable, same
-    # shape as ring; regularity = HUB center deviation + azimuth equal CV
-    radial_mode = meta.get("placement") == "radial"
-    # comb-bilateral placement (v0.7.7): row caliber = column pitch + column
-    # axis + hub-pair mirror symmetry (same caliber as the certificate)
-    comb_mode = meta.get("placement") == "comb-bilateral"
-    # lens-chain placement (pure 2-cycle figures): uniform lens rows carry
-    # the generic row-pitch caliber; regularity = pitch + 24px snap + the
-    # lens contract (both directions of every chain pair delivered as arcs)
-    lens_mode = meta.get("placement") == "lens-chain"
-    # column-chain / symmetric placement: row caliber switches per mode
-    # (column = uniform main-chain pitch + column-axis alignment;
-    # symmetric = mirror-axis error); 24px column snap inapplicable to both.
-    column_mode = meta.get("placement") == "column-chain"
-    sym_mode = meta.get("placement") == "symmetric"
-    # bowtie-vertex: mirror axes = vertical axis x + horizontal axis y
-    # (upper/lower rings mirrored)
-    bowtie_mode = meta.get("placement") == "bowtie-vertex"
-    # spine-wing: spine x on-axis + wings hugging the midline + mirror-pair error
-    spine_wing_mode = meta.get("placement") == "spine-wing"
-    # planarized L1 (docs/planarization-degrade-contract.md): witness-marked
-    # straight-line drawing caliber
-    planarized_mode = (meta.get("planarization") or {}).get("mode") == "L1"
-    W, H = layout["viewBox"][2], layout["viewBox"][3]
-    CARD_H = meta.get("cardH", 44)
-    CW = {v: p.get("w", 140) for v, p in nodes.items()}
-    report = {"checks": [], "fail": 0}
 
-    def chk(name, ok, detail=""):
-        report["checks"].append({"check": name, "pass": bool(ok), "detail": detail})
-        if not ok:
-            report["fail"] += 1
-        print(("PASS " if ok else "FAIL ") + name + ("  " + detail if detail else ""))
-
-    def polys():
-        return [([tuple(p) for p in e["route"]["points"]], e)
-                for e in edges]
-
+def _agr_01_line_crossings(P, edges, meta, planarized_mode, chk):
+    """Check 1: crossings (+ planarized witness match). Pure move."""
+    from .routing import seg_cross
     # 1. Crossings (pairwise polyline intersection, edges sharing an endpoint excluded).
     # Planarized L1 caliber (contract 4.6): the count must equal the witness
     # count and every counted crossing must map to a witness marker.
     bad = []
     xing_pts = []
-    P = polys()
     for i in range(len(P)):
         for j in range(i + 1, len(P)):
             pi, ei = P[i]
@@ -380,7 +329,11 @@ def auto_geometry_report(layout: dict) -> dict:
     else:
         chk("1. crossings <= 2 (polyline/arc sampled intersection; on hard-gate conflict keep gates, release crossings)", len(bad) <= 2,
             f"{len(edges)} edges, conflicts {len(bad)}" + (str(bad[:5]) if bad else ""))
+    return bad
 
+def _agr_02_box_press(P, nodes, CW, CARD_H, chk):
+    """Check 2: box press = 0 (1px margin). Pure move."""
+    from .routing import sample_polyline, dist_point_rect, PRESS_MARGIN
     # 2. Box press = 0 (1px margin; endpoints only touch their own box
     #    border, no positive-length traversal inside their own box)
     bad2 = []
@@ -409,6 +362,9 @@ def auto_geometry_report(layout: dict) -> dict:
                 bad2.append((f"{e['a']}->{e['b']}", v, "own"))
     chk("2. box press = 0 (any angle, incl. 1px margin)", not bad2, str(bad2[:5]))
 
+def _agr_03_edge_box_clearance(P, nodes, CW, CARD_H, chk):
+    """Check 3: edge-box clearance >= 16px. Pure move."""
+    from .routing import sample_polyline, dist_point_rect, CLEARANCE
     # 3. Edge-box clearance >= 16px (non-endpoint boxes)
     worst = None
     for pts, e in P:
@@ -423,6 +379,9 @@ def auto_geometry_report(layout: dict) -> dict:
     chk("3. edge-box clearance >= 16px", worst is None or worst[0] >= CLEARANCE - 1e-6,
         f"minimum {worst[0]:.1f}px ({worst[1]}->{worst[2]} vs {worst[3]})" if worst else "")
 
+def _agr_04_anchor_smoothness(P, nodes, meta, CW, CARD_H, chk):
+    """Check 4: anchor on border + departure angle (dense hub 12 deg). Pure move."""
+    from .routing import dist_point_rect, ANCHOR_MIN_DEG, DENSE_ANCHOR_MIN_DEG
     # 4. Anchor smoothness: anchor on box border + departure direction vs
     #    border tangent angle >= 20 deg
     #    dense-mode adaptation (dense card, Q2): edges attached to the
@@ -454,6 +413,8 @@ def auto_geometry_report(layout: dict) -> dict:
         + (" (dense hub >= 12 deg)" if _dense4_on else ""),
         not bad4, str(bad4[:5]))
 
+def _agr_05_cards_non_overlapping(nodes, CW, CARD_H, chk):
+    """Check 5: cards pairwise non-overlapping. Pure move."""
     # 5. Cards pairwise non-overlapping
     bad5 = []
     items = list(nodes.items())
@@ -465,6 +426,9 @@ def auto_geometry_report(layout: dict) -> dict:
                 bad5.append((v1, v2))
     chk("5. cards pairwise non-overlapping (per-node width)", not bad5, str(bad5[:5]))
 
+def _agr_06_grid_row_pitch(nodes, meta, manual_mode, ring_mode, radial_mode,
+                             comb_mode, column_mode, sym_mode, planarized_mode, chk):
+    """Check 6: uniform row pitch + 2px grid. Pure move; returns pitch_ok."""
     # 6. Grid / row pitch
     deg0 = set(meta.get("deg0", []))
     rowy = {}
@@ -491,7 +455,10 @@ def auto_geometry_report(layout: dict) -> dict:
     chk("6a. uniform row pitch (parking-lane nodes excluded)" + _6a_na,
         True if (manual_mode or ring_mode or radial_mode or planarized_mode) else pitch_ok, f"pitch={meta['pitch']}")
     chk("6b. all coordinates on the 2px grid (even)", not odd, str(odd))
+    return pitch_ok
 
+def _agr_07_viewbox_containment(P, nodes, CW, CARD_H, W, H, chk):
+    """Check 7: all content inside the viewBox. Pure move."""
     # 7. viewBox fully contains everything
     out = []
     for v, p in nodes.items():
@@ -503,6 +470,8 @@ def auto_geometry_report(layout: dict) -> dict:
             out.append(e["a"] + "->" + e["b"])
     chk("7. all content inside the viewBox", not out, str(out))
 
+def _agr_08_render_scale(W, H, meta, planarized_mode, chk):
+    """Check 8: 1280x800 rendering scale. Pure move; returns s."""
     # 8. Rendering scale (1280x800 tier); planarized L1: the witness-marked
     # drawing carries a product-call canvas tier PENDING (UIDesignerBot
     # marker spec card + jacky) — reported, not vetoed (honest N/A)
@@ -511,7 +480,213 @@ def auto_geometry_report(layout: dict) -> dict:
     chk("8. 1280x800 rendering scale >= 0.85" + (" (planarized: tier pending, report only)" if planarized_mode else ""),
         True if planarized_mode else s >= 0.85,
         f"viewBox {W}x{H} -> s={s:.3f}; title {fs_title}x{s:.2f}~={fs_title * s:.1f}px")
+    return s
 
+def _agr9_ring(nodes, meta, chk):
+    """Check 9 branch: ring_mode regularity. Pure move."""
+    import math as _rm
+    rnodes = (meta.get("ring") or {}).get("nodes") or []
+    rpts = [(nodes[v]["x"], nodes[v]["y"]) for v in rnodes if v in nodes]
+    if len(rpts) >= 3:
+        ds = [_rm.dist(rpts[i], rpts[(i + 1) % len(rpts)]) for i in range(len(rpts))]
+        md = sum(ds) / len(ds)
+        rsv = (sum((d - md) ** 2 for d in ds) / len(ds)) ** 0.5 / md if md else 0.0
+        from . import regularity as _reg
+        rdev = _reg.cycle_polygon_deviation(
+            {v: (nodes[v]["x"], nodes[v]["y"]) for v in rnodes}, rnodes)
+        from . import ringlayout as _ringlayout
+        ring_ok = (rsv <= _ringlayout.RING_SPACING_CV_MAX
+                   and rdev <= _ringlayout.RING_TEMPLATE_FIT_MAX)
+        ring_detail = (f"on-ring equal spacing CV={rsv:.4f}, "
+                       f"regular-polygon deviation D={rdev:.4f} "
+                       f"(gate CV<={_ringlayout.RING_SPACING_CV_MAX:.2f}, "
+                       f"D<={_ringlayout.RING_TEMPLATE_FIT_MAX:.2f}; "
+                       "manual band 2026-11-16)")
+    else:
+        ring_ok, ring_detail = False, "meta.ring.nodes missing / fewer than 3 nodes"
+    chk("9. ring placement regularity (on-ring equal spacing CV + template fit)", ring_ok, ring_detail)
+
+def _agr9_column(meta, nodes, pitch_ok, chk):
+    """Check 9 branch: column_mode regularity. Pure move."""
+    import math as _cm
+    spine = (meta.get("column") or {}).get("spine") or []
+    spts = [(nodes[v]["x"], nodes[v]["y"]) for v in spine if v in nodes]
+    if len(spts) >= 2:
+        axis = sum(p[0] for p in spts) / len(spts)
+        dev = max(abs(p[0] - axis) for p in spts)
+        col_ok = dev <= 2.0 and pitch_ok
+        col_detail = f"main-chain column-axis deviation {dev:.2f}px (gate <=2px), main-chain pitch uniform {pitch_ok}"
+    else:
+        col_ok, col_detail = False, "meta.column.spine missing / fewer than 2 nodes"
+    chk("9. column placement regularity (main-chain axis alignment + uniform pitch)", col_ok, col_detail)
+
+def _agr9_comb(meta, nodes, pitch_ok, chk):
+    """Check 9 branch: comb_mode regularity. Pure move."""
+    # comb-bilateral: column x on-axis <=2px + constant column pitch +
+    # hub-pair mirror symmetry about the column axis (<=2px)
+    comb = meta.get("comb") or {}
+    axis_x = comb.get("axis_x") or 0.0
+    errs = []
+    for cv in comb.get("column") or []:
+        if cv in nodes:
+            errs.append(abs(nodes[cv]["x"] - axis_x))
+    hl, hr = comb.get("hubs") or (None, None)
+    if hl in nodes and hr in nodes:
+        errs.append(abs((nodes[hl]["x"] + nodes[hr]["x"]) / 2 - axis_x))
+        errs.append(abs(nodes[hl]["y"] - nodes[hr]["y"]))
+    comb_ok = bool(errs) and max(errs) <= 2.0 and pitch_ok
+    chk("9. comb-bilateral placement regularity (column axis + pitch + hub mirror <=2px)",
+        comb_ok,
+        f"maximum deviation {max(errs):.2f}px, column pitch uniform {pitch_ok}"
+        if errs else "meta.comb missing")
+
+def _agr9_sym(meta, nodes, chk):
+    """Check 9 branch: sym_mode regularity. Pure move."""
+    sym = meta.get("symmetry") or {}
+    axis_x = sym.get("axis_x") or 0.0
+    pairs = sym.get("mirror_pairs") or []
+    errs = []
+    for l, r in pairs:
+        if l in nodes and r in nodes:
+            errs.append(abs((nodes[l]["x"] + nodes[r]["x"]) / 2 - axis_x))
+            errs.append(abs(nodes[l]["y"] - nodes[r]["y"]))
+    sym_ok = bool(errs) and max(errs) <= 2.0
+    chk("9. symmetric placement regularity (mirror-axis error <=2px)", sym_ok,
+        f"mirror-axis error {max(errs):.2f}px" if errs else "meta.symmetry.mirror_pairs missing")
+
+def _agr9_bowtie(meta, nodes, chk):
+    """Check 9 branch: bowtie_mode regularity. Pure move."""
+    sym = meta.get("symmetry") or {}
+    axis_x = sym.get("axis_x") or 0.0
+    axis_y = sym.get("axis_y") or 0.0
+    errs = []
+    for l, r in sym.get("mirror_pairs") or []:
+        if l in nodes and r in nodes:
+            errs.append(abs(nodes[l]["x"] - nodes[r]["x"]))
+            errs.append(abs((nodes[l]["y"] + nodes[r]["y"]) / 2 - axis_y))
+    sh = sym.get("shared_node")
+    if sh in nodes:
+        errs.append(abs(nodes[sh]["x"] - axis_x))
+        errs.append(abs(nodes[sh]["y"] - axis_y))
+    bowtie_ok = bool(errs) and max(errs) <= 2.0
+    chk("9. bowtie-vertex placement regularity (mirror-axis error <=2px)", bowtie_ok,
+        f"mirror-axis error {max(errs):.2f}px" if errs else "meta.symmetry missing")
+
+def _agr9_spine_wing(meta, nodes, chk):
+    """Check 9 branch: spine_wing_mode regularity. Pure move."""
+    # spine-wing: spine x on-axis <=2px + wings hugging the midline <=2px
+    # + mirror-pair error <=2px (consistent with certificate metrics in
+    # all three places)
+    sw = meta.get("spine_wing") or {}
+    axis_x = sw.get("axis_x") if sw.get("axis_x") is not None else 0.0
+    axis_y = sw.get("axis_y") if sw.get("axis_y") is not None else 0.0
+    errs = []
+    for sv in sw.get("spine") or []:
+        if sv in nodes:
+            errs.append(abs(nodes[sv]["x"] - axis_x))
+    for w in sw.get("wings") or []:
+        if w in nodes:
+            errs.append(abs(nodes[w]["y"] - axis_y))
+    for up, down in sw.get("mirror_pairs") or []:
+        if up in nodes and down in nodes:
+            errs.append(abs(nodes[up]["x"] - nodes[down]["x"]))
+            errs.append(abs((nodes[up]["y"] + nodes[down]["y"]) / 2 - axis_y))
+    sw_ok = bool(errs) and max(errs) <= 2.0
+    chk("9. spine-wing placement regularity (spine on-axis + midline adherence + mirror <=2px)",
+        sw_ok,
+        f"maximum deviation {max(errs):.2f}px" if errs else "meta.spine_wing missing")
+
+def _agr9_radial(meta, nodes, edges, chk):
+    """Check 9 branch: radial_mode regularity. Pure move."""
+    # radial form-coherence battery (recalibrated 2026-11-15 against
+    # the manual ground truth, benchmarks/manual fan fixtures; single
+    # source = radellayout.form_metrics + its manual-band constants,
+    # the same battery the metrics.py certificate gates read):
+    # HUB on the declared center <=2px, hub-vs-ring-centroid <=24px,
+    # azimuth CV <=0.50, radius CV <=0.15, long-edge rate 0, min
+    # card rect-gap >=6px, total-edge fit <=1.25x the minimal radius
+    from . import radellayout as _rl
+    rd = meta.get("radial") or {}
+    _card_h = float(next(iter(nodes.values())).get("h", 44))
+    fm = _rl.form_metrics(nodes, _card_h, rd,
+                          [(e["a"], e["b"]) for e in edges])
+    if fm:
+        checks = (
+            ("HUB center deviation", fm["hub_center_dev"], 2.0, "<=2px"),
+            ("ring-centroid deviation", fm.get("centroid_dev"),
+             _rl.RADIAL_CENTROID_DEV_MAX, f"<={_rl.RADIAL_CENTROID_DEV_MAX:.0f}px"),
+            ("azimuth CV", fm.get("azimuth_cv"),
+             _rl.RADIAL_AZ_CV_MAX, f"<={_rl.RADIAL_AZ_CV_MAX:.2f}"),
+            ("radius CV", fm.get("radius_cv"),
+             _rl.RADIAL_RADIUS_CV_MAX, f"<={_rl.RADIAL_RADIUS_CV_MAX:.2f}"),
+            ("long-edge rate", fm.get("long_edge_rate"), 0.0, "==0"),
+            ("min card rect-gap", fm.get("min_pair_gap"),
+             _rl.RADIAL_MIN_PAIR_GAP, f">={_rl.RADIAL_MIN_PAIR_GAP:.0f}px"),
+            ("total-edge fit ratio", fm.get("fit_ratio"),
+             _rl.RADIAL_TOTAL_EDGE_FIT,
+             f"<={_rl.RADIAL_TOTAL_EDGE_FIT:.2f}"),
+        )
+        bad = [(nm, v, lim) for nm, v, lim, _ in checks if v is None
+               or (v > lim if nm != "min card rect-gap" else v < lim)]
+        detail = ", ".join(
+            f"{nm}={v:.4g} (gate {gs})" if v is not None
+            else f"{nm}=N/A" for nm, v, _l, gs in checks)
+        chk("9. radial form coherence (manual-calibrated battery)",
+            not bad,
+            detail + (" — FAIL: " + ", ".join(f"{nm}={v}" for nm, v, _l in bad)
+                      if bad else " (manual band)"))
+    else:
+        chk("9. radial form coherence (manual-calibrated battery)",
+            False, "meta.radial hub/center/ring_nodes missing")
+
+def _agr9_lens(meta, edges, pitch_ok, snap, chk):
+    """Check 9 branch: lens_mode regularity. Pure move."""
+    # lens-chain: the layered regularity caliber (uniform row pitch +
+    # 24px column snap >= 0.6) plus the lens contract -- both directions
+    # of every chain pair delivered as an arc (one closed ring per
+    # 2-node loop); same caliber as the certificate lens_pairs_closed
+    _lens = meta.get("lens") or {}
+    _rts = {(e.get("a"), e.get("b")): (e.get("route") or {})
+            for e in edges}
+    _open = []
+    for A, B, _d in _lens.get("pairs") or []:
+        _fa, _fb = _rts.get((A, B), {}), _rts.get((B, A), {})
+        if _fa.get("kind") != "arc" or _fb.get("kind") != "arc":
+            _open.append((A, B))
+            continue
+        # closed ring: both arcs visibly bow (apex / chord >=
+        # LENS_BULGE_MIN) to opposite sides of the chord
+        _ra, _sa = arc_bulge(_fa.get("points") or [], _fa.get("ctrl"))
+        _rb, _sb = arc_bulge(_fb.get("points") or [], _fb.get("ctrl"),
+                             flip=True)
+        if (_ra is None or _rb is None or _ra < LENS_BULGE_MIN
+                or _rb < LENS_BULGE_MIN or _sa == 0 or _sa == _sb):
+            _open.append((A, B))
+    _lens_ok = (pitch_ok and snap >= 0.6 and bool(_lens.get("pairs"))
+                and not _open)
+    chk("9. lens-chain placement regularity (uniform pitch + 24px snap "
+        ">= 0.6 + every pair a closed arc ring)",
+        _lens_ok,
+        f"24px column snap {snap:.2f}, pitch uniform {pitch_ok}, "
+        f"pairs {len(_lens.get('pairs') or [])}, open pairs {_open}")
+
+def _agr9_layered(nodes, manual_mode, planarized_mode, simple, snap, pitch_ok, chk):
+    """Check 9 branch: layered / fallback regularity. Pure move."""
+    chk("9. simple-graph placement regularity"
+        + (" (manual: N/A)" if manual_mode
+           else " (planarized: N/A)" if planarized_mode else ""),
+        True if (manual_mode or planarized_mode)
+        else ((not simple) or (pitch_ok and snap >= 0.6)),
+        f"n={len(nodes)}, 24px column snap {snap:.2f}, pitch uniform {pitch_ok}"
+        + ("; inapplicable to manual layouts" if manual_mode else "")
+        + ("; inapplicable to planarized straight-line drawings"
+           if planarized_mode else ""))
+
+def _agr_09_placement_regularities(nodes, meta, edges, pitch_ok, manual_mode,
+                                   ring_mode, column_mode, comb_mode, sym_mode,
+                                   bowtie_mode, spine_wing_mode, radial_mode,
+                                   lens_mode, planarized_mode, chk):
+    """Check 9 dispatcher: the mode elif-chain, order and predicates unchanged."""
     # 9. Simple-graph regularity (<=10 nodes: uniform pitch + 24px column snap >= 60%)
     # manual layout: regularity is an automatic-pipeline structural check -> N/A
     # (the certificate regularity gate still grades)
@@ -520,188 +695,26 @@ def auto_geometry_report(layout: dict) -> dict:
     snap = sum(1 for p in nodes.values() if p["x"] % 24 == 0) / len(nodes)
     simple = len(nodes) <= 10
     if ring_mode:
-        import math as _rm
-        rnodes = (meta.get("ring") or {}).get("nodes") or []
-        rpts = [(nodes[v]["x"], nodes[v]["y"]) for v in rnodes if v in nodes]
-        if len(rpts) >= 3:
-            ds = [_rm.dist(rpts[i], rpts[(i + 1) % len(rpts)]) for i in range(len(rpts))]
-            md = sum(ds) / len(ds)
-            rsv = (sum((d - md) ** 2 for d in ds) / len(ds)) ** 0.5 / md if md else 0.0
-            from . import regularity as _reg
-            rdev = _reg.cycle_polygon_deviation(
-                {v: (nodes[v]["x"], nodes[v]["y"]) for v in rnodes}, rnodes)
-            from . import ringlayout as _ringlayout
-            ring_ok = (rsv <= _ringlayout.RING_SPACING_CV_MAX
-                       and rdev <= _ringlayout.RING_TEMPLATE_FIT_MAX)
-            ring_detail = (f"on-ring equal spacing CV={rsv:.4f}, "
-                           f"regular-polygon deviation D={rdev:.4f} "
-                           f"(gate CV<={_ringlayout.RING_SPACING_CV_MAX:.2f}, "
-                           f"D<={_ringlayout.RING_TEMPLATE_FIT_MAX:.2f}; "
-                           "manual band 2026-11-16)")
-        else:
-            ring_ok, ring_detail = False, "meta.ring.nodes missing / fewer than 3 nodes"
-        chk("9. ring placement regularity (on-ring equal spacing CV + template fit)", ring_ok, ring_detail)
+        _agr9_ring(nodes, meta, chk)
     elif column_mode:
-        import math as _cm
-        spine = (meta.get("column") or {}).get("spine") or []
-        spts = [(nodes[v]["x"], nodes[v]["y"]) for v in spine if v in nodes]
-        if len(spts) >= 2:
-            axis = sum(p[0] for p in spts) / len(spts)
-            dev = max(abs(p[0] - axis) for p in spts)
-            col_ok = dev <= 2.0 and pitch_ok
-            col_detail = f"main-chain column-axis deviation {dev:.2f}px (gate <=2px), main-chain pitch uniform {pitch_ok}"
-        else:
-            col_ok, col_detail = False, "meta.column.spine missing / fewer than 2 nodes"
-        chk("9. column placement regularity (main-chain axis alignment + uniform pitch)", col_ok, col_detail)
+        _agr9_column(meta, nodes, pitch_ok, chk)
     elif comb_mode:
-        # comb-bilateral: column x on-axis <=2px + constant column pitch +
-        # hub-pair mirror symmetry about the column axis (<=2px)
-        comb = meta.get("comb") or {}
-        axis_x = comb.get("axis_x") or 0.0
-        errs = []
-        for cv in comb.get("column") or []:
-            if cv in nodes:
-                errs.append(abs(nodes[cv]["x"] - axis_x))
-        hl, hr = comb.get("hubs") or (None, None)
-        if hl in nodes and hr in nodes:
-            errs.append(abs((nodes[hl]["x"] + nodes[hr]["x"]) / 2 - axis_x))
-            errs.append(abs(nodes[hl]["y"] - nodes[hr]["y"]))
-        comb_ok = bool(errs) and max(errs) <= 2.0 and pitch_ok
-        chk("9. comb-bilateral placement regularity (column axis + pitch + hub mirror <=2px)",
-            comb_ok,
-            f"maximum deviation {max(errs):.2f}px, column pitch uniform {pitch_ok}"
-            if errs else "meta.comb missing")
+        _agr9_comb(meta, nodes, pitch_ok, chk)
     elif sym_mode:
-        sym = meta.get("symmetry") or {}
-        axis_x = sym.get("axis_x") or 0.0
-        pairs = sym.get("mirror_pairs") or []
-        errs = []
-        for l, r in pairs:
-            if l in nodes and r in nodes:
-                errs.append(abs((nodes[l]["x"] + nodes[r]["x"]) / 2 - axis_x))
-                errs.append(abs(nodes[l]["y"] - nodes[r]["y"]))
-        sym_ok = bool(errs) and max(errs) <= 2.0
-        chk("9. symmetric placement regularity (mirror-axis error <=2px)", sym_ok,
-            f"mirror-axis error {max(errs):.2f}px" if errs else "meta.symmetry.mirror_pairs missing")
+        _agr9_sym(meta, nodes, chk)
     elif bowtie_mode:
-        sym = meta.get("symmetry") or {}
-        axis_x = sym.get("axis_x") or 0.0
-        axis_y = sym.get("axis_y") or 0.0
-        errs = []
-        for l, r in sym.get("mirror_pairs") or []:
-            if l in nodes and r in nodes:
-                errs.append(abs(nodes[l]["x"] - nodes[r]["x"]))
-                errs.append(abs((nodes[l]["y"] + nodes[r]["y"]) / 2 - axis_y))
-        sh = sym.get("shared_node")
-        if sh in nodes:
-            errs.append(abs(nodes[sh]["x"] - axis_x))
-            errs.append(abs(nodes[sh]["y"] - axis_y))
-        bowtie_ok = bool(errs) and max(errs) <= 2.0
-        chk("9. bowtie-vertex placement regularity (mirror-axis error <=2px)", bowtie_ok,
-            f"mirror-axis error {max(errs):.2f}px" if errs else "meta.symmetry missing")
+        _agr9_bowtie(meta, nodes, chk)
     elif spine_wing_mode:
-        # spine-wing: spine x on-axis <=2px + wings hugging the midline <=2px
-        # + mirror-pair error <=2px (consistent with certificate metrics in
-        # all three places)
-        sw = meta.get("spine_wing") or {}
-        axis_x = sw.get("axis_x") if sw.get("axis_x") is not None else 0.0
-        axis_y = sw.get("axis_y") if sw.get("axis_y") is not None else 0.0
-        errs = []
-        for sv in sw.get("spine") or []:
-            if sv in nodes:
-                errs.append(abs(nodes[sv]["x"] - axis_x))
-        for w in sw.get("wings") or []:
-            if w in nodes:
-                errs.append(abs(nodes[w]["y"] - axis_y))
-        for up, down in sw.get("mirror_pairs") or []:
-            if up in nodes and down in nodes:
-                errs.append(abs(nodes[up]["x"] - nodes[down]["x"]))
-                errs.append(abs((nodes[up]["y"] + nodes[down]["y"]) / 2 - axis_y))
-        sw_ok = bool(errs) and max(errs) <= 2.0
-        chk("9. spine-wing placement regularity (spine on-axis + midline adherence + mirror <=2px)",
-            sw_ok,
-            f"maximum deviation {max(errs):.2f}px" if errs else "meta.spine_wing missing")
+        _agr9_spine_wing(meta, nodes, chk)
     elif radial_mode:
-        # radial form-coherence battery (recalibrated 2026-11-15 against
-        # the manual ground truth, benchmarks/manual fan fixtures; single
-        # source = radellayout.form_metrics + its manual-band constants,
-        # the same battery the metrics.py certificate gates read):
-        # HUB on the declared center <=2px, hub-vs-ring-centroid <=24px,
-        # azimuth CV <=0.50, radius CV <=0.15, long-edge rate 0, min
-        # card rect-gap >=6px, total-edge fit <=1.25x the minimal radius
-        from . import radellayout as _rl
-        rd = meta.get("radial") or {}
-        _card_h = float(next(iter(nodes.values())).get("h", 44))
-        fm = _rl.form_metrics(nodes, _card_h, rd,
-                              [(e["a"], e["b"]) for e in edges])
-        if fm:
-            checks = (
-                ("HUB center deviation", fm["hub_center_dev"], 2.0, "<=2px"),
-                ("ring-centroid deviation", fm.get("centroid_dev"),
-                 _rl.RADIAL_CENTROID_DEV_MAX, f"<={_rl.RADIAL_CENTROID_DEV_MAX:.0f}px"),
-                ("azimuth CV", fm.get("azimuth_cv"),
-                 _rl.RADIAL_AZ_CV_MAX, f"<={_rl.RADIAL_AZ_CV_MAX:.2f}"),
-                ("radius CV", fm.get("radius_cv"),
-                 _rl.RADIAL_RADIUS_CV_MAX, f"<={_rl.RADIAL_RADIUS_CV_MAX:.2f}"),
-                ("long-edge rate", fm.get("long_edge_rate"), 0.0, "==0"),
-                ("min card rect-gap", fm.get("min_pair_gap"),
-                 _rl.RADIAL_MIN_PAIR_GAP, f">={_rl.RADIAL_MIN_PAIR_GAP:.0f}px"),
-                ("total-edge fit ratio", fm.get("fit_ratio"),
-                 _rl.RADIAL_TOTAL_EDGE_FIT,
-                 f"<={_rl.RADIAL_TOTAL_EDGE_FIT:.2f}"),
-            )
-            bad = [(nm, v, lim) for nm, v, lim, _ in checks if v is None
-                   or (v > lim if nm != "min card rect-gap" else v < lim)]
-            detail = ", ".join(
-                f"{nm}={v:.4g} (gate {gs})" if v is not None
-                else f"{nm}=N/A" for nm, v, _l, gs in checks)
-            chk("9. radial form coherence (manual-calibrated battery)",
-                not bad,
-                detail + (" — FAIL: " + ", ".join(f"{nm}={v}" for nm, v, _l in bad)
-                          if bad else " (manual band)"))
-        else:
-            chk("9. radial form coherence (manual-calibrated battery)",
-                False, "meta.radial hub/center/ring_nodes missing")
+        _agr9_radial(meta, nodes, edges, chk)
     elif lens_mode:
-        # lens-chain: the layered regularity caliber (uniform row pitch +
-        # 24px column snap >= 0.6) plus the lens contract -- both directions
-        # of every chain pair delivered as an arc (one closed ring per
-        # 2-node loop); same caliber as the certificate lens_pairs_closed
-        _lens = meta.get("lens") or {}
-        _rts = {(e.get("a"), e.get("b")): (e.get("route") or {})
-                for e in edges}
-        _open = []
-        for A, B, _d in _lens.get("pairs") or []:
-            _fa, _fb = _rts.get((A, B), {}), _rts.get((B, A), {})
-            if _fa.get("kind") != "arc" or _fb.get("kind") != "arc":
-                _open.append((A, B))
-                continue
-            # closed ring: both arcs visibly bow (apex / chord >=
-            # LENS_BULGE_MIN) to opposite sides of the chord
-            _ra, _sa = arc_bulge(_fa.get("points") or [], _fa.get("ctrl"))
-            _rb, _sb = arc_bulge(_fb.get("points") or [], _fb.get("ctrl"),
-                                 flip=True)
-            if (_ra is None or _rb is None or _ra < LENS_BULGE_MIN
-                    or _rb < LENS_BULGE_MIN or _sa == 0 or _sa == _sb):
-                _open.append((A, B))
-        _lens_ok = (pitch_ok and snap >= 0.6 and bool(_lens.get("pairs"))
-                    and not _open)
-        chk("9. lens-chain placement regularity (uniform pitch + 24px snap "
-            ">= 0.6 + every pair a closed arc ring)",
-            _lens_ok,
-            f"24px column snap {snap:.2f}, pitch uniform {pitch_ok}, "
-            f"pairs {len(_lens.get('pairs') or [])}, open pairs {_open}")
+        _agr9_lens(meta, edges, pitch_ok, snap, chk)
     else:
-        chk("9. simple-graph placement regularity"
-            + (" (manual: N/A)" if manual_mode
-               else " (planarized: N/A)" if planarized_mode else ""),
-            True if (manual_mode or planarized_mode)
-            else ((not simple) or (pitch_ok and snap >= 0.6)),
-            f"n={len(nodes)}, 24px column snap {snap:.2f}, pitch uniform {pitch_ok}"
-            + ("; inapplicable to manual layouts" if manual_mode else "")
-            + ("; inapplicable to planarized straight-line drawings"
-               if planarized_mode else ""))
+        _agr9_layered(nodes, manual_mode, planarized_mode, simple, snap, pitch_ok, chk)
 
+def _agr_10_metadata_complete(meta, chk):
+    """Check 10: auto-v2 metadata completeness. Pure move."""
     # 10. Metadata completeness (recipe / line_style / engine)
     ok10 = (meta.get("recipe") == "auto-v2" and
             meta.get("line_style") in ("straight", "arc") and
@@ -718,6 +731,8 @@ def auto_geometry_report(layout: dict) -> dict:
         f"recipe={meta.get('recipe')} line_style={meta.get('line_style')} "
         f"engine={meta.get('position_engine')}")
 
+def _agr_11_dual_crossing_accounting(meta, bad, chk):
+    """Check 11: routing theory vs delivered-geometry recheck. Pure move."""
     # 11. WS3 dual crossing accounting consistency: routing theory (crossing
     # pairs of the final route) vs delivered-geometry recheck
     router_pairs = meta.get("router_cross_pairs")
@@ -727,9 +742,9 @@ def auto_geometry_report(layout: dict) -> dict:
             abs(router_pairs - geom_pairs) < 0.5,
             f"router={router_pairs} geometric={geom_pairs}")
 
-    # 12. F1: mutual pairs (bidirectional edge pairs) two-line minimum distance >= 4px
-    # (lens double arcs; merging into a double-arrowhead line is forbidden)
-    from .routing import min_pair_dist
+def _agr_12_mutual_pair_min_dist(P, chk):
+    """Check 12: mutual-pair two-line minimum distance. Pure move."""
+    from .routing import min_pair_dist, sample_polyline
     pair_bad = []
     pair_note = []
     for i in range(len(P)):
@@ -745,6 +760,8 @@ def auto_geometry_report(layout: dict) -> dict:
     chk("12. mutual-pair two-line minimum distance >= 4px (lens double arcs, merging forbidden)",
         not pair_bad, (str(pair_bad[:5]) if pair_bad else "; ".join(pair_note[:6])))
 
+def _agr_13_path_d_consistency(P, chk):
+    """Check 13: path_d rendering = verification geometry + G1 tangent. Pure move."""
     # 13. path_d rendering geometry = verification geometry (dense points) +
     # arc G1 tangent continuity.
     # Historical bug: route_svg_d unconditionally re-drew the corner point
@@ -780,6 +797,8 @@ def auto_geometry_report(layout: dict) -> dict:
          else f"{pathd_n} vg paths render/verify consistent (G1 <=4 deg, geometry deviation <=1.5px)"
          if pathd_n else "no vg path_d routes in this graph (trivially passes)"))
 
+def _agr_14_annotation_layer(layout, nodes, edges, P, CARD_H, W, H, chk):
+    """Checks 14/15: loop labels + delay marks clear. Pure move."""
     # 14/15. Annotation layer (single source stdraw/annotations.py): the
     # positions shipped in layout.json are re-read here -- never recomputed
     # from a different model -- and tested against the delivered cards and
@@ -803,6 +822,77 @@ def auto_geometry_report(layout: dict) -> dict:
             (str(_dbad[:5]) if _dbad else
              f"{len(_dly)} mark(s), min tick->box distance {_dmin}px"))
 
+def auto_geometry_report(layout: dict) -> dict:
+    """Assemble the auto-v2 geometry self-report: shared context + the
+    per-check helpers above, in the historical check order 1..15."""
+    nodes, edges = layout["nodes"], layout["edges"]
+    meta = layout["meta"]
+    # --from-layout manual layout: uniform card pitch / simple-graph
+    # regularity are "automatic-pipeline structural checks", inapplicable to
+    # manual coordinates (the certificate's regularity gate still grades
+    # honestly, no leniency because of this).
+    manual_mode = bool(meta.get("from_layout"))
+    # Ring placement: uniform pitch / column snap are likewise row-structure
+    # checks, inapplicable to ring placement (the certificate switches to
+    # on-ring equal spacing CV + regular-polygon template fit error; see
+    # metrics).
+    ring_mode = meta.get("placement") == "ring-cycle"
+    # radial placement (hub-centered spokes): row caliber inapplicable, same
+    # shape as ring; regularity = HUB center deviation + azimuth equal CV
+    radial_mode = meta.get("placement") == "radial"
+    # comb-bilateral placement (v0.7.7): row caliber = column pitch + column
+    # axis + hub-pair mirror symmetry (same caliber as the certificate)
+    comb_mode = meta.get("placement") == "comb-bilateral"
+    # lens-chain placement (pure 2-cycle figures): uniform lens rows carry
+    # the generic row-pitch caliber; regularity = pitch + 24px snap + the
+    # lens contract (both directions of every chain pair delivered as arcs)
+    lens_mode = meta.get("placement") == "lens-chain"
+    # column-chain / symmetric placement: row caliber switches per mode
+    # (column = uniform main-chain pitch + column-axis alignment;
+    # symmetric = mirror-axis error); 24px column snap inapplicable to both.
+    column_mode = meta.get("placement") == "column-chain"
+    sym_mode = meta.get("placement") == "symmetric"
+    # bowtie-vertex: mirror axes = vertical axis x + horizontal axis y
+    # (upper/lower rings mirrored)
+    bowtie_mode = meta.get("placement") == "bowtie-vertex"
+    # spine-wing: spine x on-axis + wings hugging the midline + mirror-pair error
+    spine_wing_mode = meta.get("placement") == "spine-wing"
+    # planarized L1 (docs/planarization-degrade-contract.md): witness-marked
+    # straight-line drawing caliber
+    planarized_mode = (meta.get("planarization") or {}).get("mode") == "L1"
+    W, H = layout["viewBox"][2], layout["viewBox"][3]
+    CARD_H = meta.get("cardH", 44)
+    CW = {v: p.get("w", 140) for v, p in nodes.items()}
+    report = {"checks": [], "fail": 0}
+    def chk(name, ok, detail=""):
+        report["checks"].append({"check": name, "pass": bool(ok), "detail": detail})
+        if not ok:
+            report["fail"] += 1
+        print(("PASS " if ok else "FAIL ") + name + ("  " + detail if detail else ""))
+
+    def polys():
+        return [([tuple(p) for p in e["route"]["points"]], e)
+                for e in edges]
+    P = polys()
+    bad = _agr_01_line_crossings(P, edges, meta, planarized_mode, chk)
+    _agr_02_box_press(P, nodes, CW, CARD_H, chk)
+    _agr_03_edge_box_clearance(P, nodes, CW, CARD_H, chk)
+    _agr_04_anchor_smoothness(P, nodes, meta, CW, CARD_H, chk)
+    _agr_05_cards_non_overlapping(nodes, CW, CARD_H, chk)
+    pitch_ok = _agr_06_grid_row_pitch(nodes, meta, manual_mode, ring_mode,
+                                      radial_mode, comb_mode, column_mode,
+                                      sym_mode, planarized_mode, chk)
+    _agr_07_viewbox_containment(P, nodes, CW, CARD_H, W, H, chk)
+    s = _agr_08_render_scale(W, H, meta, planarized_mode, chk)
+    _agr_09_placement_regularities(nodes, meta, edges, pitch_ok, manual_mode,
+                                   ring_mode, column_mode, comb_mode, sym_mode,
+                                   bowtie_mode, spine_wing_mode, radial_mode,
+                                   lens_mode, planarized_mode, chk)
+    _agr_10_metadata_complete(meta, chk)
+    _agr_11_dual_crossing_accounting(meta, bad, chk)
+    _agr_12_mutual_pair_min_dist(P, chk)
+    _agr_13_path_d_consistency(P, chk)
+    _agr_14_annotation_layer(layout, nodes, edges, P, CARD_H, W, H, chk)
     report["summary"] = {
         "viewBox": [W, H], "aspect": round(W / H, 3) if H else 0,
         "nodes": len(nodes), "edges": len(edges),
