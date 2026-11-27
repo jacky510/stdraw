@@ -99,6 +99,20 @@ the registry deliberately does not copy the wording —
 | mode-triggered metrics rows | `metrics._cert_metrics_extensions` |
 | mode caliber honest-notes + `out` extensions | `metrics._cert_out_extensions` |
 
+### Duplicate-copy cleanup (follow-up to this split)
+
+The split left `metrics.py` carrying the module twice: the refactored body
+(metrics helpers + the nine `_cert_*` helpers above) followed by the full text
+of the same module. Last-definition-wins made the live namespace a mix — the
+nine helpers from the first copy, `certificate_auto` and 13 redefinitions from
+the second — so tests stayed green while the file said every shared definition
+twice. The duplicate is gone: one definition per top-level name, spliced by AST
+node ranges (no source text retyped), module namespace and every function's
+compiled code unchanged. Guard when touching this file: the coding-cookie line
+must appear once (`grep -c 'coding: utf-8' stdraw/metrics.py` -> `1`) and no
+top-level name may be defined twice (probe pattern: parse the file with `ast`,
+count names, compare per-name `ast.dump` against the pre-change copy).
+
 ## layout_auto.py + mode_registry.py (from `layout_auto._layout_candidates`, 530 lines)
 
 | old (section of `layout_auto._layout_candidates`) | new |
