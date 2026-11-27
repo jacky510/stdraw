@@ -283,6 +283,16 @@ v0.6.0 adds column/symmetric calibers and demotes crossings_zero and row alignme
 to **reported soft targets** — see docs/layout-modes.md (zh original; English edition: docs/layout-modes.en.md)
 mode. Layered layouts keep the row-alignment caliber.)
 
+**n > 10 figures (jacky ruling 2026-11-26, stdraw20 manual calibration)**: the three
+mechanical-grid regularity gates — `cv_le_035` / `pitch_uniform` (+ the
+`spine_pitch_uniform` / `column_pitch_uniform` aliases) / `column_snap24_ge_060` —
+are demoted from hard gates to **report items**: their measured booleans move to
+`reports` (with `regularity_demoted_note`), `gates_passed` no longer counts them, and
+they cannot block the grade. The underlying metrics rows (`spacing_cv`,
+`column_snap24_rate`, …) stay measured. n ≤ 10 figures — the recommended domain —
+keep all three as hard gates, byte-for-byte unchanged; manual (`--from-layout`)
+certificates keep their own caliber (P1-2 `N/A` slots, `cv_le_035` still gating).
+
 Honest grading semantics (iron rule: **never pass off a non-certificate as one**):
 
 | Grade | Definition (auto-v2) |

@@ -29,6 +29,19 @@ reproduced here; the engineering version history lives in
   (golden / demos) is the change's declared effect; re-blessing awaits
   separate approval.
 
+- **certificate caliber: the mechanical-grid regularity gates demote to
+  report items on n > 10 figures (jacky ruling 2026-11-26, from the
+  stdraw20 manual-calibration evidence)**: `cv_le_035` /
+  `pitch_uniform` (+ the `spine_pitch_uniform` / `column_pitch_uniform`
+  mode aliases) / `column_snap24_ge_060` now apply as hard gates only on
+  n ≤ 10 figures — the recommended, human-parity domain; on n > 10 their
+  measured booleans move to `reports` (with an additive
+  `regularity_demoted_note`) and no longer count in `gates_passed` or
+  block the grade. Implemented as registry `when` policies
+  (`stdraw/cert_gates.py`), not new branches. n ≤ 10 certificates and the
+  manual (`--from-layout`) caliber are unchanged byte-for-byte; layout
+  bytes never change (placement does not consume certificate gates).
+  Caliber: [docs/grading-contract.md](docs/grading-contract.md) §3.3.
 - **refactor: the giant functions are split behind registries (T17), outputs
   byte-identical**: the certificate gate assembly becomes a data registry
   (`stdraw/cert_gates.py`: `MODE_GATE_SETS` in the historical elif order,

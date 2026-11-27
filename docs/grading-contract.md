@@ -52,7 +52,7 @@ token meant something different there. Current certificates self-describe
 | `blocking_gates` | list of `false` gate keys | list of `false` gate keys |
 | `deliverable` | reflects the delivery contract (CLI full deliverable: `true`) | always `false` (see §4) |
 | `blocked_reason` / `blocked_by` | absent | set (`D0`) |
-| gate count at `best` | 11+ hard gates (placement-specific) | 4 legacy gates |
+| gate count at `best` | 11+ hard gates (placement-specific; n ≤ 10) — n > 10 figures carry fewer: the §3.3 demotion removes the three mechanical-grid regularity slots | 4 legacy gates |
 
 Grading formulas:
 
@@ -140,6 +140,25 @@ wired as the `--no-exact` CLI flag (jacky 2026-11-14 scope ruling,
 stdraw range n<=20): default stays ON for certificate integrity;
 opting out keeps the witness-marked L1 drawing but the grade honestly
 drops to `uncertified`.
+
+### 3.3 n > 10 figures — the mechanical-grid regularity gates demote to report items
+
+jacky's ruling of 2026-11-26 (stdraw20 manual-calibration lessons §5.1): the
+three mechanical-grid regularity gates — `cv_le_035`, `pitch_uniform` (with its
+`spine_pitch_uniform` / `column_pitch_uniform` mode aliases) and
+`column_snap24_ge_060` — reward mechanical grids and penalize human
+arrangements; on figures they cannot certify they measure nothing. They are
+implemented as registry `when` policies (stdraw/cert_gates.py
+`_regularity_applies`): on the **automatic pipeline they apply only to
+n ≤ 10 figures** — for n > 10 the measured boolean leaves `gates`, lands in
+`reports` (same key name) with an additive `regularity_demoted_note`, is
+excluded from `gates_passed` and `blocking_gates`, and can no longer block
+the grade. All other gates and the grade semantics are unchanged; the
+underlying metrics rows (`spacing_cv`, `column_snap24_rate`, …) stay
+measured. n ≤ 10 certificates are byte-for-byte unchanged (the human-parity
+tier keeps all three as hard gates), and the manual caliber of §3.1 is NOT
+touched by this ruling (manual `cv_le_035` still gates; manual
+`pitch_uniform` / `column_snap24_ge_060` stay `N/A`).
 
 ## 4. D0 — vertical-orthogonal diagrams are banned as deliverables
 

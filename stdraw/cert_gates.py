@@ -96,6 +96,9 @@ class GateContext:
         self._hub_bad = 0
         self._pairs = []
         self._lens_bad = 0
+        # regularity gates demoted to report items by the entries' ``when``
+        # policies (key -> measured boolean; filled by build_gates)
+        self.demoted_gates = {}
 
     @property
     def n_nodes(self):
@@ -554,6 +557,21 @@ def _gates_layered(c):
 # set applies (first version, replicates the historical branches verbatim).
 # Order of MODE_GATE_SETS = the historical elif order; first match wins.
 
+def _regularity_applies(c):
+    # ``when`` policy (jacky ruling 2026-11-26, stdraw20 manual-calibration
+    # lessons doc section 5.1): the mechanical-grid regularity gates
+    # (``cv_le_035`` / ``pitch_uniform`` family / ``column_snap24_ge_060``)
+    # reward mechanical grids and penalize human arrangements -- on the
+    # automatic pipeline they gate only n<=10 figures (the human-parity
+    # tier); for n>10 they demote to certificate report items (measured
+    # boolean kept in ``reports``, excluded from gates_passed / hard_ok,
+    # grade semantics otherwise unchanged).  The manual (--from-layout)
+    # caliber is NOT touched: manual figures keep today's slots
+    # (pitch_uniform / column_snap24_ge_060 = N/A per the P1-2 ruling,
+    # cv_le_035 still gating).
+    return c.n_nodes <= 10 or c.manual_mode
+
+
 def _entry(key, check, when=None):
     return {"key": key, "check": check, "when": when}
 
@@ -581,36 +599,48 @@ RADIAL_SET = _set("radial", lambda c: c.radial_mode, _gates_radial,
                            ("radial_total_edge_fit_le_125", g_radial_total_edge_fit_le_125)))
 
 COLUMN_SET = _set("column-chain", lambda c: c.column_mode, _gates_column,
-                  _entries(("column_axis_aligned", g_column_axis_aligned),
-                           ("spine_pitch_uniform", g_spine_pitch_uniform)))
+                  _entries(("column_axis_aligned", g_column_axis_aligned),)
+                           + [_entry("spine_pitch_uniform", g_spine_pitch_uniform,
+                                     when=_regularity_applies),
+                              _entry("cv_le_035", g_cv_le_035,
+                                     when=_regularity_applies)])
 
 COMB_SET = _set("comb-bilateral", lambda c: c.comb_mode, _gates_comb,
-                _entries(("column_axis_aligned", g_column_axis_aligned),
-                         ("column_pitch_uniform", g_column_pitch_uniform),
-                         ("hub_symmetry_le_2px", g_hub_symmetry_le_2px),
-                         ("hub_edges_straight", g_hub_edges_straight)))
+                _entries(("column_axis_aligned", g_column_axis_aligned),)
+                         + [_entry("column_pitch_uniform", g_column_pitch_uniform,
+                                   when=_regularity_applies),
+                            _entry("hub_symmetry_le_2px", g_hub_symmetry_le_2px),
+                            _entry("hub_edges_straight", g_hub_edges_straight)])
 
 SYM_BOWTIE_SET = _set("symmetric|bowtie-vertex",
                       lambda c: c.sym_mode or c.bowtie_mode, _gates_sym_bowtie,
-                      _entries(("symmetry_mirror_le_2px", g_symmetry_mirror_le_2px)))
+                      _entries(("symmetry_mirror_le_2px", g_symmetry_mirror_le_2px),)
+                               + [_entry("cv_le_035", g_cv_le_035,
+                                         when=_regularity_applies)])
 
 SPINE_SET = _set("spine-wing", lambda c: c.spine_mode, _gates_spine,
                  _entries(("spine_axis_le_2px", g_spine_axis_le_2px),
                           ("midline_adherence_le_2px", g_midline_adherence_le_2px),
-                          ("symmetry_mirror_le_2px", g_symmetry_mirror_le_2px)))
+                          ("symmetry_mirror_le_2px", g_symmetry_mirror_le_2px))
+                          + [_entry("cv_le_035", g_cv_le_035,
+                                    when=_regularity_applies)])
 
 LENS_SET = _set("lens-chain", lambda c: c.lens_mode, _gates_lens,
-                _entries(("pitch_uniform", g_pitch_uniform),
-                         ("column_snap24_ge_060", g_column_snap24_ge_060),
-                         ("lens_pairs_closed", g_lens_pairs_closed),
-                         ("lens_pair_min_sep_ge_12", g_lens_pair_min_sep_ge_12)))
+                _entries(("lens_pairs_closed", g_lens_pairs_closed),
+                         ("lens_pair_min_sep_ge_12", g_lens_pair_min_sep_ge_12))
+                         + [_entry("cv_le_035", g_cv_le_035, when=_regularity_applies),
+                            _entry("pitch_uniform", g_pitch_uniform, when=_regularity_applies),
+                            _entry("column_snap24_ge_060", g_column_snap24_ge_060,
+                                   when=_regularity_applies)])
 
 PLZ_L1_SET = _set("planarized-L1", lambda c: c.plz_l1, _gates_plz_l1,
                   _entries())  # N/A slots live in the builder (applicability facts)
 
 LAYERED_SET = _set("layered", lambda c: True, _gates_layered,
-                   _entries(("pitch_uniform", g_pitch_uniform),
-                            ("column_snap24_ge_060", g_column_snap24_ge_060)))
+                   [_entry("cv_le_035", g_cv_le_035, when=_regularity_applies),
+                    _entry("pitch_uniform", g_pitch_uniform, when=_regularity_applies),
+                    _entry("column_snap24_ge_060", g_column_snap24_ge_060,
+                           when=_regularity_applies)])
 
 MODE_GATE_SETS = [RING_SET, RADIAL_SET, COLUMN_SET, COMB_SET, SYM_BOWTIE_SET,
                   SPINE_SET, LENS_SET, PLZ_L1_SET, LAYERED_SET]
@@ -734,6 +764,19 @@ def build_gates(c):
             elif mode_set["mode"] == "lens-chain":
                 _gates_lens_prep(c)
             g = mode_set["builder"](c)
+            # ``when`` effect policies: a demoted entry's measured boolean
+            # leaves the gates dict (no longer counted in gates_passed, no
+            # longer read by hard_ok) and lands in ``c.demoted_gates`` for
+            # the certificate reports transport.  n<=10 / manual figures
+            # have when(c) True everywhere -> zero bytes change.
+            _demoted = {}
+            for entry in mode_set["entries"]:
+                _w = entry["when"]
+                if _w is not None and not _w(c):
+                    _k = entry["key"]
+                    if isinstance(g.get(_k), bool):
+                        _demoted[_k] = g.pop(_k)
+            c.demoted_gates = _demoted
             break
     else:
         raise AssertionError("unreachable: LAYERED_SET detects everything")
