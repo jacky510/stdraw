@@ -214,7 +214,7 @@ h1{{font-size:18px}} svg{{background:{T["canvas_bg"]};border:1px solid {T["canva
 
 
 # ═══ auto-v2 rendering: straight/arc lines first-class + anchored directional arrows ═══
-# Edge coloring caliber (jacky 2026-11-09 ruling, two-color polarity rework):
+# Edge coloring caliber (owner ruling; two-color polarity rework; docs/adr/ADR-0005):
 # lines carry exactly TWO colors keyed to each edge's own sign — '+' = amber,
 # '−' = sky blue — and every line is solid. The dashed=negative encoding, the
 # gray shared-edge color and the loop-id badges are retired; loop membership is

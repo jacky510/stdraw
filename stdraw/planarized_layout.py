@@ -2,7 +2,7 @@
 """Planarized 2D layer for non-planar cores (degrade ladder L1/L2).
 
 Implementation basis (sole authority): docs/planarization-degrade-contract.md
-(@ 4e0cdec, approved jacky 2026-11-14 D1-D4).  Oracle math is consumed
+(docs/adr/ADR-0012; contract doc @ 4e0cdec, D1-D4 owner-approved).  Oracle math is consumed
 READ-ONLY from crossing_exact.py (safe_reduce / heuristic planarization /
 embedding / oil insertion / _planarized_graph / _faces_from_rotation); the
 drawing kernel lives HERE so the ortho frozen files stay byte-untouched.
@@ -78,7 +78,7 @@ def _cluster_xwitnesses(points, join_px=None):
             clusters.append([idx])
     return clusters
 
-# ── D1 locked numbers (jacky 2026-11-14) ──────────────────────────────
+# ── D1 locked numbers (docs/adr/ADR-0012) ──────────────────────────────
 BUDGET_INSERT_STEPS = 2000  # insertion steps (one per witness crossing)
 BUDGET_H_VERTICES = 600     # planarized-graph vertex cap
 
@@ -497,7 +497,7 @@ def _l1_exactness(graph, cores):
     # n20 core hours), so cores >10 nodes use the heuristic UB
     # (witness-verified real drawing, proven_optimal stays False —
     # honest).  Deviation from crossing_exact's own n<=30 dispatch is a
-    # D4 cost call (jacky's contract clause: solve-time over budget is
+    # D4 cost call (contract clause; docs/adr/ADR-0012: solve-time over budget is
     # reported, never silently downgraded) -- see the implementation
     # card's measured numbers.
     from .crossing_exact import _core_heuristic, _core_exact, _has_solver

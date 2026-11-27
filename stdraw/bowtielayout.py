@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Bowtie-vertex (two rings sharing a single node) symmetric placement
-(2026-11-06 jacky aesthetics v3, ref-scrubbed).
+(aesthetics v3 directive, ref-scrubbed; docs/adr/ADR-0003).
 
-> jacky hand-laid the wage-price-spiral diagram: the shared node sits at the
+> Hand-laid ground truth (docs/adr/ADR-0003), wage-price-spiral diagram: the shared node sits at the
 > exact center of the figure, the remaining nodes of the two rings occupy
 > four symmetric positions, and the whole figure is axis-symmetric up/down
 > and left/right — "topology should decide the layout".
@@ -21,7 +21,7 @@ symlayout's shared-**edge** bowtie topology):
     decision domain of symlayout's criteria, handled by existing patterns).
 
 Placement (place_bowtie_vertex, cross-checked against the relative geometry
-of jacky's hand-laid sample):
+of the hand-laid sample):
   - The shared node sits at the canvas center (layout-layer axis x=0, y=0;
     the delivery layer translates everything uniformly to center);
   - Each ring occupies one half-plane (first ring above / second ring below;

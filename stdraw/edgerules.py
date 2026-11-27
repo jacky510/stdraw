@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Edge placement rules v1 — the pre-routing decision layer
-(docs/edge-placement-rules-v1.md, jacky's verbal spec engineered).
+(docs/edge-placement-rules-v1.md, engineered from the owner's verbal spec;
+docs/adr/ADR-0015).
 
 For every graph edge this module fixes, per end, the box side + the
 standard anchor (edge midpoint / golden-section points only — never

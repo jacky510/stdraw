@@ -474,7 +474,7 @@ def _agr_08_render_scale(W, H, meta, planarized_mode, chk):
     """Check 8: 1280x800 rendering scale. Pure move; returns s."""
     # 8. Rendering scale (1280x800 tier); planarized L1: the witness-marked
     # drawing carries a product-call canvas tier PENDING (UIDesignerBot
-    # marker spec card + jacky) — reported, not vetoed (honest N/A)
+    # marker spec pending; docs/adr/ADR-0012) — reported, not vetoed (honest N/A)
     s = min(1280 / W, 680 / H) if W and H else 0
     fs_title, fs_value = meta.get("fs", [12.5, 14.0])
     chk("8. 1280x800 rendering scale >= 0.85" + (" (planarized: tier pending, report only)" if planarized_mode else ""),

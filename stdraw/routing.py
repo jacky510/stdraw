@@ -379,7 +379,7 @@ def lens_tilt_max_deg():
 COINCIDE_THR = 1.0          # distance <1px counts as adherence (same source as the certificate accounting)
 COINCIDE_SPAN = 8.0         # accumulated adherence must exceed 8px to count as "visual coincidence" (endpoint meeting exempted)
 FAN_STEP = 18.0             # uniform spread step for multiple anchors on the same node side (ref-scrubbed rule 3)
-# Dense mode (jacky 2026-11-14 authorization: "1 anchor may be shared by
+# Dense mode (owner authorization; docs/adr/ADR-0007: "1 anchor may be shared by
 # multiple lines; angle limits may be relaxed appropriately" — dense-only
 # branch, proposal stdraw-dense approved by default final review).  Every
 # constant below is read ONLY when Router.dense_hub is set (dense := the
@@ -2121,9 +2121,9 @@ class Router:
     def fan_spread(self, routes, frozen=()):
         """Same node side with >= 2 anchors: sort by the other endpoint's azimuth and spread symmetrically on both sides of the midpoint along the border tangent.
 
-                2026-11-06 connection-point accounting hard rule 3 (jacky): multiple outgoing lines on the same node must not pile up at the
+                connection-point accounting hard rule 3 (docs/adr/ADR-0006): multiple outgoing lines on the same node must not pile up at the
                 same border midpoint -- spread uniformly with step FAN_STEP, clamped inside the border at +/-(half-3).
-                2026-11-09 ref-scrubbed (jacky): slot ORDER is azimuth-monotone -- on t/b borders by the other box center's horizontal
+                ref-scrubbed rework (docs/adr/ADR-0006): slot ORDER is azimuth-monotone -- on t/b borders by the other box center's horizontal
                 offset, on r/l borders by its vertical offset -- so anchor order along the border always matches the targets'
                 left/right (top/bottom) positions (the former incidence-angle key could invert neighbours and produce a
                 visible X crossing, classic-cld adopters box). After spreading, every
@@ -2473,8 +2473,8 @@ class Router:
     def fan_slot_reorder(self, routes, frozen=()):
         """Fan slot competition by SWAP, keyed by the departure azimuth φ.
 
-        jacky 2026-11-26 approval (multi-slot anchor vocabulary card),
-        grounded in the stdraw20 manual-calibration lessons §4: the fan X
+        owner ruling 2026-11-26 (multi-slot anchor vocabulary card;
+        docs/adr/ADR-0018), grounded in the stdraw20 manual-calibration lessons §4: the fan X
         5→3 fix came from SWAPPING the two competing anchors at the shared
         node, keyed by the departure azimuth φ rather than the far-end
         coordinate -- a far-end-monotone slot order still crosses when the
@@ -2868,12 +2868,12 @@ class Router:
     def midband_reanchor(self, routes, frozen=(), enhanced=True):
         """Delivery-layer connection-point accounting (ref-scrubbed): anchors clamped into the edge-midpoint +/- 1/4 edge-length band.
 
-                jacky: "the points where lines attach to boxes should also prefer each border's midpoint; avoid the corners
+                Owner directive (docs/adr/ADR-0006): "the points where lines attach to boxes should also prefer each border's midpoint; avoid the corners
                 possible." The routing decision layer keeps the legacy exit geometry (candidate coverage unchanged); before delivery, this channel
                 clamps out-of-band anchors along their own border tangent into the +/- 1/4 band -- corners are excluded wholesale (in-band anchors
                 can never hug a corner). Per-edge hard-gate recheck (press/clearance/anchor angle/no crossing increase/mutual separation >= 4px).
 
-                ref-scrubbed rework (rejected in jacky's second review): three stages --
+                ref-scrubbed rework (rejected in the owner's second review; docs/adr/ADR-0006): three stages --
                 Tier 0 "baseline accounting": the original v0.7.2 semantics (endpoint clamping, ctrl untouched, the original hard-gate set)
                 runs first and delivers on success (the guarantee that the other 18 graphs stay byte-for-byte identical to v0.7.2);
                 Tier 1 "enhanced ladder": enabled only on baseline failure / still out-of-band -- (1) for arcs (ctrl present), the ctrl
@@ -4139,7 +4139,7 @@ class Router:
     def anchor_snap(self, routes, max_sweeps=4):
         """Delivery-layer endpoint snapping to the 16 standard per-box anchor set (card ref-scrubbed).
 
-        jacky 2026-11-09: the 16 standard connection points (ref-scrubbed) must
+        Owner ruling (docs/adr/ADR-0001): the 16 standard connection points (ref-scrubbed) must
         be the DEFAULT attachment caliber of every rendered edge endpoint --
         not only the interactive layer.  Algorithm path (joint selection, not
         blind post-hoc snapping):

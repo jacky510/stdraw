@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Bowtie-pair (two triangles sharing an edge) symmetric placement
-(2026-11-06 jacky layout aesthetics v2, ref-scrubbed).
+(layout aesthetics v2 directive, ref-scrubbed; docs/adr/ADR-0002).
 
 > #11 learning-flywheel "could be symmetric yet leans left" — symmetric
 > structures should be explicitly symmetric.

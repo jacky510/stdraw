@@ -46,7 +46,7 @@ fallback are the caller's job (layout_auto._radial_trial), same pattern
 as ring/column/comb.
 
 Certificate caliber (mode "radial", recalibrated 2026-11-15 against the
-manual ground truth -- jacky hand-dragged fan-d12/fan-d17, exported via
+manual ground truth (docs/adr/ADR-0010) -- owner hand-dragged fan-d12/fan-d17, exported via
 "Export layout", stored under benchmarks/manual/):
   - HUB center deviation <= 2px (engine invariant: the hub sits on the
     declared ring center) AND hub-vs-ring-centroid deviation <= 24px
@@ -57,7 +57,7 @@ manual ground truth -- jacky hand-dragged fan-d12/fan-d17, exported via
     engine's quantization floor);
   - radius CV <= 0.15 (manual: 0.122 / 0.081), long-edge rate = 0
     (manual: no edge longer than 2x the median on either fixture);
-  - min card pair rect-gap >= 6px (manual minimum: 6px fan-d17 -- jacky
+  - min card pair rect-gap >= 6px (manual minimum: 6px fan-d17 -- operator
     packs tightly to keep total spoke length minimal; the chord-based
     ring radius is retired for the single-ring path);
   - total-edge fit: mean spoke length <= 1.25x the closed-form minimal
@@ -68,7 +68,7 @@ Ring placement (recalibrated): the ring radius is the MINIMAL uniform
 radius satisfying box-aware clearance (rect-gap caliber, PACK_GAP) for
 every adjacent azimuth pair plus the hub clearance -- NOT the old
 chord-based circular-packing need.  Measured on the fan family this
-reproduces jacky's manual packing almost exactly (fan-d17: closed-form
+reproduces the manual packing almost exactly (fan-d17: closed-form
 minimum ~283px vs manual mean spoke 282px; the old conservative caliber
 sat at 414px, +46% total edge length).  A double ring now only appears
 when even the box-aware minimum exceeds the radius bound (dormant on
@@ -151,7 +151,7 @@ def min_ring_radius_box(ring, widths, hub_w, card_h, pack_gap=PACK_GAP):
     RNG).  This replaces the chord-based circular-packing need for the
     single-ring path: the chord caliber ignored card orientation (a
     vertically stacked side pair only needs dy >= card_h + gap, not the
-    full chord width), which is exactly the slack jacky's manual layouts
+    full chord width), which is exactly the slack the manual layouts
     use to keep total spoke length minimal.
     """
     k = len(ring)

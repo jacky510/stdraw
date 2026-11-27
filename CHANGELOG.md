@@ -42,7 +42,7 @@ reproduced here; the engineering version history lives in
   Old-name -> new-location table:
   [docs/refactor-move-map.md](docs/refactor-move-map.md).
 - **anchors: multi-slot anchor vocabulary + anchors_standard criterion change
-  (jacky 2026-11-26 approval; grounded in the stdraw20 manual-calibration
+  (owner approval 2026-11-26; grounded in the stdraw20 manual-calibration
   lessons §4)**: (1) the anchor vocabulary opens from the fixed 16-point set
   to numbered side slots `n/s/e/w-g1..g7` (+ corners / midpoints; g1/g2 keep
   the legacy golden coordinates, slot usage is adaptive, the id -> coordinate
@@ -65,7 +65,7 @@ reproduced here; the engineering version history lives in
   separate approval.
 
 - **certificate caliber: the mechanical-grid regularity gates demote to
-  report items on n > 10 figures (jacky ruling 2026-11-26, from the
+  report items on n > 10 figures (owner ruling 2026-11-26, from the
   stdraw20 manual-calibration evidence)**: `cv_le_035` /
   `pitch_uniform` (+ the `spine_pitch_uniform` / `column_pitch_uniform`
   mode aliases) / `column_snap24_ge_060` now apply as hard gates only on
@@ -77,6 +77,23 @@ reproduced here; the engineering version history lives in
   manual (`--from-layout`) caliber are unchanged byte-for-byte; layout
   bytes never change (placement does not consume certificate gates).
   Caliber: [docs/grading-contract.md](docs/grading-contract.md) §3.3.
+
+- **code hygiene: personal-ruling annotations migrated to `docs/adr/`
+  (T18)**: the 68 "owner + date" ruling annotations across `stdraw/*.py`
+  are replaced by the rule text plus a `docs/adr/ADR-XXXX` pointer; each
+  ruling's original annotation (with attribution, verbatim) is preserved in
+  a dedicated ADR under [docs/adr/](docs/adr/README.md) (18 rulings +
+  index, each with the ruling date, the decision in force and the affected
+  source sites). Three certificate output strings changed accordingly — the
+  ring-observability note (`ring_candidates.note`) and the two n>10
+  regularity-demotion strings (`reports.regularity_demoted_note` and the
+  matching `notes` entry) now cite the ADR / the owning role instead of a
+  personal name; every other delivered byte is identical. New reference doc
+  [docs/env-vars.md](docs/env-vars.md): all five `STDRAW_*` engine
+  variables (`STDRAW_TIMING` / `STDRAW_SNAP_DEBUG` / `STDRAW_L1_PINNED` /
+  `STDRAW_PKG_PARENT` / `STDRAW_PIN`) plus the harness-only variables,
+  each with read sites and effect scope, verified against the source.
+
 - **refactor: the giant functions are split behind registries (T17), outputs
   byte-identical**: the certificate gate assembly becomes a data registry
   (`stdraw/cert_gates.py`: `MODE_GATE_SETS` in the historical elif order,

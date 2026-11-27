@@ -565,8 +565,8 @@ def _cert_press_clear_scan(edges, polys, nodes, ids, anchors, dense_on,
                 anchor_bad.append({"edge": f"{e['a']}->{e['b']}", "end": end_key,
                                    "angle": round(ang, 1)})
                 std_fail.setdefault(end_key, "angle")
-        # anchors_standard criterion (jacky 2026-11-26 approval, grounded in
-        # the stdraw20 manual-calibration lessons §4 / W9 evaluation: the
+        # anchors_standard criterion (owner approval 2026-11-26, grounded in
+        # the stdraw20 manual-calibration lessons §4 / W9 evaluation; docs/adr/ADR-0018): the
         # legacy 16-set membership blocked ~80% of manually calibrated
         # figures because human g-slot endpoints sit off the 16-point set):
         # an endpoint is compliant when it sits ON its box border (<= 0.75px,
@@ -1046,7 +1046,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # ring; gates = the layered regularity set + the lens contract
     lens_mode = scene.get("placement") == "lens-chain"
     lens = scene.get("lens") or {}
-    # P1-2 (jacky 2026-11-13 ruling): manual coordinates (--from-layout) are
+    # P1-2 (owner ruling; docs/adr/ADR-0008): manual coordinates (--from-layout) are
     # exempt from the two automatic-pipeline structural checks — same caliber
     # as check.py 6a/9 ("manual: N/A"). Layered-mode gate slots read "N/A";
     # the measured values stay in metrics.
@@ -1157,7 +1157,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "edge_box_min_clear": round(min_clear, 1) if min_clear is not None else None,
         "anchor_violations": len(anchor_bad),
         "anchor_details": anchor_bad[:10],
-        # anchors_standard criterion (jacky 2026-11-26): endpoint ON the box
+        # anchors_standard criterion (owner ruling 2026-11-26; docs/adr/ADR-0018): endpoint ON the box
         # border + departure/arrival angle >= floor -- the vocabulary is the
         # multi-slot anchors.py set, not a membership table
         "anchor_standard_violations": anchor_standard_bad,
@@ -1230,14 +1230,14 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                            "veto (hand-pulled samples show row_align delta ~= 0)"),
     }
     if _gctx.demoted_gates:
-        # n>10 regularity demotion transport (jacky ruling 2026-11-26,
-        # stdraw20 manual calibration): the demoted mechanical-grid gates
+        # n>10 regularity demotion transport (owner ruling 2026-11-26,
+        # stdraw20 manual calibration; docs/adr/ADR-0018): the demoted mechanical-grid gates
         # report their measured boolean here instead of gating; metrics
         # rows keep the underlying numbers (spacing_cv / snap rate).
         for _dk, _dv in _gctx.demoted_gates.items():
             reports[_dk] = _dv
         reports["regularity_demoted_note"] = (
-            "report items (n>10, jacky 2026-11-26 ruling): the "
+            "report items (n>10, owner ruling 2026-11-26): the "
             "mechanical-grid regularity gates cv_le_035 / pitch_uniform / "
             "column_snap24_ge_060 are demoted from hard gates per the "
             "stdraw20 manual-calibration evidence (they reward mechanical "
@@ -1245,7 +1245,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
             "all other gates and grade semantics unchanged")
         notes.append("n>10 caliber: mechanical-grid regularity gates "
                      "(cv_le_035 / pitch_uniform / column_snap24_ge_060) "
-                     "demoted to report items per jacky 2026-11-26 ruling")
+                     "demoted to report items per owner ruling 2026-11-26")
     _la = scene.get("loop_arcs")
     if _la:
         # loop-direction arc default (report item, not a gate): every
@@ -1321,7 +1321,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     # .get(..., True) reads above: the mechanical-grid regularity keys
     # (cv_le_035 / pitch_uniform family / column_snap24_ge_060) are absent
     # from g exactly when the registry ``when`` policies demoted them for
-    # n>10 (jacky ruling 2026-11-26) -- a demoted gate no longer blocks the
+    # n>10 (owner ruling 2026-11-26; docs/adr/ADR-0018) -- a demoted gate no longer blocks the
     # grade; its measured value travels in reports (block below).  For
     # n<=10 / manual figures the keys are present and the reads are
     # identical to the historical direct indexing (zero byte change).
@@ -1383,7 +1383,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         grade_note = ("hard gates not all passed or crossings > 2 — honestly "
                       "ungraded; a certificate bought with a relaxed budget "
                       "never poses as a finished product")
-    # reverse-form gate (jacky ruling 2026-11-15): a structural form that
+    # reverse-form gate (owner ruling; docs/adr/ADR-0009): a structural form that
     # was detected but abandoned (trial gate fail -> layered fallback)
     # disqualifies the certificate regardless of geometric hygiene --
     # "form misplacement is failing before any hygiene metric".  The
@@ -1526,7 +1526,7 @@ def _ring_candidates_block(graph):
     deterministic ring detection and record EVERY candidate main ring with
     the exact selection-key inputs, plus which ring the alternative key
     (chord crossings first) would pick. Recording only: the selection key
-    itself is frozen (S2-3 pending jacky's D3 ruling)."""
+    itself is frozen (S2-3 pending the owner's D3 ruling; docs/adr/ADR-0016)."""
     if graph is None:
         return None
     from .ringlayout import detect_ring
@@ -1546,7 +1546,7 @@ def _ring_candidates_block(graph):
     return {
         "note": ("observability probe only: all candidate main rings with "
                  "the selection-key inputs; the selection key is frozen "
-                 "(D3 pending jacky's ruling)"),
+                 "(D3 ring-selection ruling pending; docs/adr/ADR-0016)"),
         "selection_key": "(-k, chord_crossings, ring order)",
         "alternative_key": "(chord_crossings, -k, ring order)",
         "candidates": [{k: r[k] for k in

@@ -21,7 +21,7 @@ applicability stays data-expressible:
 * a future downgrade (e.g. "regularity gates become report items for
   n>10", stdraw20 calibration) is a ONE-LINE data change: set
   ``when=lambda ctx: ctx.n_nodes <= 10`` on the affected entries.  That
-  change is owner-gated (jacky authorization) and must NOT happen as a
+  change is owner-gated (explicit owner authorization; docs/adr/ADR-0014) and must NOT happen as a
   side effect of this refactor.
 
 Repair hints (T13): the hint text single source stays ``repair.GATE_HINTS``
@@ -120,8 +120,9 @@ def g_anchors_smooth(c):
 
 
 def g_anchors_standard(c):
-    """anchors_standard criterion (jacky 2026-11-26, multi-slot vocabulary
-    card): every delivered endpoint sits ON its box border and meets the
+    """anchors_standard criterion (owner ruling 2026-11-26, multi-slot
+    vocabulary card; docs/adr/ADR-0018): every delivered endpoint sits ON its
+    box border and meets the
     anchor-angle floor -- the legacy 16-set membership requirement is
     retired (W9: it blocked ~80% of manually calibrated figures)."""
     return c.metrics["anchor_standard_violations"] == 0
@@ -308,7 +309,7 @@ def _gates_ring(c):
         # manual ground truth (benchmarks/manual brand-flywheel +
         # random-n10-i05): thresholds = the ringlayout manual-band
         # constants (single source).  The former 0.05 calibers were
-        # uncalibrated and REJECTED jacky's hand-drawn good ring
+        # uncalibrated and REJECTED the hand-drawn good ring (docs/adr/ADR-0010)
         # itself (brand-flywheel CV 0.0802 / deviation 0.1197).
         "ring_spacing_cv_le_050": g_ring_spacing_cv_le_050(c),
         "ring_template_fit_le_070": g_ring_template_fit_le_070(c),
@@ -325,7 +326,7 @@ def _gates_radial_prep(c):
     # battery is radellayout.form_metrics (single source with
     # check.py gate 9; thresholds = the radellayout manual-band
     # constants).  The former min_gap>=16 / azimuth CV<=0.05 calibers
-    # REJECTED jacky's hand-drawn layouts themselves (manual minimum
+    # REJECTED the hand-drawn layouts themselves (docs/adr/ADR-0010; manual minimum
     # rect-gap 6px, azimuth CV up to 0.486), so the band now reads
     # the fixtures, not the old engine's quantization floor.
     from . import radellayout as _rlg
@@ -558,8 +559,8 @@ def _gates_layered(c):
 # Order of MODE_GATE_SETS = the historical elif order; first match wins.
 
 def _regularity_applies(c):
-    # ``when`` policy (jacky ruling 2026-11-26, stdraw20 manual-calibration
-    # lessons doc section 5.1): the mechanical-grid regularity gates
+    # ``when`` policy (owner ruling 2026-11-26, stdraw20 manual-calibration
+    # lessons doc section 5.1; docs/adr/ADR-0018): the mechanical-grid regularity gates
     # (``cv_le_035`` / ``pitch_uniform`` family / ``column_snap24_ge_060``)
     # reward mechanical grids and penalize human arrangements -- on the
     # automatic pipeline they gate only n<=10 figures (the human-parity
@@ -735,7 +736,7 @@ def _overlay_external_gates(c, g):
 
 def _overlay_manual_na(c, g):
     # P1-2: manual coordinates mark the two automatic-pipeline structural
-    # gates "N/A" (check.py 6a/9 caliber, jacky 2026-11-13 ruling); they are
+    # gates "N/A" (check.py 6a/9 caliber; docs/adr/ADR-0008); they are
     # excluded from the pass count and never block. This is a caliber
     # alignment, not a threshold change — no other gate is touched.
     if c.manual_mode and c.layered_mode:

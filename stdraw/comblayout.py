@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Comb-bilateral placement (v0.7.7): K_{m,2}-family graphs.
 
-Ground truth = jacky's hand-pulled HDD supply-chain layout (2026-11-07):
+Ground truth = the hand-pulled HDD supply-chain layout (docs/adr/ADR-0004):
 6 source nodes in one vertical column (column x spread <= 10px in the hand
 pull; the engine delivers exact alignment), two non-adjacent hubs in
 symmetric left/right slots at the column middle row, every hub edge a

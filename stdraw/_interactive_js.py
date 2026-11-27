@@ -243,8 +243,8 @@ function hitP(i) { return hitLayer.querySelector('.stdraw-hit[data-edge="' + i +
 // ── v0.7.11 per-edge failure isolation (fail-visible, never abort the round):
 // one edge whose reroute/updateEdge throws (degenerate geometry after card
 // growth: coincident anchors, infeasible route) must not kill the remaining
-// edges of a re-anchor pass — they would stay on stale anchors (jacky's Edge
-// mixed floating-arrow outage, ref-scrubbed). Degrade that edge visibly (red
+// edges of a re-anchor pass — they would stay on stale anchors (the Edge
+// mixed floating-arrow outage; docs/adr/ADR-0011). Degrade that edge visibly (red
 // dashed stroke) + console WARN, keep going, and self-heal the marker on the
 // edge's next successful pass.
 function markDegraded(i, what, err) {
@@ -791,8 +791,8 @@ styleEl.textContent = '#stdraw-handles circle.stdraw-wp{fill:#fff;stroke:#475569
   // press always resolves to the endpoint drag BEFORE the 12px segment hit
   // band (drag-line = whole-segment translation) can claim it — endpoint
   // hit priority is structural (DOM order), pinned by the probe.
-  // ref-scrubbed: the VISIBLE handle dot is hidden by default (jacky: dots in
-  // the rendered graph are visual noise); it fades in only while its edge is
+  // ref-scrubbed: the VISIBLE handle dot is hidden by default (dots in
+  // the rendered graph are visual noise; docs/adr/ADR-0011); it fades in only while its edge is
   // hovered or its endpoint is being dragged (.vis class, see setEpVis).
   '#stdraw-eps circle.stdraw-ep{fill:#fff;stroke:var(--stdraw-chrome-b);stroke-width:1.6;cursor:move;pointer-events:all;opacity:0;transition:opacity .12s}' +
   '#stdraw-eps circle.stdraw-ep.vis{opacity:1}' +
@@ -961,8 +961,8 @@ function refreshMetrics() {
 // (PIL measurement at generation time) and cannot see browser font settings.
 // When the browser inflates the DOM text (minimum font size / user font
 // scale), the rendered label overflows the planned rect while the edges stay
-// anchored to the planned border -> floating arrows (jacky's Edge outage,
-// ref-scrubbed). Here the ACTUAL rendered text is measured per card
+// anchored to the planned border -> floating arrows (the Edge outage,
+// ref-scrubbed; docs/adr/ADR-0011). Here the ACTUAL rendered text is measured per card
 // (getComputedTextLength + getBBox), the rect is grown (never shrunk) to fit
 // with the same conservative padding discipline as textmetrics.py
 // (>=12px per side + 6% stretch margin), the node geometry every router /
@@ -1028,7 +1028,7 @@ function syncDomGeometry() {
   if (touched) {
     // v0.7.11 per-edge isolation: a single edge throwing must never abort the
     // re-anchor round (stale anchors on all subsequent edges = the mixed
-    // floating-arrow state jacky saw in Edge). Fail-visible per edge instead.
+    // floating-arrow state seen in Edge; docs/adr/ADR-0011). Fail-visible per edge instead.
     edges.forEach(function (e, i) { safeRerouteUpdate(i, 'sync re-anchor'); });
     try { rebuildHandles(); } catch (errH) {
       try { console.warn('[stdraw] rebuildHandles failed: ' +
@@ -1349,7 +1349,7 @@ function hideFloat() {
 var anchorLayer = document.createElementNS(NS, 'g');
 anchorLayer.id = 'stdraw-anchors';
 svg.appendChild(anchorLayer);
-var anchorToggle = false, hoverNode = null;   // ref-scrubbed: anchor dots OFF by default (jacky: dots are visual noise; hover + toolbar toggle still show them)
+var anchorToggle = false, hoverNode = null;   // ref-scrubbed: anchor dots OFF by default (dots are visual noise; docs/adr/ADR-0011; hover + toolbar toggle still show them)
 var ANCHOR_CLICK_TOL = 10;   // px: a press within this distance of a visible
                              // standard anchor is an explicit assignment
 function setAnchorToggle(on) {
@@ -1434,8 +1434,8 @@ function updateEndpointHandles(i) {
 function rebuildAllEndpointHandles() {
   edges.forEach(function (e, i) { updateEndpointHandles(i); });
 }
-// ── 2026-11-12 endpoint hit-test root fix (jacky: endpoint handles hard to
-// grab) ── two compounding root causes in the old chain:
+// ── 2026-11-12 endpoint hit-test root fix (endpoint handles hard to
+// grab; docs/adr/ADR-0011) ── two compounding root causes in the old chain:
 // (a) overlap arbitration was DOM ORDER: every edge's hit circle is alive at
 //     once, and a press landing between two nearby endpoints resolved to the
 //     LATER edge in document order, not the NEARER one (adjacent anchors of
@@ -1485,7 +1485,7 @@ function arcEpPts(e, end, pt) {
   // whenever the live arc had drifted from the load geometry (any node drag
   // in between): the first pointermove after grabbing applied the entire
   // accumulated divergence at once — the user-visible "line jumps while
-  // dragging an endpoint" bug (jacky 2026-11-12 report, root cause: stale
+  // dragging an endpoint" bug (user report; docs/adr/ADR-0011; root cause: stale
   // freeze base; fix + freezeArcBase re-sync at every gesture finalize).
   if (!(e.arc && e.ctrl && e.pts.length >= 2)) return null;
   var from = e.pts[end === 0 ? 0 : e.pts.length - 1];

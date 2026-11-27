@@ -74,8 +74,8 @@ class GatePolicy:
 # G-FAN fan_spread whole-group fallback (NO own-box check -- registered
 # caliber gap, docs/routing-gates.md section 3 item 2).
 FAN_SPREAD = GatePolicy(name="fan_spread", own_check="none")
-# G-FAN-DENSE dense-mode fan_spread branch (dense card, jacky 2026-11-14
-# authorization): same shape as G-FAN; the mutual-pair separation floor
+# G-FAN-DENSE dense-mode fan_spread branch (owner authorization;
+# docs/adr/ADR-0007): same shape as G-FAN; the mutual-pair separation floor
 # relaxes 4.0 -> 3.0 (proposal gate table #5: adjacent 12px dense slots can
 # put a mutual pair's diagonal mid-run under 4px without overlapping) and
 # the anchor-smoothness floor is overridden per call to

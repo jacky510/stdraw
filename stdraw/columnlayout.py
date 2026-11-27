@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Column placement for long-chain / few-ring graphs (2026-11-06 jacky
-layout aesthetics v2, ref-scrubbed).
+"""Column placement for long-chain / few-ring graphs (layout aesthetics
+v2 directive, ref-scrubbed; docs/adr/ADR-0002).
 
 > "If the box placement can follow a pattern, make it so — e.g. align
 > into a vertical column... Draw the lines to follow the box

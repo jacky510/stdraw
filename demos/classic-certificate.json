@@ -45,7 +45,7 @@
    "detail": "spine-wing: 100% in-band enforced (enhanced re-anchor channel active, no legacy exemption)"
   },
   "ring_candidates": {
-   "note": "observability probe only: all candidate main rings with the selection-key inputs; the selection key is frozen (D3 pending jacky's ruling)",
+   "note": "observability probe only: all candidate main rings with the selection-key inputs; the selection key is frozen (D3 ring-selection ruling pending; docs/adr/ADR-0016)",
    "selection_key": "(-k, chord_crossings, ring order)",
    "alternative_key": "(chord_crossings, -k, ring order)",
    "candidates": [

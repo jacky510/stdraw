@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Spine-wing (central spine + midline wings) placement (2026-11-06 jacky's
-final call, B-limited edition, ref-scrubbed).
+"""Spine-wing (central spine + midline wings) placement (owner final call,
+B-limited edition, ref-scrubbed; docs/adr/ADR-0002).
 
-> jacky hand-laid the classic-cld-growth-and-burden diagram: the central
+> Hand-laid ground truth (docs/adr/ADR-0002), classic-cld-growth-and-burden diagram: the central
 > spine adopters (top) / rate (bottom) sits strictly vertical on the canvas
 > centerline; left wings word/potential and the right cluster crowding sit
 > on the same horizontal midline (y exactly equal); quickfix upper-right /
@@ -247,7 +247,7 @@ def detect_spine_wing(graph, why=None):
 def place_spine_wing(plan, widths, card_h, cfg, edges):
     """Spine-wing constructed placement -> ({v: x}, {v: y}, meta, constructed_routes).
 
-    Constructed constraints (relative geometry cross-checked against jacky's
+    Constructed constraints (relative geometry cross-checked against the
     hand-laid classic-cld sample; see the module docstring).
     """
     u, v = plan["spine_tail"], plan["spine_head"]

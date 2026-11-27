@@ -45,7 +45,7 @@ from .anchors import nearest_anchor as _nearest_anchor
 # dense graph that passes the hard gates with zero regressions.
 ANCHOR_SNAP_DENSE_E_OVER_N = 1.6
 
-# Reverse-form gate scope (jacky ruling 2026-11-15; widened 2026-11-16 to
+# Reverse-form gate scope (owner ruling; docs/adr/ADR-0009; widened to
 # spine-wing/ring-cycle once manual ground truth landed in
 # benchmarks/manual): a structural form that was detected but abandoned
 # (trial gate fail -> layered fallback) degrades the certificate
@@ -476,7 +476,7 @@ def _route_total(nodes_px, edges, cfg, hard_gates=False, quality=False,
     return total, routes, router
 
 
-GAP_TARGET = 36.0        # breathing room: card-gap target (jacky's 14 hand-drawn samples averaged +35.8px)
+GAP_TARGET = 36.0        # breathing room: card-gap target (hand-drawn sample set average +35.8px; docs/adr/ADR-0010)
 
 
 def _interleave_count(edges, order):
@@ -1136,7 +1136,7 @@ def _constructed_gates(nodes_px, edges, routes, cfg, constructed,
     >=ANCHOR_MIN_DEG (dense-mode hub ends: DENSE_ANCHOR_MIN_DEG), card gap >= min_gap-2, mutual-pair separation >=4px,
     crossings <=2.
     min_gap_override: radial form-family caliber (manual-calibrated
-    2026-11-15) -- jacky's hand-drawn fan fixtures pack to a 6px rect-gap
+    2026-11-15) -- the hand-drawn fan fixtures pack to a 6px rect-gap
     minimum (benchmarks/manual), so the radial trial passes
     RADIAL_MIN_PAIR_GAP + 2 and the card-gap leg reviews that floor
     instead of cfg.min_gap; every other caller keeps cfg.min_gap
@@ -1570,7 +1570,7 @@ def _bowtie_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
 
     ref-scrubbed (aesthetics v3): graphs with exactly 2 simple loops sharing
     exactly 1 node (the wage-price-spiral
-    family, benchmarked on jacky's hand-drawn samples) -> bowtie-vertex
+    family, benchmarked on hand-drawn samples) -> bowtie-vertex
     symmetric placement; all-straight-line construction,
     line-style consistency hard rule same as symmetric (vg/poly/wrap polylines
     forbidden).
@@ -1618,8 +1618,8 @@ def _spine_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
 
     ref-scrubbed (v0.7.1): hub pair on the spine + midline wing band + mirrored
     clusters beyond the wings
-    (the classic-cld-growth-and-burden family, benchmarked on jacky's
-    hand-drawn samples); spine edges
+    (the classic-cld-growth-and-burden family, benchmarked on hand-drawn
+    samples); spine edges
     are injected as constructed vertical straight lines, the rest go through
     the Router candidate pool.
     """
@@ -1658,7 +1658,8 @@ def _comb_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
 
     v0.7.7 (ref-scrubbed): K_{m,2} bilateral family — two non-adjacent hubs,
     every source connected to both, pendant trees on the source side.
-    Geometric ground truth = jacky's hand-pulled HDD supply-chain layout.
+    Geometric ground truth = the hand-pulled HDD supply-chain layout
+    (docs/adr/ADR-0004).
     """
     from . import comblayout
     try:
@@ -2177,7 +2178,8 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
         engine, pos_meta = "manual", {}
         _timing.mark("manual_positions")
     else:
-        # ②'' layout aesthetics v2 (ref-scrubbed, jacky's 2026-11-05 direction for the whole graph): mode priority =
+        # ②'' layout aesthetics v2 (ref-scrubbed, owner direction for the whole graph;
+        # docs/adr/ADR-0002): mode priority =
         #  symmetric (shared-edge bowtie, the learning-flywheel family) -> bowtie-vertex (two loops sharing one node)
         #  -> spine-wing (hub pair + wings) -> comb-bilateral (bilateral hubs, tier 2 via the salience rule)
         #  -> column (long chains / few loops, main ring <=4) -> ring (loop-dominant small graphs, ref-scrubbed)
@@ -2505,7 +2507,7 @@ def _route_stage_manual(cfg, graph, manual, edges, nodes_px, routes,
         if not wps:
             continue
         A, B = nodes_px[a], nodes_px[b]
-        # T2 caliber (plan A, jacky-approved): endpoint = the standard anchor
+        # T2 caliber (plan A, owner-approved; docs/adr/ADR-0008): endpoint = the standard anchor
         # nearest to the border point aimed at the first/last waypoint
         # (anchors.py 16-point set). If a sibling edge needs the same anchor,
         # anchor_snap's give-way machinery moves the waypoint endpoint along
@@ -2800,7 +2802,7 @@ def _route_stage_anchor_snap(router, routes, engine, er_presets, edges,
     Returns `(routes, _snap_report, _snap_deferred, _snap_reverted)`.
     """
     # ref-scrubbed: default endpoint snapping to the 16 standard per-box anchor
-    # set (anchors.py caliber) -- jacky 2026-11-09: the standard connection
+    # set (anchors.py caliber; docs/adr/ADR-0001) -- the standard connection
     # points are the DEFAULT attachment caliber of every rendered endpoint,
     # not only the interactive layer.  Gate-checked nearest-anchor assignment
     # with per-(node, anchor) occupancy + fixpoint sweeps (see
@@ -2972,8 +2974,8 @@ def _route_stage_lens_post(router, routes, engine, er_presets,
         if _lens_report.get("pairs"):
             router.lens_report = _lens_report
         _timing.mark("repair:mutual_lens_construct")
-    # fan slot competition by SWAP (departure-azimuth φ key; jacky 2026-11-26
-    # approval, stdraw20 lesson §4): last endpoint-moving repair, so the
+    # fan slot competition by SWAP (departure-azimuth φ key; owner ruling
+    # 2026-11-26, stdraw20 lesson §4; docs/adr/ADR-0018): last endpoint-moving repair, so the
     # dual crossing accounting below includes its effect.  Groups without
     # near-segment crossings are skipped byte-for-byte.
     if er_presets is None and engine != "lens-construct":
@@ -3382,7 +3384,7 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
                     **({"degrade": router.dense_degrade}
                        if router.dense_degrade else {})}}
               if _dense_hub is not None else {}),
-            # reverse-form gate (jacky ruling 2026-11-15): a detected-
+            # reverse-form gate (owner ruling; docs/adr/ADR-0009): a detected-
             # but-abandoned structural reading degrades the certificate
             # (metrics.py: grade uncertified + topology_form_fallback
             # gate).  Absent when every attempted form either delivered

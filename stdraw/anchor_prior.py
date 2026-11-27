@@ -29,7 +29,7 @@ beyond the calibrated threshold, ``library-unavailable`` / ``row-not-
 evaluable`` for degraded inputs).  Silence is not an option.
 
 The library is DATA (stdraw/data/anchor-features.json, packaged with the
-wheel, only-add): anchors are jacky's hand-drawn layouts and their
+wheel, only-add): anchors are the operator's hand-drawn layouts (docs/adr/ADR-0010) and their
 precomputed feature rows; the code never embeds anchor coordinates or
 thresholds.
 """

@@ -6,7 +6,7 @@
   "engine_version": "0.9.0",
   "python": "3.12.10",
   "platform": "Windows-11-10.0.26300-SP0",
-  "recorded": "2026-11-26",
+  "recorded": "2026-11-27",
   "hash_caliber": {
    "cld": "sha256 of the fixture bytes, CRLF folded to LF",
    "certificate": "sha256 of certificate.json bytes, CRLF folded to LF",
@@ -17,27 +17,27 @@
   "rebless": "only under an approved card: python tests/golden_gate.py --update-baseline"
  },
  "timing_ref": {
-  "avg": 1.08,
-  "max": 2.22,
+  "avg": 1.06,
+  "max": 2.18,
   "platform": "Windows-11-10.0.26300-SP0",
   "per_graph": {
-   "eroding-goals": 0.87,
-   "escalation": 0.84,
-   "fixes-that-fail": 0.86,
-   "growth-and-underinvestment": 1.13,
-   "limits-to-growth": 2.22,
-   "shifting-the-burden": 0.91,
-   "success-to-the-successful": 0.75,
-   "tragedy-of-the-commons": 1.07
+   "eroding-goals": 0.85,
+   "escalation": 0.85,
+   "fixes-that-fail": 0.92,
+   "growth-and-underinvestment": 1.07,
+   "limits-to-growth": 2.18,
+   "shifting-the-burden": 0.93,
+   "success-to-the-successful": 0.78,
+   "tragedy-of-the-commons": 0.94
   }
  },
  "graphs": {
   "eroding-goals": {
    "cld": "eroding-goals.cld",
-   "seconds": 0.87,
+   "seconds": 0.85,
    "sha256": {
     "cld": "c784caa7f3b89233f04d339622b0c13dcf29b69788748caf3d82b0188a677ac5",
-    "certificate": "077af414e901a18df7f8167f17dd5feff8200159ded62d1e9e25ecdc1719512e",
+    "certificate": "d64342891080f18dc056ac74267bab159dbab82ce83d262d5008ac15331cd1d0",
     "loops_audit": "ed451a10da2d72d26130995c1dd7d168298eaa7a2d6966d2574bcd6db56376ed",
     "layout": "8ef9f6c43620dc20fed9f2634437420b8a92f741437e808b6f9bded337679b42"
    },
@@ -58,7 +58,7 @@
   },
   "escalation": {
    "cld": "escalation.cld",
-   "seconds": 0.84,
+   "seconds": 0.85,
    "sha256": {
     "cld": "a78ba0dacc6f665abc9ef9fbbc7e4fe00d89fcba62f59142bcbc2029935a2719",
     "certificate": "bdbf7f402230c8d7cf42507498178eaada72762d0a9ecf607ac8040fd4c5c148",
@@ -82,7 +82,7 @@
   },
   "fixes-that-fail": {
    "cld": "fixes-that-fail.cld",
-   "seconds": 0.86,
+   "seconds": 0.92,
    "sha256": {
     "cld": "ecd6d76a2751b968ac6e531207fd31e13cf01f9e5cc74187f11bb290eda567f4",
     "certificate": "c6aa88a5afe68c2105a06a7c7f4ba975a8684424bc4259af42befb7d9b837996",
@@ -106,10 +106,10 @@
   },
   "growth-and-underinvestment": {
    "cld": "growth-and-underinvestment.cld",
-   "seconds": 1.13,
+   "seconds": 1.07,
    "sha256": {
     "cld": "e0c89ae4cf2c8177760e45be0db9e34ce4745b0395aadbfe95d1d0812493d5f7",
-    "certificate": "10d6a97c3d0bb3d2725b0632895464f976f81f49fac9589c0c746e15344da82e",
+    "certificate": "56b01fb21101fde97298afbadddd272cbf6b7421d9a14e4373c9a101378a84f3",
     "loops_audit": "971651dc619ed422ccd1ebb15bc39ab47af38f9a7540c627103a64cdb54933b9",
     "layout": "f8a7653f92c676aa3c9b7bdc991196926a236d8a17ef52d64241267426d66f8e"
    },
@@ -130,7 +130,7 @@
   },
   "limits-to-growth": {
    "cld": "limits-to-growth.cld",
-   "seconds": 2.22,
+   "seconds": 2.18,
    "sha256": {
     "cld": "96c4f0d9b3f2e01a86fe30b7c92c7f156de49ca66bb0df2248813a382b4131a3",
     "certificate": "f0a810ec440caf9572d4be9ecf7cad560844076497ef9f4d781dddf25bae80e1",
@@ -154,7 +154,7 @@
   },
   "shifting-the-burden": {
    "cld": "shifting-the-burden.cld",
-   "seconds": 0.91,
+   "seconds": 0.93,
    "sha256": {
     "cld": "63220b16ecbe670c028dd6619dd4fc9237c8afebf7fdc1dde0dcae236383ca83",
     "certificate": "0713bf52aca7ca9ee532f4d8b7016134f6f4302c7cae551b8d4f5adaa414ebbf",
@@ -178,7 +178,7 @@
   },
   "success-to-the-successful": {
    "cld": "success-to-the-successful.cld",
-   "seconds": 0.75,
+   "seconds": 0.78,
    "sha256": {
     "cld": "0cdd8879bf187c4f42e4b256790974226ababac2ae6f44c13079a68348d49161",
     "certificate": "c976883badf2cc3b380e3abdfb72207795d01a3dc4ce776a1086691d842d171d",
@@ -202,10 +202,10 @@
   },
   "tragedy-of-the-commons": {
    "cld": "tragedy-of-the-commons.cld",
-   "seconds": 1.07,
+   "seconds": 0.94,
    "sha256": {
     "cld": "99c64cce9c1ba3491f389dd4137a30a1e2d4744254ef9db1ef462d8278dc905d",
-    "certificate": "545031a2afb13b4a0e3edc53a0afd3f2e8b420f88a1b6eb2b4f1423653a3b69a",
+    "certificate": "514be7cd47904bfb73c418c35fd651abb80979a23429a68fcf51c70ff5b230e4",
     "loops_audit": "d04319aea4a3cf933efd014aae0bc0f4139b87e778b1a52aa579fd363c522e49",
     "layout": "c2b4b8966d9d13cd95552bdf52559fa916d498f9d7409a8c10d545397cef27ae"
    },

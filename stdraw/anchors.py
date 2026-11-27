@@ -3,7 +3,7 @@
 points per box for the interactive layer (hover display / endpoint snapping /
 explicit edge-to-anchor assignment).
 
-Caliber (jacky 2026-11-08 verbal spec, 16-point symmetric formulation):
+Caliber (owner verbal spec, 16-point symmetric formulation; docs/adr/ADR-0001):
 
   4 edge midpoints + 4 corner points + 2 golden-section points per edge
   (fractions 0.382 / 0.618) = 16 points.
@@ -144,7 +144,8 @@ def nearest_anchor(cx, cy, hw, hh, px, py, inset=ANCHOR_INSET):
     return list(best[1])
 
 
-# ── Multi-slot side vocabulary (jacky 2026-11-26 approval; grounded in the
+# ── Multi-slot side vocabulary (owner approval 2026-11-26; docs/adr/ADR-0018;
+#    grounded in the
 #    stdraw20 manual-calibration lessons §4: the manual vocabulary is
 #    multi-slot -- s-g1 / s-g2 / ... -- and a single side may carry many
 #    lines, so the fixed 16-point set cannot express it) ──────────────────

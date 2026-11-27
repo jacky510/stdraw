@@ -632,3 +632,96 @@
 ### 6.6 验收（另卡）
 
 - 数字验收门（uidesignerbot 真渲染另卡）：golden_gate 8/8 ALL GREEN、GaU 画布高 520、R1 宽/弦 0.383±0.02 / 弦 58、标签硬口径 0 违例、其余 7 图逐字节相同、GaU 四维评分目标 ≥14/20（现 11.00）。
+
+## 7. 登记 #7：T18 代码卫生——个人裁决注释迁 `docs/adr/`（2026-11-27）
+
+### 7.1 批准来源与变更内容
+
+- **批准**：owner 2026-11-27 桌面对话回复「继续跑」＝按 default 推荐执行，**选项 A 获批**——批准金标准 **3/8 重祝福**（仅更新 `tests/golden/baseline.json` 里 eroding-goals / growth-and-underinvestment / tragedy-of-the-commons 三个 `certificate` sha256，变更依据＝ADR-0016 note 去人名）；其余 5 张金标准图指纹须逐字节不变。批准出处＝本卡评论（default 于 2026-11-27 22:20 转录，原话「继续跑」/「按你推荐」）。选项 B（保留人名 + grep 留例外）**不执行**。
+- **变更内容**：把 `stdraw/*.py` 里 68 处「owner + 日期」个人裁决注释迁到 `docs/adr/`——每个裁决一个 ADR 文件（编号 + 拍板日期 + 决策内容 + 背景 + **原文逐字保留段**），代码注释只留规则本身（what/why of the rule）加一个 `docs/adr/ADR-XXXX` 指针。共 18 个 ADR + 索引（`docs/adr/README.md`）。另出 `docs/env-vars.md`：`STDRAW_*` 环境变量集中参考（引擎侧 5 个 + 测试/基准侧 6 个，逐个标注源码读点与影响面，全部按源码核实而非凭印象）。
+- **门与阈值**：零放宽。硬门阈值、grade 语义、门集合、门注册表（`when` 生效策略槽）全部未动；本卡只改注释文字与三条证书**说明性**输出串。
+
+### 7.2 字节影响面（改前 = main `302ecfd`，改后 = 本卡树，同机同解释器 Python 3.12.10 + ortools 9.15.6755，程序现读）
+
+逐图渲染两树，逐文件 sha256 比对（每图 7 件产物：`layout.json` / `certificate.json` / `geometry_report.json` / `loops_audit.json` / `graph.json` / `graph.cld` / `demo-2d.html`）：
+
+| 图 | rc 改前/改后 | 件数 | 差异产物 |
+|---|---|---|---|
+| `golden/eroding-goals` | 0 / 0 | 7 / 7 | `certificate.json` |
+| `golden/growth-and-underinvestment`（`--pitch 96`） | 0 / 0 | 7 / 7 | `certificate.json` |
+| `golden/tragedy-of-the-commons` | 0 / 0 | 7 / 7 | `certificate.json` |
+| `golden/escalation` | 0 / 0 | 7 / 7 | 无 |
+| `golden/fixes-that-fail` | 0 / 0 | 7 / 7 | 无 |
+| `golden/limits-to-growth` | 0 / 0 | 7 / 7 | 无 |
+| `golden/shifting-the-burden` | 0 / 0 | 7 / 7 | 无 |
+| `golden/success-to-the-successful` | 0 / 0 | 7 / 7 | 无 |
+| `examples/classic-cld-growth-and-burden` | 0 / 0 | 7 / 7 | `certificate.json` |
+| `corpus/random/random-n20-i00` | 3 / 3 | 0 / 0 | 无（两腿同样 rc=3，本就不出证书，见 §7.5） |
+| `corpus/random/random-n10-i03` | 0 / 0 | 7 / 7 | `certificate.json` |
+| `corpus/classic/debt-spiral` | 0 / 0 | 7 / 7 | `certificate.json` |
+
+- **布局面零漂移**：`layout.json` / `geometry_report.json` / `loops_audit.json` / `graph.json` / `graph.cld` 在上述 12 图全部逐字节相同——本卡不动任何布点、布线、门判定或渲染字节。`demo-2d.html` 在 n≤10 图上也逐字节相同；**n>10 图的页面会把证书 `notes[]` 渲进 `<p class="note">`，因此该页随之漂那一行**（实测 `examples/longtail-coupled-loops.cld`：`demo-2d.html` 仅 `n>10 caliber: ... per jacky 2026-11-26 ruling` → `per owner ruling 2026-11-26` 一处 HTML 转义文本，样式/几何/脚本零变化）。
+- **证书面差异全部是说明性 note 字符串**，逐条归因（程序 diff 取证）：
+  1. `ring_candidates.note`（ADR-0016）：`(D3 pending jacky's ruling)` → `(D3 ring-selection ruling pending; docs/adr/ADR-0016)`。出现在**有环候选**的图上（3 张金标准 + classic-cld + debt-spiral + n10-i03）。
+  2. `reports.regularity_demoted_note`（ADR-0018）：`(n>10, jacky 2026-11-26 ruling)` → `(n>10, owner ruling 2026-11-26)`。**仅 n>10 图**出现（实测 `examples/longtail-coupled-loops.cld`，14 节点）。
+  3. `notes[]` 里的 `n>10 caliber: ...` 条目（ADR-0018）：同上去人名，**仅 n>10 图**出现（并如上所述连带该图的 `demo-2d.html` 一行）。
+- n≤10 图不漂降级 note、n>10 图不漂 ring note 以外的东西——两族漂移互斥，与实现口径一致。
+
+### 7.2b A 档扩面双树对拍（43 图，程序现读）
+
+在 §7.2 的 12 图之外，另跑 A 档可交付族全量双树对拍：**classic 19 + examples 2 + random-n10 20 + longtail 1 = 43 图**，两腿同机同解释器（Python 3.12.10 + ortools 9.15.6755 / cp-sat-layered），逐图 7 件产物 sha256 对比：
+
+| 项 | 数 |
+|---|---|
+| 图数 | 43 |
+| 两腿 rc 相同 | 43 / 43（**rc 不一致 0**） |
+| 两腿 rc=0 | 42（1 图 `random-n10-i12` 两腿同样 rc=1 硬门 FAIL，产物照常落盘且逐字节可比） |
+| 逐字节完全一致 | 2 图（`arms-race`、`random-n10-i00`——无环候选、n≤10，两条 note 都不触发） |
+| 仅 `certificate.json` 漂 | 40 图 |
+| `certificate.json` + `demo-2d.html` 漂 | 1 图（`longtail-coupled-loops`，n=14，页面内嵌 `notes[]` 一行） |
+| 其它产物漂（layout / geometry / loops_audit / graph） | **0** |
+| 落盘产物总数逐字节比较 | 43 图 × 7 件 = **301 件**，其中 261 件逐字节相同、40 件证书面 + 1 件页面面 = 41 件差异全部落在 §7.2 的三条 note 上 |
+
+- 逐图差异行全部由脚本分类到三条 note（未归因差异 **0**），没有出现第四条 note 或任何结构字段变化。
+- 随机 n20 族**不在本对拍内**：本机该族多数 rc=3（结构化拒绝，两腿一致）且单图上百秒到数分钟；n>10 的两条 note 取证改用 `longtail-coupled-loops`（14 节点，正常出证书），见 §7.5 不解决项第 1、2 条。
+
+### 7.2c 「只改注释」的代码等价证明（AST 去字符串化对拍）
+
+注释不进 AST，因此把两版模块的每个字符串常量都替换成占位符后对拍 `ast.dump`，即可证明**控制流 / 数值 / 名字零变化**：
+
+- 20 个改动模块 **20/20 CODE-EQUIVALENT**（`__main__` / `_interactive_js` / `anchor_prior` / `anchors` / `bowtielayout` / `cert_gates` / `check` / `columnlayout` / `comblayout` / `edgerules` / `gates` / `layout_auto` / `metrics` / `planarized_layout` / `radellayout` / `render` / `routing` / `spinewinglayout` / `symlayout` / `themes`）。
+- 变化的字符串常量共 **58 处**，全部为 docstring / CLI help 文本 / 三条证书 note；三者中只有第三条进产物字节——与 §7.2 / §7.2b 的产物对拍结论互相印证。
+
+### 7.3 冻结基线处置（与流程门分开报）
+
+- `tests/baselines/`（ortho-v1）：**已随 2026-11-24 裁决退役**，仓内无此目录，本卡无基线可动。
+- `tests/golden/baseline.json`：**重祝福 3/8 已获批**（§7.1）。只读门首跑 = **5/8 pass + 3 DRIFT**（DRIFT 行全部且仅为 `sha256.certificate`：`eroding-goals 077af414e901 → d64342891080`、`growth-and-underinvestment 10d6a97c3d0b → 56b01fb21101`、`tragedy-of-the-commons 545031a2afb1 → 514be7cd4790`；`cld` / `loops_audit` / `layout` 三类指纹**全部不变**，硬门零失败）；随后 `--update-baseline` 执行、复跑 **8/8 ALL GREEN**。
+- `--update-baseline` 连带刷新 `recorded`（2026-11-26 → 2026-11-27）、`timing_ref`（avg 1.08 → 1.06 s，max 2.22 → 2.18 s）与逐图 `seconds`（全 8 图）——计时刷新为 WARN-only 非门，此处如实披露。
+
+| 图 | certificate 改前 | certificate 改后 | layout | gates |
+|---|---|---|---|---|
+| eroding-goals | `077af414e901` | `d64342891080` | 不变 | 13/13 best |
+| growth-and-underinvestment | `10d6a97c3d0b` | `56b01fb21101` | 不变 | 14/14 best |
+| tragedy-of-the-commons | `545031a2afb1` | `514be7cd4790` | 不变 | 13/13 best |
+| 其余 5 图 | 不变 | 不变 | 不变 | 不变 |
+
+- **A 档流程门（双腿 sweep）**：本卡只改注释与三条说明性 note 字符串，不动任何布点/布线/门判定；§7.2b 的 **43 图双树逐字节对拍**（301 件产物）已把影响面界定到「三条 note、布局面零漂移」，逐图差异行经脚本分类后未归因差异 = 0。形式上的 A 档 61 图全量双腿仍未跑，见 §7.5 第 1 条。
+
+### 7.4 demos / gallery / publishing face
+
+- `demos/classic-certificate.json` 同步重渲（改后引擎实渲与仓内文件逐字节相同：环探针 note 一行差异）；`demos/classic-cld-2d.html` **逐字节未变**（HTML 不内嵌证书 note）；`demos/classic-loops-audit.json` 未变。I 相新鲜度门（demo + certificate + loops-audit 三件逐字节对拍）绿。
+- `docs/gallery/` 截图的内容基（页面字节）未变，未重截。
+- **README / README_zh-CN 本卡未改**：核查确认两文件已是现行口径（3D 层已删、`layout-diff` / `--compare-auto` 已在 `tools/`、交互层 `--interactive` 显式 opt-in、`--from-layout` 与人工校准闭环写为现役资产），无陈旧引用可修——故不触碰 publishing face，避免无谓字节漂移。`AGENTS.md` 按卡面硬限**未碰**。
+
+### 7.5 明写不解决项
+
+1. **A 档 61 图形式门未按 `sweep_tiers.py` 全量双腿跑**：本卡以自建双树对拍覆盖 **43 图**（classic 19 + examples 2 + random-n10 20 + longtail 1，见 §7.2b），逐图 7 件产物逐字节比较、差异全部归因到三条 note；但**随机 n20 族（20 图）未纳入**，因此与「A 档 61 图双腿形式门」不完全等价。若 owner 要求形式齐备，须另跑 `benchmarks/tools/sweep_tiers.py --tier A` 两腿并把结果回填本册（注意该工具的 `--compare` 只记 rc=0 图的哈希，rc=1 图需另行目录树比对）。
+2. **随机语料 n20 族在本机多数 rc=3（两腿同样 rc=3，本就不出证书），且单图上百秒到数分钟**：这是既有语料状态，非本卡造成；该族既给不了证书面漂移样本、性价比也极低，故 n>10 的漂移取证改用 `examples/longtail-coupled-loops.cld`（14 节点，正常出证书，且实测页面与证书两面漂移都只落在降级 note）。
+3. **`docs/` 之外的散文仍保留「jacky」称谓**：本卡只清 `stdraw/*.py`（卡面验收口径），`docs/*.md`、`tests/*.py`、`benchmarks/**` 中的历史称谓未动——它们是历史记录与测试夹具，卡面明确「ADR/测试 fixtures 里如实保留历史的不算」。ADR 原文段内的人名属**逐字保留的裁决原文**，同样保留。
+4. **ADR 原文段的行号指向迁移前的 `main` 树**：`docs/adr/*` 的「Source: `stdraw/xxx.py:N`」标注的是**迁移前**的坐标（原文即出自该处），迁移后行号会漂——这是刻意的（原文可回溯到它被写下时的位置），不是笔误。
+5. **本卡不动 `AGENTS.md`**：卡面硬限；其「Version」段与 CLI 表中的历史段落仍可能与现状有出入，属另卡范围。
+6. **`--pitch` 仍标 deprecated**：T14 过渡用法未动，迁移到配方级参数须另卡，且须早于 P3 减法卡物理删除 `--pitch`。
+
+### 7.6 byte-pinned 消费方（STDRAW_PIN）
+
+- 8777 STDRAW_PIN 0.8.1 不动。本卡布局面零漂移（`layout.json` 逐字节相同），消费方若只消费坐标则**零影响**；若消费方连证书 note 一起比对，环探针 note 一行会不同（仅说明文字，判定字段不变）。消费方升级另行裁决。

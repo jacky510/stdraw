@@ -2,7 +2,7 @@
 """Design tokens: the single source of truth for every color in stdraw's two
 themes (`light` and `dark`).
 
-Caliber (UI-A "drafting room" spec, jacky 2026-11-11 ruling; spec original
+Caliber (UI-A "drafting room" spec, owner ruling; docs/adr/ADR-0017; spec original
 preserved in-repo at docs/ui-theme-spec-a.md):
   - `light` was a frozen-literal static-export baseline through v0.7.x. The
     UI-A spec replaces it as a DECLARED major-version baseline update (the

@@ -125,7 +125,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
                          "certificate exactness block (proven_optimal/gap; requires the optional "
                          "ortools dependency; honestly degraded when not installed)")
     ap.add_argument("--no-exact", dest="no_exact", action="store_true",
-                    help="D4 fallback (jacky 2026-11-14 scope ruling, stdraw range n<=20): opt OUT "
+                    help="D4 fallback (owner scope ruling, engine range n<=20; docs/adr/ADR-0013): opt OUT "
                          "of the L1-default exact layer.  L1 planarized drawings then keep the "
                          "witness-marked drawing but stay honestly 'uncertified' "
                          "(three_account_consistent cannot pass without the oracle cr UB).")
@@ -250,9 +250,9 @@ def _resolve_exactness(a, v4, g):
     out) + the exact/planarized progress prints. Returns the exactness block
     or None."""
     exactness = None
-    # D4 (jacky 2026-11-14): L1 planarized drawings default to
+    # D4 (docs/adr/ADR-0012): L1 planarized drawings default to
     # --exact (oracle cr UB participates in the three-account
-    # check).  D4 fallback (jacky 2026-11-14 scope ruling, stdraw
+    # check).  D4 fallback (owner scope ruling, docs/adr/ADR-0013, engine
     # range n<=20): --no-exact opts out; the certificate then stays
     # honestly 'uncertified' (three_account_consistent cannot pass
     # without the oracle cr UB).  Solve times over budget ->
