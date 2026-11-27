@@ -2298,7 +2298,8 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
     (coincide / midband / fan / mutual / arrival-flip / anchor-snap).
 
     Pure code motion out of layout() (byte-equivalent refactor): every
-    statement below is the original body verbatim."""
+    Every stage helper body is the original body verbatim;
+    the stages run in the original order."""
     nodes = cand["nodes"]
     # DSL-designated anchors (@anchors): the same user-authority/gate-fallback
     # accounting as --from-layout (breaching designations fall back to the
@@ -2314,8 +2315,37 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
     _routes_final = cand["_routes_final"]
     from_meta = cand["from_meta"]
 
-    # ④ routing (straight/arc first-class, boxes do not press lines) + WS3 theoretical caliber (final-route crossing pairs)
     nodes_px = {v: (pos[v], y[v], widths[v], card_h) for v in nodes}
+    er_kinds, er_presets, er_report = _route_stage_presets(
+        cfg, graph, manual, edges, nodes_px, engine, _dense_hub)
+    router, routes, er_presets, er_report, _manual_base = \
+        _route_stage_primary(
+            cfg, graph, edges, nodes_px, manual, er_kinds, er_presets,
+            er_report, _dense_hub, constructed, _routes_final,
+            _has_dsl_anchors)
+    routes, manual_wps, manual_styles, manual_anchors = \
+        _route_stage_manual(
+            cfg, graph, manual, edges, nodes_px, routes, constructed,
+            from_meta, _manual_base)
+    routes, _frozen = _route_stage_repair(
+        engine, edges, routes, router, constructed, er_presets,
+        manual_wps, manual_styles, manual_anchors)
+    routes, _snap_report, _snap_deferred, _snap_reverted = \
+        _route_stage_anchor_snap(router, routes, engine, er_presets,
+                                 edges, nodes)
+    routes, router_pairs = _route_stage_lens_post(
+        router, routes, engine, er_presets, _snap_report, _snap_deferred,
+        _snap_reverted, _frozen)
+    return routes, router, router_pairs, er_report, _snap_deferred
+
+
+def _route_stage_presets(cfg, graph, manual, edges, nodes_px, engine,
+                         _dense_hub):
+    """Stage 2a -- edgerules anchor presets (auto + layered engines only).
+
+    Returns `(er_kinds, er_presets, er_report)`; all three stay None on
+    the manual path and on the constructed-placement engines.
+    """
     # Edge placement rules v1 (docs/edge-placement-rules-v1.md): on the
     # AUTO path (manual=None) every endpoint is pre-assigned to a standard
     # anchor by the edgerules decision layer BEFORE routing (spec §2:
@@ -2349,46 +2379,18 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
                     {"edge": "%s->%s" % (edges[_i][0], edges[_i][1]), "rule": 0,
                      "detail": "hard-gate precedence: preset dropped, legacy pool used"})
                 er_presets.pop(_i, None)
+    return er_kinds, er_presets, er_report
 
-    def _er_gate_tuple(rt_obj, rts):
-        """Hard-gate tuple used to compare deliveries honestly: hard-gate
-        BREACHES are absolute (press / clearance / anchor-angle / crossings
-        over budget) and rank above the raw counts (spec §4: all hard gates
-        are equal-rank; any breach dominates a breach-free delivery).
-        Breach COUNTS rank above the raw crossing count -- ordering the raw
-        crossings first let a delivery with fewer crossings but strictly
-        worse breach counts (press 8 / angle 12 vs 3 / 6, measured on
-        random-n20-i00) win the comparison, so the graph-level exemption
-        could never fire."""
-        from .routing import ANCHOR_MIN_DEG
-        prs = rt_obj.final_crossing_pairs(rts)
-        clrbad = sum(1 for _i in rts.values()
-                     if _i.get("min_clear") is not None
-                     and _i["min_clear"] < cfg.clearance - 1e-6)
-        angbad = sum(1 for _i in rts.values()
-                     if min(_i.get("ang_a", ANCHOR_MIN_DEG),
-                            _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
-        pressbad = sum(1 for _i in rts.values() if _i.get("press", 0))
-        return (pressbad > 0, clrbad > 0, angbad > 0, prs > 2,
-                pressbad, clrbad, angbad, prs)
 
-    def _er_involved_edges(rt_obj, rts):
-        """Edge indices involved in final crossing pairs (spec §5 step 7)."""
-        items = sorted(rts.items())
-        inv = set()
-        for a in range(len(items)):
-            ia, info_a = items[a]
-            ea = rt_obj.edges[ia]
-            for b in range(a + 1, len(items)):
-                ib, info_b = items[b]
-                eb = rt_obj.edges[ib]
-                if ea[0] in eb or ea[1] in eb:
-                    continue
-                if rt_obj._poly_cross(info_a["points"], info_b["points"]):
-                    inv.add(ia)
-                    inv.add(ib)
-        return sorted(inv)
+def _route_stage_primary(cfg, graph, edges, nodes_px, manual, er_kinds,
+                         er_presets, er_report, _dense_hub, constructed,
+                         _routes_final, _has_dsl_anchors):
+    """Stage 2b -- primary routing: Router + route_all, the manual
+    pre-injection snapshot, the bounded preset re-enumeration rounds and
+    the graph-level legacy-exemption comparison.
 
+    Returns `(router, routes, er_presets, er_report, _manual_base)`.
+    """
     router = Router(nodes_px, edges, cfg.clearance, cfg.pitch, presets=er_presets,
                     dense_hub=_dense_hub)
     routes = router.route_all()
@@ -2402,10 +2404,11 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
                     if (manual is not None or _has_dsl_anchors)
                     else None)
     if er_presets is not None:
+        from . import edgerules as _er
         # spec §5 step 7: bounded deterministic local re-enumeration for
         # edges still involved in crossings (<= 3 rounds; each round's
         # candidate pool includes the joint_reroute fallback machinery).
-        _er_best = (_er_gate_tuple(router, routes), er_presets, routes)
+        _er_best = (_er_gate_tuple(cfg, router, routes), er_presets, routes)
         for _er_round in (1, 2, 3):
             _er_inv = _er_involved_edges(router, _er_best[2])
             if not _er_inv:
@@ -2420,8 +2423,8 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
             _r2 = Router(nodes_px, edges, cfg.clearance, cfg.pitch,
                          presets=_er_alts)
             _rt2 = _r2.joint_reroute(_r2.route_all())
-            if _er_gate_tuple(_r2, _rt2) < _er_best[0]:
-                _er_best = (_er_gate_tuple(_r2, _rt2), _er_alts, _rt2)
+            if _er_gate_tuple(cfg, _r2, _rt2) < _er_best[0]:
+                _er_best = (_er_gate_tuple(cfg, _r2, _rt2), _er_alts, _rt2)
         er_presets, routes = _er_best[1], _er_best[2]
         er_report = dict(er_report, violations=er_report["violations"] + _er.audit_delivery(er_presets, routes, edges))
         # spec §4 (graph level): honest comparison against the FULL legacy
@@ -2450,7 +2453,7 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
             _rt_lg = _router_lg.lens_joint_reassign(
                 _rt_lg, _snap_rep.get("lens_pairs", []))
             _rt_lg = _router_lg.mutual_arrival_flip(_rt_lg, enhanced_gates=True)
-        if _er_gate_tuple(_router_lg, _rt_lg) < _er_gate_tuple(router, routes):
+        if _er_gate_tuple(cfg, _router_lg, _rt_lg) < _er_gate_tuple(cfg, router, routes):
             er_report["exempt"] = True
             er_report["violations"].append(
                 {"edge": "*", "rule": 0,
@@ -2464,6 +2467,19 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
     elif _routes_final is not None:
         routes = _routes_final
     _timing.mark("route_final")
+    return router, routes, er_presets, er_report, _manual_base
+
+
+def _route_stage_manual(cfg, graph, manual, edges, nodes_px, routes,
+                        constructed, from_meta, _manual_base):
+    """Stage 2c -- manual injection: constructed-route freeze, waypoint /
+    style / user-anchor overrides (manual export and DSL @anchors) and
+    the hard-gate fallback.
+
+    Returns `(routes, manual_wps, manual_styles, manual_anchors)` -- the
+    fallback pops breaching entries out of those dicts, so the caller
+    sees the same post-fallback state the historical body did.
+    """
     # ref-scrubbed constructed-route injection (column closed arcs / bowtie mirror-symmetry arcs): these edges skip the candidate pool and are
     # delivered with the constructed geometry (the trial gate has already rechecked the hard gates); the injection must happen before
     # final_crossing_pairs so the dual crossing accounting (check11) includes the constructed routes.
@@ -2720,6 +2736,18 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
                       "; ".join(f"{e['edge']} ({e['reason']})"
                                 for e in _fb_edges))
     _timing.mark("manual_injection")
+    return routes, manual_wps, manual_styles, manual_anchors
+
+
+def _route_stage_repair(engine, edges, routes, router, constructed,
+                        er_presets, manual_wps, manual_styles,
+                        manual_anchors):
+    """Stage 2d -- first repair chain: frozen set + coincide reroute,
+    midband reanchor, fan spread, mutual-straight (spine only) and the
+    pre-snap arrival flip.
+
+    Returns `(routes, _frozen)` (the freeze set feeds the later stages).
+    """
     # ref-scrubbed: directed rerouting for line-line visual coincidence - a backstop fix for fan-out edges hugging the same corridor (stair/lane
     # shared lanes). Constructed routes and user-anchored waypoint edges are untouched; only edges involved in coincident pairs are rerouted,
     # on the condition that the hard gates do not regress (press/clearance/anchor/crossing count).
@@ -2761,6 +2789,16 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
     # (gate-guarded; untouched routes returned byte-for-byte otherwise).
     routes = router.mutual_arrival_flip(routes, frozen=_frozen)
     _timing.mark("repair:arrival_flip_pre")
+    return routes, _frozen
+
+
+def _route_stage_anchor_snap(router, routes, engine, er_presets, edges,
+                             nodes):
+    """Stage 2e -- endpoint snap to the standard anchor vocabulary with
+    the density-gated probe / revert accounting.
+
+    Returns `(routes, _snap_report, _snap_deferred, _snap_reverted)`.
+    """
     # ref-scrubbed: default endpoint snapping to the 16 standard per-box anchor
     # set (anchors.py caliber) -- jacky 2026-11-09: the standard connection
     # points are the DEFAULT attachment caliber of every rendered endpoint,
@@ -2884,6 +2922,18 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
                       f"{len(_snap_report['failures'])} endpoint(s) could not be placed "
                       f"on a standard anchor: {_snap_report['failures'][:5]}",
                       file=sys.stderr)
+    return routes, _snap_report, _snap_deferred, _snap_reverted
+
+
+def _route_stage_lens_post(router, routes, engine, er_presets,
+                           _snap_report, _snap_deferred, _snap_reverted,
+                           _frozen):
+    """Stage 2f -- post-snap lens channel (joint re-assignment + enhanced
+    arrival flip), the closed-ring mutual-pair construction and the
+    fan-slot swap (the last endpoint-moving repair).
+
+    Returns `(routes, router_pairs)`.
+    """
     # ref-scrubbed: re-run the lens arrival channel AFTER snapping -- snap moves
     # lens arc endpoints/ctrl, so the arrival-normal caliber (<=10 deg) and the
     # pair separation may degrade.  The flip re-derives ctrl only (endpoints
@@ -2930,7 +2980,50 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
         routes = router.fan_slot_reorder(routes, frozen=_frozen)
         _timing.mark("repair:fan_slot_reorder")
     router_pairs = router.final_crossing_pairs(routes)
-    return routes, router, router_pairs, er_report, _snap_deferred
+    return routes, router_pairs
+
+
+def _er_gate_tuple(cfg, rt_obj, rts):
+    """Hard-gate tuple used to compare deliveries honestly: hard-gate
+    BREACHES are absolute (press / clearance / anchor-angle / crossings
+    over budget) and rank above the raw counts (spec §4: all hard gates
+    are equal-rank; any breach dominates a breach-free delivery).
+    Breach COUNTS rank above the raw crossing count -- ordering the raw
+    crossings first let a delivery with fewer crossings but strictly
+    worse breach counts (press 8 / angle 12 vs 3 / 6, measured on
+    random-n20-i00) win the comparison, so the graph-level exemption
+    could never fire."""
+    from .routing import ANCHOR_MIN_DEG
+    prs = rt_obj.final_crossing_pairs(rts)
+    clrbad = sum(1 for _i in rts.values()
+                 if _i.get("min_clear") is not None
+                 and _i["min_clear"] < cfg.clearance - 1e-6)
+    angbad = sum(1 for _i in rts.values()
+                 if min(_i.get("ang_a", ANCHOR_MIN_DEG),
+                        _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
+    pressbad = sum(1 for _i in rts.values() if _i.get("press", 0))
+    return (pressbad > 0, clrbad > 0, angbad > 0, prs > 2,
+            pressbad, clrbad, angbad, prs)
+
+
+def _er_involved_edges(rt_obj, rts):
+    """Edge indices involved in final crossing pairs (spec §5 step 7)."""
+    items = sorted(rts.items())
+    inv = set()
+    for a in range(len(items)):
+        ia, info_a = items[a]
+        ea = rt_obj.edges[ia]
+        for b in range(a + 1, len(items)):
+            ib, info_b = items[b]
+            eb = rt_obj.edges[ib]
+            if ea[0] in eb or ea[1] in eb:
+                continue
+            if rt_obj._poly_cross(info_a["points"], info_b["points"]):
+                inv.add(ia)
+                inv.add(ib)
+    return sorted(inv)
+
+
 
 
 def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
