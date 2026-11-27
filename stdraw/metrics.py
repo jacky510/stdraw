@@ -1526,6 +1526,23 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "row_align_note": ("report item: row alignment is no longer a "
                            "veto (hand-pulled samples show row_align delta ~= 0)"),
     }
+    if _gctx.demoted_gates:
+        # n>10 regularity demotion transport (jacky ruling 2026-11-26,
+        # stdraw20 manual calibration): the demoted mechanical-grid gates
+        # report their measured boolean here instead of gating; metrics
+        # rows keep the underlying numbers (spacing_cv / snap rate).
+        for _dk, _dv in _gctx.demoted_gates.items():
+            reports[_dk] = _dv
+        reports["regularity_demoted_note"] = (
+            "report items (n>10, jacky 2026-11-26 ruling): the "
+            "mechanical-grid regularity gates cv_le_035 / pitch_uniform / "
+            "column_snap24_ge_060 are demoted from hard gates per the "
+            "stdraw20 manual-calibration evidence (they reward mechanical "
+            "grids and penalize human arrangements); measured values above, "
+            "all other gates and grade semantics unchanged")
+        notes.append("n>10 caliber: mechanical-grid regularity gates "
+                     "(cv_le_035 / pitch_uniform / column_snap24_ge_060) "
+                     "demoted to report items per jacky 2026-11-26 ruling")
     _la = scene.get("loop_arcs")
     if _la:
         # loop-direction arc default (report item, not a gate): every
@@ -1567,35 +1584,44 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
     elif comb_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
-                   g["column_axis_aligned"] and g["column_pitch_uniform"] and
+                   g["column_axis_aligned"] and g.get("column_pitch_uniform", True) and
                    g["hub_symmetry_le_2px"] and g["hub_edges_straight"] and
                    g["mutual_pairs_closed"])
     elif column_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
-                   g["cv_le_035"] and g["column_axis_aligned"] and
-                   g["spine_pitch_uniform"] and g["mutual_pairs_closed"])
+                   g.get("cv_le_035", True) and g["column_axis_aligned"] and
+                   g.get("spine_pitch_uniform", True) and g["mutual_pairs_closed"])
     elif sym_mode or bowtie_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
-                   g["cv_le_035"] and g["symmetry_mirror_le_2px"] and
+                   g.get("cv_le_035", True) and g["symmetry_mirror_le_2px"] and
                    g["mutual_pairs_closed"])
     elif spine_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
-                   g["cv_le_035"] and g["spine_axis_le_2px"] and
+                   g.get("cv_le_035", True) and g["spine_axis_le_2px"] and
                    g["midline_adherence_le_2px"] and
                    g["symmetry_mirror_le_2px"] and g["mutual_pairs_closed"])
     elif lens_mode:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
                    g["anchors_smooth"] and g["min_gap_ge_16"] and
-                   g["cv_le_035"] and g["pitch_uniform"] and
-                   g["column_snap24_ge_060"] and g["lens_pairs_closed"] and
+                   g.get("cv_le_035", True) and g.get("pitch_uniform", True) and
+                   g.get("column_snap24_ge_060", True) and g["lens_pairs_closed"] and
                    g["lens_pair_min_sep_ge_12"])
     else:
         hard_ok = (g["box_press_zero"] and g["edge_box_clear_ge_16"] and
-                   g["anchors_smooth"] and g["min_gap_ge_16"] and g["cv_le_035"] and
-                   (manual_mode or g["pitch_uniform"]) and g["mutual_pairs_closed"])
+                   g["anchors_smooth"] and g["min_gap_ge_16"] and
+                   g.get("cv_le_035", True) and
+                   (manual_mode or g.get("pitch_uniform", True)) and
+                   g["mutual_pairs_closed"])
+    # .get(..., True) reads above: the mechanical-grid regularity keys
+    # (cv_le_035 / pitch_uniform family / column_snap24_ge_060) are absent
+    # from g exactly when the registry ``when`` policies demoted them for
+    # n>10 (jacky ruling 2026-11-26) -- a demoted gate no longer blocks the
+    # grade; its measured value travels in reports (block below).  For
+    # n<=10 / manual figures the keys are present and the reads are
+    # identical to the historical direct indexing (zero byte change).
     # ref-scrubbed finalize (approved 2026-11-09): honest dense-snap
     # deferral annotation -- the anchors_standard gate value stays MEASURED
     # (False when endpoints remain off-anchor on a deferred dense graph);

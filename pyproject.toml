@@ -54,4 +54,7 @@ markers = [
     # that must exist; tests are auto-skipped with the missing paths in the
     # reason when absent (e.g. running pytest from an sdist extraction).
     "repo(...): test needs repo-only data (paths relative to the repo root)",
+    # minutes-class CLI integration test (e.g. the n20 demotion leg);
+    # deselect with -k "not slow" for the fast gate
+    "slow: minutes-class integration leg",
 ]
