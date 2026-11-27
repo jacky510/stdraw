@@ -1823,6 +1823,268 @@ def _lens_trial(plan, nodes, widths, card_h, cfg, edges, why=None):
     return plan
 
 
+def _place_sym(st):
+    """Place: symmetric (shared-edge bowtie) plan consumption (pure move)."""
+    nodes, adj = st.nodes, st.adj
+    sym_plan = st.plans['sym']
+    spos, sy, smeta, sconstructed = sym_plan["placed"]
+    pos, y = spos, sy
+    deg0 = list(sym_plan["deg0"])
+    rows = [[v for v in nodes if y[v] == yy]
+            for yy in sorted({y[v] for v in nodes})]
+    engine = "sym-construct"
+    pos_meta = smeta
+    constructed = sconstructed
+    st.pos, st.y, st.deg0, st.rows = pos, y, deg0, rows
+    st.engine, st.pos_meta = engine, pos_meta
+    st.constructed = constructed
+
+
+def _place_bw(st):
+    """Place: bowtie-vertex plan consumption (pure move)."""
+    nodes, adj = st.nodes, st.adj
+    bw_plan = st.plans['bw']
+    bpos, by, bmeta, bconstructed = bw_plan["placed"]
+    pos, y = bpos, by
+    deg0 = list(bw_plan["deg0"])
+    rows = [[v for v in nodes if y[v] == yy]
+            for yy in sorted({y[v] for v in nodes})]
+    engine = "bowtie-construct"
+    pos_meta = bmeta
+    constructed = bconstructed
+    st.pos, st.y, st.deg0, st.rows = pos, y, deg0, rows
+    st.engine, st.pos_meta = engine, pos_meta
+    st.constructed = constructed
+
+
+def _place_sw(st):
+    """Place: spine-wing plan consumption (pure move)."""
+    nodes, adj = st.nodes, st.adj
+    sw_plan = st.plans['sw']
+    wpos, wy, wmeta, wconstructed = sw_plan["placed"]
+    pos, y = wpos, wy
+    deg0 = list(sw_plan["deg0"])
+    rows = [[v for v in nodes if y[v] == yy]
+            for yy in sorted({y[v] for v in nodes})]
+    engine = "spine-construct"
+    pos_meta = wmeta
+    constructed = wconstructed
+    st.pos, st.y, st.deg0, st.rows = pos, y, deg0, rows
+    st.engine, st.pos_meta = engine, pos_meta
+    st.constructed = constructed
+
+
+def _place_comb(st):
+    """Place: comb-bilateral plan consumption (pure move)."""
+    nodes, adj = st.nodes, st.adj
+    comb_plan = st.plans['comb']
+    cpos, cy, cmeta = comb_plan["placed"]
+    pos, y = cpos, cy
+    deg0 = list(comb_plan["deg0"]) if "deg0" in comb_plan else \
+        [v for v in nodes if not adj[v]]
+    rows = [[v for v in nodes if y[v] == yy]
+            for yy in sorted({y[v] for v in nodes})]
+    engine = "comb-construct"
+    pos_meta = cmeta
+    # v0.7.8: tier-1 fan lines ride the generic constructed-route
+    # injection channel (frozen out of coincide/midband/fan_spread,
+    # hard gates already rechecked by the trial)
+    constructed = comb_plan.get("constructed") or {}
+    st.pos, st.y, st.deg0, st.rows = pos, y, deg0, rows
+    st.engine, st.pos_meta = engine, pos_meta
+    st.constructed = constructed
+
+
+def _place_column(st):
+    """Place: column-chain plan consumption (pure move)."""
+    nodes, adj = st.nodes, st.adj
+    column_plan = st.plans['column']
+    cpos, cy, cmeta, cconstructed = column_plan["placed"]
+    pos, y = cpos, cy
+    deg0 = list(column_plan["deg0"])
+    rows = [[v for v in nodes if y[v] == yy]
+            for yy in sorted({y[v] for v in nodes})]
+    engine = "column-construct"
+    pos_meta = cmeta
+    constructed = cconstructed
+    st.pos, st.y, st.deg0, st.rows = pos, y, deg0, rows
+    st.engine, st.pos_meta = engine, pos_meta
+    st.constructed = constructed
+
+
+def _place_ring(st):
+    """Place: ring-cycle plan consumption (pure move)."""
+    nodes, adj = st.nodes, st.adj
+    ring_plan = st.plans['ring']
+    rpos, ry, rmeta = ring_plan["placed"]
+    pos, y = rpos, ry
+    deg0 = list(ring_plan["deg0"])
+    rows = [[v for v in nodes if y[v] == yy]
+            for yy in sorted({y[v] for v in nodes})]
+    engine = "ring-construct"
+    pos_meta = rmeta
+    st.pos, st.y, st.deg0, st.rows = pos, y, deg0, rows
+    st.engine, st.pos_meta = engine, pos_meta
+
+
+def _place_radial(st):
+    """Place: radial plan consumption (pure move)."""
+    nodes, adj = st.nodes, st.adj
+    radial_plan = st.plans['radial']
+    dpos, dyy, dmeta = radial_plan["placed"]
+    pos, y = dpos, dyy
+    deg0 = list(radial_plan["deg0"])
+    rows = [[v for v in nodes if y[v] == yy]
+            for yy in sorted({y[v] for v in nodes})]
+    engine = "radial-construct"
+    pos_meta = dmeta
+    st.pos, st.y, st.deg0, st.rows = pos, y, deg0, rows
+    st.engine, st.pos_meta = engine, pos_meta
+
+
+def _place_lens(st):
+    """Place: lens-chain plan consumption (pure move)."""
+    nodes, adj = st.nodes, st.adj
+    lens_plan = st.plans['lens']
+    lpos, ly, lmeta = lens_plan["placed"]
+    pos, y = lpos, ly
+    deg0 = list(lens_plan["deg0"])
+    rows = [[v for v in nodes if y[v] == yy]
+            for yy in sorted({y[v] for v in nodes})]
+    engine = "lens-construct"
+    pos_meta = lmeta
+    # lens arcs ride the generic constructed-route injection channel
+    # (frozen out of coincide/midband/fan_spread; the trial already
+    # rechecked the unified hard gates on the injected geometry)
+    constructed = lens_plan.get("constructed") or {}
+    st.pos, st.y, st.deg0, st.rows = pos, y, deg0, rows
+    st.engine, st.pos_meta = engine, pos_meta
+    st.constructed = constructed
+
+
+def _place_layered(st):
+    """Place: layered fallback (layering + cp-sat/construct placement
+    + polish + gated reorder). Pure move; also routes the gated
+    reorder result back via st.routes_final."""
+    nodes, adj = st.nodes, st.adj
+    core, linestyle = st.core, st.linestyle
+    widths, card_h, cfg, edges = st.widths, st.card_h, st.cfg, st.edges
+    deg0 = st.deg0
+    _routes_final = st.routes_final
+    # ② layering (cycle breaking + longest path + empty-layer compression)
+    _, dag = _cycle_break(core, edges)
+    layer = _layers(core, dag)
+    nrow = max(layer.values()) + 1 if core else 1
+    rows = [[v for v in core if layer[v] == r] for r in range(nrow)]
+    rows = [r for r in rows if r]
+    _timing.mark("layering")
+
+    # ③ placement
+    pos, engine, pos_meta = _solve_positions(core, rows, widths, cfg, linestyle, edges)
+
+    # y coordinates (even rows -> the foundation of the regularity gate)
+    y = {v: cfg.top + r * cfg.pitch for r, vs in enumerate(rows) for v in vs}
+    # parking strip for isolated nodes: evenly laid out at the top (24px column snap for small graphs, consistent with the regularity gate)
+    if deg0:
+        total = sum(widths[v] for v in deg0) + cfg.min_gap * (len(deg0) + 1)
+        cw = _content_w(rows, widths, cfg)
+        cur = max(cfg.margin, (cw - total) / 2)
+        snap = cfg.snap_regular if len(nodes) <= 10 else cfg.grid
+        for v in deg0:
+            pos[v] = int(round((cur + widths[v] / 2) / snap)) * snap
+            y[v] = cfg.park_y
+            cur += widths[v] + cfg.min_gap
+    _timing.mark("placement_cp_sat")
+
+    # ③b local polish (small graphs <=10 nodes): hill-climbing horizontal shifts on routing ground-truth total cost, explicitly
+    # feeding routing feasibility (press/clearance/crossings) back into the placement layer
+    if len(core) <= 10:
+        # exact-memo cache shared by both polish passes and the
+        # gated-block routers (fresh per layout call; with it the
+        # delivered bytes are identical, construction-guaranteed)
+        _ec = EvalCache()
+        pos, _sc, _rt = _polish(core, edges, rows, pos, y,
+                                widths, card_h, cfg, eval_cache=_ec)
+        # -- WS3 routing-quality rework (random dense graphs: check1 crossings>2 / check3 clearance<16): when a routing hard gate fails, the
+        #    layout bottleneck is not the router (the graph is planar but the placement pushes topological interleaving pairs to 3+, and greedy
+        #    routing can only dodge some of them) but the "row assignment + in-row order". Trigger a deterministic (row, order) reorder -> 24px
+        #    repack -> hard-gate polish, and pick the better of it and the original placement under the same evaluation caliber (never worse
+        #    than the baseline). Gated trigger: layouts whose hard gates already pass (the entire classic domain, existing passing cases) get
+        #    zero perturbation, output byte-for-byte unchanged.
+        _r0 = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
+                     edges, cfg.clearance, cfg.pitch, eval_cache=_ec)
+        _routes0 = _r0.route_all()
+        _pairs0 = _r0.final_crossing_pairs(_routes0)
+        _clrbad0 = sum(1 for _i in _routes0.values()
+                       if _i.get("min_clear") is not None
+                       and _i["min_clear"] < cfg.clearance - 1e-6)
+        _angbad0 = sum(1 for _i in _routes0.values()
+                       if min(_i.get("ang_a", ANCHOR_MIN_DEG),
+                              _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
+        _pressbad0 = sum(1 for _i in _routes0.values() if _i.get("press", 0))
+        if _pairs0 > 2 or _clrbad0 or _angbad0 or _pressbad0:
+            # The router layer's second move: joint rerouting of crossing pairs (breaks the mutual-local-optimum deadlock). quality=True is what
+            # expands the stair candidate pool - gated path only; the normal path (including polish's _route_total) keeps the historical
+            # candidate pool, zero perturbation for passing cases.
+            _rq = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
+                         edges, cfg.clearance, cfg.pitch, quality=True,
+                         eval_cache=_ec)
+            _routesA = _rq.joint_reroute(dict(_routes0))
+            _pairsA = _rq.final_crossing_pairs(_routesA)
+            _clrbadA = sum(1 for _i in _routesA.values()
+                           if _i.get("min_clear") is not None
+                           and _i["min_clear"] < cfg.clearance - 1e-6)
+            _angbadA = sum(1 for _i in _routesA.values()
+                           if min(_i.get("ang_a", ANCHOR_MIN_DEG),
+                                  _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
+            _pressbadA = sum(1 for _i in _routesA.values() if _i.get("press", 0))
+            _gate0 = (_pairs0, _clrbad0, _angbad0, _pressbad0)
+            _best = (_gate0, None, None, None, _routes0)
+            if (_pairsA, _clrbadA, _angbadA, _pressbadA) < _best[0]:
+                _best = ((_pairsA, _clrbadA, _angbadA, _pressbadA), pos, y, rows, _routesA)
+            # The layout layer's second move: deterministic (row, order) reorder -> 24px repack -> hard-gate polish
+            # -> routing -> joint reroute
+            _order2 = _reorder_rows(edges, rows)
+            _pos2 = _repack_x(_order2, widths, cfg)
+            _y2 = dict(y)
+            for _r, _vs in enumerate(_order2):
+                for _v in _vs:
+                    _y2[_v] = cfg.top + _r * cfg.pitch
+            _pos2, _sc2, _rt2 = _polish(core, edges, _order2, _pos2,
+                                        _y2, widths, card_h, cfg,
+                                        hard_gates=True, eval_cache=_ec)
+            # ref-scrubbed: isolated nodes are not in rows (delivered on the top parking strip); the gated reorder reorders only core -
+            # parking-strip coordinates are carried back as-is, so the Router's all-node keys stay complete (legacy gap: on graphs
+            # with isolated nodes the gated path raised KeyError on first trigger)
+            for _v in deg0:
+                _pos2.setdefault(_v, pos[_v])
+            _r2 = Router({v: (_pos2[v], _y2[v], widths[v], card_h)
+                          for v in nodes}, edges, cfg.clearance, cfg.pitch,
+                         quality=True, eval_cache=_ec)
+            _rt2 = _r2.route_all()
+            _rt2 = _r2.joint_reroute(dict(_rt2))
+            _pairs2 = _r2.final_crossing_pairs(_rt2)
+            _clrbad2 = sum(1 for _i in _rt2.values()
+                           if _i.get("min_clear") is not None
+                           and _i["min_clear"] < cfg.clearance - 1e-6)
+            _angbad2 = sum(1 for _i in _rt2.values()
+                           if min(_i.get("ang_a", ANCHOR_MIN_DEG),
+                                  _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
+            _pressbad2 = sum(1 for _i in _rt2.values() if _i.get("press", 0))
+            if (_pairs2, _clrbad2, _angbad2, _pressbad2) < _best[0]:
+                _best = ((_pairs2, _clrbad2, _angbad2, _pressbad2),
+                         _pos2, _y2, _order2, _rt2)
+            if _best[1] is None:
+                _routes_final = _best[4]      # placement unchanged but the routes were swapped for better ones
+            elif _best[0] < _gate0:
+                pos, y, rows = _best[1], _best[2], _best[3]
+                _routes_final = _best[4]
+    _timing.mark("polish_gated_reorder")
+    st.pos, st.y, st.rows = pos, y, rows
+    st.engine, st.pos_meta = engine, pos_meta
+    st.routes_final = _routes_final
+
+
 def _layout_candidates(graph, cfg, edges, linestyle, manual):
     """layout() stage 1 -- candidate generation: card metrics, dense verdict,
     mode priority chain + trial gates, placement (manual / constructed /
@@ -1947,377 +2209,49 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
             _mode_rules.append(entry)
             return plan
 
-        sym_plan = None
-        bw_plan = None
-        sw_plan = None
-        comb_plan = None
-        column_plan = None
-        ring_plan = None
-        radial_plan = None
-        _why_sym, _why_bw, _why_sw = {}, {}, {}
-        _why_comb, _why_col, _why_ring = {}, {}, {}
-        _why_rad = {}
-        _tw_sym, _tw_bw, _tw_sw = {}, {}, {}
-        _tw_comb, _tw_col, _tw_ring = {}, {}, {}
-        _tw_rad = {}
-        # lens-chain (pure 2-cycle figures: every loop a mutual pair, simple
-        # graph a forest) -- evaluated after radial, the last structural
-        # reading before the layered fallback
-        lens_plan = None
-        _why_lens, _tw_lens = {}, {}
-        # reverse-form gate (jacky ruling 2026-11-15, widened 2026-11-16):
-        # when a structural form detector fires but its trial gate fails,
-        # the fallback to layered is NOT silent anymore -- the abandoned
-        # reading is recorded in _form_fallbacks (initialized above the
-        # manual branch) and the certificate degrades (metrics.py: grade
-        # uncertified + topology_form_fallback gate).  "Form misplacement
-        # is disqualifying before any hygiene metric."
-        # Scope: _FORM_FALLBACK_MODES = radial + spine-wing + ring-cycle.
-        # The spine/ring widening was measured against the manual fixtures
-        # before landing (brand-flywheel CV 0.0802 / i05 CV 0.4626 -- the
-        # old uncalibrated 0.05 ring gates rejected the ground truth
-        # itself); the affected random-corpus graphs already grade
-        # uncertified, so the widening flips bytes only.  Artifact
-        # regeneration for the affected corpus face is concentrated at the
-        # version closure (no in-flight flip of stored certificates).
+        # -- mode priority chain: registry-driven (T17 refactor, pure move)
+        # The historical inline if/elif steps now live as data in
+        # stdraw/mode_registry.py -- MODE_CHAIN order = the old evaluation
+        # order, trace entries appended in the same sequence (trace bytes
+        # unchanged).  Each mode carries detect / place references; the
+        # gate side is stdraw/cert_gates.MODE_GATE_SETS (same vocabulary).
+        # Extension points reserved (design-only, card T17): layout-family
+        # output on detect, routing-feedback hook before place, multi-slot
+        # anchor vocabulary (n/s/e/w x 1..k, src/dst split).
+        from .mode_registry import ChainState
         _chain_cap = len(nodes) <= 12
-        if not _chain_cap:
-            _cap_reason = (f"n={len(nodes)} > 12 — structural modes cap at "
-                           "12 nodes")
-            for _nm in ("symmetric (shared-edge bowtie)", "bowtie-vertex",
-                        "spine-wing", "column-chain", "comb-bilateral",
-                        "ring-cycle"):
-                _mode_rules.append({"tier": 0, "rule": _nm,
-                                    "triggered": False,
-                                    "reason": f"not evaluated: {_cap_reason}",
-                                    "trial_gate": None})
-        if _chain_cap:
-            from . import symlayout as _symlayout
-            _sym = _symlayout.detect_bowtie(graph, why=_why_sym)
-            if _sym is not None:
-                sym_plan = _sym_trial(_sym, nodes, widths, card_h, cfg, edges,
-                                      why=_tw_sym)
-            _rule_hit("symmetric (shared-edge bowtie)", 1, _sym is not None,
-                      sym_plan, _why_sym, _tw_sym)
-        # ref-scrubbed (aesthetics v3) bowtie-vertex (two loops sharing a single node): topologically mutually exclusive with the shared-edge bowtie
-        # (symmetric) and tied with it at the top tier; detection enumerates simple loops (the declared table mixes in 2-node pseudo-loops
-        # and misses derived loops, so it is unusable).
-        if sym_plan is None and _chain_cap:
-            from . import bowtielayout as _bowtielayout
-            _bw = _bowtielayout.detect_bowtie_vertex(graph, why=_why_bw)
-            if _bw is not None:
-                bw_plan = _bowtie_trial(_bw, nodes, widths, card_h, cfg, edges,
-                                        why=_tw_bw)
-            _rule_hit("bowtie-vertex", 1, _bw is not None, bw_plan,
-                      _why_bw, _tw_bw)
-        if bw_plan is None and sym_plan is None and _chain_cap:
-            from . import spinewinglayout as _spinewinglayout
-            _sw = _spinewinglayout.detect_spine_wing(graph, why=_why_sw)
-            if _sw is not None:
-                sw_plan = _spine_trial(_sw, nodes, widths, card_h, cfg, edges,
-                                       why=_tw_sw)
-            _rule_hit("spine-wing", 2, _sw is not None, sw_plan,
-                      _why_sw, _tw_sw)
-        if (bw_plan is None and sym_plan is None and sw_plan is None
-                and _chain_cap):
-            from . import ringlayout as _ringlayout
-            from . import columnlayout as _columnlayout
-            from . import comblayout as _comblayout
-            _ring_detect = _ringlayout.detect_ring(graph, why=_why_ring)
-            # column is detected only when ring would not take the pure-cycle/ratio branch (cover-triggered graphs with a main ring <=4 go
-            # to column; large rings with k>=5 still go to ring)
-            if _ring_detect is None or _ring_detect["trigger"] == "cover":
-                _col = _columnlayout.detect_column(graph, why=_why_col)
-                if _col is not None:
-                    column_plan = _column_trial(_col, nodes, widths, card_h,
-                                                cfg, edges, why=_tw_col)
-                _rule_hit("column-chain", 3, _col is not None, column_plan,
-                          _why_col, _tw_col)
-            else:
-                _mode_rules.append({
-                    "tier": 3, "rule": "column-chain", "triggered": False,
-                    "reason": ("not evaluated: ring detection would take the "
-                               f"{_ring_detect['trigger']} branch "
-                               "(pure-cycle/ratio graphs go to ring-cycle)"),
-                    "trial_gate": None})
-            # v0.7.7 comb-bilateral (K_{m,2} bilateral hubs) sits between
-            # column and ring (preempts ring: these graphs score a high
-            # non-bridge ratio with a 4-cycle "main ring" and historically
-            # misfired the ring ratio branch). Against column it applies a
-            # salience rule: the bilateral reading wins only when the source
-            # column is strictly longer than the best column spine (in the
-            # established column-chain families the spine weaves
-            # hub-source-hub-source and is at least as salient — zero drift).
-            _comb = _comblayout.detect_comb(graph, why=_why_comb)
-            if _comb is not None and _col is not None \
-                    and len(_comb["column"]) <= len(_col.get("spine") or ()):
-                _mode_rules.append({
-                    "tier": 2, "rule": "comb-bilateral", "triggered": False,
-                    "reason": ("detected, but not adopted: the comb source "
-                               "column is not strictly longer than the best "
-                               "column spine (salience rule — the column "
-                               "reading wins)"),
-                    "trial_gate": None})
-                _comb = None
-            if _comb is not None:
-                comb_plan = _comb_trial(_comb, nodes, widths, card_h, cfg, edges,
-                                        why=_tw_comb)
-                _rule_hit("comb-bilateral", 2, True, comb_plan,
-                          _why_comb, _tw_comb)
-            if column_plan is None and comb_plan is None and _ring_detect is not None:
-                ring_plan = _ring_trial(_ring_detect, nodes, widths, card_h,
-                                        cfg, edges, why=_tw_ring)
-                _rule_hit("ring-cycle", 4, True, ring_plan,
-                          _why_ring, _tw_ring)
-            elif _ring_detect is None:
-                _mode_rules.append({"tier": 4, "rule": "ring-cycle",
-                                    "triggered": False,
-                                    "reason": _why_ring.get("reason"),
-                                    "trial_gate": None})
-            elif column_plan is not None or comb_plan is not None:
-                _mode_rules.append({"tier": 4, "rule": "ring-cycle",
-                                    "triggered": False,
-                                    "reason": ("detected, but a higher-tier "
-                                               "plan was adopted — trial not "
-                                               "run"),
-                                    "trial_gate": None})
-        if not any(p is not None for p in (sym_plan, bw_plan, sw_plan,
-                                           comb_plan, column_plan,
-                                           ring_plan)):
-            # radial (priority 5, after ring-cycle / before layered):
-            # star/fan graphs put the leaves around the HUB. Trace
-            # discipline: the rule entry is recorded ONLY when the
-            # detector fires — a non-hit leaves mode_decision_trace
-            # byte-for-byte unchanged, so every layered corpus graph
-            # keeps its delivered bytes (trigger-writes-the-key
-            # precedent, post_layout_reposition).
-            from . import radellayout as _radellayout
-            _rad = _radellayout.detect_radial(graph, why=_why_rad)
-            if _rad is not None:
-                radial_plan = _radial_trial(_rad, nodes, widths, card_h,
-                                            cfg, edges, why=_tw_rad,
-                                            dense_hub=_dense_hub)
-                _rule_hit("radial", 5, True, radial_plan, _why_rad,
-                          _tw_rad)
-        if not any(p is not None for p in (sym_plan, bw_plan, sw_plan,
-                                           comb_plan, column_plan,
-                                           ring_plan, radial_plan)):
-            # lens-chain (priority 5, after radial, before layered): pure
-            # 2-cycle figures (every loop a mutual pair a<->b, simple graph
-            # a forest) -- the reinforcing + balancing loops sharing one
-            # variable.  Every lens is a closed arc ring on constructed
-            # coordinates; the trial gate falls back to layered silently
-            # (byte-for-byte) on any failure.
-            from . import lenslayout as _lenslayout
-            _lens = _lenslayout.detect_lens_chain(graph, why=_why_lens)
-            if _lens is not None:
-                lens_plan = _lens_trial(_lens, nodes, widths, card_h, cfg,
-                                        edges, why=_tw_lens)
-            # trace entry only when this tier actually did something (a lens
-            # structure was detected or a trial ran): a figure without a
-            # mutual pair keeps its pre-lens trace byte-for-byte
-            if _lens is not None or _tw_lens:
-                _rule_hit("lens-chain", 5, _lens is not None, lens_plan,
-                          _why_lens, _tw_lens)
-        if not any(p is not None for p in (sym_plan, bw_plan, sw_plan,
-                                           comb_plan, column_plan,
-                                           ring_plan, radial_plan,
-                                           lens_plan)):
-            _mode_rules.append({"tier": 5, "rule": "layered (existing path)",
-                                "triggered": True,
-                                "reason": ("fallback: no structural mode "
-                                           "triggered — layered layering + "
-                                           "placement (byte-stable default)"),
-                                "trial_gate": None})
+        _st = ChainState(graph=graph, nodes=nodes, adj=adj,
+                          widths=widths, card_h=card_h, cfg=cfg, edges=edges,
+                          cap=_chain_cap, dense_hub=_dense_hub,
+                          linestyle=linestyle,
+                          core=[v for v in nodes if adj[v]],
+                          deg0=deg0,
+                          mode_rules=_mode_rules,
+                          form_fallbacks=_form_fallbacks,
+                          rule_hit=_rule_hit)
+        from .mode_registry import run_mode_chain, apply_place_chain
+        run_mode_chain(_st)
+
+        # -- placement consumption: registry-driven (T17, order unchanged;
+        # layered = the fallback place)
         _timing.mark("mode_detection_trials")
-        constructed = {}
-        if sym_plan is not None:
-            spos, sy, smeta, sconstructed = sym_plan["placed"]
-            pos, y = spos, sy
-            deg0 = list(sym_plan["deg0"])
-            rows = [[v for v in nodes if y[v] == yy]
-                    for yy in sorted({y[v] for v in nodes})]
-            engine = "sym-construct"
-            pos_meta = smeta
-            constructed = sconstructed
-        elif bw_plan is not None:
-            bpos, by, bmeta, bconstructed = bw_plan["placed"]
-            pos, y = bpos, by
-            deg0 = list(bw_plan["deg0"])
-            rows = [[v for v in nodes if y[v] == yy]
-                    for yy in sorted({y[v] for v in nodes})]
-            engine = "bowtie-construct"
-            pos_meta = bmeta
-            constructed = bconstructed
-        elif sw_plan is not None:
-            wpos, wy, wmeta, wconstructed = sw_plan["placed"]
-            pos, y = wpos, wy
-            deg0 = list(sw_plan["deg0"])
-            rows = [[v for v in nodes if y[v] == yy]
-                    for yy in sorted({y[v] for v in nodes})]
-            engine = "spine-construct"
-            pos_meta = wmeta
-            constructed = wconstructed
-        elif comb_plan is not None:
-            cpos, cy, cmeta = comb_plan["placed"]
-            pos, y = cpos, cy
-            deg0 = list(comb_plan["deg0"]) if "deg0" in comb_plan else \
-                [v for v in nodes if not adj[v]]
-            rows = [[v for v in nodes if y[v] == yy]
-                    for yy in sorted({y[v] for v in nodes})]
-            engine = "comb-construct"
-            pos_meta = cmeta
-            # v0.7.8: tier-1 fan lines ride the generic constructed-route
-            # injection channel (frozen out of coincide/midband/fan_spread,
-            # hard gates already rechecked by the trial)
-            constructed = comb_plan.get("constructed") or {}
-        elif column_plan is not None:
-            cpos, cy, cmeta, cconstructed = column_plan["placed"]
-            pos, y = cpos, cy
-            deg0 = list(column_plan["deg0"])
-            rows = [[v for v in nodes if y[v] == yy]
-                    for yy in sorted({y[v] for v in nodes})]
-            engine = "column-construct"
-            pos_meta = cmeta
-            constructed = cconstructed
-        elif ring_plan is not None:
-            rpos, ry, rmeta = ring_plan["placed"]
-            pos, y = rpos, ry
-            deg0 = list(ring_plan["deg0"])
-            rows = [[v for v in nodes if y[v] == yy]
-                    for yy in sorted({y[v] for v in nodes})]
-            engine = "ring-construct"
-            pos_meta = rmeta
-        elif radial_plan is not None:
-            dpos, dyy, dmeta = radial_plan["placed"]
-            pos, y = dpos, dyy
-            deg0 = list(radial_plan["deg0"])
-            rows = [[v for v in nodes if y[v] == yy]
-                    for yy in sorted({y[v] for v in nodes})]
-            engine = "radial-construct"
-            pos_meta = dmeta
-        elif lens_plan is not None:
-            lpos, ly, lmeta = lens_plan["placed"]
-            pos, y = lpos, ly
-            deg0 = list(lens_plan["deg0"])
-            rows = [[v for v in nodes if y[v] == yy]
-                    for yy in sorted({y[v] for v in nodes})]
-            engine = "lens-construct"
-            pos_meta = lmeta
-            # lens arcs ride the generic constructed-route injection channel
-            # (frozen out of coincide/midband/fan_spread; the trial already
-            # rechecked the unified hard gates on the injected geometry)
-            constructed = lens_plan.get("constructed") or {}
-        else:
-            # ② layering (cycle breaking + longest path + empty-layer compression)
-            _, dag = _cycle_break(core, edges)
-            layer = _layers(core, dag)
-            nrow = max(layer.values()) + 1 if core else 1
-            rows = [[v for v in core if layer[v] == r] for r in range(nrow)]
-            rows = [r for r in rows if r]
-            _timing.mark("layering")
+        _st.constructed = {}
+        apply_place_chain(_st)
 
-            # ③ placement
-            pos, engine, pos_meta = _solve_positions(core, rows, widths, cfg, linestyle, edges)
-
-            # y coordinates (even rows -> the foundation of the regularity gate)
-            y = {v: cfg.top + r * cfg.pitch for r, vs in enumerate(rows) for v in vs}
-            # parking strip for isolated nodes: evenly laid out at the top (24px column snap for small graphs, consistent with the regularity gate)
-            if deg0:
-                total = sum(widths[v] for v in deg0) + cfg.min_gap * (len(deg0) + 1)
-                cw = _content_w(rows, widths, cfg)
-                cur = max(cfg.margin, (cw - total) / 2)
-                snap = cfg.snap_regular if len(nodes) <= 10 else cfg.grid
-                for v in deg0:
-                    pos[v] = int(round((cur + widths[v] / 2) / snap)) * snap
-                    y[v] = cfg.park_y
-                    cur += widths[v] + cfg.min_gap
-            _timing.mark("placement_cp_sat")
-
-            # ③b local polish (small graphs <=10 nodes): hill-climbing horizontal shifts on routing ground-truth total cost, explicitly
-            # feeding routing feasibility (press/clearance/crossings) back into the placement layer
-            if len(core) <= 10:
-                # exact-memo cache shared by both polish passes and the
-                # gated-block routers (fresh per layout call; with it the
-                # delivered bytes are identical, construction-guaranteed)
-                _ec = EvalCache()
-                pos, _sc, _rt = _polish(core, edges, rows, pos, y,
-                                        widths, card_h, cfg, eval_cache=_ec)
-                # -- WS3 routing-quality rework (random dense graphs: check1 crossings>2 / check3 clearance<16): when a routing hard gate fails, the
-                #    layout bottleneck is not the router (the graph is planar but the placement pushes topological interleaving pairs to 3+, and greedy
-                #    routing can only dodge some of them) but the "row assignment + in-row order". Trigger a deterministic (row, order) reorder -> 24px
-                #    repack -> hard-gate polish, and pick the better of it and the original placement under the same evaluation caliber (never worse
-                #    than the baseline). Gated trigger: layouts whose hard gates already pass (the entire classic domain, existing passing cases) get
-                #    zero perturbation, output byte-for-byte unchanged.
-                _r0 = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
-                             edges, cfg.clearance, cfg.pitch, eval_cache=_ec)
-                _routes0 = _r0.route_all()
-                _pairs0 = _r0.final_crossing_pairs(_routes0)
-                _clrbad0 = sum(1 for _i in _routes0.values()
-                               if _i.get("min_clear") is not None
-                               and _i["min_clear"] < cfg.clearance - 1e-6)
-                _angbad0 = sum(1 for _i in _routes0.values()
-                               if min(_i.get("ang_a", ANCHOR_MIN_DEG),
-                                      _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
-                _pressbad0 = sum(1 for _i in _routes0.values() if _i.get("press", 0))
-                if _pairs0 > 2 or _clrbad0 or _angbad0 or _pressbad0:
-                    # The router layer's second move: joint rerouting of crossing pairs (breaks the mutual-local-optimum deadlock). quality=True is what
-                    # expands the stair candidate pool - gated path only; the normal path (including polish's _route_total) keeps the historical
-                    # candidate pool, zero perturbation for passing cases.
-                    _rq = Router({v: (pos[v], y[v], widths[v], card_h) for v in nodes},
-                                 edges, cfg.clearance, cfg.pitch, quality=True,
-                                 eval_cache=_ec)
-                    _routesA = _rq.joint_reroute(dict(_routes0))
-                    _pairsA = _rq.final_crossing_pairs(_routesA)
-                    _clrbadA = sum(1 for _i in _routesA.values()
-                                   if _i.get("min_clear") is not None
-                                   and _i["min_clear"] < cfg.clearance - 1e-6)
-                    _angbadA = sum(1 for _i in _routesA.values()
-                                   if min(_i.get("ang_a", ANCHOR_MIN_DEG),
-                                          _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
-                    _pressbadA = sum(1 for _i in _routesA.values() if _i.get("press", 0))
-                    _gate0 = (_pairs0, _clrbad0, _angbad0, _pressbad0)
-                    _best = (_gate0, None, None, None, _routes0)
-                    if (_pairsA, _clrbadA, _angbadA, _pressbadA) < _best[0]:
-                        _best = ((_pairsA, _clrbadA, _angbadA, _pressbadA), pos, y, rows, _routesA)
-                    # The layout layer's second move: deterministic (row, order) reorder -> 24px repack -> hard-gate polish
-                    # -> routing -> joint reroute
-                    _order2 = _reorder_rows(edges, rows)
-                    _pos2 = _repack_x(_order2, widths, cfg)
-                    _y2 = dict(y)
-                    for _r, _vs in enumerate(_order2):
-                        for _v in _vs:
-                            _y2[_v] = cfg.top + _r * cfg.pitch
-                    _pos2, _sc2, _rt2 = _polish(core, edges, _order2, _pos2,
-                                                _y2, widths, card_h, cfg,
-                                                hard_gates=True, eval_cache=_ec)
-                    # ref-scrubbed: isolated nodes are not in rows (delivered on the top parking strip); the gated reorder reorders only core -
-                    # parking-strip coordinates are carried back as-is, so the Router's all-node keys stay complete (legacy gap: on graphs
-                    # with isolated nodes the gated path raised KeyError on first trigger)
-                    for _v in deg0:
-                        _pos2.setdefault(_v, pos[_v])
-                    _r2 = Router({v: (_pos2[v], _y2[v], widths[v], card_h)
-                                  for v in nodes}, edges, cfg.clearance, cfg.pitch,
-                                 quality=True, eval_cache=_ec)
-                    _rt2 = _r2.route_all()
-                    _rt2 = _r2.joint_reroute(dict(_rt2))
-                    _pairs2 = _r2.final_crossing_pairs(_rt2)
-                    _clrbad2 = sum(1 for _i in _rt2.values()
-                                   if _i.get("min_clear") is not None
-                                   and _i["min_clear"] < cfg.clearance - 1e-6)
-                    _angbad2 = sum(1 for _i in _rt2.values()
-                                   if min(_i.get("ang_a", ANCHOR_MIN_DEG),
-                                          _i.get("ang_b", ANCHOR_MIN_DEG)) < ANCHOR_MIN_DEG - 1e-9)
-                    _pressbad2 = sum(1 for _i in _rt2.values() if _i.get("press", 0))
-                    if (_pairs2, _clrbad2, _angbad2, _pressbad2) < _best[0]:
-                        _best = ((_pairs2, _clrbad2, _angbad2, _pressbad2),
-                                 _pos2, _y2, _order2, _rt2)
-                    if _best[1] is None:
-                        _routes_final = _best[4]      # placement unchanged but the routes were swapped for better ones
-                    elif _best[0] < _gate0:
-                        pos, y, rows = _best[1], _best[2], _best[3]
-                        _routes_final = _best[4]
-            _timing.mark("polish_gated_reorder")
+        sym_plan = _st.plans["sym"]
+        bw_plan = _st.plans["bw"]
+        sw_plan = _st.plans["sw"]
+        comb_plan = _st.plans["comb"]
+        column_plan = _st.plans["column"]
+        ring_plan = _st.plans["ring"]
+        radial_plan = _st.plans["radial"]
+        lens_plan = _st.plans["lens"]
+        pos, y, rows = _st.pos, _st.y, _st.rows
+        deg0 = _st.deg0
+        engine = _st.engine
+        pos_meta = _st.pos_meta
+        constructed = _st.constructed
+        _routes_final = _st.routes_final
 
         # ref-scrubbed improvement ticket: single-node zero-crossing
         # neighborhood reposition post-processing (ring-cycle placement).
