@@ -7,9 +7,6 @@ on:
   schedule:
     # Saturdays 03:00 UTC = 11:00 UTC+8 — weekly full 3.9 compatibility sweep
     - cron: "0 3 * * 6"
-    # TEMP (evidence harness, removed in the next commit): a 5-minute tick so
-    # the push-vs-schedule isolation can be observed without waiting a week.
-    - cron: "*/5 * * * *"
   # Manual entry so the weekly 3.9 sweep (and the whole matrix) can be
   # reproduced on demand instead of waiting for the Saturday tick.
   workflow_dispatch:
