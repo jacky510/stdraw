@@ -17,27 +17,27 @@
   "rebless": "only under an approved card: python tests/golden_gate.py --update-baseline"
  },
  "timing_ref": {
-  "avg": 1.28,
-  "max": 2.39,
+  "avg": 1.31,
+  "max": 2.42,
   "platform": "Windows-11-10.0.26300-SP0",
   "per_graph": {
-   "eroding-goals": 1.12,
-   "escalation": 1.15,
-   "fixes-that-fail": 1.25,
-   "growth-and-underinvestment": 1.24,
-   "limits-to-growth": 2.39,
-   "shifting-the-burden": 0.99,
-   "success-to-the-successful": 0.97,
-   "tragedy-of-the-commons": 1.14
+   "eroding-goals": 1.11,
+   "escalation": 1.11,
+   "fixes-that-fail": 1.14,
+   "growth-and-underinvestment": 1.32,
+   "limits-to-growth": 2.42,
+   "shifting-the-burden": 1.18,
+   "success-to-the-successful": 1.04,
+   "tragedy-of-the-commons": 1.17
   }
  },
  "graphs": {
   "eroding-goals": {
    "cld": "eroding-goals.cld",
-   "seconds": 1.12,
+   "seconds": 1.11,
    "sha256": {
     "cld": "c784caa7f3b89233f04d339622b0c13dcf29b69788748caf3d82b0188a677ac5",
-    "certificate": "45908ca41f82f61a7c3d24a36a96ccb0324c802ae3321bec684f319da050ac1e",
+    "certificate": "c9f29257a7b599e6b1199f1efacf335005f0931dda8feba47aa85e90aa3c7ae4",
     "loops_audit": "ed451a10da2d72d26130995c1dd7d168298eaa7a2d6966d2574bcd6db56376ed",
     "layout": "8ef9f6c43620dc20fed9f2634437420b8a92f741437e808b6f9bded337679b42"
    },
@@ -58,10 +58,10 @@
   },
   "escalation": {
    "cld": "escalation.cld",
-   "seconds": 1.15,
+   "seconds": 1.11,
    "sha256": {
     "cld": "a78ba0dacc6f665abc9ef9fbbc7e4fe00d89fcba62f59142bcbc2029935a2719",
-    "certificate": "73579831a66efc12e864c1c779349f84d2ba10e2f54fbeebacde775421a3e38b",
+    "certificate": "3dd34481d9d4dfad27596643789ef8021198f5ea95824db78947e5dfaf8018bd",
     "loops_audit": "7cbb9c104143a09554bdb7190bac6bdac145b17c46e9fbc797c2a524785ce846",
     "layout": "555fe1377e3e82d50e023a17909df14192fd8bad81d969a208f616e114e89849"
    },
@@ -82,10 +82,10 @@
   },
   "fixes-that-fail": {
    "cld": "fixes-that-fail.cld",
-   "seconds": 1.25,
+   "seconds": 1.14,
    "sha256": {
     "cld": "ecd6d76a2751b968ac6e531207fd31e13cf01f9e5cc74187f11bb290eda567f4",
-    "certificate": "c7d2ceb2cc5b7fe293fbd40217d2a9c1fbd7066554a0196a4bdd14b1692526b8",
+    "certificate": "0875f9f7b42a620fa571d47de3177855330476534e090b8cdf92bde8c48f9968",
     "loops_audit": "a2ebafb9b0c0856b19c158cae5fa6383d14406155b6ba336c3deab6c6082c75c",
     "layout": "efd05280f8ec9ec4d4d1365953261468b4565cacffe21350ead700e82b18287a"
    },
@@ -106,10 +106,10 @@
   },
   "growth-and-underinvestment": {
    "cld": "growth-and-underinvestment.cld",
-   "seconds": 1.24,
+   "seconds": 1.32,
    "sha256": {
     "cld": "e0c89ae4cf2c8177760e45be0db9e34ce4745b0395aadbfe95d1d0812493d5f7",
-    "certificate": "23ab9a10a02c8ba6391821ac7c423c45a4d5b43786162d155af72b10392819f9",
+    "certificate": "e2edcaf42783e3c180e510eba61c3fc05ce66af6cfb302e3b466ef7cc13244dc",
     "loops_audit": "971651dc619ed422ccd1ebb15bc39ab47af38f9a7540c627103a64cdb54933b9",
     "layout": "f8a7653f92c676aa3c9b7bdc991196926a236d8a17ef52d64241267426d66f8e"
    },
@@ -130,10 +130,10 @@
   },
   "limits-to-growth": {
    "cld": "limits-to-growth.cld",
-   "seconds": 2.39,
+   "seconds": 2.42,
    "sha256": {
     "cld": "96c4f0d9b3f2e01a86fe30b7c92c7f156de49ca66bb0df2248813a382b4131a3",
-    "certificate": "825a22b272f7a7151d7f84b1a02bd45b2539c122a8cf19c618d3008c1eb02b47",
+    "certificate": "189e50d6387cbd004aa0b125ec2dfa2641e421457a0b04acff0deae8b322c388",
     "loops_audit": "1d3a446146801b2c5da2f284f6119bfaa9a00e06bfb05ad2d5fed122eb3c73dd",
     "layout": "783d684719e46f639132d9b4ce1fc8e51bfeb7783087c148920a1e1d4827da24"
    },
@@ -154,10 +154,10 @@
   },
   "shifting-the-burden": {
    "cld": "shifting-the-burden.cld",
-   "seconds": 0.99,
+   "seconds": 1.18,
    "sha256": {
     "cld": "63220b16ecbe670c028dd6619dd4fc9237c8afebf7fdc1dde0dcae236383ca83",
-    "certificate": "d232d41a6092e3ebf8e06e585573f8cee34b961d422dbf0a6a05601b8eee6b39",
+    "certificate": "e4c0f4e46ac6a37c12564cbc4368b851a1b9d470a294f1812dc2c957201ba3bc",
     "loops_audit": "2ed57eb657c5a44bb50c254ca13b3e2a8cf850895f801cec3f26cf1deca86146",
     "layout": "c9bc669207fcb406d64e38db2021d4d98671af0bbc103318b21c332d83abb86f"
    },
@@ -178,10 +178,10 @@
   },
   "success-to-the-successful": {
    "cld": "success-to-the-successful.cld",
-   "seconds": 0.97,
+   "seconds": 1.04,
    "sha256": {
     "cld": "0cdd8879bf187c4f42e4b256790974226ababac2ae6f44c13079a68348d49161",
-    "certificate": "c50599628945199c7bef5a07b7ee258e74929995d477a23e5a3a3dcea3793d12",
+    "certificate": "50881c0ccdcd1968cbe0b349e65383f3266ff56ebb9afa7bb97e103f7e7a9f1e",
     "loops_audit": "132463ee14dc9e24a8c1c904f90ce0e24b3e66f2baa1443a752cdc4bb13a220b",
     "layout": "47106da82e96f4fd3fd8e96cab1c99f58d45dcbf2dd59014463a3fe107f48856"
    },
@@ -202,10 +202,10 @@
   },
   "tragedy-of-the-commons": {
    "cld": "tragedy-of-the-commons.cld",
-   "seconds": 1.14,
+   "seconds": 1.17,
    "sha256": {
     "cld": "99c64cce9c1ba3491f389dd4137a30a1e2d4744254ef9db1ef462d8278dc905d",
-    "certificate": "3f3612bfaacb3ce0b2823fd383c4b8ca58767c5aa824758dd016e82894eb7660",
+    "certificate": "fef605f9f169ed469b8eabf08e8be15a3c54d66f8803dafba0f315816363666c",
     "loops_audit": "d04319aea4a3cf933efd014aae0bc0f4139b87e778b1a52aa579fd363c522e49",
     "layout": "c2b4b8966d9d13cd95552bdf52559fa916d498f9d7409a8c10d545397cef27ae"
    },

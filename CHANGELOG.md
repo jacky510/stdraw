@@ -4,6 +4,23 @@ Notable user-visible changes to **stdraw**. Entries before 0.8.0 are not
 reproduced here; the engineering version history lives in
 [AGENTS.md](AGENTS.md) ("Version" section) — pointer, not a copy.
 
+## 0.10.1 (unreleased)
+
+- **certificate `grade_semantics`: the retired `3d` token is now described as
+  what it is** — a historical read-back token. The field used to say "the 3d
+  tier in the docs describes the 3D delivery path", which reads as if a 3D
+  path still existed after its 0.10.0 removal; it now says the `3d` token is
+  kept only so pre-0.10.0 certificates still validate, and that the 3D
+  delivery path it described was removed in 0.10.0 (wording aligned with
+  `docs/grading-contract.md` §1). Text-only: `grade` / gates / metrics /
+  `layout.json` / `loops_audit.json` are byte-identical, and a per-field diff
+  of the eight golden certificates plus the demo certificate shows exactly one
+  changed leaf (`.grade_semantics`). The certificate file grows by 89 bytes, so
+  `tests/golden/baseline.json` was re-blessed (8/8 `sha256.certificate`, no
+  other key) and `demos/classic-certificate.json` re-rendered; the proof and
+  the new pinned hashes are recorded in `docs/a-tier-drift-registry.md` #10.
+  Byte-pinned consumers re-fetch once.
+
 ## 0.10.0 (2026-11-28)
 
 - **loops: a cycle's R/B polarity parity is now direction-aware**
@@ -229,9 +246,12 @@ reproduced here; the engineering version history lives in
   judged low-value and dropped): `layout3d` / `render3d`, the `--solids`,
   `--theme-3d` and `--skip-3d` flags, `positions3d.json`, `demo-3d.html`,
   the bundled three.js assets and the standalone 3D viewer are gone.
-  The CLI is 2D-only; every 2D artifact is byte-identical to 0.9.0
-  (26-figure three-way hash sweep: pre-removal `--skip-3d`,
-  pre-removal default, post-removal default).
+  The CLI is 2D-only. **The 2D artifacts produced by that one commit
+  (`81901db`) were byte-identical to the pre-removal 2D output**
+  (26-figure three-way hash sweep: pre-removal `--skip-3d`, pre-removal
+  default, post-removal default) — an equality scoped to `81901db`, **not**
+  to the 0.10.0 tag: six later changes in the same release do move 2D bytes
+  (see the consumer note below).
 - **Loop-reading layer (default on)**: every declared loop carries a
   loop-center label (id + name + direction glyph; polarity stays
   color-only), loop-member edges of loops with >= 3 nodes default to an

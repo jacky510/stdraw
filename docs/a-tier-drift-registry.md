@@ -800,3 +800,45 @@
 3. **登记 #8 的处置不是白做**：那次重录是当时的正确动作（口径未改前，基线必须反映当时的字节）；本条是在其证明结论（version-only）基础上做的一次性口径升级。
 4. **不追溯历史**：`v0.9.0` 及更早的 tag 内 `baseline.json` 口径保持原样，不改写历史提交。
 
+## 10. 登记 #10：证书 `grade_semantics` 残留 3D 口径 → 历史读回口径（2026-11-28，并入 0.10.1）
+
+### 10.1 批准来源与变更内容
+
+- **批准**：owner 2026-11-28 对 WorkBuddy P4 评审的处置（处置卡由主 session 拆出，卡面明令本条走批准后的 re-bless）。本卡另含两处文档口径（`AGENTS.md` 受保护，另走 owner 当场批准；`CHANGELOG.md` 本卡自改）。
+- **变更内容（唯一产物面改动）**：`stdraw/metrics.py` 的证书 `grade_semantics` 逐字替换一句——
+  - 旧口径：`3d` 被描述成「文档里那个 3D 交付层级」所在（原文为一句英文，见改动前的 `git show 803a958:stdraw/metrics.py`）。
+  - 新口径：`3d` 仅为历史读回令牌——旧（0.10.0 之前）证书仍可据此校验，而它所描述的 3D 交付路径已于 0.10.0 移除。
+  - 字符串 511 → 600 字符（+89 B/图）。同串其余字面（grade 定义 / 软目标段 / `second` 段 / single-source 指针）与代码其余部分**零改动**。
+- **语义**：`3d` 由「文档里描述的 3D 交付路径」改为「仅旧证书读回令牌」，与 `docs/grading-contract.md` §1 现行口径一致（3D 已于 0.10.0 物理删除）。
+- **同批交付面**：`demos/classic-certificate.json` 重渲（唯一 diff 为同一行）。
+
+### 10.2 证明（双树渲染 + 逐叶子 diff，程序现读，2026-11-28）
+
+- **方法**：改前树 = main `803a958`；改后树 = 本卡工作树。两侧各渲染 8 张金标准图 + classic demo（GaU 用 `--pitch 96`，与 `tests/golden_gate.py` 同口径；Python 3.12.10 + ortools 9.15.6755），对 7 类产物做递归叶子 diff（对比脚本与本条原始输出随处置卡留档，不入库）。
+- **结果 9/9**：`certificate.json` 差异叶子集合 **恰好 = `["grade_semantics"]`**；其余 6 类产物（`layout.json` / `loops_audit.json` / `geometry_report.json` / `demo-2d.html` / `graph.json` / `graph.cld`）**逐字节相同**。
+- **证书字节**：9 份全部 **+89 B**。
+- **门侧独立佐证**：re-bless 前 `python tests/golden_gate.py` 报 **8 条、且只有 `sha256.certificate drift`**，无 grade / gate / crossings / geometry / `sha256.layout` / `sha256.loops_audit` / `sha256.cld` 漂移行。
+- **解释器无关**：同一改后树用 Python 3.14.7 与 3.12.10 渲染，8/8 证书逐字节相同（重录用 3.12.10，故 `_meta.python` 保持 `3.12.10`）。
+
+| 图 | 证书哈希（前 12 位 → 后 12 位） | 证书字节 |
+|---|---|---|
+| eroding-goals | 45908ca41f82 → c9f29257a7b5 | 10179 → 10268 |
+| escalation | 73579831a66e → 3dd34481d9d4 | 7749 → 7838 |
+| fixes-that-fail | c7d2ceb2cc5b → 0875f9f7b42a | 8068 → 8157 |
+| growth-and-underinvestment | 23ab9a10a02c → e2edcaf42783 | 9778 → 9867 |
+| limits-to-growth | 825a22b272f7 → 189e50d6387c | 8069 → 8158 |
+| shifting-the-burden | d232d41a6092 → e4c0f4e46ac6 | 8623 → 8712 |
+| success-to-the-successful | c50599628945 → 50881c0ccdcd | 8127 → 8216 |
+| tragedy-of-the-commons | 3f3612bfaacb → fef605f9f169 | 10056 → 10145 |
+| classic demo（`demos/classic-certificate.json`） | —（交付面重渲） | 13006 → 13095 |
+
+### 10.3 冻结基线处置（与流程门分开报）
+
+- `python tests/golden_gate.py --update-baseline`（批准卡通道；重录前已按 §10.2 证明差异集合恰 `[".grade_semantics"]`）：**changed 列表恰 8 条 `sha256.certificate`**，无其它键。
+- 基线文件 diff 另含 `seconds` / `timing_ref`（计时参考值，从不参与判定）；**无** grade / placement / gates_passed / crossings / visual_crossings / nodes / edges / loops_declared / `sha256.cld` / `sha256.layout` / `sha256.loops_audit` 变化；`_meta.python` / `_meta.platform` / `_meta.engine_version` 不变。
+- 重录后 `tests/golden_gate.py` **8/8 ALL GREEN**；`tests/ci_checks.py` 相位 I（demo / certificate / loops-audit 新鲜度）、K（语言分区）、M（金标准集）本地复跑全绿。
+
+### 10.4 byte-pinned 消费方（STDRAW_PIN）
+
+- 任何 pin 了 0.10.0 证书字节的消费方需重取一次：**字段语义零变**（grade / 门集 / 度量逐值相同），只有 `grade_semantics` 文本澄清；新 pin 值见 §10.2 表。
+- **明写不解决项**：本条不扩大口径——证书哈希仍按登记 #9 剔除 `version` 值、其余字节钉死；`grade_semantics` 属真实内容，故按真实变更重新钉基线，而不是把它加入剔除清单。

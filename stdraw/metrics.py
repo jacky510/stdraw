@@ -1510,7 +1510,9 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         "uncertified (honest no-grade). Soft targets (crossings <= 2, row "
         "alignment) are layout objective-function report items, NOT "
         "certificate gates. Tokens: best | uncertified (2D certificate "
-        "field); the 3d tier in the docs describes the 3D delivery path. "
+        "field); `3d` is a historical read-back token only, so pre-0.10.0 "
+        "certificates still validate -- the 3D delivery path it described "
+        "was removed in 0.10.0. "
         "second was removed in v0.7.15+ (logically unreachable). Single "
         "source: docs/grading-contract.md")
     out["blocking_gates"] = [k for k, v in g.items() if v is False]
