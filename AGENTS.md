@@ -448,13 +448,19 @@ Current **0.10.0** (`stdraw.__version__`, consistent with `pyproject.toml`).
 The DSL is a v0.1 draft; backward-compatible upgrades will bump in sync with
 the spec documents.
 
-- **After v0.9.0 (unreleased)**: 3D layer removed (owner ruling 2026-11-24:
-  the 3D deliverable was judged low-value and dropped) — `layout3d` /
-  `render3d`, the `--solids` / `--theme-3d` / `--skip-3d` flags,
-  `positions3d.json` / `demo-3d.html`, the bundled three.js `assets/` and
-  the standalone 3D `viewer/` are gone (commit 81901db); the CLI is 2D-only
-  and every 2D artifact is byte-identical to 0.9.0; the `3d` grade token is
-  retired to historical read-back only (CHANGELOG.md Unreleased).
+- **v0.10.0** (released 2026-11-28; this entry records the release's 3D
+  closure — the full change list lives in CHANGELOG.md 0.10.0): 3D layer
+  removed (owner ruling 2026-11-24: the 3D deliverable was judged low-value
+  and dropped) — `layout3d` / `render3d`, the `--solids` / `--theme-3d` /
+  `--skip-3d` flags, `positions3d.json` / `demo-3d.html`, the bundled
+  three.js `assets/` and the standalone 3D `viewer/` are gone (commit
+  81901db); the CLI is 2D-only. The 2D artifacts of that commit were
+  byte-identical to 0.9.0 (three-way hash sweep: pre-removal `--skip-3d`,
+  pre-removal default, post-removal default) — an equality scoped to
+  `81901db`, **not** to the 0.10.0 tag: six later changes in the same
+  release do move 2D bytes (CHANGELOG.md 0.10.0 consumer note). The `3d`
+  grade token is retired to historical read-back only (CHANGELOG.md 0.10.0
+  / 0.10.1; `docs/grading-contract.md` section 1).
 - **v0.9.0 version closure** (85-commit sweep since 0.8.2: preference
   research toolchain + opt-in candidate generation + performance):
   (a) opt-in anchors-as-prior candidate generation — family-gated anchor
