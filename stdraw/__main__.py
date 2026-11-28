@@ -340,6 +340,51 @@ def _report_internal(exc):
         traceback.print_exc()
 
 
+def _measure_hint_status(a, delivered, cfg):
+    """Per-hint delivered status: ablation on the DELIVERED geometry.
+
+    The pristine graph (hints as declared, loops in their declared order)
+    comes from a fresh parse of the input — @order has already reordered the
+    pipeline graph, and ablating against that state would make the "without
+    @order" run a no-op. Each ablated delivery is a full run of the same
+    recipe: one extra layout run per declared hint, paid only by hinted
+    graphs. Progress lines printed by the ablated runs are swallowed so the
+    CLI transcript still describes the single delivered run.
+    """
+    import contextlib
+    import io
+    from .hints import measure_status
+
+    pristine = load_graph(a.input)
+
+    def run(g2):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            return _run_layout_request(a, g2, cfg)
+
+    return measure_status(pristine, delivered, run)
+
+
+def _hint_status_line(status: dict) -> str:
+    """One-line CLI transcript of the measured per-hint statuses."""
+
+    def st(rec):
+        reason = rec.get("reason")
+        return rec["status"] + (" (%s)" % reason if reason else "")
+
+    parts = ["@main %s %s" % (rec["loop"], st(rec))
+             for rec in (status.get("main") or [])]
+    if status.get("order"):
+        rec = status["order"]
+        parts.append("@order %s %s" % (",".join(rec.get("ids") or []), st(rec)))
+    for rec in (status.get("pairs") or []):
+        parts.append("@pair %s %s" % (",".join(rec["pair"]), st(rec)))
+    runs = (status.get("measurement") or {}).get("ablation_runs", 0)
+    return ("; ".join(parts)
+            + " — measured by ablation on the delivered artifacts "
+              "(%d extra run(s))" % runs)
+
+
 def main(argv=None):
     a = _build_arg_parser().parse_args(argv)
     try:
@@ -389,11 +434,19 @@ def _run_pipeline(a):
     # deliverable (delivery="stdraw-cli", no warning) per the delivery
     # contract; `interactive` is true only when --interactive opted in.
     v4 = stamp_cli_deliverable(v4, interactive=a.interactive)
+    # T14 delivered-status measurement: one ablation run per declared hint,
+    # diffed against the delivered geometry (hinted graphs only).  The
+    # certificate carries the result; a hints-free graph pays nothing and
+    # keeps its bytes.
+    hint_status = (_measure_hint_status(a, v4, cfg)
+                   if has_hints(g) else None)
     p = w("layout.json", v4)
     meta = v4["meta"]
     print(f"[3/5] 2D layout (auto-v2, engine={meta['position_engine']}, "
           f"line kinds {line_kind_summary(v4)}): {v4['viewBox'][2]}x{v4['viewBox'][3]}, "
           f"{meta['rows']} rows -> {p}")
+    if hint_status:
+        print("      [hints] " + _hint_status_line(hint_status))
     rc = geometry_report_to_file(
         v4, os.path.join(a.outdir, "geometry_report.json"))
     exactness = _resolve_exactness(a, v4, g)
@@ -403,6 +456,7 @@ def _run_pipeline(a):
                             drag_layer="yes" if a.interactive else "no",
                             deliverable=True,
                             annotation_layer=a.loop_labels,
+                            hint_status=hint_status,
                             notes=(["deprecated pixel parameter(s) used: "
                                     + ", ".join(_deprecated_used)
                                     + " — prefer the DSL semantic hints "

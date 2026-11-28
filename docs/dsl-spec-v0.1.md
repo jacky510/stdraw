@@ -132,10 +132,25 @@ docs/agent-interface.md):
   accumulate). Referencing an undeclared loop/variable is a validation
   error;
 - The certificate records the hints actually declared (`certificate.json`
-  `hints` block: ids + the mechanism each hint feeds) — emitted only when
-  hints exist, so hints-free graphs keep their bytes byte-for-byte;
+  `hints` block: ids + the mechanism each hint feeds + the MEASURED delivered
+  `status` of every declaration) — emitted only when hints exist, so
+  hints-free graphs keep their bytes byte-for-byte;
+- `hints.status` carries one row per declaration: `applied` / `unapplied`,
+  with a reason code when unapplied (`cross-row`: the two variables are
+  delivered on different rows and cannot be adjacent; `mode-not-eligible`:
+  the delivered template placement does not consume the hint;
+  `no-effect-measured`: the engine consumed it and the delivery still did
+  not move). The status is measured by ablation on the delivered artifacts —
+  the same delivery is re-run with exactly one declaration removed and the
+  delivered node centers + route points are diffed (`@order` is diffed on
+  the delivered loop-label sequence instead: the reading order itself is its
+  effect). It is never inferred from the code path reading the field. Each
+  declaration therefore costs one extra layout run; only hinted graphs pay
+  it, and a certificate built outside the CLI delivery path reports
+  `unmeasured` / `measurement-not-run` rather than a fabricated status;
 - `dumps` emits the hints after the groups in the canonical order (`@main`
   lines, then `@order`, then `@pair` lines); `parse(dumps(g)) == g` holds
   with and without hints (property-tested in tests/test_dsl_hints.py);
-- Cross-row `@pair` pairs cannot be adjacent and are reported unapplied
-  (honest boundary).
+- Cross-row `@pair` pairs cannot be adjacent: the delivered status records
+  them as `unapplied` with reason `cross-row` (honest boundary, measured —
+  see the status bullet above).

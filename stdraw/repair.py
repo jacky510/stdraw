@@ -156,29 +156,42 @@ def _first_edge_tag(rows):
     return None
 
 
-def hints_block(graph) -> dict:
-    """T14 certificate record: which semantic hints this run declared and
-    what each is expected to do. Emitted only when hints exist."""
+def hints_block(graph, status=None) -> dict:
+    """T14 certificate record: which semantic hints this run declared, what
+    each feeds, and the MEASURED delivered status of each declaration.
+
+    status: the block returned by ``hints.measure_status`` (ablation on the
+    delivered geometry). Emitted only when hints exist; a hints-free graph
+    keeps its bytes byte-for-byte. Without a measurement the status rows are
+    ``unmeasured`` / ``measurement-not-run`` — the record never asserts a
+    status from the code path."""
     h = getattr(graph, "hints", None)
     if not h or h.empty():
         return {}
+    from .hints import status_block
     mech = {}
     if h.main:
         mech["main"] = ("placement objective centering term on the main-loop "
-                        "nodes (cp-sat) / centering shift (construct)")
+                        "nodes (cp-sat) / centering shift (construct) / "
+                        "main-ring selection (ring)")
     if h.order:
         mech["order"] = ("loops reordered to the reading sequence at pipeline "
                          "entry (loop audit listing, loop-arc scope, "
                          "annotation order follow)")
     if h.pairs:
         mech["pair"] = ("placement objective adjacency term for same-row "
-                        "pairs (cp-sat) / adjacent packing (construct); "
-                        "cross-row pairs are reported unapplied")
+                        "pairs (cp-sat) / adjacent packing (construct) / "
+                        "consecutive ring slots (ring)")
     return {
         "main": list(h.main),
         "order": list(h.order),
         "pairs": [[a, b] for (a, b) in h.pairs],
         "mechanism": mech,
+        # per-declaration delivered status, MEASURED by ablation (applied /
+        # unapplied + reason code); see stdraw/hints.py measure_status()
+        "status": status_block(graph, status),
         "note": ("DSL semantic hints (T14); the pixel parameters --pitch / "
-                 "--hub-side / --column-order are deprecated"),
+                 "--hub-side / --column-order are deprecated; status is "
+                 "measured on the delivered geometry (one ablation run per "
+                 "declaration)"),
     }

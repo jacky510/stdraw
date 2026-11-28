@@ -78,9 +78,10 @@ b -> + a @delay @loops R1
 ```
 
 - `@main` 与 `@order` 接受逗号分隔的回路 id（多条 `@main` 行累加）；`@pair` 恰好两个变量 id（多行累加）。引用未声明的回路/变量是校验错误；
-- 证书如实记录本次声明的提示（`certificate.json` 的 `hints` 块：id + 每条提示馈入的机制）——仅在有提示时输出，无提示图字节级不变；
+- 证书如实记录本次声明的提示（`certificate.json` 的 `hints` 块：id + 每条提示馈入的机制 + **逐条实测交付状态**）——仅在有提示时输出，无提示图字节级不变；
+- `hints.status` 一行一条声明：`applied` / `unapplied`；未生效附原因码（`cross-row`：两变量交付在不同行、无法相邻；`mode-not-eligible`：交付的模板放置不消费该提示；`no-effect-measured`：引擎消费了但交付确实没变）。状态由**交付物消融实测**得到——同一交付配方去掉恰好一条声明再跑，比较交付后的节点坐标 + 路由点（`@order` 比较交付的回路注解序列，阅读顺序本身就是它的效果），绝不按「代码路径读了这个字段」推断。因此每条声明多花一次布局运行（只有带提示的图付）；CLI 之外构造的证书如实写 `unmeasured` / `measurement-not-run`，不编造状态；
 - `dumps` 在 groups 之后按规范顺序输出提示（`@main` 行、`@order`、`@pair` 行）；有无提示均满足 `parse(dumps(g)) == g`（属性测试在 tests/test_dsl_hints.py）；
-- 跨行的 `@pair` 无法相邻，会如实报告为未生效（诚实边界）。
+- 跨行的 `@pair` 无法相邻：交付状态实测为 `unapplied` + `cross-row`（诚实边界，见上面的状态条目）。
 
 ## 附录 C. 端点锚位指定 `@anchors`（2026-11-26）
 

@@ -40,6 +40,27 @@ reproduced here; the engineering version history lives in
   the new pinned hashes are recorded in `docs/a-tier-drift-registry.md` #10.
   Byte-pinned consumers re-fetch once.
 
+- **semantic hints: the certificate now carries a MEASURED delivered status
+  per declaration** (the docs promised "reported unapplied" while nothing was
+  implemented): `certificate.json` `hints.status` lists every `@main` id, the
+  `@order` line and every `@pair` with `status` = `applied` / `unapplied` and,
+  when unapplied, a reason code — `cross-row` (the two variables are
+  delivered on different rows, so they cannot be adjacent),
+  `mode-not-eligible` (the delivered template placement does not consume the
+  hint) or `no-effect-measured` (the engine consumed it and the delivery
+  still did not move). The status is measured by ABLATION on the delivered
+  artifacts: the same delivery is re-run with exactly one declaration removed
+  and the delivered node centers + route points are diffed; `@order` is
+  diffed on the delivered loop-label sequence, because the reading order
+  itself is its effect and it never moves a coordinate. Nothing is inferred
+  from "the engine reads this field" — that would be self-certification.
+  Cost: one extra layout run per declaration, paid only by hinted graphs (a
+  hints-free graph keeps its certificate bytes byte-for-byte, and the golden
+  set stays 8/8 baseline identical). A certificate built outside the CLI
+  delivery path reports `unmeasured` / `measurement-not-run` instead of a
+  fabricated status. Docs: `docs/dsl-spec-v0.1.md` appendix B,
+  `docs/agent-interface.md` T14 section.
+
 ## 0.10.0 (2026-11-28)
 
 - **loops: a cycle's R/B polarity parity is now direction-aware**

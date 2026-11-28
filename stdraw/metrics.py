@@ -994,7 +994,8 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                      graph=None, exactness: Optional[dict] = None,
                      interactive: str = "no", drag_layer: str = "no",
                      deliverable: bool = False,
-                     annotation_layer: bool = True) -> dict:
+                     annotation_layer: bool = True,
+                     hint_status: Optional[dict] = None) -> dict:
     """v2 quality certificate: five metrics + new hard gates + honest grading.
     All verification runs on delivered coordinates.
 
@@ -1007,6 +1008,11 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
                           tangent angle >= ANCHOR_MIN_DEG
       regularity_simple   simple graph (<=10 nodes) placement regularity:
                           uniform row pitch + 24px column snap >= 60%
+
+    hint_status: per-declaration delivered status for the ``hints`` block
+      (``stdraw.hints.measure_status``). Absent -> the block honestly says
+      ``unmeasured`` / ``measurement-not-run``; the CLI delivery path always
+      measures by ablation on the delivered geometry.
     """
     nodes = scene["nodes"]
     edges = scene["edges"]
@@ -1454,7 +1460,7 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         **({"edge_rules": scene["edge_rules"]} if scene.get("edge_rules") else {}),
         # T14: DSL semantic hints record — emitted only when the graph
         # declares hints (hints-free graphs keep their bytes byte-for-byte)
-        **({"hints": _hints_blk} if (_hints_blk := hints_block(graph)) else {}),
+        **({"hints": _hints_blk} if (_hints_blk := hints_block(graph, hint_status)) else {}),
         # loop-direction arc default record (emitted only when the scope has
         # a loop-member line): honest delivery counts + fallback reasons
         **({"loop_arcs": scene["loop_arcs"]} if scene.get("loop_arcs") else {}),

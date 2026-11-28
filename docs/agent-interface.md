@@ -70,8 +70,11 @@ CLI 的失败面分两类，产物文件名与退出码都不同——agent 按�
 - 实际机制（提示存在时才进入任何提示代码路径；无提示图输出字节级不变）：
   - `@order`：流水线入口按声明序列重排 `graph.loops`——回路审计清单、回路弧向作用域、注解层顺序都跟随（幂等）；
   - `@main`：ring 模式强制主环选择（`meta.ring.hint_main` 如实记录；试验门兜底不失效）；layered 模式在放置目标函数加入居中项（cp-sat）/ 整体平移居中（construct）；
-  - `@pair`：ring 模式旋转环序列使两变量占相邻环位；layered 模式目标函数加相邻项（cp-sat）/ 相邻打包（construct）。跨行对无法相邻，如实不生效。
-- 证书 `hints` 块：声明的 id + 每条提示馈入的机制说明——仅在有提示时输出。
+  - `@pair`：ring 模式旋转环序列使两变量占相邻环位；layered 模式目标函数加相邻项（cp-sat）/ 相邻打包（construct）。跨行对无法相邻——交付状态实测为 `unapplied` + `cross-row`。
+- 证书 `hints` 块：声明的 id + 每条提示馈入的机制说明 + **逐条交付状态**，仅在有提示时输出（无提示图字节级不变）。`hints.status` 一行一条声明：
+  - `status` = `applied` / `unapplied`；`unapplied` 附原因码 `cross-row`（两变量交付在不同行，无法相邻）/ `mode-not-eligible`（交付用的模板放置不消费该提示）/ `no-effect-measured`（引擎读了但交付几何没变）；
+  - 状态是**实测**的：同一交付配方去掉该条声明再跑一次，比较交付后的节点坐标 + 路由点（`@order` 比较交付的回路注解序列，因为阅读顺序本身就是它的效果）。不看「引擎有没有读到字段」——那是自证；
+  - 每条声明多花一次布局运行（只有带提示的图付这个成本）；CLI 同时在 stdout 打一行 `[hints] ...`。
 - **弃用（本卡只标记，物理删除留 P3 减法卡）**：`--pitch` / `--hub-side` / `--column-order` 继续工作，但 `--help` 标 DEPRECATED、使用时 stderr 打 `[deprecated]` 警告、certificate `honest_notes` 追加一条弃用记录（条件追加，不用则字节不变）。
 
 ## 决策记录
