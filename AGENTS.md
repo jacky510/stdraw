@@ -22,7 +22,7 @@
 | Path | Purpose |
 |---|---|
 | `stdraw/` | engine package: DSL parsing / placement (auto-v2 mode-based) / mathematical routing (WS3) / exact crossings (WS2) / certificates / CLI (`python -m stdraw` entry) |
-| `tests/` | pytest cases + `ci_checks.py` (CI iron-gate script) + `baselines/` (ortho-v1 frozen baselines, byte-pinned) |
+| `tests/` | pytest cases + `ci_checks.py` (CI iron-gate script) + `golden/` (golden archetype baselines, byte-pinned) |
 | `examples/` | `.cld` samples (limits-to-growth / classic-cld-growth-and-burden) |
 | `demos/` | deliverable demo HTML + certificate JSON — **publishing face**, must stay byte-identical to a fresh re-render by the current engine |
 | `docs/` | caliber originals: `dsl-spec-v0.1.md` (+ `.zh-CN.md` counterpart) / `layout-modes.md` / `crossing-exact.md` / `gallery/` (screenshots) |
@@ -36,7 +36,7 @@ Local dev interpreter: `<user-home>/AppData/Local/Programs/Python/Python312/pyth
 | Command | Purpose |
 |---|---|
 | `python -m pytest tests/ -q` | unit tests |
-| `python tests/ci_checks.py` | CI iron gates: ortho frozen regression byte-pinned + auto-v2 hard gates + determinism double-run (+ optional DOM layer) |
+| `python tests/ci_checks.py` | CI iron gates: auto-v2 hard gates + golden archetype byte-regression + determinism double-run (+ optional DOM layer) |
 | `python -m stdraw layout examples/classic-cld-growth-and-burden.cld --name classic-cld` | run the main sample, producing certificate/demo |
 | same command twice + `sha256sum` comparison | determinism verification (outputs are safe to commit, diff must be clean) |
 | re-render the demo and compare byte-for-byte against `demos/classic-cld-2d.html` | demo freshness gate (stale-deliverable detection) |
@@ -49,7 +49,7 @@ Local dev interpreter: `<user-home>/AppData/Local/Programs/Python/Python312/pyth
 
 ## Forbidden (must hang a card or kanban_block and wait — never decide on your own)
 
-- Changing the `tests/baselines/` frozen baselines or ortho-v1 frozen behavior — unless the card explicitly requires "re-baselining" and states the basis (only with same-file precedent)
+- Changing the A-tier frozen byte baseline (dual-leg `--compare` guard in `benchmarks/tools/sweep_tiers.py`) or the golden archetype baseline (`tests/golden/baseline.json` via `tests/golden_gate.py`) — unless the card explicitly requires "re-baselining" and states the basis (only with same-file precedent); `tests/baselines/` and the ortho-v1 frozen face are retired with their products and are no longer protected surfaces
 - Touching the publishing face (`README*` / `demos/` / `docs/gallery/` / `skills/stdraw/SKILL.md`) without publishing-face acceptance
 - Relaxing certificate hard-gate thresholds or changing the grade semantics (best / uncertified; the `3d` token is retired, historical read-back only) — never tune gates to let a figure pass
 - Copying the default-side `systems-thinking-diagram` skill canonical copy into the repo (pointers only, see the header)
@@ -156,7 +156,7 @@ content.
      elegance first); grading semantics unchanged — "best" still requires
      0 crossings. Grading single source: `docs/grading-contract.md` —
      auto-v2 (caliber `v2-hardgates`) emits `best` / `uncertified` only
-     (`second` removed in v0.7.15+, survives only in the v1-legacy ortho
+     (`second` removed in v0.7.15+, survives only in the historical v1-legacy ortho
      caliber, which is banned as a deliverable by ruling D0); read
      `certificate.json.caliber` before interpreting `grade`;
    - **R/B polarity coloring** (replacing letter badges): single-loop edges
@@ -189,13 +189,12 @@ content.
    by the B&B), with no claim over an arbitrary drawing space. Requires the
    optional dependency `pip install "stdraw[solver]"`; when absent,
    `computed:false` is honestly marked.
-4. **ortho-v1 frozen recipe (`--recipe ortho`)**: planar embedding +
-   st-numbering + visibility representation, all wires strictly vertical,
-   **0 crossings on planar graphs with theorem guarantee**; behavior frozen,
-   protected by a CI byte-regression iron gate, safe for production callers
-   to pin. Non-planar input raises `NotPlanarError` (the CLI prints an
-   honest degradation and stops there — no 2D layout / certificate /
-   demo is written, exit status 0; the CLI is 2D-only, no fallback layer).
+4. **ortho-v1 recipe (retired 2026-11-27, owner ruling)**: the vertical-
+   orthogonal constructive recipe (`--recipe ortho`, `recipes.ortho_v1()`,
+   the v1-legacy scoring caliber and its frozen byte baselines) is gone —
+   the CLI entry was removed, `stdraw/planar.py` survives only as the
+   internal planarization module. The delivery ban (ruling D0) still
+   holds: vertical-orthogonal output is never a deliverable.
 5. **Loop semantics audit (lint)**: verifies declared loop closure and R/B
    polarity parity against an independent enumeration of all graph loops;
    `loops_audit.json`'s `summary.problems` must = 0.
@@ -208,10 +207,11 @@ content.
    "Export layout" writes `edges[].waypoints` for anchored edges;
    `--from-layout` re-runs the same routing + certificate pipeline on manual
    coordinates (automatic-pipeline structural gates read N/A per the manual caliber — grading-contract.md §3.1; graded honestly on the remaining gates);
-   `--compare-auto` additionally runs the automatic layout of the same graph
-   and outputs the dual-certificate comparison `compare-auto.json`;
-   `layout-diff` produces a three-layer diff (node displacement / structural
-   metrics / loop semantics).
+   the repo dev gauges `tools/compare_auto.py` (dual-certificate comparison
+   manual vs automatic, `compare-auto.json`) and `tools/layoutdiff.py`
+   (three-layer diff: node displacement / structural metrics / loop
+   semantics) live outside the CLI (moved out of the core on 2026-11-26) and
+   are not shipped in the wheel.
 
 ## Install
 
@@ -227,21 +227,20 @@ Without the solver, auto-v2 degrades gracefully to the constructive method
 
 ```bash
 stdraw layout <input.cld|.json> [options]        # full layout pipeline (equivalent to python -m stdraw layout ...)
-stdraw layout-diff <layout.json> <layout2.json> [--cld graph-source] [--diff-out diff.json]
+python tools/layoutdiff.py <layout.json> <layout2.json> [--cld graph-source] [--out diff.json]
+                                                 # repo dev gauge: layout-diff moved out of the CLI into tools/, not shipped in the wheel
 ```
 
 | Option | Default | Description |
 |---|---|---|
 | `--outdir` | `stdraw-out` | output directory |
-| `--recipe {auto,ortho}` | `auto` | auto = auto-v2 (straight/arc lines + hard gates + mode-based placement); ortho = ortho-v1 (constructive, frozen behavior, pin-safe) |
+| `--recipe {auto,candidate-v1}` | `auto` | auto = auto-v2 (straight/arc lines + hard gates + mode-based placement, default); candidate-v1 = opt-in candidate-pool pipeline (structure analyzer + template sources + orchestrator, not-worse-than-auto guard) |
 | `--linestyle {straight,arc}` | `straight` | auto recipe line style (arc = all-arc preference) |
-| `--pitch` | 56 | row pitch px; raising it for small graphs (e.g. 62) makes the clearance gates easier |
+| `--pitch` | 56 | row pitch px; raising it for small graphs (e.g. 62) makes the clearance gates easier. **Deprecated** (transitional pixel parameter, removal planned; migration to recipe-level parameters tracked separately) |
 | `--name` | the DSL graph name | graph name in the certificate |
 | `--exact` | off | exact crossing-number layer: B&B squeeze computes cr(G) into the certificate exactness block (needs `stdraw[solver]`) |
 | `--from-layout` | — | manual layout JSON (a demo-2d.html "Export layout" product or a layout.json subset: node id->x,y + viewBox [+ edges[].waypoints]). Runs the same routing + certificate pipeline on manual coordinates, automatic-pipeline structural gates read N/A per grading-contract.md §3.1, graded honestly on the remaining gates |
-| `--compare-auto` | off | with `--from-layout`: also runs the automatic layout of the same graph into `<outdir>-compare-auto/`, outputting the dual-certificate comparison `compare-auto.json` |
-| `--cld` | — | layout-diff: graph source (.cld/.json), enables the semantic layer (loop membership / cohesion) |
-| `--diff-out` | — | layout-diff: machine-readable JSON output path |
+| *(no `--compare-auto` / `--cld` / `--diff-out`)* | — | these three flags left the CLI with the 2026-11-26 subtraction: the dual-certificate comparison is `python tools/compare_auto.py <input.cld> --from-layout MANUAL_JSON --outdir OUTDIR`, the three-layer diff is `python tools/layoutdiff.py AUTO.json MANUAL.json [--cld GRAPH] [--out DIFF.json]` (repo dev gauges, not shipped in the wheel) |
 
 Examples:
 
@@ -250,7 +249,7 @@ stdraw layout examples/limits-to-growth.cld --outdir out --pitch 62
 python -m stdraw layout examples/limits-to-growth.cld --outdir out
 stdraw layout model.cld --outdir out --exact
 stdraw layout model.cld --outdir out-manual --from-layout graph-manual-layout.json
-stdraw layout-diff out/layout.json out-manual/layout.json --cld model.cld --diff-out diff.json
+python tools/layoutdiff.py out/layout.json out-manual/layout.json --cld model.cld --out diff.json
 ```
 
 ## Input format (.cld DSL)
@@ -277,12 +276,12 @@ models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
 | File | Content | How agents use it |
 |---|---|---|
 | `graph.json` / `graph.cld` | normalized graph model + DSL round-trip text | downstream programmatic consumption |
-| `layout.json` | 2D delivered coordinates (all integers, 2px grid); edges carry `loop_kinds`/`loop_color` and route `kind` (line/arc/vg/poly/waypoints) plus `via` fold points; delivery-contract stamped (stdraw/delivery.py): library outputs self-declare `"delivery": "coordinates-only"` + warning, the CLI marks full deliverables `"delivery": "stdraw-cli"` / `"interactive": true`, and the ortho CLI layout.json stays byte-frozen (production pin — its contract travels on certificate.json) | rendering / recomputation |
+| `layout.json` | 2D delivered coordinates (all integers, 2px grid); edges carry `loop_kinds`/`loop_color` and route `kind` (line/arc/vg/poly/waypoints) plus `via` fold points; delivery-contract stamped (stdraw/delivery.py): library outputs self-declare `"delivery": "coordinates-only"` + warning, the CLI marks full deliverables `"delivery": "stdraw-cli"`, with `"interactive": true` only when `--interactive` opts the drag layer in (default delivery is the static page + certificate) | rendering / recomputation |
 | `geometry_report.json` | geometry self-checks (CI gate form), CLI exits 1 when `fail>0` | **CI gate** (assert fail==0) |
 | `certificate.json` | metrics + gates + report items + honest grade + `placement` mode + delivery-face confession (`"interactive"` / `"drag_layer"`: yes only when the CLI shipped demo-2d.html with its drag layer — usable as a host CI gate) | **quality assertion** (below) |
 | `loops_audit.json` | loop audit: declared / closed / enumerated / problems | assert `summary.problems == 0` |
 | `demo-2d.html` | 2D deliverable page (embedded certificate + drag touch-up layer) | directly human-viewable / printable |
-| `compare-auto.json` (with `--compare-auto`) | manual vs automatic dual-certificate comparison | quantifies the aesthetic distance between engine and human |
+| `compare-auto.json` (with `tools/compare_auto.py`) | manual vs automatic dual-certificate comparison | quantifies the aesthetic distance between engine and human |
 
 ## How to read the certificate (honest grading semantics)
 
@@ -340,7 +339,7 @@ models are also accepted (`nodes`/`edges`/`loops`, structure identical to the
 
 | grade | semantics |
 |---|---|
-| `best` | all placement hard gates pass + 0 line crossings (auto recipe: an optimization result, not a theorem guarantee; ortho recipe: theorem-guaranteed) |
+| `best` | all placement hard gates pass + 0 line crossings (auto recipe: an optimization result, not a theorem guarantee; the theorem-guaranteed ortho recipe is retired) |
 | `3d` | **retired** documentation-level tier: the 3D layer was removed after v0.9.0; never emitted by the 2D pipeline, kept in the read-back set only so historical certificates still validate (docs/grading-contract.md) |
 | `uncertified` | everything else — **honestly ungraded**. This is not an error; it is the honest boundary |
 
@@ -378,7 +377,9 @@ ELK layered}, six metrics from one same-source implementation, all raw
 evaluation JSON archived in `benchmarks/raw/`. **Measurement base point**:
 stdraw auto/auto-exact re-measured on the post-WS5-performance-fix engine
 (bf08643+); Graphviz/ELK baselines and stdraw-ortho carried over from WS4
-same-machine measurements.
+same-machine measurements. The ortho arm is a historical measurement only —
+the recipe itself is retired (2026-11-27) and the table below is kept as
+the published comparison record.
 
 Classic means (REPORT.md section 7):
 
@@ -414,19 +415,18 @@ Honest conclusions (wins stated as wins, losses as losses):
 
 - Crossings are a soft target (since v0.6.0): placement regularity first;
   with all hard gates passed, <= 2 crossings are acceptable (the "best"
-  grade still requires 0 crossings); the ortho recipe raises
-  `NotPlanarError` on non-planar input (the CLI prints the honest degradation
-  and delivers no 2D layout — 2D-only, no fallback layer); 2D planarization
-  degradation is on the roadmap;
-- ortho-v1 allows "unrelated wires occluded under cards" (cards opaque, the
-  v0.1 design caliber), honestly counted in the certificate; auto-v2's
-  box-over-line is a hard gate = 0. **Delivery ban (ruling D0, 2026-11-11):
-  vertical-orthogonal (ortho-v1) output is NOT a deliverable** —
-  box-over-line / leader-bar occlusion is structural in visibility
-  representation and repeatedly unfixable; the frozen baseline stays only
-  for CI byte-regression; enforced by `scripts/check_no_ortho_delivery.py`
-  (CI gate) plus the certificate's `deliverable: false` / `blocked_by: D0`
-  confession; see `docs/grading-contract.md` section 4;
+  grade still requires 0 crossings); the retired ortho recipe used to raise
+  `NotPlanarError` on non-planar input (the CLI is 2D-only, no fallback
+  layer); 2D planarization degradation is on the roadmap;
+- the retired ortho-v1 recipe allowed "unrelated wires occluded under
+  cards" (cards opaque, the v0.1 design caliber), honestly counted in the
+  certificate; auto-v2's box-over-line is a hard gate = 0. **Delivery ban
+  (ruling D0, 2026-11-11): vertical-orthogonal (ortho-v1) output is NOT a
+  deliverable** — box-over-line / leader-bar occlusion is structural in
+  visibility representation and repeatedly unfixable; enforced by
+  `scripts/check_no_ortho_delivery.py` (CI gate) plus the certificate's
+  `deliverable: false` / `blocked_by: D0` confession; see
+  `docs/grading-contract.md` section 4;
 - Random sparse graphs n>=20: positioned as the best incumbent within the
   8det budget (not proven optimal); routing box press / clearance follow
   REPORT section 4 measurements (non-zero); `_polish` feedback runs only for
