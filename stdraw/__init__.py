@@ -8,7 +8,7 @@ Two-layer architecture:
 Honest tiering promise: if a certificate cannot be obtained we say so; we never claim 0 crossings for arbitrary graphs.
 """
 
-__version__ = "0.9.0"
+__version__ = "0.10.0"
 
 from .model import Graph, Node, Edge, Loop, Group
 from .dsl import parse, dumps

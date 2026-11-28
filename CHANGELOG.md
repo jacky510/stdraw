@@ -4,7 +4,7 @@ Notable user-visible changes to **stdraw**. Entries before 0.8.0 are not
 reproduced here; the engineering version history lives in
 [AGENTS.md](AGENTS.md) ("Version" section) — pointer, not a copy.
 
-## Unreleased
+## 0.10.0 (2026-11-28)
 
 - **manual (`--from-layout`) caliber: `cv_le_035` demotes to a report item**
   (jacky's ruling of 2026-11-27, extending the 2026-11-26 automatic-tier
