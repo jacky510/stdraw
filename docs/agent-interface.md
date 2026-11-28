@@ -1,4 +1,4 @@
-# Agent 接口契约（T13 修复建议 / T14 语义提示 / T15 规模上限 / 错误面契约）
+# Agent 接口契约（T13 修复建议 / T14 语义提示 / T15 规模上限 / 错误面契约 / `@anchors` 交付状态）
 
 面向 agent 调用方的接口约定。语法细则见 `docs/dsl-spec-v0.1.md` 附录 B（英文正本）与 zh-CN 副本；本文是行为契约与产物 schema。来源：Copilot 评审清单 T13/T14/T15（stdraw-copilot-issues-2026-11-24）。
 
@@ -76,6 +76,26 @@ CLI 的失败面分两类，产物文件名与退出码都不同——agent 按�
   - 状态是**实测**的：同一交付配方去掉该条声明再跑一次，比较交付后的节点坐标 + 路由点（`@order` 比较交付的回路注解序列，因为阅读顺序本身就是它的效果）。不看「引擎有没有读到字段」——那是自证；
   - 每条声明多花一次布局运行（只有带提示的图付这个成本）；CLI 同时在 stdout 打一行 `[hints] ...`。
 - **弃用（本卡只标记，物理删除留 P3 减法卡）**：`--pitch` / `--hub-side` / `--column-order` 继续工作，但 `--help` 标 DEPRECATED、使用时 stderr 打 `[deprecated]` 警告、certificate `honest_notes` 追加一条弃用记录（条件追加，不用则字节不变）。
+
+## `@anchors` 指定与交付状态（0.10.1）
+
+`@anchors` 是**请求**而不是保证：硬门优先于用户指定——会压到自己框里的指定走线回退成引擎自己的交付，`layout.json` 的那条边于是**不带** `anchor_ids`。为让调用方能区分「被硬门拒绝（为什么）」与「引擎根本没消费这条提示」，证书在**图里存在 `@anchors` 时**多一个 `anchor_designations` 块：
+
+```json
+"anchor_designations": {
+  "edges": [
+    {"edge": "A->B", "requested": {"src": "n-g4", "dst": "s-g6"},
+     "status": "fallback", "reason": "box-press", "detail": "box press A (own)"}
+  ],
+  "declared": 1, "applied": 0, "fallback": 1
+}
+```
+
+- `status`：`applied`（指定被采纳，该边带 `anchor_ids`）｜`fallback`（被拒 / 未消费，该边不带 `anchor_ids`）｜`unrecorded`（引擎没报；如实暴露，不静默丢弃）。
+- `reason`（仅 `fallback` 记录有）：`box-press`｜`clearance`｜`pair-merged`｜`manual-override`（同边已有 `--from-layout` 的 `edges[].anchors`，DSL 提示未消费）｜`planarized-l1`（该图含交叉、走见证标记的平面化 L1 交付，该路径根本不消费锚点指定）｜`not-consumed`（防御性）｜`other`（引擎报的回退原因尚未归类，原话留在 `detail`，不编造码）｜`delivered-mismatch`（证书侧复核发现交付没兑现 `applied` 声明）。
+- **不采信引擎自述**：证书对每条 `applied` 做交付几何复核——端点落在指定锚点坐标 0.75px 内、且 `layout.json` 的 `edges[].anchor_ids` 带着该 id；不符即降级为 `fallback` / `delivered-mismatch`。块只会少说，不会多说。
+- **不进入本块的两种情形**（分工见「错误面契约」）：未知 / 非法锚点 id 是输入错误 → 退出码 2 + `parse_error.json`，永远走不到这里；出发角过小与两个指定抢同一槽位**不会**触发回退（被指定的端点由 `anchor_snap` 冻结，抢槽由未指定的邻边让步），因此 `angle-below-floor` / `slot-conflict` 不在词表内——出发角问题由 `anchors_standard` 门如实报出，不做成因改写。
+- 无 `@anchors` 的图：块不出现，证书与 `layout.json` 字节不变。`--from-layout` 的锚点来源仍看证书 `from_layout.user_anchors` / `from_layout.manual_fallback`，两块不混。
 
 ## 决策记录
 

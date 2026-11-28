@@ -20,6 +20,7 @@ from typing import Dict, List, Optional
 from . import __version__ as _PKG_VERSION
 from .gates import LENS_BULGE_MIN, arc_bulge
 from .repair import certificate_repair_hints, hints_block
+from .anchor_designations import designations_block as _designations_block
 
 EPS = 1e-9
 ROW_EPS = 4          # visual same-row test: y difference <= 4px counts as one row
@@ -177,6 +178,13 @@ def scene_from_auto(v4: dict) -> dict:
             # ref-scrubbed: deterministic mode-decision audit trail (which rule
             # hit, why, trial gate, legacy band exemption)
             "mode_decision_trace": v4["meta"].get("mode_decision_trace"),
+            # @anchors designation accounting pass-through (0.10.1): the
+            # engine verdict per declared edge rides layout.json meta
+            "anchor_designations": v4["meta"].get("anchor_designations"),
+            # delivered edges[].anchor_ids of layout.json (per edge, None
+            # absent): the certificate re-checks every "applied" @anchors
+            # claim against them (never trusts the engine verdict alone)
+            "anchor_ids": [e.get("anchor_ids") for e in v4["edges"]],
             # T1: --from-layout provenance (anchor source auto vs user) --
             # present only on the manual path; the auto path carries None
             # (scene-level pass-through, output bytes unchanged).
@@ -1461,6 +1469,12 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         # T14: DSL semantic hints record — emitted only when the graph
         # declares hints (hints-free graphs keep their bytes byte-for-byte)
         **({"hints": _hints_blk} if (_hints_blk := hints_block(graph, hint_status)) else {}),
+        # @anchors designation accounting (0.10.1): emitted only when the
+        # graph declares @anchors; per-edge request + delivered status +
+        # fallback reason code, every "applied" claim re-checked against the
+        # delivered artifact (anchor-free graphs keep their bytes).
+        **({"anchor_designations": _anchors_blk}
+           if (_anchors_blk := _designations_block(graph, scene)) else {}),
         # loop-direction arc default record (emitted only when the scope has
         # a loop-member line): honest delivery counts + fallback reasons
         **({"loop_arcs": scene["loop_arcs"]} if scene.get("loop_arcs") else {}),

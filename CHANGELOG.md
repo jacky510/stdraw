@@ -6,6 +6,30 @@ reproduced here; the engineering version history lives in
 
 ## 0.10.1 (unreleased)
 
+- **a rejected `@anchors` designation is now named on the certificate** —
+  a DSL anchor designation is a request, not a guarantee: hard gates outrank
+  it, so a designation whose delivery would press a box falls back to the
+  engine's own route and the delivered edge simply carries no
+  `anchor_ids`. That left the caller unable to tell "rejected by a gate (and
+  why)" from "the engine never consumed the hint". When the graph declares
+  `@anchors`, the certificate now carries an `anchor_designations` block:
+  one record per declared edge with `edge`, `requested` (`src`/`dst` slots),
+  `status` (`applied` / `fallback` / `unrecorded`) and, on fallbacks, a
+  `reason` code (`box-press` / `clearance` / `pair-merged` /
+  `manual-override` / `planarized-l1` / `not-consumed` /
+  `delivered-mismatch`) plus the
+  engine's own `detail` text. The status is the layout stage's verdict, not
+  a guess, and the certificate re-checks every `applied` claim against the
+  delivered artifact (endpoint within 0.75px of the designated anchor and
+  the id present in `edges[].anchor_ids`), downgrading any claim the
+  delivery does not back — the block may under-claim, never over-claim.
+  `layout.json` semantics are untouched (`anchor_ids` still appears only on
+  edges that really delivered the designation); unknown/invalid ids stay an
+  input error (`parse_error.json`, exit 2) and are never reported here.
+  Graphs without `@anchors` get no block: certificate and `layout.json`
+  bytes are unchanged. Contract: `docs/agent-interface.md`
+  (「`@anchors` 指定与交付状态」).
+
 - **malformed input has a structured error face**: a DSL syntax or
   structural-validation failure used to surface as a bare `ValueError` plus a
   Python traceback (exit 1), while the size limit already answered with

@@ -201,6 +201,14 @@ def test_dsl_designation_gate_clean_is_honored(tmp_path):
     assert (abs(got_b[0] - expect_b[0]) <= 0.75
             and abs(got_b[1] - expect_b[1]) <= 0.75)
     assert cert["gates"]["anchors_standard"] is True
+    # 0.10.1: the certificate names the delivered status of the declaration
+    blk = cert.get("anchor_designations")
+    assert blk and blk["declared"] == 1 and blk["applied"] == 1, blk
+    rec = blk["edges"][0]
+    assert rec["edge"] == "A->B"
+    assert rec["requested"] == {"src": "s-g4", "dst": "n-g4"}
+    assert rec["status"] == "applied"
+    assert "reason" not in rec, "applied designations carry no fallback reason"
 
 
 @pytest.mark.skipif(not os.path.exists(EX), reason="example missing")
@@ -225,6 +233,135 @@ def test_dsl_designation_breach_falls_back(tmp_path):
     e = next(x for x in lay["edges"] if (x["a"], x["b"]) == ("A", "B"))
     assert not e.get("anchor_ids"), "breached designation must not export ids"
     assert cert["gates"]["anchors_standard"] is True
+    # 0.10.1: the rejection is NAMED on the certificate (which edge, which
+    # slots, which gate) -- no more inferring it from a missing field alone
+    blk = cert.get("anchor_designations")
+    assert blk and blk["declared"] == 1 and blk["fallback"] == 1, blk
+    rec = blk["edges"][0]
+    assert rec["edge"] == "A->B"
+    assert rec["requested"] == {"src": "n-g4", "dst": "s-g6"}
+    assert rec["status"] == "fallback"
+    assert rec["reason"] == "box-press", rec
+    assert "box press" in rec["detail"]
+    # layout.json keeps the delivery's word: the rejected edge carries no ids
+    meta_rec = lay["meta"]["anchor_designations"][0]
+    assert meta_rec["status"] == "fallback"
+    assert "anchor_ids" not in meta_rec
+
+
+@pytest.mark.skipif(not os.path.exists(EX), reason="example missing")
+def test_no_designation_means_no_certificate_block(tmp_path):
+    # a graph without @anchors is untouched by the accounting: the block is
+    # absent (not empty, not null-in-a-field) and layout.json carries no
+    # anchor_designations meta key either.
+    cld = ('graph "plain"\n\nvar A "A"\nvar B "B"\n\nA -> + B\n')
+    src = tmp_path / "g.cld"
+    src.write_text(cld, encoding="utf-8")
+    out = tmp_path / "out"
+    r = subprocess.run([PY, "-m", "stdraw", "layout", str(src),
+                        "--outdir", str(out), "--name", "plain"], cwd=ROOT,
+                       capture_output=True, text=True, encoding="utf-8",
+                       errors="replace")
+    assert r.returncode == 0, r.stderr[-500:]
+    lay = json.load(open(out / "layout.json", encoding="utf-8"))
+    cert = json.load(open(out / "certificate.json", encoding="utf-8"))
+    assert "anchor_designations" not in cert
+    assert "anchor_designations" not in lay["meta"]
+
+
+@pytest.mark.skipif(not os.path.exists(EX), reason="example missing")
+def test_designation_on_a_non_planar_graph_names_the_planarized_path(tmp_path):
+    # a non-planar core takes the witness-marked planarized L1 delivery,
+    # built by the planarization ladder -- it never looks at the anchor
+    # designations at all.  The block names that instead of leaving the
+    # caller to infer "not consumed" from a missing field.
+    cld = ('graph "k5"\n\nvar A "A"\nvar B "B"\nvar C "C"\nvar D "D"\n'
+           'var E "E"\n\nA -> + B @anchors src=e-g4\nA -> + C\nA -> + D\n'
+           'A -> + E\nB -> + C\nB -> + D\nB -> + E\nC -> + D\nC -> + E\n'
+           'D -> + E\n')
+    src = tmp_path / "g.cld"
+    src.write_text(cld, encoding="utf-8")
+    out = tmp_path / "out"
+    r = subprocess.run([PY, "-m", "stdraw", "layout", str(src),
+                        "--outdir", str(out), "--name", "k5"], cwd=ROOT,
+                       capture_output=True, text=True, encoding="utf-8",
+                       errors="replace")
+    assert r.returncode == 0, r.stderr[-500:]
+    lay = json.load(open(out / "layout.json", encoding="utf-8"))
+    cert = json.load(open(out / "certificate.json", encoding="utf-8"))
+    assert lay["meta"]["position_engine"] == "planarized"
+    blk = cert["anchor_designations"]
+    assert blk["edges"][0]["edge"] == "A->B"
+    assert blk["edges"][0]["status"] == "fallback"
+    assert blk["edges"][0]["reason"] == "planarized-l1"
+    assert all(not e.get("anchor_ids") for e in lay["edges"])
+
+
+# ── 5. designation accounting: pure-function caliber (0.10.1) ─────────
+
+def _dsl_graph(theta="s-g1"):
+    return dsl.parse('graph "g"\n\nvar a "a"\nvar b "b"\n\n'
+                     'a -> + b @anchors src=%s\n' % theta)
+
+
+def test_designation_reason_codes():
+    from stdraw.anchor_designations import classify_fallback
+    assert classify_fallback("box press A (own)") == "box-press"
+    assert classify_fallback("clearance 9.4px < 16px") == "clearance"
+    assert classify_fallback("mutual-pair separation 2.1px < 4px") == "pair-merged"
+    assert classify_fallback("something new") == "other"
+
+
+def test_designation_records_applied_and_manual_override():
+    from stdraw.anchor_designations import records
+    g = _dsl_graph()
+    edges = tuple((e.a, e.b) for e in g.edges)
+    # applied: nothing claimed the edge before the merge, no gate fallback
+    recs = records(g, edges, set(), {}, {("a", "b"): {"src": "s-g1"}})
+    assert recs == [{"edge": "a->b", "requested": {"src": "s-g1"},
+                     "status": "applied"}]
+    # a --from-layout designation on the same edge won the merge: the DSL
+    # hint was NOT consumed and says so (it is not silently "applied")
+    recs = records(g, edges, {("a", "b")}, {}, {("a", "b"): {"src": "w-g2"}})
+    assert recs[0]["status"] == "fallback"
+    assert recs[0]["reason"] == "manual-override"
+    # gate fallback: the reason code comes from the engine's own verdict
+    recs = records(g, edges, set(), {0: "box press a (own)"},
+                   {("a", "b"): {"src": "s-g1"}})
+    assert recs[0]["status"] == "fallback"
+    assert recs[0]["reason"] == "box-press"
+
+
+def test_designation_block_downgrades_an_undelivered_claim():
+    """The certificate may under-claim, never over-claim: an engine
+    "applied" that the delivery does not back becomes a fallback record."""
+    from stdraw.anchor_designations import designations_block
+    g = _dsl_graph("s-g3")
+    # node a: card at (140, 80), 96x44 -> s-g3 is the bottom mid anchor
+    from stdraw.anchors import anchor_point
+    ax, ay = anchor_point(140.0, 80.0, 48.0, 22.0, "s-g3")
+    quoted = [{"edge": "a->b", "requested": {"src": "s-g3"},
+               "status": "applied"}]
+    base = {"nodes": {"a": {"x": 140, "y": 80, "w": 96, "h": 44},
+                      "b": {"x": 140, "y": 240, "w": 96, "h": 44}},
+            "edges": [{"a": "a", "b": "b"}]}
+    # delivered ON the anchor + the ids exported -> the claim stands
+    ok = designations_block(g, dict(
+        base, polylines={0: [(ax, ay), (140.0, 221.0)]},
+        anchor_ids=[{"src": "s-g3"}], anchor_designations=quoted))
+    assert ok["edges"][0]["status"] == "applied", ok
+    # delivered 6px off the anchor -> downgraded with a named reason
+    bad = designations_block(g, dict(
+        base, polylines={0: [(ax + 6.0, ay), (140.0, 221.0)]},
+        anchor_ids=[None], anchor_designations=quoted))
+    rec = bad["edges"][0]
+    assert rec["status"] == "fallback" and rec["reason"] == "delivered-mismatch"
+    assert bad["applied"] == 0 and bad["fallback"] == 1
+    # no engine verdict at all -> surfaced, never silently dropped
+    none_rec = designations_block(g, dict(base, polylines={0: [(ax, ay)]},
+                                          anchor_ids=[None]))
+    assert none_rec["edges"][0]["status"] == "unrecorded"
+    assert none_rec.get("unrecorded") == 1
 
 
 @pytest.mark.skipif(not os.path.exists(EX), reason="example missing")

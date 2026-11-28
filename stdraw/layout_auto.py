@@ -32,6 +32,7 @@ from .anchors import rounded_tip as _rounded_tip
 from .routing import (Router, CLEARANCE, SIDE_MARGIN, PAIR_SEP_W,
                       ANCHOR_MIN_DEG, border_point, EvalCache)
 from .anchors import nearest_anchor as _nearest_anchor
+from . import anchor_designations as _anchor_designations
 
 # ref-scrubbed finalize (approved 2026-11-09): edge/node density at or
 # above which anchor_snap's revert probe also counts unplaceable endpoints
@@ -2111,6 +2112,19 @@ def _layout_candidates(graph, cfg, edges, linestyle, manual):
         from .planarized_layout import planarized_entry
         _pl_mode, _pl_payload = planarized_entry(graph, cfg, linestyle)
         if _pl_mode == "L1":
+            # @anchors accounting: the planarized L1 drawing is built by the
+            # planarization ladder, not by the routing stage -- it never looks
+            # at the designations, so say exactly that instead of leaving the
+            # caller to infer it from a missing field (anchor-free graphs are
+            # untouched: no records, no meta key)
+            _pl_recs = _anchor_designations.records_not_consumed(
+                graph, edges, "planarized-l1",
+                "the planarized L1 delivery (witness-marked crossing layout) "
+                "is built by the planarization ladder and does not consume "
+                "anchor designations")
+            if _pl_recs:
+                _pl_payload.setdefault("meta", {})[
+                    "anchor_designations"] = _pl_recs
             _timing.mark("planarized_l1")
             _timing.finish()
             return _pl_payload, None
@@ -2325,7 +2339,7 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
             cfg, graph, edges, nodes_px, manual, er_kinds, er_presets,
             er_report, _dense_hub, constructed, _routes_final,
             _has_dsl_anchors)
-    routes, manual_wps, manual_styles, manual_anchors = \
+    routes, manual_wps, manual_styles, manual_anchors, _dsl_recs = \
         _route_stage_manual(
             cfg, graph, manual, edges, nodes_px, routes, constructed,
             from_meta, _manual_base)
@@ -2338,7 +2352,8 @@ def _layout_optimize_routes(cfg, graph, manual, edges, cand):
     routes, router_pairs = _route_stage_lens_post(
         router, routes, engine, er_presets, _snap_report, _snap_deferred,
         _snap_reverted, _frozen)
-    return routes, router, router_pairs, er_report, _snap_deferred
+    return (routes, router, router_pairs, er_report, _snap_deferred,
+            _dsl_recs)
 
 
 def _route_stage_presets(cfg, graph, manual, edges, nodes_px, engine,
@@ -2478,9 +2493,11 @@ def _route_stage_manual(cfg, graph, manual, edges, nodes_px, routes,
     style / user-anchor overrides (manual export and DSL @anchors) and
     the hard-gate fallback.
 
-    Returns `(routes, manual_wps, manual_styles, manual_anchors)` -- the
-    fallback pops breaching entries out of those dicts, so the caller
-    sees the same post-fallback state the historical body did.
+    Returns `(routes, manual_wps, manual_styles, manual_anchors,
+    dsl_records)` -- the fallback pops breaching entries out of those
+    dicts, so the caller sees the same post-fallback state the historical
+    body did; ``dsl_records`` is the DSL ``@anchors`` designation
+    accounting (empty without ``@anchors``, see anchor_designations.py).
     """
     # ref-scrubbed constructed-route injection (column closed arcs / bowtie mirror-symmetry arcs): these edges skip the candidate pool and are
     # delivered with the constructed geometry (the trial gate has already rechecked the hard gates); the injection must happen before
@@ -2602,6 +2619,10 @@ def _route_stage_manual(cfg, graph, manual, edges, nodes_px, routes,
     manual_anchors = {}
     if manual is not None:
         manual_anchors = _manual_anchors(manual, edges)
+    # edges already claimed by the --from-layout export BEFORE the DSL merge
+    # below (the more specific intent wins; the losing DSL hint is reported
+    # as fallback/manual-override in the certificate accounting)
+    _pre_merger_keys = set(manual_anchors)
     # DSL-designated anchors (@anchors src=..,dst=..): the same vocabulary
     # and the same user-designation channel as the manual-layout export.
     # --from-layout entries win on conflict (the more specific intent).
@@ -2700,6 +2721,7 @@ def _route_stage_manual(cfg, graph, manual, edges, nodes_px, routes,
     # router's mutual-pair lens offset / press avoidance / clearance
     # machinery delivers gate-clean geometry.  Gate-clean user styles are
     # honored untouched -- benign manual layouts stay byte-identical.
+    _fb = {}
     if _manual_base is not None:
         _styled = {(a, b) for (a, b) in edges
                    if (manual_styles.get((a, b)) or manual_anchors.get((a, b)))
@@ -2737,8 +2759,13 @@ def _route_stage_manual(cfg, graph, manual, edges, nodes_px, routes,
                       "hard gates; engine routing took over: " +
                       "; ".join(f"{e['edge']} ({e['reason']})"
                                 for e in _fb_edges))
+    # DSL @anchors designation accounting (0.10.1): the engine's own verdict
+    # per declared edge -- applied, or fallback with a reason code.  Empty
+    # list on graphs without @anchors (no record may be invented).
+    _dsl_recs = _anchor_designations.records(
+        graph, edges, _pre_merger_keys, _fb, manual_anchors)
     _timing.mark("manual_injection")
-    return routes, manual_wps, manual_styles, manual_anchors
+    return routes, manual_wps, manual_styles, manual_anchors, _dsl_recs
 
 
 def _route_stage_repair(engine, edges, routes, router, constructed,
@@ -3030,7 +3057,7 @@ def _er_involved_edges(rt_obj, rts):
 
 def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
                               routes, router, router_pairs, er_report,
-                              _snap_deferred, cand):
+                              _snap_deferred, _dsl_recs, cand):
     """layout() stage 3 -- delivery assembly: loop coloring, edges_out,
     viewBox + dx/dy shift, mode trace, v4 dict + coordinate stamping.
 
@@ -3345,6 +3372,12 @@ def _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
             "mode_decision_trace": _mode_trace,
             # --from-layout metadata (written only on the manual path; the auto path is byte-for-byte unchanged)
             **({} if from_meta is None else {"from_layout": from_meta}),
+            # DSL @anchors designation accounting (0.10.1): per-edge request
+            # + delivered status + fallback reason code -- the certificate
+            # copies it as "anchor_designations" and re-checks every applied
+            # claim against the delivered artifact.  Key absent on graphs
+            # without @anchors (anchor-free figures keep their bytes).
+            **({} if not _dsl_recs else {"anchor_designations": _dsl_recs}),
             "clearance": CLEARANCE,
             "router_cross_pairs": router_pairs,
             # ref-scrubbed finalize: honest dense-snap deferral record (None
@@ -3480,7 +3513,7 @@ def _layout_pipeline(graph, cfg, linestyle, manual):
     # stage 2 -- routing optimization loop (extracted verbatim; see
     # _layout_optimize_routes): edgerules presets, final routing,
     # deterministic repair chain, anchor snap
-    routes, router, router_pairs, er_report, _snap_deferred = \
+    routes, router, router_pairs, er_report, _snap_deferred, _dsl_recs = \
         _layout_optimize_routes(cfg, graph, manual, edges, cand)
     # S2 mirror-symmetry post-pass (opt-in; DEFAULT OFF = this branch never
     # runs and the output is byte-identical to history).  Auto-path only:
@@ -3497,7 +3530,7 @@ def _layout_pipeline(graph, cfg, linestyle, manual):
     # shift, mode trace, v4 + stamp
     v4 = _layout_assemble_delivery(cfg, graph, manual, edges, linestyle,
                                    routes, router, router_pairs,
-                                   er_report, _snap_deferred, cand)
+                                   er_report, _snap_deferred, _dsl_recs, cand)
     if mirror_report is not None:
         v4.setdefault("meta", {})["mirror_symmetry"] = mirror_report
     return v4
