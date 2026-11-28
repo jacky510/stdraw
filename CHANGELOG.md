@@ -6,6 +6,20 @@ reproduced here; the engineering version history lives in
 
 ## 0.10.0 (2026-11-28)
 
+- **loops: a cycle's R/B polarity parity is now direction-aware**
+  (commit `50971c8`): `cycle_kind` used to collect the polarities of every edge
+  whose endpoints matched `(a, b)` **in either direction**, so a cycle walking a
+  mutual pair in both directions folded the two opposite-direction edges into
+  one hop and counted the negative one twice -- `neg_edges` came out too high
+  and, where only one direction was negative, the R/B `kind` was wrong.
+  `neg_edges` now counts the traversed direction only (measured 2 -> 1 on
+  `classic-cld-growth-and-burden`), declared-loop matching compares the
+  normalised directed closure walk instead of the node set (two
+  opposite-direction cycles over the same nodes can no longer hide behind one
+  declaration), and the enumerated-cycle order is a deterministic total order.
+  Clean audits keep `problems: 0`; `loops_audit.json` bytes do change where such
+  a cycle exists, so byte-pinned consumers must re-generate.
+
 - **closed-ring lenses for mutual pairs, rounded-corner arrow tips**
   (commit `3b8e21d`): a delivery repair pass (`Router.mutual_lens_construct`,
   runs last on every non-lens engine) rebuilds each `a<->b` pair as the
@@ -28,14 +42,17 @@ reproduced here; the engineering version history lives in
   12/13) and certificates of figures that now fail a gate gain `repair_hints`.
 
 - **Consumer note: 0.10.0 is not a byte-identical drop-in for 0.9.0.** The 3D
-  removal itself changes no 2D artifact, but four other changes in this range
+  removal itself changes no 2D artifact, but six other changes in this range
   do: `edges[].arrow` (rounded-corner projection), `interactive` / `drag_layer`
   (opt-in drag layer, so the default delivery face declares `false` / `"no"`),
-  the new `mutual_pairs_closed` gate (gate counts move), and the resulting
-  `metrics` / `mode_decision_trace` / `gates_passed` shift. Measured on
-  `examples/limits-to-growth.cld` at both tags: `layout.json` differs in 280
-  leaves and `certificate.json` in 48, while `loops_audit.json` and
-  `graph.json` are unchanged. Re-generate pinned artifacts before pinning
+  the new `mutual_pairs_closed` gate (gate counts move), the resulting
+  `metrics` / `mode_decision_trace` / `gates_passed` shift,
+  `loops_audit.extra_cycles[].neg_edges` (direction-aware R/B parity, fix
+  `50971c8`; `kind` can flip), and `layout.annotations.loop_labels`
+  (loop-reading layer). Measured across three example graphs at both tags:
+  `layout.json` differs every time (up to 444 leaves), `certificate.json` in
+  35-48, `loops_audit.json` in 6 leaves on one of the three, while `graph.json`
+  and `graph.cld` are unchanged. Re-generate pinned artifacts before pinning
   again.
 
 - **manual (`--from-layout`) caliber: `cv_le_035` demotes to a report item**
