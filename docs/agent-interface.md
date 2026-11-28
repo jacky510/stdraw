@@ -54,6 +54,7 @@ CLI 的失败面分两类，产物文件名与退出码都不同——agent 按�
 ## T13 FAIL 结构化修复建议
 
 - **证书**（`certificate.json`）：每个值为 `False` 的硬门，`repair_hints` 数组给一条 `{"gate", "hint", "retry": true}`（`hint` 指向 `@main` / `@order` / `@pair` 语义提示或拆图杠杆）。仅在存在失败门时输出——全过证书字节级不变（金标准集字节锁定，重祝福须授权）。
+  - **`edge` 的口径（必出，仅限两个几何门）**：`visual_crossings_zero` 与 `lines_no_coincidence` 的 hint **必带** `edge`，格式 `u<->v`（节点 id，方向省略），取自本次测量明细的首条（`metrics.visual_crossing_details` / `metrics.line_line_coincident_details`）；这两个门 FAIL 当且仅当明细非空，故无缺失分支。其余门的 hint **不含** `edge`（它们不测线段对，硬编一个 tag 就是编造事实）。完整交叉/重合明细仍在 `metrics` 里，`edge` 只是指针级摘要。取舍见 `docs/adr/ADR-0020-repair-hint-edge-source.md`。
   - **口径**：只有硬门 FAIL 才附建议。报告项（`crossings_zero` / `row_align_ge_060` / `loop_edges_arced`）是软目标不是门，不产生建议块。
   - **文案纪律**（default 备案 2026-11-26，依据 stdraw20 人工校准经验）：`cv_le_035` / `pitch_uniform` / `column_snap24_ge_060` / `anchors_standard` 四门的 hint 不得把 agent 往机械网格 / 16 锚集坐标上推（实测这些门惩罚人类风格排布，anchors_standard 阻塞约 80% 的人工稿）——只指语义提示与拆图。门阈值与 grade 语义不受文案层影响，本卡未放宽。
   - 带交叉下界的 hint（非平面图 `visual_crossings_zero` 不可达 0）留后续卡，不在本卡。

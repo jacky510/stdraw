@@ -16,6 +16,7 @@ T15: the CLI refuses graphs above MAX_LAYOUT_NODES before any layout
 """
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -72,6 +73,58 @@ def test_repair_hints_absent_on_all_pass():
     gates = {"box_press_zero": True, "min_gap_ge_16": True,
              "dense_mode": {"note": "annotation dict, not a gate"}}
     assert certificate_repair_hints(gates, {}) == []
+
+
+# The crossing / coincidence scans emit detail rows shaped
+# {"edges": ["u->v", "x->y"], "at": [..], "fan_pair": bool} (resp.
+# {"pair": ["u->v", "x->y"], "span_px": ..}) inside the METRICS dict. The
+# hints builder reads them from that host and turns the first measured line
+# into the `edge` tag of the geometric gate's hint.
+CROSSING_ROWS = [{"edges": ["ms->val", "credit->inv"], "at": [425, 312],
+                  "fan_pair": False}]
+
+
+def test_repair_hints_edge_from_crossing_details():
+    hints = certificate_repair_hints(
+        {"box_press_zero": True, "visual_crossings_zero": False},
+        {"visual_crossing_details": CROSSING_ROWS})
+    assert [h["gate"] for h in hints] == ["visual_crossings_zero"]
+    assert re.fullmatch(r"[^<>]+<->[^<>]+", hints[0]["edge"])
+    assert hints[0]["edge"] == "ms<->val"
+
+
+def test_repair_hints_edge_from_coincidence_details():
+    hints = certificate_repair_hints(
+        {"lines_no_coincidence": False},
+        {"line_line_coincident_details": [{"pair": ["a->b", "c->d"],
+                                           "span_px": 12.0}]})
+    assert [h["gate"] for h in hints] == ["lines_no_coincidence"]
+    assert hints[0]["edge"] == "a<->b"
+
+
+def test_repair_hints_edge_only_on_geometric_gates():
+    hints = certificate_repair_hints(
+        {"min_gap_ge_16": False, "visual_crossings_zero": True},
+        {"visual_crossing_details": CROSSING_ROWS})
+    assert [h["gate"] for h in hints] == ["min_gap_ge_16"]
+    assert "edge" not in hints[0]
+
+
+def test_certificate_crossing_fail_hint_carries_edge(tmp_path):
+    # a K5-flavoured non-planar family: visual_crossings_zero necessarily fails
+    cld = os.path.join(ROOT, "benchmarks", "manual", "jacky-batch2",
+                       "sources", "nonplanar-credit.cld")
+    outdir = tmp_path / "o-cross"
+    r = _run_cli(cld, str(outdir))
+    assert r.returncode == 0
+    cert = json.load(open(outdir / "certificate.json", encoding="utf-8"))
+    assert cert["gates"]["visual_crossings_zero"] is False
+    rows = cert["metrics"]["visual_crossing_details"]
+    assert rows
+    hint = next(h for h in cert["repair_hints"]
+                if h["gate"] == "visual_crossings_zero")
+    u, v = rows[0]["edges"][0].split("->")
+    assert hint["edge"] == f"{u}<->{v}"
 
 
 def test_certificate_repair_hints_block_only_when_failing():

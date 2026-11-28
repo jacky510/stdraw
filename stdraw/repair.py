@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Structured repair hints (T13): every FAIL in a certificate or a loop
 audit carries an actionable, machine-readable suggestion — instead of a
-bare False the agent gets {"gate", "edge"?, "hint", "retry"}.
+bare False the agent gets {"gate", "hint", "retry"}, plus an "edge" tag on
+the two geometric gates (visual_crossings_zero / lines_no_coincidence; see
+docs/adr/ADR-0020-repair-hint-edge-source.md).
 
 The hints reference the DSL semantic hints (@main / @order / @pair, T14)
 where those are the right lever, and the split-by-loops advice for graphs
@@ -87,7 +89,7 @@ GENERIC_HINT = ("hard gate failed: re-run with the semantic hints @main / "
 
 
 
-def certificate_repair_hints(gates: dict, scene: dict) -> list:
+def certificate_repair_hints(gates: dict, metrics: dict) -> list:
     """T13: one structured suggestion per failing hard gate.
 
     Scope caliber: only FAILING BOOLEAN GATES produce hints. Report items
@@ -95,9 +97,16 @@ def certificate_repair_hints(gates: dict, scene: dict) -> list:
     by ruling — not gate FAILs — and all-pass certificates must keep their
     bytes byte-for-byte (golden set is byte-pinned; re-blessing needs
     explicit authorization). Annotation dicts (dense_mode /
-    planarization_deferred) are not gates. "edge" context is attached when
-    the certificate scene carries it (visual crossing details). Empty list
-    = caller omits the block (byte-identity).
+    planarization_deferred) are not gates. Empty list = caller omits the
+    block (byte-identity).
+
+    Second argument = the certificate's METRICS dict, not the scene: the
+    crossing / coincidence scans host their detail rows there
+    (`visual_crossing_details` / `line_line_coincident_details`) and the
+    scene only nests the dict under `scene["metrics"]`, so reading the scene
+    top level never found them (docs/adr/ADR-0020-repair-hint-edge-source.md).
+    The two geometric gates get an `edge` tag naming the first measured
+    line; every other gate's hint carries no `edge`.
     """
     hints = []
     for k, v in (gates or {}).items():
@@ -105,16 +114,46 @@ def certificate_repair_hints(gates: dict, scene: dict) -> list:
             item = {"gate": k, "hint": GATE_HINTS.get(k, GENERIC_HINT),
                     "retry": True}
             hints.append(item)
-    details = (scene or {}).get("visual_crossing_details") or []
-    if details and isinstance(details[0], dict):
-        a, b = details[0].get("a"), details[0].get("b")
-        if a and b:
+    src = metrics or {}
+    for gate_key, detail_key in _EDGE_DETAIL_SOURCES:
+        tag = _first_edge_tag(src.get(detail_key))
+        if tag:
             for item in hints:
-                if item["gate"] in ("visual_crossings_zero",
-                                    "lines_no_coincidence"):
-                    item["edge"] = f"{a}<->{b}"
-                    break
+                if item["gate"] == gate_key:
+                    item["edge"] = tag
     return hints
+
+
+# geometric gate -> the metrics detail list whose first row names the line
+_EDGE_DETAIL_SOURCES = (
+    ("visual_crossings_zero", "visual_crossing_details"),
+    ("lines_no_coincidence", "line_line_coincident_details"),
+)
+
+
+def _first_edge_tag(rows):
+    """`u<->v` for the first line of the first measured detail row.
+
+    Rows are the scans' own shape — crossings carry {"edges": ["u->v", ...]},
+    coincidences {"pair": ["u->v", ...]} — and the direction is dropped so the
+    tag speaks the same `a<->b` vocabulary as the mutual-pair rows. Returns
+    None for an empty/malformed list: a real FAIL implies a non-empty detail
+    list (both gates fail iff their count is > 0 and the list is that count
+    capped at 10), so None only happens for a hand-built payload.
+    """
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        lines = row.get("edges") or row.get("pair") or []
+        if not lines:
+            continue
+        head = str(lines[0])
+        if "->" not in head:
+            continue
+        u, v = head.split("->", 1)
+        if u and v:
+            return f"{u}<->{v}"
+    return None
 
 
 def hints_block(graph) -> dict:

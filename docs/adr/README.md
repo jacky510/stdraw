@@ -21,3 +21,4 @@ One file per ruling; the original in-code annotations (with attribution) are pre
 - [ADR-0017-ui-theme-spec-a](ADR-0017-ui-theme-spec-a.md) - UI-A theme baseline: design tokens single source (Accepted 2026-11-11)
 - [ADR-0018-2026-11-26-anchor-vocabulary-and-regularity-demotion](ADR-0018-2026-11-26-anchor-vocabulary-and-regularity-demotion.md) - 2026-11-26 batch: multi-slot anchor vocabulary + on-border/angle `anchors_standard` + fan slot swap (phi key) + n>10 regularity demotion to report items (Accepted 2026-11-26)
 - [ADR-0019-manual-cv-gate-demotion](ADR-0019-manual-cv-gate-demotion.md) - Manual (`--from-layout`) caliber: `cv_le_035` demotes to a report item; the two regularity calibers stated separately (Accepted 2026-11-27)
+- [ADR-0020-repair-hint-edge-source](ADR-0020-repair-hint-edge-source.md) - Repair-hint `edge` tag: read the metrics detail rows (host + detail-shape dead-code fix; mandatory on the two geometric gates) (Accepted 2026-11-28)

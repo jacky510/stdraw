@@ -1539,8 +1539,9 @@ def certificate_auto(scene: dict, graph_name: str = "", layer: str = "2D",
         out["mode_decision_trace"] = tr
     # T13: structured repair hints for every failing gate / report item —
     # emitted only when something failed (all-pass certificates keep their
-    # bytes byte-for-byte)
-    _rh = certificate_repair_hints(g, scene)
+    # bytes byte-for-byte). The detail rows live in `metrics`, not on the
+    # scene top level (docs/adr/ADR-0020-repair-hint-edge-source.md).
+    _rh = certificate_repair_hints(g, metrics)
     if _rh:
         out["repair_hints"] = _rh
     return out

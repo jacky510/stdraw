@@ -842,3 +842,74 @@
 
 - 任何 pin 了 0.10.0 证书字节的消费方需重取一次：**字段语义零变**（grade / 门集 / 度量逐值相同），只有 `grade_semantics` 文本澄清；新 pin 值见 §10.2 表。
 - **明写不解决项**：本条不扩大口径——证书哈希仍按登记 #9 剔除 `version` 值、其余字节钉死；`grade_semantics` 属真实内容，故按真实变更重新钉基线，而不是把它加入剔除清单。
+
+## 11. 登记 #11：`repair_hints.edge` 从死代码变为真实字段（2026-11-28）
+
+### 11.1 批准来源与变更内容
+
+- **批准**：operator 2026-11-28 立卡（来源：对 0.10.0 的真实使用评审 P2「`repair_hints` 的 `edge` 字段是死代码」，operator 独立复核确认）。
+- **变更内容**：`repair.certificate_repair_hints` 的两个缺陷修复——① 明细宿主取错（读 scene 顶层，而扫描结果住在 metrics 字典）；② 明细字段名取错（读 `a`/`b`，实际 shape 是 `edges: ["u->v", …]` / `pair: ["u->v", …]`）。修复后 `visual_crossings_zero` / `lines_no_coincidence` 两条 FAIL 提示带 `"edge": "u<->v"`（取舍见 `docs/adr/ADR-0020-repair-hint-edge-source.md`）。**不改门阈值、不改评分语义、不动 `hints` 块**；只有 FAIL 门产生提示块的既有纪律不变，全 PASS 证书字节不变。
+- **可预期后果**：任何**证书里带 FAIL 几何门的图**，其 `certificate.json` 必然多出一个 `repair_hints[i].edge` 键 —— 本条登记的就是这批图的逐字节漂移。
+
+### 11.2 两腿口径
+
+- 基线腿 = `origin/main`（`803a958`）的 `git archive` 纯净快照（该提交与引擎前序 `b10ef86` 的引擎文件逐字节相同，只动 `CHANGELOG.md`）；改后腿 = 分支 `stdraw/repair-hint-edge`（基于 `803a958`）。
+- **归因不受主干后续前进影响**：本条两腿只相差本卡的提交，故 14 条漂移可完全归因于本卡。主干其后并入 `20272f1`（证书 `grade_semantics` 文本口径，已单独登记为 #10）使**绝对基线**前进一代，但那是一次与本卡无交集的文本改动——本条的差分结论（唯一差异 = `repair_hints[].edge` 新增键）在结构差分层面成立，与基线停在哪个提交无关。
+- 工具与口径：`benchmarks/tools/sweep_tiers.py --tier A` 的图列、逐图命令（`stdraw layout <cld> --outdir <leg>/<family>/<stem> --allow-oversize`）与记录字段（7 个产物的 sha256）照用；剩余图按 4 分片并行渲染后按 key 合并 `sweep_index.json`，逐字节比对调用工具自带的 `compare()`（未被改写）。同机、同解释器（Python 3.12 + ortools）、耗时口径 `cp-sat-layered`。
+- 比对面：`layout.json` / `certificate.json` / `geometry_report.json` / `loops_audit.json` / `demo-2d.html` / `graph.json` / `graph.cld`。
+
+### 11.3 汇总
+
+| 项 | 数 |
+|---|---|
+| A 档图列 | 60 图 |
+| 两腿 rc 相同 | 60 / 60（rc=0 44；rc=1 15；TIMEOUT 1） |
+| 进入逐字节比对（rc=0） | 44 图 |
+| 字节漂移条目 | **14 条，全部为 `certificate.json`** |
+| 其余 6 类产物漂移 | **0**（layout / geometry_report / loops_audit / demo-2d / graph.json / graph.cld） |
+| 新增/删除门行、交叉数变化、视觉交叉数变化 | 0 / 0 / 0 |
+| grade 迁移 | 0 图升降（14 图前后均 `uncertified`） |
+| 两腿 rc=1（既存失败，逐图相同） | 15 图 |
+| 两腿 TIMEOUT（同图同腿） | 1 图（`random-n20-i18`，与前次登记的慢图一致） |
+
+### 11.4 漂移归因
+
+对 14 张漂移图的 `certificate.json` 做结构差分（逐键递归）：**唯一差异是 `repair_hints[i].edge` 这一新增键**（14/14 图如此，无其它增删改）。`gates` / `gates_passed` / `metrics` / `grade` / `honest_notes` / 序列化格式全部不变。差分样例：
+
+```
+leg1: {"gate": "visual_crossings_zero", "hint": "...", "retry": true}
+leg2: {"gate": "visual_crossings_zero", "hint": "...", "retry": true, "edge": "N00<->N05"}
+```
+
+`random-n10-i03` 同时命中两条几何门，是该修复的一次完整现场：`lines_no_coincidence` 拿到 `N05<->N06`、`visual_crossings_zero` 拿到 `N00<->N05`，同图的非几何门 `topology_form_fallback` 仍无 `edge`（口径：只有测线段对的门才带标签）。
+
+### 11.5 逐图表（14 张漂移图，全部 `random` 家族 n10）
+
+| 图 | 基线腿 FAIL 门 | 漂移产物 |
+|---|---|---|
+| random-n10-i00 | visual_crossings_zero, topology_form_fallback | certificate.json |
+| random-n10-i01 | visual_crossings_zero, topology_form_fallback | certificate.json |
+| random-n10-i02 | visual_crossings_zero | certificate.json |
+| random-n10-i03 | lines_no_coincidence, visual_crossings_zero, topology_form_fallback | certificate.json |
+| random-n10-i04 | visual_crossings_zero, topology_form_fallback | certificate.json |
+| random-n10-i05 | visual_crossings_zero, topology_form_fallback | certificate.json |
+| random-n10-i06 | visual_crossings_zero, topology_form_fallback | certificate.json |
+| random-n10-i07 | visual_crossings_zero, topology_form_fallback | certificate.json |
+| random-n10-i08 | visual_crossings_zero, topology_form_fallback | certificate.json |
+| random-n10-i13 | visual_crossings_zero | certificate.json |
+| random-n10-i14 | visual_crossings_zero, topology_form_fallback | certificate.json |
+| random-n10-i15 | visual_crossings_zero | certificate.json |
+| random-n10-i17 | visual_crossings_zero | certificate.json |
+| random-n10-i18 | visual_crossings_zero, topology_form_fallback | certificate.json |
+
+未漂移的 30 张 rc=0 图证明纪律面：其中含只有非几何门 FAIL 的图（提示块照旧输出、无 `edge`）与全 PASS 图（无提示块），两类都逐字节不变。
+
+### 11.6 冻结基线处置
+
+- `tests/golden/baseline.json`（金标准 8/8）：**不重祝福**，本卡跑 `tests/golden_gate.py` 必须 8/8 `baseline identical`（`edge` 只出现在 FAIL 证书上，金标准全 `best`）。
+- `tests/baselines/`（ortho-v1 冻结）：已随产品退役，不涉及。
+
+### 11.7 byte-pinned 消费方影响
+
+- `layout.json` 与 `geometry_report.json` 逐字节不变（14 图皆然）——消费方若 pin 的是布局/几何产物，本变更**零影响**。
+- 消费方若把 `certificate.json` 整文件做字节 pin 且样本落在上述 14 图的族里，需按本条登记重取（差分为新增 `edge` 键，语义上只增信息、不减任何字段）。0.10.1 补丁版发布说明须与此口径一致：`edge` 在两条几何门上是**必出**字段。
