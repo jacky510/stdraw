@@ -13,10 +13,11 @@ import argparse
 import json
 import os
 import sys
+import traceback
 
 from . import __version__
 from .model import Graph
-from .dsl import parse, dumps
+from .dsl import parse, dumps, DSLParseError
 from .recipes import run as recipes_run
 from .check import geometry_report_to_file
 from .loops import loops_audit
@@ -56,6 +57,54 @@ def load_manual_layout(path: str) -> dict:
     return {"nodes": raw["nodes"], "viewBox": raw.get("viewBox"),
             "edges": raw.get("edges"),
             "source": os.path.basename(path)}
+
+
+def _write_parse_error(a, err: DSLParseError):
+    """Input-surface failure -> structured artifact instead of a stack trace.
+
+    Presentation layer only: the library still raises (Python callers need the
+    exception); the CLI turns it into ``parse_error.json`` + exit 2.
+    Exit 3 stays the size refusal (`refusal.json`), 1 a layout that ran but
+    failed its geometry gate.  ``STDRAW_DEBUG=1`` re-adds the traceback.
+    """
+    os.makedirs(a.outdir, exist_ok=True)
+    payload = err.to_dict()
+    payload["input"] = os.path.basename(a.input)
+    payload["exit_code"] = 2
+    p = os.path.join(a.outdir, "parse_error.json")
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=1)
+    print(json.dumps(payload, ensure_ascii=False, indent=1))
+    where = "" if payload["line"] is None else f" line {payload['line']}"
+    summary = str(err).splitlines()[0].rstrip(": ")
+    if err.detail and err.detail not in summary:
+        summary += f" ({err.detail})"
+    print(f"[input rejected] {err.kind}{where}: {summary} -> {p} "
+          "(structured error; docs/agent-interface.md)", file=sys.stderr)
+    if os.environ.get("STDRAW_DEBUG") == "1":
+        traceback.print_exc()
+    sys.exit(2)
+
+
+def _load_graph_or_report(a) -> Graph:
+    """load_graph() + the CLI error-presentation contract (no stack by default)."""
+    try:
+        return load_graph(a.input)
+    except DSLParseError as e:
+        _write_parse_error(a, e)
+    except FileNotFoundError as e:
+        _write_parse_error(a, DSLParseError(
+            f"input file not found: {os.path.basename(str(e.filename or a.input))}",
+            kind="io", detail="check the input path"))
+    except OSError as e:
+        _write_parse_error(a, DSLParseError(
+            f"input cannot be read: {e}", kind="io",
+            detail="check the path and its permissions"))
+    except (ValueError, KeyError, TypeError) as e:
+        # .json input that is not a graph model (json.JSONDecodeError is a ValueError)
+        _write_parse_error(a, DSLParseError(
+            f"input is not a usable graph model: {e}", kind="input",
+            detail="expected a stdraw graph.json model or a .cld DSL file"))
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -151,16 +200,18 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 def _prepare_graph(a):
     """Load + validate + hints + size refusal + deprecation warnings.
 
-    Returns (g, name, deprecated_used). Exits the process on validation
-    failure (2) or structured size refusal (3) — verbatim CLI behavior.
+    Returns (g, name, deprecated_used). Exits the process on a malformed input
+    (2, structured parse_error.json) or a structured size refusal (3).
     """
-    g = load_graph(a.input)
+    g = _load_graph_or_report(a)
     os.makedirs(a.outdir, exist_ok=True)
     name = a.name or g.name or os.path.splitext(os.path.basename(a.input))[0]
     problems = g.validate()
     if problems:
-        print("Structural validation failed:", *problems, sep="\n  ", file=sys.stderr)
-        sys.exit(2)
+        _write_parse_error(a, DSLParseError(
+            "graph model structural validation failed:\n  " + "\n  ".join(problems),
+            kind="structure", detail=problems[0],
+            problems=[{"line": None, "reason": p} for p in problems]))
 
     # T14: apply the semantic hints (@order reading order) — BEFORE the loop
     # audit and the graph.json write, so every delivered artifact follows the
@@ -278,9 +329,29 @@ def _resolve_exactness(a, v4, g):
     return exactness
 
 
+def _report_internal(exc):
+    """Last-resort presentation: an unexpected failure, still no stack by default."""
+    print(json.dumps({"error": True, "kind": "internal",
+                      "reason": f"{type(exc).__name__}: {exc}",
+                      "hint": "internal failure, not an input problem — "
+                              "re-run with STDRAW_DEBUG=1 for the traceback"},
+                     ensure_ascii=False, indent=1), file=sys.stderr)
+    if os.environ.get("STDRAW_DEBUG") == "1":
+        traceback.print_exc()
+
+
 def main(argv=None):
     a = _build_arg_parser().parse_args(argv)
+    try:
+        return _run_pipeline(a)
+    except SystemExit:
+        raise
+    except Exception as e:      # the CLI owns the last-resort presentation
+        _report_internal(e)
+        return 1
 
+
+def _run_pipeline(a):
     g, name, _deprecated_used = _prepare_graph(a)
 
     def w(fn, obj):

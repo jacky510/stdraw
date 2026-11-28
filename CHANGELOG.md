@@ -6,6 +6,25 @@ reproduced here; the engineering version history lives in
 
 ## 0.10.1 (unreleased)
 
+- **malformed input has a structured error face**: a DSL syntax or
+  structural-validation failure used to surface as a bare `ValueError` plus a
+  Python traceback (exit 1), while the size limit already answered with
+  `refusal.json` + exit 3. The CLI now writes `parse_error.json` (fields
+  `error` / `kind` / `line` / `column` / `reason` / `snippet` / `detail` /
+  `input` / `exit_code`) and exits 2 — 3 stays the size refusal, 1 a layout
+  that ran but failed its geometry gate. `kind` separates `syntax` (unknown
+  anchor id, unknown/duplicate tag, unrecognized line), `structure`
+  (undeclared endpoint/loop/group, self-loop, duplicate edge, bad polarity,
+  dangling `@main`/`@order`/`@pair`), `io` and `input`. `line`/`column` point
+  at the offending declaration (`Graph.validate_details()` supplies the
+  provenance; `Graph.validate()` keeps its exact string list). The Python
+  library contract is unchanged: `stdraw.dsl.parse()` still raises —
+  `DSLParseError` subclasses `ValueError` and every message is
+  byte-identical, so existing `except ValueError` callers are unaffected.
+  Tracebacks are printed only under `STDRAW_DEBUG=1`. Contract and the exit
+  code table: `docs/agent-interface.md` ("错误面契约"). Success-path artifacts
+  are unchanged (golden set 8/8 `baseline identical`).
+
 - **certificate `grade_semantics`: the retired `3d` token is now described as
   what it is** — a historical read-back token. The field used to say "the 3d
   tier in the docs describes the 3D delivery path", which reads as if a 3D

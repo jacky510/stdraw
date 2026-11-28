@@ -22,7 +22,7 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from stdraw.dsl import parse                      # noqa: E402
+from stdraw.dsl import parse, DSLParseError     # noqa: E402
 from stdraw.limits import (HARD_CEILING_NODES,     # noqa: E402
                            MAX_LAYOUT_NODES, size_refusal)
 from stdraw.loops import loops_audit               # noqa: E402
@@ -229,10 +229,10 @@ def _write_cld(path, n):
         f.write("\n".join(lines) + "\n")
 
 
-def _run_cli(path, outdir, extra=()):
+def _run_cli(path, outdir, extra=(), env=None):
     return subprocess.run(
         [PY, "-m", "stdraw", "layout", path, "--outdir", outdir, *extra],
-        capture_output=True, text=True, cwd=ROOT)
+        capture_output=True, text=True, cwd=ROOT, env=env)
 
 
 @pytest.mark.parametrize("n,extra,want_rc,want_refusal", [
@@ -299,3 +299,135 @@ def test_no_deprecation_warning_without_pixel_params(tmp_path):
     r = _run_cli(cld, str(outdir))
     assert r.returncode == 0
     assert "[deprecated]" not in r.stderr
+
+
+# ── structured parse errors (error-surface contract) ──
+#
+# The library keeps raising: DSLParseError IS a ValueError and every message
+# is byte-identical to the historical one.  The CLI stops the stack trace at
+# its own boundary and writes parse_error.json + exit 2 (3 stays the size
+# refusal, 1 a layout that ran but failed its geometry gate).
+
+ANCHOR_TYPO = ('graph "t"\n'
+               'var a "A"\n'
+               'var b "B"\n'
+               'a -> + b\n'
+               'loop R1 "r" "R" [a, b]\n'
+               'b -> + a @anchors src=n-g8\n')
+
+UNDECLARED_ENDPOINT = ('graph "t"\n'
+                       'var a "A"\n'
+                       'a -> + b\n')
+
+SYNTAX_ERROR = ('graph "t"\n'
+                'var a "A"\n'
+                'var b "B"\n'
+                'a => b\n')
+
+
+def _write(path, text):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return str(path)
+
+
+def _parse_error(outdir):
+    with open(os.path.join(str(outdir), "parse_error.json"), encoding="utf-8") as f:
+        return json.load(f)
+
+
+def test_parse_error_unknown_anchor_id(tmp_path):
+    cld = _write(tmp_path / "anch.cld", ANCHOR_TYPO)
+    out = tmp_path / "o"
+    r = _run_cli(cld, str(out))
+    assert r.returncode == 2
+    d = _parse_error(out)
+    assert d["error"] is True and d["kind"] == "syntax"
+    assert d["line"] == 6
+    assert d["snippet"] == "b -> + a @anchors src=n-g8"
+    assert d["column"] == len("b -> + a ") + 1     # the failing tag, not the line
+    assert "unknown anchor id" in d["detail"] and "n-g8" in d["detail"]
+    # the legacy message is untouched; only the presentation changed
+    assert d["reason"] == ("DSL line 6 cannot be parsed: "
+                           "'b -> + a @anchors src=n-g8'")
+    assert d["input"] == "anch.cld" and d["exit_code"] == 2
+    assert json.loads(r.stdout) == d               # stdout = the artifact
+    assert "Traceback (most recent call last)" not in r.stderr
+    assert "[input rejected] syntax line 6" in r.stderr
+    assert not (out / "layout.json").exists()      # nothing was laid out
+
+
+def test_parse_error_undeclared_endpoint(tmp_path):
+    cld = _write(tmp_path / "undecl.cld", UNDECLARED_ENDPOINT)
+    out = tmp_path / "o"
+    r = _run_cli(cld, str(out))
+    assert r.returncode == 2
+    d = _parse_error(out)
+    assert d["kind"] == "structure"
+    assert d["line"] == 3 and d["snippet"] == "a -> + b"
+    assert d["column"] is None                     # line-scoped problem
+    assert d["reason"] == ("DSL structural validation failed:\n"
+                           "  edge endpoint not declared: a->b")
+    assert d["problems"] == [{"line": 3,
+                              "reason": "edge endpoint not declared: a->b"}]
+    assert "Traceback (most recent call last)" not in r.stderr
+    assert not (out / "layout.json").exists()
+
+
+def test_parse_error_syntax_error(tmp_path):
+    cld = _write(tmp_path / "syn.cld", SYNTAX_ERROR)
+    out = tmp_path / "o"
+    r = _run_cli(cld, str(out))
+    assert r.returncode == 2
+    d = _parse_error(out)
+    assert d["kind"] == "syntax" and d["line"] == 4 and d["column"] == 1
+    assert d["snippet"] == "a => b"
+    assert "documented forms" in d["detail"]
+    assert "Traceback (most recent call last)" not in r.stderr
+
+
+def test_parse_error_missing_input_is_structured(tmp_path):
+    out = tmp_path / "o"
+    r = _run_cli(str(tmp_path / "nope.cld"), str(out))
+    assert r.returncode == 2
+    d = _parse_error(out)
+    assert d["kind"] == "io" and d["line"] is None
+    assert "not found" in d["reason"]
+    assert "Traceback (most recent call last)" not in r.stderr
+
+
+def test_parse_error_traceback_only_under_debug(tmp_path):
+    cld = _write(tmp_path / "anch.cld", ANCHOR_TYPO)
+    out = tmp_path / "o"
+    env = dict(os.environ, STDRAW_DEBUG="1")
+    r = _run_cli(cld, str(out), env=env)
+    assert r.returncode == 2                       # debug never changes the code
+    assert "Traceback (most recent call last)" in r.stderr
+    assert _parse_error(out)["kind"] == "syntax"
+
+
+def test_parse_error_does_not_regress_size_refusal(tmp_path):
+    cld = tmp_path / "g16.cld"
+    _write_cld(str(cld), MAX_LAYOUT_NODES + 1)
+    out = tmp_path / "o"
+    r = _run_cli(str(cld), str(out))
+    assert r.returncode == 3
+    assert (out / "refusal.json").exists()
+    assert not (out / "parse_error.json").exists()  # two distinct error faces
+
+
+def test_library_still_raises_valueerror():
+    # the CLI presentation must not leak into the library contract
+    with pytest.raises(ValueError) as struct_err:
+        parse(UNDECLARED_ENDPOINT)
+    assert isinstance(struct_err.value, DSLParseError)
+    assert struct_err.value.kind == "structure"
+    assert str(struct_err.value) == ("DSL structural validation failed:\n"
+                                     "  edge endpoint not declared: a->b")
+
+    with pytest.raises(ValueError) as syn_err:
+        parse(SYNTAX_ERROR)
+    assert isinstance(syn_err.value, DSLParseError)
+    assert syn_err.value.kind == "syntax" and syn_err.value.line == 4
+    assert str(syn_err.value) == "DSL line 4 cannot be parsed: 'a => b'"
+    assert syn_err.value.to_dict()["line"] == 4

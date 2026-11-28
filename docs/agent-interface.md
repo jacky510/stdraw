@@ -1,4 +1,4 @@
-# Agent 接口契约（T13 修复建议 / T14 语义提示 / T15 规模上限）
+# Agent 接口契约（T13 修复建议 / T14 语义提示 / T15 规模上限 / 错误面契约）
 
 面向 agent 调用方的接口约定。语法细则见 `docs/dsl-spec-v0.1.md` 附录 B（英文正本）与 zh-CN 副本；本文是行为契约与产物 schema。来源：Copilot 评审清单 T13/T14/T15（stdraw-copilot-issues-2026-11-24）。
 
@@ -19,6 +19,37 @@
  "advice": "split the graph by loops: ...",
  "split_hint": {"note": "...", "loops": [{"id": "R1", "label": "...", "kind": "R", "nodes": [...]}]}}
 ```
+
+## 错误面契约（0.10.1）
+
+CLI 的失败面分两类，产物文件名与退出码都不同——agent 按文件名判断，不必解析 stderr：
+
+| 情形 | 产物 | 退出码 | 发生在 |
+|---|---|---|---|
+| 节点数超过上限 | 只写 `refusal.json`，不产出 layout/certificate/demo | **3** | 加载+结构校验通过后、任何布局尝试之前 |
+| 输入面错误（语法 / 结构校验 / 读不到文件 / JSON 不是图模型） | 只写 `parse_error.json`，不产出 layout/certificate/demo | **2** | `load_graph` 与结构校验阶段 |
+| 布局跑完但几何自检不过 | 产物齐全（`geometry_report.json` 里有失败项） | **1** | 布局之后 |
+| 成功 | 全套产物 | **0** | — |
+
+- **默认不吐 Python traceback**：面向 agent 的调用面只给结构化 JSON（stdout 打同一份 payload）+ 一行 stderr 摘要。需要栈时加 `STDRAW_DEBUG=1`（退出码不变，仍为 2）。
+- `parse_error.json` schema（`line` / `column` 可为 `null`，其余必有）：
+
+```json
+{"error": true,
+ "kind": "syntax",
+ "line": 6, "column": 10,
+ "reason": "DSL line 6 cannot be parsed: 'b -> + a @anchors src=n-g8'",
+ "snippet": "b -> + a @anchors src=n-g8",
+ "detail": "unknown anchor id: 'n-g8' (vocabulary: n/e/s/w, ne/se/sw/nw, <side>-g1..g7)",
+ "input": "g.cld", "exit_code": 2}
+```
+
+  - `kind`：`syntax`（该行语法不成立：未知锚点 id / 未知 tag / 重复 tag / 认不出任何文档形式）｜`structure`（`Graph.validate()` 报告的声明不一致：未声明端点·回路·分组、自环、重复边、极性非法、`@main`/`@order`/`@pair` 指向不存在的 id）｜`io`（文件不存在或读不出）｜`input`（`.json` 不是 stdraw 图模型）。
+  - `reason` 与库异常消息**逐字相同**（多条问题用 `\n  ` 串联）；`detail` 给更具体的第一因（如未知锚点 id 的词表范围）；`problems` 仅在 `kind=structure` 时出现，逐条列 `{line, reason}`（行号可为 `null`）。
+  - `line` 是 1 基源行号；`.json` 输入与 `io` 类没有行号 → `null`。`column` 是 1 基列号：语法类错误指向出错 tag 的起始位置，行级语义问题为 `null`。
+  - `input` 只记文件名（不落绝对路径）；`exit_code` 与进程退出码一致（恒 2）。
+- **库 API 不变**：`stdraw.dsl.parse()` 仍然抛异常——`DSLParseError` 是 `ValueError` 子类且消息逐字保持历史文本，Python 调用方照旧 `try/except ValueError`；结构化字段只服务 CLI 呈现层。
+- 两类错误互斥：同一份输入不会同时产出 `refusal.json` 与 `parse_error.json`（结构校验先于规模检查，语法/结构错误时根本走不到规模检查）。
 
 ## T13 FAIL 结构化修复建议
 
@@ -45,4 +76,5 @@
 ## 决策记录
 
 - 上限取 15（n≤20 硬限内留余量），拒绝发生在布局前（不先布局再给 uncertified）。
+- 退出码不重排：**0 成功 / 1 布局跑完但几何门不过 / 2 输入面错误（`parse_error.json`）/ 3 规模拒绝（`refusal.json`）**——0.10.0 起 1/2/3 已是这个语义，错误面契约只是把 2 的产物从"仅 stderr"补齐成结构化 JSON。
 - tier A 全量字节门（61 图，含 random-n20 x20）经 `sweep_tiers.py --allow-oversize` 保持不变；ci_checks B2-P 的 n20 L2 腿同旗保持其计划化降级覆盖，另加 B2-T15 拒绝腿。

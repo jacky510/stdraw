@@ -109,48 +109,79 @@ class Graph:
 
     def validate(self) -> List[str]:
         """Structural validation: returns a list of problems (empty = passed)."""
-        problems = []
+        return [d["reason"] for d in self.validate_details()]
+
+    def validate_details(self) -> List[dict]:
+        """Structural validation with provenance; ``validate()`` is its string view.
+
+        Every entry is ``{"reason": <the exact string validate() returns>,
+        "kind": "node" | "edge" | "loop" | "group" | "hint"}`` plus the
+        identifiers a caller needs to point at the offending declaration
+        (``a``/``b`` for edges, ``id`` for nodes/loops/groups, ``target`` +
+        ``ids`` for semantic hints; ``occurrence`` = "last" marks the second
+        of a duplicated declaration).  Ordering and reason texts are the
+        historical ``validate()`` output verbatim, so the string view stays
+        byte-identical for every existing caller; the extra keys let the DSL
+        parser attach source lines and the CLI write a structured
+        parse_error.json (docs/agent-interface.md).
+        """
+        details = []
         ids = self.node_ids()
         dup = {i for i in ids if ids.count(i) > 1}
         if dup:
-            problems.append(f"duplicate node ids: {sorted(dup)}")
+            _dup = sorted(dup)
+            details.append({"reason": f"duplicate node ids: {_dup}",
+                            "kind": "node", "id": _dup[0],
+                            "occurrence": "last"})
         idset = set(ids)
         seen_dirs = set()
         for e in self.edges:
             if e.a not in idset or e.b not in idset:
-                problems.append(f"edge endpoint not declared: {e.a}->{e.b}")
+                details.append({"reason": f"edge endpoint not declared: {e.a}->{e.b}",
+                                "kind": "edge", "a": e.a, "b": e.b})
             if e.polarity not in ("+", "-"):
-                problems.append(f"invalid polarity: {e.a}->{e.b} {e.polarity!r}")
+                details.append({"reason": f"invalid polarity: {e.a}->{e.b} {e.polarity!r}",
+                                "kind": "edge", "a": e.a, "b": e.b})
             if e.a == e.b:
-                problems.append(f"self-loop edge: {e.a}->{e.b}")
+                details.append({"reason": f"self-loop edge: {e.a}->{e.b}",
+                                "kind": "edge", "a": e.a, "b": e.b})
             if (e.a, e.b) in seen_dirs:
-                problems.append(f"duplicate edge: {e.a}->{e.b}")
+                details.append({"reason": f"duplicate edge: {e.a}->{e.b}",
+                                "kind": "edge", "a": e.a, "b": e.b,
+                                "occurrence": "last"})
             seen_dirs.add((e.a, e.b))
         id2loop = {lp.id: lp for lp in self.loops}
         for e in self.edges:
             for lid in e.loops:
                 if lid not in id2loop:
-                    problems.append(f"edge {e.a}->{e.b} references undeclared loop {lid}")
+                    details.append({"reason": f"edge {e.a}->{e.b} references undeclared loop {lid}",
+                                    "kind": "edge", "a": e.a, "b": e.b})
         for lp in self.loops:
             for v in lp.nodes:
                 if v not in idset:
-                    problems.append(f"loop {lp.id} references undeclared node {v}")
+                    details.append({"reason": f"loop {lp.id} references undeclared node {v}",
+                                    "kind": "loop", "id": lp.id})
         for n in self.nodes:
             if n.group and n.group not in {g.id for g in self.groups}:
-                problems.append(f"node {n.id} references undeclared group {n.group}")
+                details.append({"reason": f"node {n.id} references undeclared group {n.group}",
+                                "kind": "node", "id": n.id})
         id2loop = {lp.id for lp in self.loops}
         for hid in self.hints.main:
             if hid not in id2loop:
-                problems.append(f"@main references undeclared loop {hid}")
+                details.append({"reason": f"@main references undeclared loop {hid}",
+                                "kind": "hint", "target": "main", "ids": [hid]})
         for hid in self.hints.order:
             if hid not in id2loop:
-                problems.append(f"@order references undeclared loop {hid}")
+                details.append({"reason": f"@order references undeclared loop {hid}",
+                                "kind": "hint", "target": "order", "ids": [hid]})
         for (a, b) in self.hints.pairs:
             if a not in idset or b not in idset:
-                problems.append(f"@pair references undeclared variable: {a},{b}")
+                details.append({"reason": f"@pair references undeclared variable: {a},{b}",
+                                "kind": "hint", "target": "pair", "ids": [a, b]})
             elif a == b:
-                problems.append(f"@pair names the same variable twice: {a}")
-        return problems
+                details.append({"reason": f"@pair names the same variable twice: {a}",
+                                "kind": "hint", "target": "pair", "ids": [a]})
+        return details
 
     def to_dict(self) -> dict:
         return {
