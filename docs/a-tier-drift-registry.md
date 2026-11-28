@@ -762,5 +762,5 @@
 
 ### 8.5 与历史口径订正的关系
 
-本条同时订正一条**已过时的记载**：AGENTS.md 历史版本段曾写「the version string never enters output bytes (demos/classic-certificate.json byte-identical pre/post bump)」。该说法自 `3b0e55a`（证书版本号改为跟随 `stdraw.__version__`）起已不成立——现由 `stdraw/delivery.py` 的 `engine_version` 与 `stdraw/metrics.py` 的 `version` 字段共同使版本号进入交付字节。本次 0.10.0 收尾的证书重渲与金标准重录都是该事实的直接后果。
+本条同时订正一条**已过时的记载**：AGENTS.md 历史版本段曾声称「版本号永不进入输出字节、`demos/classic-certificate.json` 在 bump 前后逐字节相同」。该说法自 `3b0e55a`（证书版本号改为跟随 `stdraw.__version__`）起已不成立——现由 `stdraw/delivery.py` 的 `engine_version` 与 `stdraw/metrics.py` 的 `version` 字段共同使版本号进入交付字节。本次 0.10.0 收尾的证书重渲与金标准重录都是该事实的直接后果。
 
