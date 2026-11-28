@@ -6,6 +6,38 @@ reproduced here; the engineering version history lives in
 
 ## 0.10.0 (2026-11-28)
 
+- **closed-ring lenses for mutual pairs, rounded-corner arrow tips**
+  (commit `3b8e21d`): a delivery repair pass (`Router.mutual_lens_construct`,
+  runs last on every non-lens engine) rebuilds each `a<->b` pair as the
+  lens-chain double arc, trying anchor variants in order and gate-checking each
+  edge against `LENS_CONSTRUCT` and the >=12px pair separation; a pair the
+  arrow-normal channel already closed as a slim lens is left untouched, and a
+  refused pair keeps its lines byte-for-byte with per-variant reasons. A new
+  hard gate **`mutual_pairs_closed`** re-reads the delivered geometry (fat or
+  slim lens closed; tilt exemption reproducible from the node centres and every
+  anchor variant's chord; blocked / claimed / frozen / designated accounted as
+  exemptions) and joins only the non-lens gate sets (lens-chain keeps
+  `lens_pairs_closed`); grade semantics unchanged. Arrow tips on corner anchors
+  are projected onto the r=14 rounded outline (the `arrow` field only -- anchors
+  and path points untouched; the interactive JS mirrors it with `cardRadius` in
+  the payload). `column-chain` members with a spine neighbour take the anchor
+  row first. Docs: `docs/layout-modes.md` (zh/en) closed-ring contract,
+  `docs/routing-gates.md` section 9, `tests/test_mutual_lens_rebuild.py`.
+  **This is the one 0.10.0 change that moves 2D bytes beyond the deliberate
+  items listed in the consumer note below** -- gate counts shift (e.g. 11/12 ->
+  12/13) and certificates of figures that now fail a gate gain `repair_hints`.
+
+- **Consumer note: 0.10.0 is not a byte-identical drop-in for 0.9.0.** The 3D
+  removal itself changes no 2D artifact, but four other changes in this range
+  do: `edges[].arrow` (rounded-corner projection), `interactive` / `drag_layer`
+  (opt-in drag layer, so the default delivery face declares `false` / `"no"`),
+  the new `mutual_pairs_closed` gate (gate counts move), and the resulting
+  `metrics` / `mode_decision_trace` / `gates_passed` shift. Measured on
+  `examples/limits-to-growth.cld` at both tags: `layout.json` differs in 280
+  leaves and `certificate.json` in 48, while `loops_audit.json` and
+  `graph.json` are unchanged. Re-generate pinned artifacts before pinning
+  again.
+
 - **manual (`--from-layout`) caliber: `cv_le_035` demotes to a report item**
   (jacky's ruling of 2026-11-27, extending the 2026-11-26 automatic-tier
   ruling): a hand-drawn layout is not a mechanical grid, so the spacing-CV
@@ -154,7 +186,7 @@ reproduced here; the engineering version history lives in
   The library API (`render_html`) keeps its previous behavior by default;
   only the CLI default changed.
 - **BREAKING: `layout-diff` / `--compare-auto` moved out of the CLI into
-  repo tools** (development gauges, not shipped in the wheel):
+  repo tools** (development gauges, not shipped in the wheel or the sdist):
   `stdraw layout-diff a.json b.json --cld x.cld --diff-out d.json` becomes
   `python tools/layoutdiff.py a.json b.json --cld x.cld --out d.json`, and
   the `--compare-auto` flag becomes
