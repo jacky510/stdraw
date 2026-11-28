@@ -725,3 +725,42 @@
 ### 7.6 byte-pinned 消费方（STDRAW_PIN）
 
 - 8777 STDRAW_PIN 0.8.1 不动。本卡布局面零漂移（`layout.json` 逐字节相同），消费方若只消费坐标则**零影响**；若消费方连证书 note 一起比对，环探针 note 一行会不同（仅说明文字，判定字段不变）。消费方升级另行裁决。
+
+## 8. 登记 #8：0.10.0 版本收尾——金标准证书哈希随引擎版本号重录（2026-11-28）
+
+### 8.1 批准来源与变更内容
+
+- **批准**：owner 2026-11-28 桌面会话对 0.10.0 发版回「B」（= 现在全套发；版本收尾须 owner 在场批，本条即该批准的执行记录）。
+- **变更内容**：`tests/golden/baseline.json` 的 **8 条 `sha256.certificate`** 随版本号 0.9.0 → 0.10.0 重录；同批更新 `_meta.engine_version` 与 `_meta.recorded`。**其余字段零改动**（grade / placement / gates_passed / crossings / visual_crossings / nodes / edges / loops_declared / `sha256.cld` / `sha256.layout` / `sha256.loops_audit` 全部逐字段相同）。
+- **触发原因（非行为回归）**：`stdraw/metrics.py` 的 `certificate_auto` 头部写死 `"version": _PKG_VERSION`，而 `_PKG_VERSION` 跟随 `stdraw.__version__`。版本收尾 bump 版本号 → 证书字节变 → 金标准门的证书哈希必然漂移。**这是金标准门建立（2026-11-24）以来的第一次版本收尾相撞**（此前 v0.8.2 → v0.9.0 发版时金标准基线尚不存在），因此这条口径此前未被触发过。
+
+### 8.2 字节影响面与「只有版本号变了」的证明
+
+**证明方法（双树渲染 + 逐字段 diff + 按基线自身哈希口径复算）**：在 bump 前的引擎树（`cc0c19a`，version 0.9.0）与 bump 后的引擎树（`218efcd`，version 0.10.0）分别渲染全部 8 张金标准图，然后：
+
+1. **逐字段证书 diff**：8/8 图的 `certificate.json` 差异字段集合 **恰好 = `[".version"]`**（`"0.9.0"` → `"0.10.0"`），其余字段（grade / gates / metrics / loops / geometry）全部逐值相同。
+2. **按基线自身口径复算**（`tests/golden_gate.py` 的 `hash_caliber`：`cld` = fixture 字节 CRLF→LF；`certificate` / `loops_audit` = 文件字节 CRLF→LF；`layout` = 规范化 JSON 且**剔除 `engine_version`**）：
+   - 证书哈希：变化（8/8），但**去掉 `version` 字段后两侧哈希完全相同** → 版本号是唯一成因；
+   - 布局哈希：**8/8 相同**（口径本就剔除 `engine_version`）；
+   - `loops_audit` 哈希：**8/8 相同**；
+   - `cld` 哈希：未触碰 fixture，**8/8 相同**。
+3. **CI 侧独立佐证**：失败 run 的漂移清单只有 `sha256.certificate drift` 一类共 8 条，**没有一条** grade / gate / crossings / geometry 漂移行——语义门全部逐值通过。
+
+**结论**：漂移是版本号进入证书字节所致，**不是行为回归**。正确动作是按门自身的机制显式重录（`--update-baseline`，仅批准卡可做），而非回退版本或放水门。
+
+### 8.3 与 `demos/` 的同步
+
+- `demos/classic-certificate.json` 同批重渲（同样只差 `"version"` 一行：13005 → 13006 字节）；demo 新鲜度门（ci_checks 相位 I）在 bump 后本地复跑 **双绿**（demo HTML 逐字节相同 + 证书逐字节相同）。
+- `demos/classic-cld-2d.html` 与 `demos/classic-loops-audit.json`：**逐字节未变**（HTML 不嵌版本号）。
+
+### 8.4 明写不解决项
+
+1. **口径本身未修**：`certificate` 哈希口径仍含 `version` 字段（`layout` 口径已剔除 `engine_version`）。即**下一次版本收尾仍会触发同一条 8/8 漂移**，需再次显式重录。是否把证书口径改为「剔除 `version` 字段」属**口径变更**（放宽漂移检测面），须 owner 单独拍板，本卡不擅自改。
+2. **`_meta.python` 未更新**：基线记录的解释器版本仍为 `3.12.10`（本次重录用的是同一解释器 `Python312`，字节口径一致）；平台字串 `Windows-11-10.0.26300-SP0` 同步保持。
+3. **计时参考值随之刷新**（`seconds` / `timing_ref`）：本机 8 图 avg 1.06s → 1.30s、max 2.18s → 2.63s。计时**从不参与门判定**（runner 速度不是仓库属性），门只在慢于参考 2 倍时大声告警。
+4. **其余 7 张金标准图的语义字段零改动**：`grade` 全为 `best`，门数 13/13 ~ 15/15，交叉 0，loops 问题 0，几何 fail 0。
+
+### 8.5 与历史口径订正的关系
+
+本条同时订正一条**已过时的记载**：AGENTS.md 历史版本段曾写「the version string never enters output bytes (demos/classic-certificate.json byte-identical pre/post bump)」。该说法自 `3b0e55a`（证书版本号改为跟随 `stdraw.__version__`）起已不成立——现由 `stdraw/delivery.py` 的 `engine_version` 与 `stdraw/metrics.py` 的 `version` 字段共同使版本号进入交付字节。本次 0.10.0 收尾的证书重渲与金标准重录都是该事实的直接后果。
+
