@@ -7,9 +7,21 @@ on:
   schedule:
     # Saturdays 03:00 UTC = 11:00 UTC+8 — weekly full 3.9 compatibility sweep
     - cron: "0 3 * * 6"
+    # TEMP (evidence harness, removed in the next commit): a 5-minute tick so
+    # the push-vs-schedule isolation can be observed without waiting a week.
+    - cron: "*/5 * * * *"
+  # Manual entry so the weekly 3.9 sweep (and the whole matrix) can be
+  # reproduced on demand instead of waiting for the Saturday tick.
+  workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # The event name is part of the group on purpose. Push and schedule both run
+  # on refs/heads/main, so a ref-only group put them in one lane and the later
+  # schedule tick cancelled the in-flight push run: run 46138593952 (push) was
+  # cancelled by the 11:15 schedule run 46139007908, leaving that commit's push
+  # run without a verdict. Runs of the same event on one ref still cancel each
+  # other, which is the behaviour worth keeping (consecutive pushes to main).
+  group: ci-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 # Job split (2026-11-10 bottleneck-localization card): the single
@@ -165,9 +177,18 @@ jobs:
           --splitting-algorithm least_duration
 
   checks-py39-weekly:
-    # 3.9 full-compatibility sweep: weekly schedule only, never on push/pr
-    if: github.event_name == 'schedule'
-    runs-on: ubuntu-latest
+    # 3.9 full-compatibility sweep for the declared floor (pyproject:
+    # requires-python >= 3.9): weekly schedule, plus manual dispatch so a failed
+    # sweep can be re-run without waiting a week; never on push/pr.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    # Pinned image, not ubuntu-latest. ubuntu-latest migrated to 26.04, and the
+    # setup-python versions manifest ships 3.9 builds only for 22.04/24.04
+    # (newest 3.9.25: linux-22.04 / linux-24.04, no 26.04 build at all). On
+    # 26.04 the job died inside setup-python with "The version '3.9' with
+    # architecture 'x64' was not found for Ubuntu 26.04" before installing a
+    # single dependency (runs 44894934217, 46139007908). Pinning 24.04 keeps the
+    # declared floor verifiable without touching requires-python.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: "Internal-leak sanitization gate"
