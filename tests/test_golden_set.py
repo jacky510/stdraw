@@ -132,3 +132,65 @@ def test_golden_gate_refuses_without_ortools():
                        encoding="utf-8", errors="replace")
     assert r.returncode == 1, r.stdout + r.stderr
     assert "ortools absent" in r.stdout + r.stderr
+_GATE_PATH = ROOT / "tests" / "golden_gate.py"
+
+
+def _gate_module():
+    """Import tests/golden_gate.py as a module (it is a script with a __main__ guard)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("_golden_gate_under_test", _GATE_PATH)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _write_cert(path, version="0.10.0", grade="best"):
+    obj = {"tool": "stdraw", "version": version, "grade": grade,
+           "metrics": {"crossings": 0}}
+    path.write_text(json.dumps(obj, ensure_ascii=False, indent=1) + "\n",
+                    encoding="utf-8", newline="\n")
+
+
+def test_certificate_caliber_ignores_the_version_value(tmp_path):
+    """A version closure must not move the eight certificate fingerprints.
+
+    Drift registry #8: the certificate stamps ``stdraw.__version__`` into a
+    top-level ``version`` field, so bumping 0.9.0 -> 0.10.0 drifted all eight
+    hashes with zero content change.  The caliber now neutralizes that one
+    value (owner ruling 2026-11-28, registry #9).
+    """
+    gate = _gate_module()
+    a, b = tmp_path / "a.json", tmp_path / "b.json"
+    _write_cert(a, version="0.9.0")
+    _write_cert(b, version="0.10.0")
+    assert gate.sha256_file_certificate(a) == gate.sha256_file_certificate(b)
+
+
+def test_certificate_caliber_still_pins_everything_else(tmp_path):
+    # a real content change must still drift, or the caliber is a blunt amnesty
+    gate = _gate_module()
+    a, b = tmp_path / "a.json", tmp_path / "b.json"
+    _write_cert(a, grade="best")
+    _write_cert(b, grade="good")
+    assert gate.sha256_file_certificate(a) != gate.sha256_file_certificate(b)
+    # formatting is part of the pin too (raw bytes, not canonical JSON)
+    c = tmp_path / "c.json"
+    c.write_text(a.read_text(encoding="utf-8").replace("\n ", "\n    "),
+                 encoding="utf-8", newline="\n")
+    assert gate.sha256_file_certificate(a) != gate.sha256_file_certificate(c)
+
+
+def test_certificate_caliber_fails_closed(tmp_path):
+    # no string version -> the gate must refuse, not fall back to raw bytes
+    gate = _gate_module()
+    p = tmp_path / "no-version.json"
+    p.write_text(json.dumps({"tool": "stdraw"}, indent=1) + "\n",
+                 encoding="utf-8", newline="\n")
+    with pytest.raises(SystemExit):
+        gate.sha256_file_certificate(p)
+    # version present but written in a shape the caliber cannot pin down
+    q = tmp_path / "odd.json"
+    q.write_text('{"version":"0.10.0"}\n', encoding="utf-8", newline="\n")
+    with pytest.raises(SystemExit):
+        gate.sha256_file_certificate(q)

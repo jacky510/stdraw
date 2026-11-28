@@ -10,9 +10,16 @@ come out of the full CLI pipeline as::
 
 and must stay byte-identical to tests/golden/baseline.json:
 
-- ``certificate.json`` / ``loops_audit.json``: sha256 of the raw bytes with
-  CRLF folded to LF (the CLI writes text-mode files, so Windows and Linux
-  check-outs differ only by EOL);
+- ``loops_audit.json``: sha256 of the raw bytes with CRLF folded to LF (the
+  CLI writes text-mode files, so Windows and Linux check-outs differ only
+  by EOL);
+- ``certificate.json``: the same raw-byte sha256, except that the *value*
+  of the top-level ``version`` field is neutralized to ``"<version>"``.
+  That value tracks ``stdraw.__version__`` and so moves at every version
+  closure -- the same reason the layout caliber drops ``engine_version``
+  (owner ruling 2026-11-28, drift registry #9).  The field name, its
+  position, the formatting and every other byte stay pinned, so this is
+  strictly narrower than hashing canonical JSON;
 - ``layout.json``: sha256 of the canonical JSON dump with ``engine_version``
   removed (that one field moves at every version closure; everything else in
   the layout is content);
@@ -98,6 +105,40 @@ def layout_fingerprint(layout_obj):
     canon = json.dumps(obj, sort_keys=True, ensure_ascii=False,
                        separators=(",", ":")).encode("utf-8")
     return sha256_bytes(canon)
+
+
+_VERSION_PLACEHOLDER = '"<version>"'
+
+
+def sha256_file_certificate(path):
+    """Certificate fingerprint: raw bytes with the ``version`` value blanked.
+
+    The certificate stamps ``stdraw.__version__`` into a top-level ``version``
+    field, so a version closure moved all eight fingerprints without changing
+    any content (drift registry #8).  Only that one value is neutralized --
+    formatting, field order and every other byte stay pinned, so this is
+    strictly narrower than the layout caliber's canonical-JSON rewrite.
+
+    Fails closed: a certificate whose ``version`` value cannot be located
+    exactly once raises, instead of silently hashing the raw bytes and
+    re-introducing the very drift this caliber removes.
+    """
+    with open(path, "rb") as f:
+        data = fold_lf(f.read())
+    try:
+        version = json.loads(data.decode("utf-8")).get("version")
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"golden gate: cannot read certificate {path}: {exc}")
+    if not isinstance(version, str) or not version:
+        raise SystemExit(f"golden gate: certificate {path} carries no string "
+                         f"'version' field to neutralize")
+    needle = ('"version": ' + json.dumps(version, ensure_ascii=False)).encode("utf-8")
+    if data.count(needle) != 1:
+        raise SystemExit(f"golden gate: certificate {path} writes the version "
+                         f"value {data.count(needle)} times as {needle!r}; the "
+                         f"caliber needs exactly one")
+    blanked = ('"version": ' + _VERSION_PLACEHOLDER).encode("utf-8")
+    return sha256_bytes(data.replace(needle, blanked))
 
 
 def load_json(path):
@@ -187,7 +228,8 @@ def evaluate(name, cld, outdir, rc, seconds):
         "edges": len(layout.get("edges") or []),
         "sha256": {
             "cld": rec["sha256"]["cld"],
-            "certificate": sha256_file_lf(os.path.join(outdir, "certificate.json")),
+            "certificate": sha256_file_certificate(
+                               os.path.join(outdir, "certificate.json")),
             "loops_audit": sha256_file_lf(os.path.join(outdir, "loops_audit.json")),
             "layout": layout_fingerprint(layout),
         },
@@ -356,7 +398,8 @@ def main(argv=None):
                 "recorded": datetime.date.today().isoformat(),
                 "hash_caliber": {
                     "cld": "sha256 of the fixture bytes, CRLF folded to LF",
-                    "certificate": "sha256 of certificate.json bytes, CRLF folded to LF",
+                    "certificate": "sha256 of certificate.json bytes, CRLF folded to LF, with the top-level version value neutralized to \"<version>\" "
+                                   "(it tracks stdraw.__version__; the layout caliber drops engine_version for the same reason)",
                     "loops_audit": "sha256 of loops_audit.json bytes, CRLF folded to LF",
                     "layout": "sha256 of layout.json as canonical JSON (sort_keys, "
                               "compact separators, ensure_ascii=False) minus engine_version",

@@ -764,3 +764,39 @@
 
 本条同时订正一条**已过时的记载**：AGENTS.md 历史版本段曾声称「版本号永不进入输出字节、`demos/classic-certificate.json` 在 bump 前后逐字节相同」。该说法自 `3b0e55a`（证书版本号改为跟随 `stdraw.__version__`）起已不成立——现由 `stdraw/delivery.py` 的 `engine_version` 与 `stdraw/metrics.py` 的 `version` 字段共同使版本号进入交付字节。本次 0.10.0 收尾的证书重渲与金标准重录都是该事实的直接后果。
 
+## 9. 登记 #9：证书哈希口径改为「剔除 version 值」——版本收尾不再漂基线（2026-11-28，owner 裁定 B）
+
+### 9.1 批准与动机
+
+- **批准**：owner 2026-11-28 桌面会话对「证书哈希口径要不要改」回「**B**」= 改口径，一次到位。
+- **动机**：登记 #8 暴露的口径不对称——`layout` 口径早已剔除 `engine_version`（理由：该字段每次版本收尾都会动），而 `certificate` 口径把跟随 `stdraw.__version__` 的 `version` 值算进哈希 → **每次版本收尾都要重录 8 张图**，且重录时用「整体换 8 条哈希」的方式掩盖同批真实回归的风险更高。改成剔除后，版本收尾与基线解耦。
+
+### 9.2 变更内容（实现面）
+
+- `tests/golden_gate.py` 新增 `sha256_file_certificate()`：先按既有规则把 CRLF 折成 LF，再只把**顶层 `version` 字段的值**替换为占位串 `"<version>"`，然后取 sha256。
+- **fail-closed 三判**：证书不可解析、`version` 不是非空字符串、或该值在文件里出现次数 ≠ 1，一律 `SystemExit` 拒跑——**绝不静默回落到「哈希原始字节」**，否则口径失效却不报警。
+- `_meta.hash_caliber["certificate"]` 与模块 docstring 的口径清单同步改写：证书字节按 LF 归一后，把顶层 `version` 字段的值中和为占位串 `"<version>"`。
+- **仍是字节级钉死**：字段名、字段位置、缩进、分隔符、以及其余所有值都在哈希内（比 `layout` 的 canonical-JSON 路线更严——那条会抹掉格式差异）。
+
+### 9.3 证明（三层，全部实测）
+
+1. **重录后 changed 列表恰 8 条**：`sha256.certificate` × 8，**无一条** grade / gate / crossings / geometry / `sha256.layout` / `sha256.loops_audit` / `sha256.cld` 变化。
+   ```
+   eroding-goals 92a842ec629c -> 45908ca41f82      limits-to-growth 34e458e6acef -> 825a22b272f7
+   escalation e87c74148b5f -> 73579831a66e         shifting-the-burden 0862bd68ef2f -> d232d41a6092
+   fixes-that-fail 30fcba32facc -> c7d2ceb2cc5b    success-to-the-successful d05100c005dc -> c50599628945
+   growth-and-underinvestment 94582644c058 -> 23ab9a10a02c   tragedy-of-the-commons 7d58fa282968 -> 3f3612bfaacb
+   ```
+2. **真实数据不变量（8/8）**：取 8 张图的真实 0.10.0 渲染证书（GaU 用其 `--pitch 96` 渲染），把 `version` 原文改写成 `0.9.0` 后再算指纹——**8/8 指纹不变，且等于新基线值**。这就是「版本号不再影响基线」的直接证据。
+3. **新增 3 条单测**（`tests/test_golden_set.py`，随 pytest 道常跑）：
+   - `test_certificate_caliber_ignores_the_version_value`：0.9.0 与 0.10.0 两份证书指纹相同；
+   - `test_certificate_caliber_still_pins_everything_else`：`grade` 变值必漂、缩进变必漂（格式仍在钉内）；
+   - `test_certificate_caliber_fails_closed`：缺 `version` 拒跑；`{"version":"0.10.0"}` 这种无空格写法（命中 0 次）也拒跑。
+
+### 9.4 明写不解决项
+
+1. **`demos/` 新鲜度门（ci_checks 相位 I）仍逐字节比 `certificate.json`**——版本 bump 后 demo 证书仍必须重渲。这是**交付面事实**（仓库里那份 demo 证书确实写着旧版本号），不是基线口径问题，故**不**豁免。
+2. **AGENTS.md L25「golden archetype baselines, byte-pinned」是概括表述**，未改：受保护文件（每次写入需 owner 当场批准），且该句非事实错误（证书除 `version` 值外仍字节级钉死）。口径正文以本登记 + `tests/golden_gate.py` docstring + `tests/golden/baseline.json` 的 `_meta.hash_caliber` 为准。
+3. **登记 #8 的处置不是白做**：那次重录是当时的正确动作（口径未改前，基线必须反映当时的字节）；本条是在其证明结论（version-only）基础上做的一次性口径升级。
+4. **不追溯历史**：`v0.9.0` 及更早的 tag 内 `baseline.json` 口径保持原样，不改写历史提交。
+
